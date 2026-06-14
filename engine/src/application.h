@@ -1,5 +1,6 @@
 #pragma once
 
+#include "graphics/vulkan/vulkanCommands.h"
 #include "graphics/vulkan/vulkanContext.h"
 #include "graphics/vulkan/vulkanDevice.h"
 #include "graphics/vulkan/vulkanSwapchain.h"
@@ -29,5 +30,7 @@ namespace Engine
             GFX::cVulkanContext     m_vulkanContext;
             GFX::cVulkanDevice      m_vulkanDevice;
             GFX::cVulkanSwapchain   m_vulkanSwapchain;
+            GFX::cVulkanCommands    m_vulkanCommands; 
+            
     };
 }
