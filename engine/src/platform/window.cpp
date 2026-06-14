@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include <stdexcept> 
+#include "window.h"
 
 // -------------------------------------------------------------------------------------------------------------------------
 
@@ -15,6 +16,9 @@ namespace Engine::Platform
     // creates glfw window
 
     cWindow::cWindow(int _width, int _height, const char* _pTitle)
+        : m_pWindow(nullptr)
+        , m_width(_width)
+        , m_height(_height)
     {
         if(!glfwInit())
         {
@@ -24,7 +28,7 @@ namespace Engine::Platform
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); 
 
-        m_pWindow = glfwCreateWindow(_width, _height, _pTitle, nullptr, nullptr); 
+        m_pWindow = glfwCreateWindow(m_width, m_height, _pTitle, nullptr, nullptr); 
 
         if(!m_pWindow)
         {
@@ -68,6 +72,24 @@ namespace Engine::Platform
         return m_pWindow;
     }
 
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    int cWindow::GetWidth() const
+    {
+        return m_width;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    int Engine::Platform::cWindow::GetHeight() const
+    {
+        return m_height;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
+
+

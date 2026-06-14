@@ -21,8 +21,14 @@ namespace Engine::Platform
             
             GLFWwindow* GetWindow() const;
 
+            int GetWidth()  const;
+            int GetHeight() const;
+
         private:
 
             GLFWwindow* m_pWindow;
+
+            int m_width;
+            int m_height;
     };
 }
