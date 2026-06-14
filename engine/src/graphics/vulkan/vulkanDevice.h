@@ -35,18 +35,34 @@ namespace Engine::GFX
             void Init(const cVulkanContext& _rContext);
             void Shutdown(); 
 
-            VkPhysicalDevice            GetDevice() const;
+        public:
+
+            VkPhysicalDevice    GetPhysicalDevice() const;
+            VkDevice            GetDevice()         const; 
+
+            VkQueue GetGraphicsQueue() const;
+            VkQueue GetPresentQueue()  const;
+
             const sQueueFamilyIndices&  GetQueueFamilyIndices() const;
 
         private:
 
             void PickPhysicalDevice(const cVulkanContext& _rContext);
+            void CreateLogicalDevice();
+
             bool IsDeviceSuitable(VkPhysicalDevice _pDevice, VkSurfaceKHR _pSurface);
             sQueueFamilyIndices FindQueueFamilies(VkPhysicalDevice _pDevice, VkSurfaceKHR);
+            bool CheckDeviceExtensionSupport(VkPhysicalDevice _pDevice);
 
         private:
 
             VkPhysicalDevice    m_pPhysicalDevice;
-            sQueueFamilyIndices m_queuFamilyIndices;
+            VkDevice            m_pDevice;
+
+            VkQueue m_pGraphicsQueue; 
+            VkQueue m_pPresentQueue;
+
+            sQueueFamilyIndices m_queueFamilyIndices;
+
     };
 }

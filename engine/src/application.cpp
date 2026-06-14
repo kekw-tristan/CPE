@@ -21,8 +21,8 @@ namespace Engine
 
     cApplication::~cApplication()
     {
-        m_vulkanContext.Shutdown();
         m_vulkanDevice.Shutdown();
+        m_vulkanContext.Shutdown();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
