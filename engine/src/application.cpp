@@ -14,6 +14,7 @@ namespace Engine
     {
         m_vulkanContext.Init(m_window);
         m_vulkanDevice.Init(m_vulkanContext);
+        m_vulkanSwapchain.Init(m_vulkanContext, m_vulkanDevice, m_window);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -21,6 +22,7 @@ namespace Engine
 
     cApplication::~cApplication()
     {
+        m_vulkanSwapchain.Shutdown(m_vulkanDevice);
         m_vulkanDevice.Shutdown();
         m_vulkanContext.Shutdown();
     }

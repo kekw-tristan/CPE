@@ -2,6 +2,7 @@
 
 #include "graphics/vulkan/vulkanContext.h"
 #include "graphics/vulkan/vulkanDevice.h"
+#include "graphics/vulkan/vulkanSwapchain.h"
 
 #include "platform/window.h"
 
@@ -25,7 +26,8 @@ namespace Engine
 
             Platform::cWindow m_window;
 
-            GFX::cVulkanContext m_vulkanContext;
-            GFX::cVulkanDevice  m_vulkanDevice;
+            GFX::cVulkanContext     m_vulkanContext;
+            GFX::cVulkanDevice      m_vulkanDevice;
+            GFX::cVulkanSwapchain   m_vulkanSwapchain;
     };
 }
