@@ -17,6 +17,7 @@ namespace Engine
         m_vulkanSwapchain.Init(m_vulkanContext, m_vulkanDevice, m_window);
         m_vulkanCommands .Init(m_vulkanDevice);
         m_vulkanSync     .Init(m_vulkanDevice);
+        m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanSync);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -39,6 +40,7 @@ namespace Engine
         while (!m_window.ShouldClose())
         {
             m_window.PollEvents();
+            m_vulkanRenderer.DrawFrame();
         }
     }
 
