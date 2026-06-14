@@ -69,10 +69,11 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanContext::Init(const Platform::cWindow& _pWindow)
+    void cVulkanContext::Init(const Platform::cWindow& _rWindow)
     {
         CreateInstance(); 
         CreateDebugMessenger();
+        CreateSurface(_rWindow);
 
         std::cout << "vulkan context initialized." << std::endl;
     }
@@ -81,6 +82,12 @@ namespace Engine::GFX
 
     void cVulkanContext::Shutdown()
     {
+        if (m_pSurface != VK_NULL_HANDLE)
+        {
+            vkDestroySurfaceKHR(m_pInstance, m_pSurface, nullptr);
+            m_pSurface = VK_NULL_HANDLE;
+        }
+
         if (m_pDebugMessenger != VK_NULL_HANDLE)
         {
             DestroyDebugUtilsMessengerEXT(m_pInstance, m_pDebugMessenger, nullptr);
@@ -96,6 +103,20 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    VkInstance cVulkanContext::GetInstance() const
+    {
+        return m_pInstance;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    VkSurfaceKHR cVulkanContext::GetSurface()  const
+    {
+        return m_pSurface;
+    } 
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cVulkanContext::CreateInstance()
     {
         if (!CheckValidationLayerSupport())
@@ -105,7 +126,7 @@ namespace Engine::GFX
 
         VkApplicationInfo appInfo{}; 
 
-        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        appInfo.sType               = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName    = "game";
         appInfo.applicationVersion  = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName         = "engine";
@@ -160,6 +181,20 @@ namespace Engine::GFX
         {
             throw std::runtime_error("Failed to create Vulkan debug messenger."); 
         }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanContext::CreateSurface(const Platform::cWindow& _rWindow)
+    {
+        VkResult result = glfwCreateWindowSurface(m_pInstance, _rWindow.GetWindow(), nullptr, &m_pSurface);
+
+        if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create Vulkan surface!");
+        }
+
+        std::cout << "Vulkan surface created" << std::endl;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

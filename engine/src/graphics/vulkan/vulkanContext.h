@@ -24,10 +24,16 @@ namespace Engine::GFX
            void Init(const Platform::cWindow& _pWindow); 
            void Shutdown();
 
+        public:
+
+            VkInstance   GetInstance() const;
+            VkSurfaceKHR GetSurface()  const; 
+
         private:
 
             void CreateInstance(); 
             void CreateDebugMessenger();
+            void CreateSurface(const Platform::cWindow& _pWindow);
 
             bool CheckValidationLayerSupport() const;
 
@@ -35,5 +41,6 @@ namespace Engine::GFX
 
             VkInstance                  m_pInstance; 
             VkDebugUtilsMessengerEXT    m_pDebugMessenger;
+            VkSurfaceKHR                m_pSurface;
     };
 }
