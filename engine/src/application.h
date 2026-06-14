@@ -4,6 +4,7 @@
 #include "graphics/vulkan/vulkanContext.h"
 #include "graphics/vulkan/vulkanDevice.h"
 #include "graphics/vulkan/vulkanSwapchain.h"
+#include "graphics/vulkan/vulkanSync.h"
 
 #include "platform/window.h"
 
@@ -31,6 +32,7 @@ namespace Engine
             GFX::cVulkanDevice      m_vulkanDevice;
             GFX::cVulkanSwapchain   m_vulkanSwapchain;
             GFX::cVulkanCommands    m_vulkanCommands; 
-            
+            GFX::cVulkanSync        m_vulkanSync;
+
     };
 }

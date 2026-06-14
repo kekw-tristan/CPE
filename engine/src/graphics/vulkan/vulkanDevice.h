@@ -37,6 +37,10 @@ namespace Engine::GFX
 
         public:
 
+            void WaitIdle() const;
+
+        public:
+
             VkPhysicalDevice    GetPhysicalDevice() const;
             VkDevice            GetDevice()         const; 
 
