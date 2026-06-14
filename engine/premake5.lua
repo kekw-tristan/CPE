@@ -19,6 +19,12 @@ project "engine"
     {
         "src"
     }
+    
+    links
+    {
+        "vulkan",
+        "glfw"
+    }
 
     filter "system:linux"
         defines

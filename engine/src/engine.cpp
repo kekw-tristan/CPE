@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-namespace GFX
+namespace Engine
 {
     void PrintHello()
     {

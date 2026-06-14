@@ -22,7 +22,9 @@ project "game"
 
     links
     {
-        "engine"
+        "engine",
+        "vulkan",
+        "glfw"
     }
 
     filter "system:linux"
