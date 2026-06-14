@@ -1,0 +1,68 @@
+# Build output
+bin/
+bin-int/
+build/
+out/
+
+# Premake generated files
+Makefile
+*.make
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.xcodeproj/
+*.xcworkspace/
+*.workspace
+*.project
+*.codelite/
+
+# Compiled objects / binaries
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+*.app
+
+# Debug / symbols
+*.pdb
+*.ilk
+*.dSYM/
+*.su
+*.idb
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+compile_commands.json
+
+# Vulkan / shaders generated
+*.spv
+
+# Logs
+*.log
+logs/
+
+# IDE/editor
+.vscode/
+.idea/
+.vs/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Linux temporary files
+*.tmp
+*.temp
+.cache/
+
+# Local scripts/config
+*.local
+.env
