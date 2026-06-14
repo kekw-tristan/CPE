@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/vulkan/vulkanContext.h"
+#include "graphics/vulkan/vulkanDevice.h"
 
 #include "platform/window.h"
 
@@ -25,5 +26,6 @@ namespace Engine
             Platform::cWindow m_window;
 
             GFX::cVulkanContext m_vulkanContext;
+            GFX::cVulkanDevice  m_vulkanDevice;
     };
 }
