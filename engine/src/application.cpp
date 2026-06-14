@@ -13,6 +13,7 @@ namespace Engine
         : m_window(1280, 720, "Vulkan Engine")
     {
         m_vulkanContext.Init(m_window);
+        m_vulkanDevice.Init(m_vulkanContext);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -21,6 +22,7 @@ namespace Engine
     cApplication::~cApplication()
     {
         m_vulkanContext.Shutdown();
+        m_vulkanDevice.Shutdown();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
