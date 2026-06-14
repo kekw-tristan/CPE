@@ -7,6 +7,7 @@
 #include <set>
 #include <stdexcept> 
 #include <vector>
+#include "vulkanDevice.h"
 
 // -------------------------------------------------------------------------------------------------------------------------
 
@@ -41,6 +42,16 @@ namespace Engine::GFX
         m_queueFamilyIndices = {};
     }
 
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanDevice::WaitIdle() const
+    {
+        if (m_pDevice != VK_NULL_HANDLE)
+        {
+            vkDeviceWaitIdle(m_pDevice);
+        }
+    } 
+    
     // -------------------------------------------------------------------------------------------------------------------------
 
     VkPhysicalDevice cVulkanDevice::GetPhysicalDevice() const
