@@ -88,6 +88,28 @@ namespace Engine::GFX
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
+
+    uint32_t cVulkanDevice::FindMemoryType(uint32_t _typeFilter, VkMemoryPropertyFlags _properties) const
+    {
+        VkPhysicalDeviceMemoryProperties memoryProperties;
+
+        vkGetPhysicalDeviceMemoryProperties(m_pPhysicalDevice, &memoryProperties);
+
+        for (uint32_t index = 0; index < memoryProperties.memoryTypeCount; ++index)
+        {
+            bool typeMatches = (_typeFilter & (1 << index)) != 0;
+            bool propertiesMatch = (memoryProperties.memoryTypes[index].propertyFlags & _properties) == _properties;
+            
+            if (typeMatches && propertiesMatch)
+            {
+                return index;
+            }
+        }
+
+        throw std::runtime_error("Failed to find suitable Vulkan memory type!");
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
     
     void cVulkanDevice::PickPhysicalDevice(const cVulkanContext& _rContext)
     {
