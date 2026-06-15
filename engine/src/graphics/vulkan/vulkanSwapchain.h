@@ -35,6 +35,7 @@ namespace Engine::GFX
 
             void Init(const cVulkanContext& _rVulkanContext, const cVulkanDevice& _rDevice, const Platform::cWindow& _rWindow);
             void Shutdown(const cVulkanDevice& _rDevice);
+            void Recreate(cVulkanContext& _rContext, cVulkanDevice& _rDevice, Engine::Platform::cWindow& _rWindow);
 
         public:
 

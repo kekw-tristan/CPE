@@ -11,6 +11,10 @@
 #include <limits>
 #include <stdexcept>
 
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#include "vulkanSwapchain.h"
+
 // -------------------------------------------------------------------------------------------------------------------------
 
 namespace Engine::GFX
@@ -49,6 +53,19 @@ namespace Engine::GFX
         m_imageFormat   = VK_FORMAT_UNDEFINED;
         m_extent        = {};
     }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanSwapchain::Recreate(cVulkanContext &_rContext, cVulkanDevice &_rDevice, Engine::Platform::cWindow &_rWindow)
+    {
+        _rWindow.WaitUntilFramebufferHasSize(); 
+
+        _rDevice.WaitIdle(); 
+        
+        Shutdown(_rDevice);
+
+        Init(_rContext, _rDevice, _rWindow);
+    } 
     
     // -------------------------------------------------------------------------------------------------------------------------
 
@@ -260,10 +277,15 @@ namespace Engine::GFX
             return _rCapabilities.currentExtent;
         }
 
-        VkExtent2D actualExtent =
+        int width  = 0;
+        int height = 0;
+
+        glfwGetFramebufferSize(_rWindow.GetWindow(), &width, &height);
+
+        VkExtent2D actualExtent = 
         {
-            static_cast<uint32_t>(_rWindow.GetWidth()),
-            static_cast<uint32_t>(_rWindow.GetHeight())
+            static_cast<uint32_t>(width),
+            static_cast<uint32_t>(height)
         };
 
         actualExtent.width  = std::clamp(actualExtent.width,  _rCapabilities.minImageExtent.width,  _rCapabilities.maxImageExtent.width);

@@ -12,8 +12,6 @@ namespace Engine
     cApplication::cApplication()
         : m_window(1280, 720, "Vulkan Engine")
     {
-        
-
         m_vulkanContext  .Init(m_window);
         m_vulkanDevice   .Init(m_vulkanContext);
         m_vulkanSwapchain.Init(m_vulkanContext, m_vulkanDevice, m_window);
@@ -21,7 +19,6 @@ namespace Engine
         m_vulkanSync     .Init(m_vulkanDevice);
         m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
         m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanSync, m_vulkanPipeline);
-        
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -47,7 +44,13 @@ namespace Engine
         while (!m_window.ShouldClose())
         {
             m_window.PollEvents();
-            m_vulkanRenderer.DrawFrame();
+            bool isFrameOk = m_vulkanRenderer.DrawFrame();
+
+            if (!isFrameOk || m_window.WasResized())
+            {
+                m_window.ResetRezisedFlag();
+                m_vulkanSwapchain.Recreate(m_vulkanContext, m_vulkanDevice, m_window);
+            }
         }
     }
 
