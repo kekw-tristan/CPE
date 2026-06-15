@@ -1,6 +1,7 @@
 #include "vulkanRenderer.h"
 
 #include "graphics/vulkan/vulkanDevice.h"
+#include "graphics/vulkan/vulkanPipeline.h"
 #include "graphics/vulkan/vulkanSwapchain.h"
 #include "graphics/vulkan/vulkanCommands.h"
 #include "graphics/vulkan/vulkanSync.h"
@@ -14,12 +15,13 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanSync& _rSync)
+    void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanSync& _rSync, cVulkanPipeline& _rPipeline)
     {
         m_pDevice    = &_rDevice;
         m_pSwapchain = &_rSwapChain;
         m_pCommands  = &_rCommands;
         m_pSync      = &_rSync; 
+        m_pPipeline  = &_rPipeline;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -30,7 +32,7 @@ namespace Engine::GFX
         VkFence  inFlightFence = m_pSync->GetInFlightFence();
 
         vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX); 
-        vkResetFences(device, 1, &inFlightFence);
+        
 
         uint32_t imageIndex = 0; 
 
@@ -49,6 +51,8 @@ namespace Engine::GFX
 
         vkResetCommandBuffer(commandBuffer, 0); 
         RecordCommandBuffer(imageIndex);
+
+        vkResetFences(device, 1, &inFlightFence);
 
         VkSemaphore          waitSemaphores[]   = { m_pSync->GetImageAvailableSemaphore() };
         VkSemaphore          signalSemaphores[] = { m_pSync->GetRenderFinishedSemaphore() };
@@ -106,46 +110,93 @@ namespace Engine::GFX
             throw std::runtime_error("Failed to begin recording command buffer!");
         }
 
-        VkImage swapchainImage = m_pSwapchain->GetImages()[_imageIndex];
+        VkImage     swapchainImage     = m_pSwapchain->GetImages()[_imageIndex];
+        VkImageView swapchainImageView = m_pSwapchain->GetImageViews()[_imageIndex];
+        VkExtent2D  extent             = m_pSwapchain->GetExtent();
 
-        VkImageMemoryBarrier barrierToClear{};
-        barrierToClear.sType                            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrierToClear.oldLayout                        = VK_IMAGE_LAYOUT_UNDEFINED;
-        barrierToClear.newLayout                        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrierToClear.srcQueueFamilyIndex              = VK_QUEUE_FAMILY_IGNORED;
-        barrierToClear.dstQueueFamilyIndex              = VK_QUEUE_FAMILY_IGNORED;
-        barrierToClear.image                            = swapchainImage;
-        barrierToClear.subresourceRange.aspectMask      = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrierToClear.subresourceRange.baseMipLevel    = 0;
-        barrierToClear.subresourceRange.levelCount      = 1;
-        barrierToClear.subresourceRange.baseArrayLayer  = 0;
-        barrierToClear.subresourceRange.layerCount      = 1;
-        barrierToClear.srcAccessMask                    = 0;
-        barrierToClear.dstAccessMask                    = VK_ACCESS_TRANSFER_WRITE_BIT;
+        VkImageMemoryBarrier barrierToColorAttachment{};
 
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierToClear);
+        barrierToColorAttachment.sType                              = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrierToColorAttachment.oldLayout                          = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrierToColorAttachment.newLayout                          = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        barrierToColorAttachment.srcQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
+        barrierToColorAttachment.dstQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
+        barrierToColorAttachment.image                              = swapchainImage;
+        barrierToColorAttachment.subresourceRange.aspectMask        = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrierToColorAttachment.subresourceRange.baseMipLevel      = 0;
+        barrierToColorAttachment.subresourceRange.levelCount        = 1;
+        barrierToColorAttachment.subresourceRange.baseArrayLayer    = 0;
+        barrierToColorAttachment.subresourceRange.layerCount        = 1;
+        barrierToColorAttachment.srcAccessMask                      = 0;
+        barrierToColorAttachment.dstAccessMask                      = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-        VkClearColorValue clearColor{};
+        vkCmdPipelineBarrier(
+            commandBuffer,
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrierToColorAttachment
+        );
 
-        clearColor.float32[0] = 0.0f;
-        clearColor.float32[1] = 0.0f;
-        clearColor.float32[2] = 0.0f;
-        clearColor.float32[3] = 1.0f;
+        VkClearValue clearValue{};
 
-        VkImageSubresourceRange clearRange{};
+        clearValue.color.float32[0] = 0.0f;
+        clearValue.color.float32[1] = 0.0f;
+        clearValue.color.float32[2] = 0.0f;
+        clearValue.color.float32[3] = 1.0f;
 
-        clearRange.aspectMask       = VK_IMAGE_ASPECT_COLOR_BIT;
-        clearRange.baseMipLevel     = 0;
-        clearRange.levelCount       = 1;
-        clearRange.baseArrayLayer   = 0;
-        clearRange.layerCount       = 1;
+        VkRenderingAttachmentInfo colorAttachment{};
 
-        vkCmdClearColorImage(commandBuffer, swapchainImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearColor, 1, &clearRange);
+        colorAttachment.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        colorAttachment.imageView   = swapchainImageView;
+        colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.clearValue  = clearValue;
+
+        VkRenderingInfo renderingInfo{};
+
+        renderingInfo.sType                 = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        renderingInfo.renderArea.offset     = { 0, 0 };
+        renderingInfo.renderArea.extent     = extent;
+        renderingInfo.layerCount            = 1;
+        renderingInfo.colorAttachmentCount  = 1;
+        renderingInfo.pColorAttachments     = &colorAttachment;
+
+        vkCmdBeginRendering(commandBuffer, &renderingInfo);
+
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width  = static_cast<float>(extent.width);
+        viewport.height = static_cast<float>(extent.height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+        scissor.offset = { 0, 0 };
+        scissor.extent = extent;
+
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        vkCmdBindPipeline(
+            commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_pPipeline->GetPipeline()
+        );
+
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+        vkCmdEndRendering(commandBuffer);
 
         VkImageMemoryBarrier barrierToPresent{};
 
         barrierToPresent.sType                              = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrierToPresent.oldLayout                          = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrierToPresent.oldLayout                          = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         barrierToPresent.newLayout                          = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         barrierToPresent.srcQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
         barrierToPresent.dstQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
@@ -155,10 +206,18 @@ namespace Engine::GFX
         barrierToPresent.subresourceRange.levelCount        = 1;
         barrierToPresent.subresourceRange.baseArrayLayer    = 0;
         barrierToPresent.subresourceRange.layerCount        = 1;
-        barrierToPresent.srcAccessMask                      = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrierToPresent.srcAccessMask                      = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         barrierToPresent.dstAccessMask                      = 0;
 
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrierToPresent);
+        vkCmdPipelineBarrier(
+            commandBuffer,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrierToPresent
+        );
 
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
         {

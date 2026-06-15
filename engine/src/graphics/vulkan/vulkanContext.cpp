@@ -123,6 +123,7 @@ namespace Engine::GFX
         {
             throw std::runtime_error("Vulkan validation layer not available!");
         }
+        
 
         VkApplicationInfo appInfo{}; 
 

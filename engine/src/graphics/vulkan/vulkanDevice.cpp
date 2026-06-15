@@ -144,6 +144,12 @@ namespace Engine::GFX
             
             queueCreateInfos.push_back(queueCreateInfo);
         }
+
+        VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{};
+        
+        dynamicRenderingFeatures.sType              = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+        dynamicRenderingFeatures.dynamicRendering   = VK_TRUE;
+
         VkPhysicalDeviceFeatures deviceFeatures{};
 
         VkDeviceCreateInfo createInfo{};
@@ -153,6 +159,7 @@ namespace Engine::GFX
         createInfo.pEnabledFeatures         = &deviceFeatures;
         createInfo.enabledExtensionCount    = static_cast<uint32_t>(c_deviceExtensions.size());
         createInfo.ppEnabledExtensionNames  = c_deviceExtensions.data();
+        createInfo.pNext                    = &dynamicRenderingFeatures;
 
         VkResult result = vkCreateDevice(m_pPhysicalDevice, &createInfo, nullptr, &m_pDevice);
 
@@ -175,7 +182,17 @@ namespace Engine::GFX
 
         bool isExtensionSupported = CheckDeviceExtensionSupport(_pDevice);
 
-        return indices.IsComplete() && isExtensionSupported;
+        VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{};
+        dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+
+        VkPhysicalDeviceFeatures2 features2{};
+
+        features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features2.pNext = &dynamicRenderingFeatures;
+
+        vkGetPhysicalDeviceFeatures2(_pDevice, &features2);
+
+        return indices.IsComplete() && isExtensionSupported && dynamicRenderingFeatures.dynamicRendering;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
