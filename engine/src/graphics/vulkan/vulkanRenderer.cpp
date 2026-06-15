@@ -1,6 +1,7 @@
 #include "vulkanRenderer.h"
 
 #include "graphics/vulkan/vulkanDevice.h"
+#include "graphics/vulkan/vulkanMesh.h"
 #include "graphics/vulkan/vulkanPipeline.h"
 #include "graphics/vulkan/vulkanSwapchain.h"
 #include "graphics/vulkan/vulkanCommands.h"
@@ -15,13 +16,14 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanSync& _rSync, cVulkanPipeline& _rPipeline)
+    void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanSync& _rSync, cVulkanPipeline& _rPipeline, cVulkanMesh& _rMesh)
     {
         m_pDevice    = &_rDevice;
         m_pSwapchain = &_rSwapChain;
         m_pCommands  = &_rCommands;
         m_pSync      = &_rSync; 
         m_pPipeline  = &_rPipeline;
+        m_pMesh      = &_rMesh;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -200,7 +202,7 @@ namespace Engine::GFX
             m_pPipeline->GetPipeline()
         );
 
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        m_pMesh->Draw(commandBuffer);
 
         vkCmdEndRendering(commandBuffer);
 

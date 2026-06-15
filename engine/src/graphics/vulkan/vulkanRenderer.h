@@ -9,6 +9,7 @@ namespace Engine::GFX
     class cVulkanCommands;
     class cVulkanSync;
     class cVulkanPipeline;
+    class cVulkanMesh;
 
     class cVulkanRenderer
     {
@@ -21,7 +22,7 @@ namespace Engine::GFX
 
         public:
         
-            void Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanSync& _rSync, cVulkanPipeline& _rPipeline);    
+            void Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanSync& _rSync, cVulkanPipeline& _rPipeline, cVulkanMesh& _rMesh);    
             bool DrawFrame();
             
         private:
@@ -35,5 +36,6 @@ namespace Engine::GFX
             cVulkanCommands*    m_pCommands;
             cVulkanSync*        m_pSync;
             cVulkanPipeline*    m_pPipeline;
+            cVulkanMesh*        m_pMesh;
     };
 }  

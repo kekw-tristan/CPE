@@ -1,33 +1,30 @@
-struct VSOut
+struct VSInput
 {
-    float4 position : SV_Position;
-    float3 color    : COLOR0;
+    float3 position : POSITION;
+    float3 normal   : NORMAL;
+    float2 texCoord : TEXCOORD0;
+    float4 color    : COLOR0;
 };
 
-VSOut VSMain(uint vertexID : SV_VertexID)
+struct VSOutput
 {
-    float2 positions[3] =
-    {
-        float2( 0.0, -0.5),
-        float2( 0.5,  0.5),
-        float2(-0.5,  0.5)
-    };
+    float4 position : SV_Position;
+    float4 color    : COLOR0;
+    float2 texCoord : TEXCOORD0;
+};
 
-    float3 colors[3] =
-    {
-        float3(1.0, 0.0, 0.0),
-        float3(0.0, 1.0, 0.0),
-        float3(0.0, 0.0, 1.0)
-    };
+VSOutput VSMain(VSInput input)
+{
+    VSOutput output;
 
-    VSOut output;
-    output.position = float4(positions[vertexID], 0.0, 1.0);
-    output.color = colors[vertexID];
+    output.position = float4(input.position, 1.0);
+    output.color = input.color;
+    output.texCoord = input.texCoord;
 
     return output;
 }
 
-float4 PSMain(VSOut input) : SV_Target0
+float4 PSMain(VSOutput input) : SV_Target0
 {
-    return float4(input.color, 1.0);
+    return input.color;
 }

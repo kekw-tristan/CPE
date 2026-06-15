@@ -48,6 +48,7 @@ namespace Engine::GFX
             VkQueue GetPresentQueue()  const;
 
             const sQueueFamilyIndices&  GetQueueFamilyIndices() const;
+            uint32_t FindMemoryType(uint32_t _typeFilter, VkMemoryPropertyFlags _properties) const;
 
         private:
 

@@ -2,6 +2,8 @@
 
 #include "graphics/vulkan/vulkanDevice.h"
 #include "graphics/vulkan/vulkanSwapchain.h"
+#include "graphics/vulkan/vulkanVertex.h"
+
 
 #include <fstream>
 #include <stdexcept>
@@ -45,11 +47,14 @@ namespace Engine::GFX
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         
+        auto bindingDescription     = sVulkanVertex::GetBindingDescription(); 
+        auto attributeDescriptions  = sVulkanVertex::GetAttributeDescriptions();
+
         vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount   = 0;
-        vertexInputInfo.pVertexBindingDescriptions      = nullptr;
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
-        vertexInputInfo.pVertexAttributeDescriptions    = nullptr;
+        vertexInputInfo.vertexBindingDescriptionCount   = 1;
+        vertexInputInfo.pVertexBindingDescriptions      = &bindingDescription;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.pVertexAttributeDescriptions    = attributeDescriptions.data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 
