@@ -26,7 +26,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::DrawFrame()
+    bool cVulkanRenderer::DrawFrame()
     {
         VkDevice device        = m_pDevice->GetDevice();
         VkFence  inFlightFence = m_pSync->GetInFlightFence();
@@ -36,13 +36,18 @@ namespace Engine::GFX
 
         uint32_t imageIndex = 0; 
 
-        VkResult acqureResult = vkAcquireNextImageKHR(device, 
+        VkResult acquireResult = vkAcquireNextImageKHR(device, 
                                                       m_pSwapchain->GetSwapchain(),
                                                       UINT64_MAX,m_pSync->GetImageAvailableSemaphore(),
                                                       VK_NULL_HANDLE,
                                                       &imageIndex);
 
-        if (acqureResult != VK_SUCCESS)
+         if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            return false;
+        }
+
+        if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR)
         {
             throw std::runtime_error("Failed to acquire swapchain image!");
         }
@@ -89,11 +94,17 @@ namespace Engine::GFX
 
         VkResult presentResult = vkQueuePresentKHR(m_pDevice->GetPresentQueue(), &presentInfo);
 
+        if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
+        {
+            return false;
+        }
+
         if (presentResult != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to present swapchain image.");
         }
 
+        return true;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

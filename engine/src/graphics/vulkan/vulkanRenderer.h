@@ -22,7 +22,7 @@ namespace Engine::GFX
         public:
         
             void Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanSync& _rSync, cVulkanPipeline& _rPipeline);    
-            void DrawFrame();
+            bool DrawFrame();
             
         private:
 
