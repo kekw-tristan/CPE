@@ -16,8 +16,8 @@ namespace Engine::GFX
 
     void cVulkanPipeline::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapchain)
     {
-        auto vertShaderCode = ReadFile("game/assets/shaders/triangle.vert.spv");
-        auto fragShaderCode = ReadFile("game/assets/shaders/triangle.frag.spv");
+        auto vertShaderCode = ReadFile("game/assets/shaders/bin/main.vert.spv");
+        auto fragShaderCode = ReadFile("game/assets/shaders/bin/main.frag.spv");
 
         VkShaderModule vertShaderModule = CreateShaderModule(_rDevice, vertShaderCode);
         VkShaderModule fragShaderModule = CreateShaderModule(_rDevice, fragShaderCode);
@@ -28,14 +28,14 @@ namespace Engine::GFX
         vertShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vertShaderStageInfo.stage   = VK_SHADER_STAGE_VERTEX_BIT;
         vertShaderStageInfo.module  = vertShaderModule;
-        vertShaderStageInfo.pName   = "main";
+        vertShaderStageInfo.pName   = "VSMain";
 
         VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
 
         fragShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         fragShaderStageInfo.stage   = VK_SHADER_STAGE_FRAGMENT_BIT;
         fragShaderStageInfo.module  = fragShaderModule;
-        fragShaderStageInfo.pName   = "main";
+        fragShaderStageInfo.pName   = "PSMain";
 
         VkPipelineShaderStageCreateInfo shaderStages[] = 
         {
