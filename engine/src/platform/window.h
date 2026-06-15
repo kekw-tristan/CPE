@@ -1,6 +1,7 @@
 #pragma once 
 
 struct GLFWwindow; 
+struct GLFWmonitor;
 
 namespace Engine::Platform
 {
@@ -29,9 +30,14 @@ namespace Engine::Platform
             
             void WaitUntilFramebufferHasSize(); 
 
+            void ToggleFullscreen(); 
+            bool IsFullscreen();
+
+
         private:
 
             static void FramebufferResizeCallback(GLFWwindow* _pWindow, int _width, int _height);
+            GLFWmonitor* GetCurrentMonitor();
 
         private:
 
@@ -41,5 +47,13 @@ namespace Engine::Platform
             int m_height;
 
             bool m_hasFramebufferResized;
+
+            bool m_isFullscreen; 
+
+            int m_windowedX;
+            int m_windowedY;
+            int m_windowedWidth; 
+            int m_windowedHeight; 
+
     };
 }

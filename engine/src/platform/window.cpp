@@ -3,6 +3,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
 #include <stdexcept> 
 #include "window.h"
 
@@ -20,6 +21,11 @@ namespace Engine::Platform
         , m_width(_width)
         , m_height(_height)
         , m_hasFramebufferResized(false)
+        , m_isFullscreen(false) 
+        , m_windowedX(100)
+        , m_windowedY(100)
+        , m_windowedWidth(_width) 
+        , m_windowedHeight(_height) 
     {
         if(!glfwInit())
         {
@@ -126,6 +132,45 @@ namespace Engine::Platform
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cWindow::ToggleFullscreen()
+    {
+        if (!m_pWindow)
+        {
+            return;
+        }
+
+        m_hasFramebufferResized = true;
+
+        if (!m_isFullscreen)
+        {
+            glfwGetWindowPos(m_pWindow, &m_windowedX, &m_windowedY);
+            glfwGetWindowSize(m_pWindow, &m_windowedWidth, &m_windowedHeight);
+
+            GLFWmonitor*       pMonitor = GetCurrentMonitor();
+            const GLFWvidmode* pMode    = glfwGetVideoMode(pMonitor);
+
+            glfwSetWindowMonitor(m_pWindow, pMonitor, 0, 0, pMode->width, pMode->height, pMode->refreshRate);
+
+            m_isFullscreen = true; 
+
+        }
+        else
+        {
+            glfwSetWindowMonitor(m_pWindow, nullptr, m_windowedX, m_windowedY, m_windowedWidth, m_windowedHeight, 0);
+        
+            m_isFullscreen = false;
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool cWindow::IsFullscreen()
+    {
+        return false;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cWindow::FramebufferResizeCallback(GLFWwindow *_pWindow, int _width, int _height)
     {
         cWindow* pWindow = reinterpret_cast<cWindow*>(glfwGetWindowUserPointer(_pWindow));   
@@ -133,6 +178,70 @@ namespace Engine::Platform
         pWindow->m_width                    = _width; 
         pWindow->m_height                   = _height;
         pWindow->m_hasFramebufferResized    = true;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    GLFWmonitor* cWindow::GetCurrentMonitor()
+    {
+        int windowX         = 0; 
+        int windowY         = 0; 
+        int windowWidth     = 0;
+        int windowHeight    = 0;
+
+        glfwGetWindowPos(m_pWindow, &windowX, &windowY); 
+        glfwGetWindowSize(m_pWindow, &windowWidth, &windowHeight);
+
+        int monitorCount = 0; 
+        GLFWmonitor** ppMonitors = glfwGetMonitors(&monitorCount);
+
+        if (monitorCount == 0 || ppMonitors == nullptr)
+        {
+            return glfwGetPrimaryMonitor();
+        }
+
+        GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+        int primaryOverlap = 0;
+
+        for (int index = 0; index < monitorCount; ++index)
+        {
+            GLFWmonitor* pMonitor = ppMonitors[index];
+
+            int monitorX = 0;
+            int monitorY = 0;
+
+            glfwGetMonitorPos(pMonitor, &monitorX, &monitorY);
+
+            const GLFWvidmode* pMode = glfwGetVideoMode(pMonitor);
+
+            if (!pMode)
+            {
+                continue;
+            }
+
+            int monitorWidth  = pMode->width;
+            int monitorHeight = pMode->height;
+
+            int overlapLeft     = std::max(windowX, monitorX);
+            int overlapTop      = std::max(windowY, monitorY);
+
+            int overlapRight    = std::min(windowX + windowWidth,  monitorX + monitorWidth);
+            int overlapBottom   = std::min(windowY + windowHeight, monitorY + monitorHeight);
+
+            int overlapWidth    = std::max(0, overlapRight  - overlapLeft);
+            int overlapHeight   = std::max(0, overlapBottom - overlapTop);
+
+            int overlapArea = overlapWidth * overlapHeight;
+
+            if (overlapArea > primaryOverlap)
+            {
+                primaryOverlap = overlapArea; 
+                primaryMonitor = pMonitor;
+            }
+
+        }
+
+        return primaryMonitor;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

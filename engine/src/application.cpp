@@ -1,5 +1,8 @@
 #include "application.h"
 
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
 // -------------------------------------------------------------------------------------------------------------------------
 
 namespace Engine
@@ -41,9 +44,22 @@ namespace Engine
 
     void cApplication::Run()
     {
+        bool wasF11Pressed = false;
+
         while (!m_window.ShouldClose())
         {
             m_window.PollEvents();
+            
+            // fullscreen
+            bool isF11Pressed = glfwGetKey(m_window.GetWindow(), GLFW_KEY_F11) == GLFW_PRESS;
+            if (isF11Pressed && !wasF11Pressed)
+            {
+                m_window.ToggleFullscreen();
+            }
+
+            wasF11Pressed = isF11Pressed;
+
+            // draw frame
             bool isFrameOk = m_vulkanRenderer.DrawFrame();
 
             if (!isFrameOk || m_window.WasResized())
