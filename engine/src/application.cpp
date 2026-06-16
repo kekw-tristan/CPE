@@ -68,7 +68,7 @@ namespace Engine
         
         m_vulkanSync     .Init(m_vulkanDevice);
         m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
-        m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanSync, m_vulkanPipeline, m_quadMesh);
+        m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline, m_quadMesh);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -79,6 +79,7 @@ namespace Engine
         m_vulkanDevice.WaitIdle();
 
         m_quadMesh       .Shutdown(m_vulkanDevice);
+        m_vulkanRenderer .ShutDown();
         m_vulkanPipeline .Shutdown(m_vulkanDevice);
         m_vulkanSync     .Shutdown(m_vulkanDevice);
         m_vulkanCommands .Shutdown(m_vulkanDevice);
