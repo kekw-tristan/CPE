@@ -1,5 +1,7 @@
 #include "vulkanRenderer.h"
 
+#include "graphics/gfxConfig.h"
+
 #include "graphics/vulkan/vulkanDevice.h"
 #include "graphics/vulkan/vulkanMesh.h"
 #include "graphics/vulkan/vulkanPipeline.h"
@@ -7,6 +9,7 @@
 #include "graphics/vulkan/vulkanCommands.h"
 #include "graphics/vulkan/vulkanSync.h"
 
+#include <iostream>
 #include <stdexcept>
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -16,35 +19,87 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanSync& _rSync, cVulkanPipeline& _rPipeline, cVulkanMesh& _rMesh)
+    void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline, cVulkanMesh& _rMesh)
     {
         m_pDevice    = &_rDevice;
         m_pSwapchain = &_rSwapChain;
         m_pCommands  = &_rCommands;
-        m_pSync      = &_rSync; 
         m_pPipeline  = &_rPipeline;
         m_pMesh      = &_rMesh;
+
+        m_currentFrame = 0;
+
+        CreateFrameResources();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::ShutDown()
+    {
+        if (m_pDevice == nullptr)
+        {
+            return;
+        }
+
+        VkDevice device = m_pDevice->GetDevice(); 
+
+        for (sVulkanFrame& rFrame : m_frames)
+        {
+            if (rFrame.imageAvailableSemaphore != VK_NULL_HANDLE)
+            {
+                vkDestroySemaphore(device, rFrame.imageAvailableSemaphore, nullptr);
+                rFrame.imageAvailableSemaphore = VK_NULL_HANDLE;
+            }
+            
+            if (rFrame.renderFinishedSemaphore != VK_NULL_HANDLE)
+            {
+                vkDestroySemaphore(device, rFrame.renderFinishedSemaphore, nullptr);
+                rFrame.renderFinishedSemaphore = VK_NULL_HANDLE;
+            }
+
+            if (rFrame.inFlightFence != VK_NULL_HANDLE)
+            {
+                vkDestroyFence(device, rFrame.inFlightFence, nullptr);
+                rFrame.inFlightFence = VK_NULL_HANDLE;
+            }
+
+            if (rFrame.pCommandBuffer != VK_NULL_HANDLE && m_pCommands != nullptr)
+            {
+                vkFreeCommandBuffers(device, m_pCommands->GetCommandPool(), 1, &rFrame.pCommandBuffer);
+                rFrame.pCommandBuffer = VK_NULL_HANDLE;
+            }
+        }
+
+        m_currentFrame = 0;
+
+        m_pMesh      = nullptr;
+        m_pPipeline  = nullptr;
+        m_pCommands  = nullptr;
+        m_pSwapchain = nullptr;
+        m_pDevice    = nullptr;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
 
     bool cVulkanRenderer::DrawFrame()
     {
-        VkDevice device        = m_pDevice->GetDevice();
-        VkFence  inFlightFence = m_pSync->GetInFlightFence();
+        VkDevice        device          = m_pDevice->GetDevice();
+        sVulkanFrame&   frame           = m_frames[m_currentFrame];
 
-        vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX); 
+        vkWaitForFences(device, 1, &frame.inFlightFence, VK_TRUE, UINT64_MAX); 
         
 
         uint32_t imageIndex = 0; 
 
-        VkResult acquireResult = vkAcquireNextImageKHR(device, 
-                                                      m_pSwapchain->GetSwapchain(),
-                                                      UINT64_MAX,m_pSync->GetImageAvailableSemaphore(),
-                                                      VK_NULL_HANDLE,
-                                                      &imageIndex);
+        VkResult acquireResult = vkAcquireNextImageKHR(
+            device, 
+            m_pSwapchain->GetSwapchain(),
+            UINT64_MAX,frame.imageAvailableSemaphore,
+            VK_NULL_HANDLE,
+            &imageIndex
+        );
 
-         if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
+        if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
         {
             return false;
         }
@@ -59,10 +114,10 @@ namespace Engine::GFX
         vkResetCommandBuffer(commandBuffer, 0); 
         RecordCommandBuffer(imageIndex);
 
-        vkResetFences(device, 1, &inFlightFence);
+        vkResetFences(device, 1, &frame.inFlightFence);
 
-        VkSemaphore          waitSemaphores[]   = { m_pSync->GetImageAvailableSemaphore() };
-        VkSemaphore          signalSemaphores[] = { m_pSync->GetRenderFinishedSemaphore() };
+        VkSemaphore          waitSemaphores[]   = { frame.imageAvailableSemaphore };
+        VkSemaphore          signalSemaphores[] = { frame.renderFinishedSemaphore };
         VkPipelineStageFlags waitStages[]       = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
         VkSubmitInfo submitInfo{};
@@ -76,7 +131,7 @@ namespace Engine::GFX
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores    = signalSemaphores;
 
-        VkResult submitResult = vkQueueSubmit(m_pDevice->GetGraphicsQueue(), 1, &submitInfo, m_pSync->GetInFlightFence());
+        VkResult submitResult = vkQueueSubmit(m_pDevice->GetGraphicsQueue(), 1, &submitInfo, frame.inFlightFence);
 
         if (submitResult != VK_SUCCESS)
         {
@@ -236,6 +291,43 @@ namespace Engine::GFX
         {
             throw std::runtime_error("Failed to record command buffer!");
         }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::CreateFrameResources()
+    {
+        VkDevice device = m_pDevice->GetDevice();
+
+
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        VkFenceCreateInfo fenceInfo{};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+
+        // fence starts signaled
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        for (sVulkanFrame& rFrame : m_frames)
+        {
+            if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &rFrame.imageAvailableSemaphore) != VK_SUCCESS)
+            {
+                throw std::runtime_error("Failed to create image available semaphore!");
+            }
+        
+            if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &rFrame.renderFinishedSemaphore) != VK_SUCCESS)
+            {
+                throw std::runtime_error("Failed to create render finished semaphore!");
+            }
+        
+            if (vkCreateFence(device, &fenceInfo, nullptr, &rFrame.inFlightFence) != VK_SUCCESS)
+            {
+                throw std::runtime_error("Failed to create in-flight fence!");
+            }
+        }
+
+        std::cout << "Vulkan sync objects created." << std::endl;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
