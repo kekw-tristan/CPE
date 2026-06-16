@@ -14,6 +14,7 @@ namespace Engine::GFX
         VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE; 
         VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
 
-        cVulkanBuffer pCameraBuffer;
+        cVulkanBuffer frameUniformedBuffer;
+        VkDescriptorSet frameDescriptorSet = VK_NULL_HANDLE;
     };
 }

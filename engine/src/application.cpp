@@ -23,38 +23,190 @@ namespace Engine
         m_vulkanDevice   .Init(m_vulkanContext);
         m_vulkanCommands .Init(m_vulkanDevice);
     
-        std::vector<Engine::GFX::sVulkanVertex> vertices =
+    std::vector<Engine::GFX::sVulkanVertex> vertices =
         {
+            // Front face (+Z)
             {
-                {-0.5f, -0.5f, 0.0f},
-                { 0.0f,  0.0f, 1.0f},
+                {-0.5f, -0.5f,  0.5f},
+                { 0.0f,  0.0f,  1.0f},
                 { 0.0f,  0.0f},
-                { 1.0f,  0.0f, 0.0f, 1.0f}
+                { 1.0f,  0.0f,  0.0f, 1.0f}
             },
             {
-                { 0.5f, -0.5f, 0.0f},
-                { 0.0f,  0.0f, 1.0f},
+                { 0.5f, -0.5f,  0.5f},
+                { 0.0f,  0.0f,  1.0f},
                 { 1.0f,  0.0f},
-                { 0.0f,  1.0f, 0.0f, 1.0f}
+                { 1.0f,  0.0f,  0.0f, 1.0f}
             },
             {
-                { 0.5f,  0.5f, 0.0f},
-                { 0.0f,  0.0f, 1.0f},
+                { 0.5f,  0.5f,  0.5f},
+                { 0.0f,  0.0f,  1.0f},
                 { 1.0f,  1.0f},
-                { 0.0f,  0.0f, 1.0f, 1.0f}
+                { 1.0f,  0.0f,  0.0f, 1.0f}
             },
             {
-                {-0.5f,  0.5f, 0.0f},
-                { 0.0f,  0.0f, 1.0f},
+                {-0.5f,  0.5f,  0.5f},
+                { 0.0f,  0.0f,  1.0f},
                 { 0.0f,  1.0f},
-                { 1.0f,  1.0f, 1.0f, 1.0f}
+                { 1.0f,  0.0f,  0.0f, 1.0f}
+            },
+
+            // Back face (-Z)
+            {
+                { 0.5f, -0.5f, -0.5f},
+                { 0.0f,  0.0f, -1.0f},
+                { 0.0f,  0.0f},
+                { 0.0f,  1.0f,  0.0f, 1.0f}
+            },
+            {
+                {-0.5f, -0.5f, -0.5f},
+                { 0.0f,  0.0f, -1.0f},
+                { 1.0f,  0.0f},
+                { 0.0f,  1.0f,  0.0f, 1.0f}
+            },
+            {
+                {-0.5f,  0.5f, -0.5f},
+                { 0.0f,  0.0f, -1.0f},
+                { 1.0f,  1.0f},
+                { 0.0f,  1.0f,  0.0f, 1.0f}
+            },
+            {
+                { 0.5f,  0.5f, -0.5f},
+                { 0.0f,  0.0f, -1.0f},
+                { 0.0f,  1.0f},
+                { 0.0f,  1.0f,  0.0f, 1.0f}
+            },
+
+            // Left face (-X)
+            {
+                {-0.5f, -0.5f, -0.5f},
+                {-1.0f,  0.0f,  0.0f},
+                { 0.0f,  0.0f},
+                { 0.0f,  0.0f,  1.0f, 1.0f}
+            },
+            {
+                {-0.5f, -0.5f,  0.5f},
+                {-1.0f,  0.0f,  0.0f},
+                { 1.0f,  0.0f},
+                { 0.0f,  0.0f,  1.0f, 1.0f}
+            },
+            {
+                {-0.5f,  0.5f,  0.5f},
+                {-1.0f,  0.0f,  0.0f},
+                { 1.0f,  1.0f},
+                { 0.0f,  0.0f,  1.0f, 1.0f}
+            },
+            {
+                {-0.5f,  0.5f, -0.5f},
+                {-1.0f,  0.0f,  0.0f},
+                { 0.0f,  1.0f},
+                { 0.0f,  0.0f,  1.0f, 1.0f}
+            },
+
+            // Right face (+X)
+            {
+                { 0.5f, -0.5f,  0.5f},
+                { 1.0f,  0.0f,  0.0f},
+                { 0.0f,  0.0f},
+                { 1.0f,  1.0f,  0.0f, 1.0f}
+            },
+            {
+                { 0.5f, -0.5f, -0.5f},
+                { 1.0f,  0.0f,  0.0f},
+                { 1.0f,  0.0f},
+                { 1.0f,  1.0f,  0.0f, 1.0f}
+            },
+            {
+                { 0.5f,  0.5f, -0.5f},
+                { 1.0f,  0.0f,  0.0f},
+                { 1.0f,  1.0f},
+                { 1.0f,  1.0f,  0.0f, 1.0f}
+            },
+            {
+                { 0.5f,  0.5f,  0.5f},
+                { 1.0f,  0.0f,  0.0f},
+                { 0.0f,  1.0f},
+                { 1.0f,  1.0f,  0.0f, 1.0f}
+            },
+
+            // Top face (+Y)
+            {
+                {-0.5f,  0.5f,  0.5f},
+                { 0.0f,  1.0f,  0.0f},
+                { 0.0f,  0.0f},
+                { 1.0f,  0.0f,  1.0f, 1.0f}
+            },
+            {
+                { 0.5f,  0.5f,  0.5f},
+                { 0.0f,  1.0f,  0.0f},
+                { 1.0f,  0.0f},
+                { 1.0f,  0.0f,  1.0f, 1.0f}
+            },
+            {
+                { 0.5f,  0.5f, -0.5f},
+                { 0.0f,  1.0f,  0.0f},
+                { 1.0f,  1.0f},
+                { 1.0f,  0.0f,  1.0f, 1.0f}
+            },
+            {
+                {-0.5f,  0.5f, -0.5f},
+                { 0.0f,  1.0f,  0.0f},
+                { 0.0f,  1.0f},
+                { 1.0f,  0.0f,  1.0f, 1.0f}
+            },
+
+            // Bottom face (-Y)
+            {
+                {-0.5f, -0.5f, -0.5f},
+                { 0.0f, -1.0f,  0.0f},
+                { 0.0f,  0.0f},
+                { 0.0f,  1.0f,  1.0f, 1.0f}
+            },
+            {
+                { 0.5f, -0.5f, -0.5f},
+                { 0.0f, -1.0f,  0.0f},
+                { 1.0f,  0.0f},
+                { 0.0f,  1.0f,  1.0f, 1.0f}
+            },
+            {
+                { 0.5f, -0.5f,  0.5f},
+                { 0.0f, -1.0f,  0.0f},
+                { 1.0f,  1.0f},
+                { 0.0f,  1.0f,  1.0f, 1.0f}
+            },
+            {
+                {-0.5f, -0.5f,  0.5f},
+                { 0.0f, -1.0f,  0.0f},
+                { 0.0f,  1.0f},
+                { 0.0f,  1.0f,  1.0f, 1.0f}
             }
         };
 
         std::vector<uint32_t> indices =
         {
+            // Front
             0, 1, 2,
-            2, 3, 0
+            2, 3, 0,
+
+            // Back
+            4, 5, 6,
+            6, 7, 4,
+
+            // Left
+            8, 9, 10,
+            10, 11, 8,
+
+            // Right
+            12, 13, 14,
+            14, 15, 12,
+
+            // Top
+            16, 17, 18,
+            18, 19, 16,
+
+            // Bottom
+            20, 21, 22,
+            22, 23, 20
         };
 
         m_quadMesh.Create(
@@ -63,10 +215,8 @@ namespace Engine
             vertices,
             indices
         );
-
         m_vulkanSwapchain.Init(m_vulkanContext, m_vulkanDevice, m_window);
         
-        m_vulkanSync     .Init(m_vulkanDevice);
         m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
         m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline, m_quadMesh);
     }
@@ -81,7 +231,6 @@ namespace Engine
         m_quadMesh       .Shutdown(m_vulkanDevice);
         m_vulkanRenderer .ShutDown();
         m_vulkanPipeline .Shutdown(m_vulkanDevice);
-        m_vulkanSync     .Shutdown(m_vulkanDevice);
         m_vulkanCommands .Shutdown(m_vulkanDevice);
         m_vulkanSwapchain.Shutdown(m_vulkanDevice);
         m_vulkanDevice   .Shutdown();

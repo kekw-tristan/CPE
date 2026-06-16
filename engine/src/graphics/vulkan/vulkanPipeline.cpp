@@ -113,11 +113,18 @@ namespace Engine::GFX
         dynamicState.dynamicStateCount  = static_cast<uint32_t>(dynamicStates.size());
         dynamicState.pDynamicStates     = dynamicStates.data();
 
+
+        CreateFrameUniformDescriptorSetLayout(_rDevice);
+        VkDescriptorSetLayout setLayouts[] =  
+        {
+            GetFrameUniformDescriptorSetLayout()
+        };
+
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         
         pipelineLayoutInfo.sType                    = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount           = 0;
-        pipelineLayoutInfo.pSetLayouts              = nullptr;
+        pipelineLayoutInfo.setLayoutCount           = 1;
+        pipelineLayoutInfo.pSetLayouts              = setLayouts;
         pipelineLayoutInfo.pushConstantRangeCount   = 0;
         pipelineLayoutInfo.pPushConstantRanges      = nullptr;
 
@@ -179,6 +186,12 @@ namespace Engine::GFX
             vkDestroyPipelineLayout(device, m_pPipelineLayout, nullptr); 
             m_pPipelineLayout = VK_NULL_HANDLE;
         }
+
+        if (m_pFrameUniformDescriptorSetLayout != VK_NULL_HANDLE)
+        {
+            vkDestroyDescriptorSetLayout(device, m_pFrameUniformDescriptorSetLayout, nullptr);
+            m_pFrameUniformDescriptorSetLayout = VK_NULL_HANDLE;
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -193,6 +206,13 @@ namespace Engine::GFX
     VkPipelineLayout cVulkanPipeline::GetPipelineLayout()
     {
         return m_pPipelineLayout;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    VkDescriptorSetLayout cVulkanPipeline::GetFrameUniformDescriptorSetLayout()
+    {
+        return m_pFrameUniformDescriptorSetLayout;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -234,6 +254,31 @@ namespace Engine::GFX
         }
 
         return shaderModule; 
+
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanPipeline::CreateFrameUniformDescriptorSetLayout(cVulkanDevice &_rDevice)
+    {
+        VkDescriptorSetLayoutBinding frameBinding{}; 
+
+        frameBinding.binding            = 0;
+        frameBinding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        frameBinding.descriptorCount    = 1;
+        frameBinding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
+        frameBinding.pImmutableSamplers = nullptr;
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+
+        layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings    = &frameBinding;
+
+        if (vkCreateDescriptorSetLayout(_rDevice.GetDevice(), &layoutInfo, nullptr, &m_pFrameUniformDescriptorSetLayout) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create frame uniform descriptor set layout");
+        }
 
     }
 

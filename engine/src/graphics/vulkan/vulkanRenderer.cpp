@@ -1,5 +1,6 @@
 #include "vulkanRenderer.h"
 
+#include "graphics/frameUniformData.h"
 #include "graphics/gfxConfig.h"
 
 #include "graphics/vulkan/vulkanDevice.h"
@@ -7,9 +8,9 @@
 #include "graphics/vulkan/vulkanPipeline.h"
 #include "graphics/vulkan/vulkanSwapchain.h"
 #include "graphics/vulkan/vulkanCommands.h"
-#include "graphics/vulkan/vulkanSync.h"
 
 #include <iostream>
+#include <cstring>
 #include <stdexcept>
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -30,6 +31,8 @@ namespace Engine::GFX
         m_currentFrame = 0;
 
         CreateFrameResources();
+        CreateDescriptorPool();
+        CreateDescriptorSets();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -68,6 +71,17 @@ namespace Engine::GFX
                 vkFreeCommandBuffers(device, m_pCommands->GetCommandPool(), 1, &rFrame.pCommandBuffer);
                 rFrame.pCommandBuffer = VK_NULL_HANDLE;
             }
+
+            if (rFrame.frameUniformedBuffer.GetBuffer() != VK_NULL_HANDLE)
+            {
+                rFrame.frameUniformedBuffer.Shutdown(*m_pDevice);
+            }
+        }
+
+        if (m_pDescriptorPool != VK_NULL_HANDLE)
+        {
+            vkDestroyDescriptorPool(device, m_pDescriptorPool, nullptr);
+            m_pDescriptorPool = VK_NULL_HANDLE;
         }
 
         m_currentFrame = 0;
@@ -109,10 +123,12 @@ namespace Engine::GFX
             throw std::runtime_error("Failed to acquire swapchain image!");
         }
 
+        UpdateFrameUniformBuffer(frame);
+
         VkCommandBuffer commandBuffer = m_pCommands->GetCommandBuffer(); 
 
         vkResetCommandBuffer(commandBuffer, 0); 
-        RecordCommandBuffer(imageIndex);
+        RecordCommandBuffer(commandBuffer, imageIndex, frame);
 
         vkResetFences(device, 1, &frame.inFlightFence);
 
@@ -166,7 +182,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::RecordCommandBuffer(uint32_t _imageIndex)
+    void cVulkanRenderer::RecordCommandBuffer(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex, sVulkanFrame& _rFrame)
     {
         VkCommandBuffer commandBuffer = m_pCommands->GetCommandBuffer();
 
@@ -257,6 +273,8 @@ namespace Engine::GFX
             m_pPipeline->GetPipeline()
         );
 
+        vkCmdBindDescriptorSets(_pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(), 0, 1, &_rFrame.frameDescriptorSet, 0, nullptr);
+
         m_pMesh->Draw(commandBuffer);
 
         vkCmdEndRendering(commandBuffer);
@@ -325,9 +343,142 @@ namespace Engine::GFX
             {
                 throw std::runtime_error("Failed to create in-flight fence!");
             }
+
+            rFrame.frameUniformedBuffer.Create(*m_pDevice, sizeof(sFrameUniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        
+            rFrame.frameUniformedBuffer.Map(*m_pDevice, sizeof(sFrameUniformData), 0);
         }
 
         std::cout << "Vulkan sync objects created." << std::endl;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::CreateDescriptorPool()
+    {
+        VkDescriptorPoolSize poolSize{};
+        
+        poolSize.type               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount    = c_maxNumberOfFrames;
+
+        VkDescriptorPoolCreateInfo poolInfo{};
+
+        poolInfo.sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount  = 1;
+        poolInfo.pPoolSizes     = &poolSize;
+        poolInfo.maxSets        = c_maxNumberOfFrames;
+
+        if (vkCreateDescriptorPool(m_pDevice->GetDevice(), &poolInfo, nullptr, &m_pDescriptorPool) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create Vulkan descriptor pool!");
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::CreateDescriptorSets()
+    {
+        std::array<VkDescriptorSetLayout, c_maxNumberOfFrames> layouts{};
+
+        for (int index = 0; index < c_maxNumberOfFrames; ++index)
+        {
+            layouts[index] = m_pPipeline->GetFrameUniformDescriptorSetLayout();
+        }
+
+        VkDescriptorSetAllocateInfo allocInfo{};
+
+        allocInfo.sType                 = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool        = m_pDescriptorPool;
+        allocInfo.descriptorSetCount    = c_maxNumberOfFrames;
+        allocInfo.pSetLayouts           = layouts.data();
+
+        std::array<VkDescriptorSet, c_maxNumberOfFrames> descriptorSets{};
+
+        if (vkAllocateDescriptorSets(m_pDevice->GetDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to allocate frame uniform descriptor sets!");
+        }
+
+        for (int index = 0; index < c_maxNumberOfFrames; ++index)
+        {
+            m_frames[index].frameDescriptorSet = descriptorSets[index];
+
+            VkDescriptorBufferInfo bufferInfo{};
+
+            bufferInfo.buffer   = m_frames[index].frameUniformedBuffer.GetBuffer();
+            bufferInfo.offset   = 0;
+            bufferInfo.range    = sizeof(sFrameUniformData);
+
+            VkWriteDescriptorSet descriptorWrite{};
+
+            descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrite.dstBinding      = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo     = &bufferInfo;
+
+            vkUpdateDescriptorSets(m_pDevice->GetDevice(), 1, &descriptorWrite, 0, nullptr);
+        }
+
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::UpdateFrameUniformBuffer(sVulkanFrame& _rFrame)
+    {
+        sFrameUniformData frameData{};
+
+        const float identityMatrix[16] =
+        {
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+        };
+
+        const float angledViewProj[16] =
+        {
+            0.85f,  0.00f, 0.00f, 0.00f,
+            0.15f,  1.00f, 0.00f, 0.00f,
+            0.00f,  0.00f, 1.00f, 0.00f,
+
+            0.10f, -0.10f, 0.00f, 1.00f
+        };
+
+        std::memcpy(frameData.viewMatrix, identityMatrix,  sizeof(identityMatrix));
+        std::memcpy(frameData.projMatrix, identityMatrix,  sizeof(identityMatrix));
+        std::memcpy(frameData.viewProj,    angledViewProj, sizeof(angledViewProj));
+
+        frameData.cameraPosition[0] = 0.0f;
+        frameData.cameraPosition[1] = 0.0f;
+        frameData.cameraPosition[2] = 2.0f;
+        frameData.cameraPosition[3] = 1.0f;
+
+        frameData.cameraDirection[0] = 0.0f;
+        frameData.cameraDirection[1] = 0.0f;
+        frameData.cameraDirection[2] = -1.0f;
+        frameData.cameraDirection[3] = 0.0f;
+
+        const float width  = static_cast<float>(m_pSwapchain->GetExtent().width);
+        const float height = static_cast<float>(m_pSwapchain->GetExtent().height);
+
+        frameData.viewportSize[0] = width;
+        frameData.viewportSize[1] = height;
+        frameData.viewportSize[2] = width  > 0.0f ? 1.0f / width  : 0.0f;
+        frameData.viewportSize[3] = height > 0.0f ? 1.0f / height : 0.0f;
+
+        frameData.clipPlanes[0] = 0.1f;
+        frameData.clipPlanes[1] = 100.0f;
+        frameData.clipPlanes[2] = 0.0f;
+        frameData.clipPlanes[3] = 0.0f;
+
+        _rFrame.frameUniformedBuffer.Write(
+            &frameData,
+            sizeof(sFrameUniformData),
+            0
+        );
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
