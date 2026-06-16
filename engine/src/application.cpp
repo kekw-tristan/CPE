@@ -21,6 +21,7 @@ namespace Engine
     {
         m_vulkanContext  .Init(m_window);
         m_vulkanDevice   .Init(m_vulkanContext);
+        m_vulkanCommands .Init(m_vulkanDevice);
     
         std::vector<Engine::GFX::sVulkanVertex> vertices =
         {
@@ -58,12 +59,13 @@ namespace Engine
 
         m_quadMesh.Create(
             m_vulkanDevice,
+            m_vulkanCommands,
             vertices,
             indices
         );
 
         m_vulkanSwapchain.Init(m_vulkanContext, m_vulkanDevice, m_window);
-        m_vulkanCommands .Init(m_vulkanDevice);
+        
         m_vulkanSync     .Init(m_vulkanDevice);
         m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
         m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanSync, m_vulkanPipeline, m_quadMesh);

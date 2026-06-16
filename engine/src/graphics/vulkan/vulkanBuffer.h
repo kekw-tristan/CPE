@@ -5,17 +5,22 @@
 namespace Engine::GFX
 {
     class cVulkanDevice;
+    class cVulkanCommands;
 
     class cVulkanBuffer
     {
         public:
 
-            cVulkanBuffer() = default;
+            cVulkanBuffer();
            ~cVulkanBuffer() = default;
 
             cVulkanBuffer(const cVulkanBuffer&)             = delete;
             cVulkanBuffer& operator=(const cVulkanBuffer&)  = delete;
 
+        public:
+
+            static void CopyBuffer(cVulkanDevice& _rDevice, cVulkanCommands& _rCommands, VkBuffer _pSourceBuffer, VkBuffer _pDestinationBuffer, VkDeviceSize _size);
+        
         public:
 
             void Create(cVulkanDevice& _rDevice, VkDeviceSize _size, VkBufferUsageFlags _usage, VkMemoryPropertyFlags _properties);

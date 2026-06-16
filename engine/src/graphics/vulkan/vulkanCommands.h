@@ -25,6 +25,9 @@ namespace Engine::GFX
             VkCommandPool   GetCommandPool()   const;
             VkCommandBuffer GetCommandBuffer() const;
 
+            VkCommandBuffer BeginSingleTimeCommands(const cVulkanDevice& _rDevice); 
+            void EndSingleTimeCommands(const cVulkanDevice& _rDevice, VkCommandBuffer _pCommandBuffer);
+
         private:
 
             void CreateCommandPool    (const cVulkanDevice& _rDevice);
@@ -32,7 +35,7 @@ namespace Engine::GFX
 
         private:
 
-            VkCommandPool   m_pCommandPool   = VK_NULL_HANDLE;
-            VkCommandBuffer m_pCommandBuffer = VK_NULL_HANDLE;
+            VkCommandPool   m_pCommandPool;
+            VkCommandBuffer m_pCommandBuffer;
     };
 }
