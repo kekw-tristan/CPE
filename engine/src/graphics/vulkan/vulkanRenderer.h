@@ -18,6 +18,7 @@ namespace Engine::GFX
     class cVulkanRenderer
     {
         public:
+
             cVulkanRenderer()  = default;
             ~cVulkanRenderer() = default;
         
@@ -32,8 +33,11 @@ namespace Engine::GFX
             
         private:
 
-            void RecordCommandBuffer(uint32_t _imageIndex);
+            void RecordCommandBuffer(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex, sVulkanFrame& _rFrame);
             void CreateFrameResources();
+            void CreateDescriptorPool();
+            void CreateDescriptorSets();
+            void UpdateFrameUniformBuffer(sVulkanFrame& _rFrame);
             
         private:
 
@@ -47,6 +51,8 @@ namespace Engine::GFX
 
             std::array<sVulkanFrame, c_maxNumberOfFrames> m_frames;
             int m_currentFrame; 
+
+            VkDescriptorPool m_pDescriptorPool;
             
     };
 }  

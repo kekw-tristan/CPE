@@ -7,7 +7,6 @@
 #include "graphics/vulkan/vulkanPipeline.h"
 #include "graphics/vulkan/vulkanRenderer.h"
 #include "graphics/vulkan/vulkanSwapchain.h"
-#include "graphics/vulkan/vulkanSync.h"
 
 #include "platform/window.h"
 
@@ -35,7 +34,6 @@ namespace Engine
             GFX::cVulkanDevice      m_vulkanDevice;
             GFX::cVulkanSwapchain   m_vulkanSwapchain;
             GFX::cVulkanCommands    m_vulkanCommands; 
-            GFX::cVulkanSync        m_vulkanSync;
             GFX::cVulkanRenderer    m_vulkanRenderer;
             GFX::cVulkanPipeline    m_vulkanPipeline;
             GFX::cVulkanMesh        m_quadMesh;
