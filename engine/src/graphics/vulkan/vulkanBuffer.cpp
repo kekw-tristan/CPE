@@ -1,5 +1,6 @@
 #include "vulkanBuffer.h"
 
+#include "graphics/vulkan/vulkanCommands.h"
 #include "graphics/vulkan/vulkanDevice.h"
 
 #include <cstring>
@@ -13,7 +14,34 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanBuffer::Create(cVulkanDevice &_rDevice, VkDeviceSize _size, VkBufferUsageFlags _usage, VkMemoryPropertyFlags _properties)
+    cVulkanBuffer::cVulkanBuffer()
+        : m_pBuffer(VK_NULL_HANDLE)
+        , m_pMemory(VK_NULL_HANDLE)
+        , m_size(0)
+        , m_pMappedData(nullptr) 
+    {
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanBuffer::CopyBuffer(cVulkanDevice &_rDevice, cVulkanCommands &_rCommands, VkBuffer _pSourceBuffer, VkBuffer _pDestinationBuffer, VkDeviceSize _size)
+    {
+        VkCommandBuffer pCommandBuffer = _rCommands.BeginSingleTimeCommands(_rDevice);
+
+        VkBufferCopy copyRegion{};
+
+        copyRegion.srcOffset = 0; 
+        copyRegion.dstOffset = 0; 
+        copyRegion.size      = _size;
+
+        vkCmdCopyBuffer(pCommandBuffer, _pSourceBuffer, _pDestinationBuffer, 1, &copyRegion);
+
+        _rCommands.EndSingleTimeCommands(_rDevice, pCommandBuffer);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanBuffer::Create(cVulkanDevice& _rDevice, VkDeviceSize _size, VkBufferUsageFlags _usage, VkMemoryPropertyFlags _properties)
     {
         m_size = _size;
 
@@ -52,7 +80,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanBuffer::Shutdown(cVulkanDevice &_rDevice)
+    void cVulkanBuffer::Shutdown(cVulkanDevice& _rDevice)
     {
         VkDevice device = _rDevice.GetDevice();
 
@@ -79,7 +107,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanBuffer::Map(cVulkanDevice &_rDevice, VkDeviceSize _size, VkDeviceSize _offset)
+    void cVulkanBuffer::Map(cVulkanDevice& _rDevice, VkDeviceSize _size, VkDeviceSize _offset)
     {
         if (m_pMemory == VK_NULL_HANDLE)
         {
@@ -94,7 +122,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanBuffer::Unmap(cVulkanDevice &_rDevice)
+    void cVulkanBuffer::Unmap(cVulkanDevice& _rDevice)
     {
         if (m_pMappedData)
         {
@@ -105,7 +133,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanBuffer::Write(const void *_pData, VkDeviceSize _size, VkDeviceSize _offset)
+    void cVulkanBuffer::Write(const void* _pData, VkDeviceSize _size, VkDeviceSize _offset)
     {
         if (!m_pMappedData)
         {

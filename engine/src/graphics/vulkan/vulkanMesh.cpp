@@ -11,7 +11,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanMesh::Create(cVulkanDevice &_rDevice, const std::vector<sVulkanVertex> &_rVertices, const std::vector<uint32_t> &_rIndices)
+    void cVulkanMesh::Create(cVulkanDevice &_rDevice, cVulkanCommands& _rCommands,const std::vector<sVulkanVertex> &_rVertices, const std::vector<uint32_t> &_rIndices)
     {
         if (_rVertices.empty())
         {
@@ -25,21 +25,34 @@ namespace Engine::GFX
 
         m_indexCount = static_cast<uint32_t>(_rIndices.size());
 
-        VkDeviceSize vertexBufferSize = sizeof(_rVertices[0]) * _rVertices.size();
 
-        m_vertexBuffer.Create(_rDevice, vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        // vertexBuffer
+        VkDeviceSize  vertexBufferSize = sizeof(_rVertices[0]) * _rVertices.size();
+        cVulkanBuffer vertexStaginBuffer;
 
-        m_vertexBuffer.Map(_rDevice);
-        m_vertexBuffer.Write(_rVertices.data(), vertexBufferSize);
-        m_vertexBuffer.Unmap(_rDevice);
+        vertexStaginBuffer.Create(_rDevice, vertexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
+        vertexStaginBuffer.Map(_rDevice);
+        vertexStaginBuffer.Write(_rVertices.data(), vertexBufferSize);
+        vertexStaginBuffer.Unmap(_rDevice);
+
+        m_vertexBuffer.Create(_rDevice, vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        cVulkanBuffer::CopyBuffer(_rDevice, _rCommands, vertexStaginBuffer.GetBuffer(), m_vertexBuffer.GetBuffer(), vertexBufferSize);
+        vertexStaginBuffer.Shutdown(_rDevice);
+
+        // Indexbuffer
         VkDeviceSize indexBufferSize = sizeof(_rIndices[0]) * _rIndices.size();
+        cVulkanBuffer indexStagingBuffer;
+        indexStagingBuffer.Create(_rDevice, indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        m_indexBuffer.Create(_rDevice, indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        indexStagingBuffer.Map(_rDevice);
+        indexStagingBuffer.Write(_rIndices.data(), indexBufferSize);
+        indexStagingBuffer.Unmap(_rDevice);
 
-        m_indexBuffer.Map(_rDevice);
-        m_indexBuffer.Write(_rIndices.data(), indexBufferSize);
-        m_indexBuffer.Unmap(_rDevice);
+        m_indexBuffer.Create(_rDevice, indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        cVulkanBuffer::CopyBuffer(_rDevice, _rCommands, indexStagingBuffer.GetBuffer(), m_indexBuffer.GetBuffer(), indexBufferSize);
+        indexStagingBuffer.Shutdown(_rDevice);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
