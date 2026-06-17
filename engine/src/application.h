@@ -10,6 +10,7 @@
 #include "graphics/vulkan/vulkanRenderer.h"
 #include "graphics/vulkan/vulkanSwapchain.h"
 
+#include "platform/input.h"
 #include "platform/window.h"
 
 namespace Engine
@@ -30,7 +31,12 @@ namespace Engine
 
         private:
 
+            void UpdateCamera();
+
+        private:
+
             Platform::cWindow m_window;
+            Platform::cInput  m_input;
 
             GFX::cVulkanContext     m_vulkanContext;
             GFX::cVulkanDevice      m_vulkanDevice;

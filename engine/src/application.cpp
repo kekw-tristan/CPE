@@ -224,12 +224,15 @@ namespace Engine
             2.0f, 1.5f, 3.0f,
             0.0f, 0.0f, 0.0f
         );
-        
+
         m_camera.SetPerspective(
             60.0f,
             0.1f,
             100.0f
         );
+
+        
+        m_input.Init(m_window.GetWindow());
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -258,15 +261,14 @@ namespace Engine
         while (!m_window.ShouldClose())
         {
             m_window.PollEvents();
+            m_input.Update();
+            UpdateCamera();
             
             // fullscreen
-            bool isF11Pressed = glfwGetKey(m_window.GetWindow(), GLFW_KEY_F11) == GLFW_PRESS;
-            if (isF11Pressed && !wasF11Pressed)
+            if (m_input.WasKeyPressed(GLFW_KEY_F11))
             {
                 m_window.ToggleFullscreen();
             }
-
-            wasF11Pressed = isF11Pressed;
 
             // draw frame
             bool isFrameOk = m_vulkanRenderer.DrawFrame(m_camera);
@@ -277,6 +279,69 @@ namespace Engine
                 m_vulkanSwapchain.Recreate(m_vulkanContext, m_vulkanDevice, m_window);
                 m_vulkanRenderer.RecreateDepthBuffer();
             }
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplication::UpdateCamera()
+    {
+            float moveSpeed = 3.0f;
+
+        if (m_input.IsKeyDown(GLFW_KEY_LEFT_SHIFT))
+        {
+            moveSpeed = 8.0f;
+        }
+
+        const float moveAmount = 0.03f;
+
+        if (m_input.IsKeyDown(GLFW_KEY_W))
+        {
+            m_camera.MoveForward(moveAmount);
+        }
+
+        if (m_input.IsKeyDown(GLFW_KEY_S))
+        {
+            m_camera.MoveForward(-moveAmount);
+        }
+
+        if (m_input.IsKeyDown(GLFW_KEY_D))
+        {
+            m_camera.MoveRight(moveAmount);
+        }
+
+        if (m_input.IsKeyDown(GLFW_KEY_A))
+        {
+            m_camera.MoveRight(-moveAmount);
+        }
+
+        if (m_input.IsKeyDown(GLFW_KEY_E))
+        {
+            m_camera.MoveUp(moveAmount);
+        }
+
+        if (m_input.IsKeyDown(GLFW_KEY_Q))
+        {
+            m_camera.MoveUp(-moveAmount);
+        }
+
+        if (m_input.WasMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT))
+        {
+            m_input.SetMouseCaptured(true);
+        }
+
+        if (m_input.WasKeyPressed(GLFW_KEY_ESCAPE))
+        {
+            m_input.SetMouseCaptured(false);
+        }
+
+        if (m_input.IsMouseCaptured())
+        {
+            const float mouseSensitivity = 0.12f;
+
+            m_camera.AddYaw(static_cast<float>(m_input.GetMouseDeltaX()) * mouseSensitivity);
+
+            m_camera.AddPitch(-static_cast<float>(m_input.GetMouseDeltaY()) * mouseSensitivity);
         }
     }
 
