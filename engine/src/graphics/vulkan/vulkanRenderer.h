@@ -2,12 +2,14 @@
 
 #include "graphics/gfxConfig.h"
 #include "graphics/vulkan/vulkanFrame.h"
+#include "graphics/vulkan/vulkanDepthBuffer.h"
 
 #include <array>
 #include <vulkan/vulkan.h>
 
 namespace Engine::GFX
 {
+    class cCamera;
     class cVulkanDevice;
     class cVulkanSwapchain;
     class cVulkanCommands;
@@ -29,7 +31,8 @@ namespace Engine::GFX
         
             void Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline, cVulkanMesh& _rMesh);  
             void ShutDown();  
-            bool DrawFrame();
+            bool DrawFrame(const cCamera& _rCamera);
+            void RecreateDepthBuffer();
             
         private:
 
@@ -37,7 +40,7 @@ namespace Engine::GFX
             void CreateFrameResources();
             void CreateDescriptorPool();
             void CreateDescriptorSets();
-            void UpdateFrameUniformBuffer(sVulkanFrame& _rFrame);
+            void UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera);
             
         private:
 
@@ -53,6 +56,8 @@ namespace Engine::GFX
             int m_currentFrame; 
 
             VkDescriptorPool m_pDescriptorPool;
+
+            cVulkanDepthBuffer m_depthBuffer;
             
     };
 }  

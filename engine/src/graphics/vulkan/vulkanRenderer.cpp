@@ -1,5 +1,6 @@
 #include "vulkanRenderer.h"
 
+#include "graphics/camera.h"
 #include "graphics/frameUniformData.h"
 #include "graphics/gfxConfig.h"
 
@@ -30,6 +31,8 @@ namespace Engine::GFX
 
         m_currentFrame = 0;
 
+        m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
+
         CreateFrameResources();
         CreateDescriptorPool();
         CreateDescriptorSets();
@@ -45,6 +48,8 @@ namespace Engine::GFX
         }
 
         VkDevice device = m_pDevice->GetDevice(); 
+
+        m_depthBuffer.ShutDown(*m_pDevice);
 
         for (sVulkanFrame& rFrame : m_frames)
         {
@@ -95,7 +100,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    bool cVulkanRenderer::DrawFrame()
+    bool cVulkanRenderer::DrawFrame(const cCamera& _rCamera)
     {
         VkDevice        device          = m_pDevice->GetDevice();
         sVulkanFrame&   frame           = m_frames[m_currentFrame];
@@ -123,7 +128,7 @@ namespace Engine::GFX
             throw std::runtime_error("Failed to acquire swapchain image!");
         }
 
-        UpdateFrameUniformBuffer(frame);
+        UpdateFrameUniformBuffer(frame, _rCamera);
 
         VkCommandBuffer commandBuffer = m_pCommands->GetCommandBuffer(); 
 
@@ -182,9 +187,20 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cVulkanRenderer::RecreateDepthBuffer()
+    {
+        m_pDevice->WaitIdle();
+
+        m_depthBuffer.ShutDown(*m_pDevice);
+
+        m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cVulkanRenderer::RecordCommandBuffer(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex, sVulkanFrame& _rFrame)
     {
-        VkCommandBuffer commandBuffer = m_pCommands->GetCommandBuffer();
+        VkCommandBuffer commandBuffer = _pCommandBuffer;
 
         VkCommandBufferBeginInfo beginInfo{}; 
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -240,6 +256,15 @@ namespace Engine::GFX
         colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
         colorAttachment.clearValue  = clearValue;
 
+        VkRenderingAttachmentInfo depthAttachment{};
+
+        depthAttachment.sType                   = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        depthAttachment.imageView               = m_depthBuffer.GetImageView();
+        depthAttachment.imageLayout             = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depthAttachment.loadOp                  = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depthAttachment.storeOp                 = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depthAttachment.clearValue.depthStencil = { 1.0f, 0 };
+
         VkRenderingInfo renderingInfo{};
 
         renderingInfo.sType                 = VK_STRUCTURE_TYPE_RENDERING_INFO;
@@ -248,6 +273,8 @@ namespace Engine::GFX
         renderingInfo.layerCount            = 1;
         renderingInfo.colorAttachmentCount  = 1;
         renderingInfo.pColorAttachments     = &colorAttachment;
+        renderingInfo.pDepthAttachment      = &depthAttachment;
+        renderingInfo.pStencilAttachment    = nullptr;
 
         vkCmdBeginRendering(commandBuffer, &renderingInfo);
 
@@ -426,59 +453,33 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::UpdateFrameUniformBuffer(sVulkanFrame& _rFrame)
-    {
-        sFrameUniformData frameData{};
-
-        const float identityMatrix[16] =
+    void cVulkanRenderer::UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera)
         {
-            1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
-        };
-
-        const float angledViewProj[16] =
-        {
-            0.85f,  0.00f, 0.00f, 0.00f,
-            0.15f,  1.00f, 0.00f, 0.00f,
-            0.00f,  0.00f, 1.00f, 0.00f,
-
-            0.10f, -0.10f, 0.00f, 1.00f
-        };
-
-        std::memcpy(frameData.viewMatrix, identityMatrix,  sizeof(identityMatrix));
-        std::memcpy(frameData.projMatrix, identityMatrix,  sizeof(identityMatrix));
-        std::memcpy(frameData.viewProj,    angledViewProj, sizeof(angledViewProj));
-
-        frameData.cameraPosition[0] = 0.0f;
-        frameData.cameraPosition[1] = 0.0f;
-        frameData.cameraPosition[2] = 2.0f;
-        frameData.cameraPosition[3] = 1.0f;
-
-        frameData.cameraDirection[0] = 0.0f;
-        frameData.cameraDirection[1] = 0.0f;
-        frameData.cameraDirection[2] = -1.0f;
-        frameData.cameraDirection[3] = 0.0f;
+              sFrameUniformData frameData{};
 
         const float width  = static_cast<float>(m_pSwapchain->GetExtent().width);
         const float height = static_cast<float>(m_pSwapchain->GetExtent().height);
+
+        const float aspectRatio = height > 0.0f ? width / height : 1.0f;
+
+        _rCamera.GetViewMatrix(frameData.viewMatrix);
+        _rCamera.GetProjectionMatrix(aspectRatio, frameData.projMatrix);
+        _rCamera.GetViewProjectionMatrix(aspectRatio, frameData.viewProj);
+
+        _rCamera.GetPosition(frameData.cameraPosition);
+        _rCamera.GetDirection(frameData.cameraDirection);
 
         frameData.viewportSize[0] = width;
         frameData.viewportSize[1] = height;
         frameData.viewportSize[2] = width  > 0.0f ? 1.0f / width  : 0.0f;
         frameData.viewportSize[3] = height > 0.0f ? 1.0f / height : 0.0f;
 
-        frameData.clipPlanes[0] = 0.1f;
-        frameData.clipPlanes[1] = 100.0f;
+        frameData.clipPlanes[0] = _rCamera.GetNearPlane();
+        frameData.clipPlanes[1] = _rCamera.GetFarPlane();
         frameData.clipPlanes[2] = 0.0f;
         frameData.clipPlanes[3] = 0.0f;
 
-        _rFrame.frameUniformedBuffer.Write(
-            &frameData,
-            sizeof(sFrameUniformData),
-            0
-        );
+        _rFrame.frameUniformedBuffer.Write(&frameData, sizeof(sFrameUniformData), 0);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

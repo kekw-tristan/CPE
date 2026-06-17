@@ -219,6 +219,17 @@ namespace Engine
         
         m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
         m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline, m_quadMesh);
+
+        m_camera.LookAt(
+            2.0f, 1.5f, 3.0f,
+            0.0f, 0.0f, 0.0f
+        );
+        
+        m_camera.SetPerspective(
+            60.0f,
+            0.1f,
+            100.0f
+        );
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -258,12 +269,13 @@ namespace Engine
             wasF11Pressed = isF11Pressed;
 
             // draw frame
-            bool isFrameOk = m_vulkanRenderer.DrawFrame();
+            bool isFrameOk = m_vulkanRenderer.DrawFrame(m_camera);
 
             if (!isFrameOk || m_window.WasResized())
             {
                 m_window.ResetRezisedFlag();
                 m_vulkanSwapchain.Recreate(m_vulkanContext, m_vulkanDevice, m_window);
+                m_vulkanRenderer.RecreateDepthBuffer();
             }
         }
     }
