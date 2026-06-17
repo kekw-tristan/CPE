@@ -1,5 +1,7 @@
 #pragma once
 
+#include "graphics/camera.h"
+
 #include "graphics/vulkan/vulkanCommands.h"
 #include "graphics/vulkan/vulkanContext.h"
 #include "graphics/vulkan/vulkanDevice.h"
@@ -37,5 +39,7 @@ namespace Engine
             GFX::cVulkanRenderer    m_vulkanRenderer;
             GFX::cVulkanPipeline    m_vulkanPipeline;
             GFX::cVulkanMesh        m_quadMesh;
+
+            GFX::cCamera            m_camera;
     };
 }
