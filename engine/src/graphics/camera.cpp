@@ -55,7 +55,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cCamera::MoveRigh(float _amount)
+    void cCamera::MoveRight(float _amount)
     {
         m_position += GetRightInternal() * _amount;
     }

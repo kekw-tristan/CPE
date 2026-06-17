@@ -20,7 +20,7 @@ namespace Engine::GFX
             void SetPerspective(float _fov, float _nearPlane, float _farPlane);
 
             void MoveForward(float _amount);
-            void MoveRigh(float _amount); 
+            void MoveRight(float _amount); 
             void MoveUp(float _amount); 
 
             void AddYaw(float _amountDegrees);
