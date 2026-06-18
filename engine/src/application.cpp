@@ -231,7 +231,7 @@ namespace Engine
             100.0f
         );
 
-        
+        m_Timer.Reset();
         m_input.Init(m_window.GetWindow());
     }
 
@@ -262,7 +262,10 @@ namespace Engine
         {
             m_window.PollEvents();
             m_input.Update();
-            UpdateCamera();
+            m_Timer.Tick();
+            UpdateCamera(m_Timer.GetDeltaTime());
+
+            std::cout << m_Timer.GetDeltaTime() << std::endl;
             
             // fullscreen
             if (m_input.WasKeyPressed(GLFW_KEY_F11))
@@ -284,16 +287,16 @@ namespace Engine
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cApplication::UpdateCamera()
+    void cApplication::UpdateCamera(float _deltaTime)
     {
-            float moveSpeed = 3.0f;
+        float moveSpeed = 3.0f;
 
         if (m_input.IsKeyDown(GLFW_KEY_LEFT_SHIFT))
         {
             moveSpeed = 8.0f;
         }
-
-        const float moveAmount = 0.03f;
+        
+        const float moveAmount = moveSpeed * _deltaTime;
 
         if (m_input.IsKeyDown(GLFW_KEY_W))
         {
