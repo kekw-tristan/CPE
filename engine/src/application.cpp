@@ -256,16 +256,33 @@ namespace Engine
 
     void cApplication::Run()
     {
-        bool wasF11Pressed = false;
+        bool     wasF11Pressed  = false;
+        float    fpsTimer       = 0.f;
+        uint32_t frameCounter   = 0; 
 
         while (!m_window.ShouldClose())
         {
             m_window.PollEvents();
             m_input.Update();
             m_Timer.Tick();
-            UpdateCamera(m_Timer.GetDeltaTime());
 
-            std::cout << m_Timer.GetDeltaTime() << std::endl;
+            const float deltaTime = m_Timer.GetDeltaTime();
+
+            UpdateCamera(deltaTime);
+
+            // fps
+            fpsTimer += deltaTime;
+            ++frameCounter;
+            if (fpsTimer >= 1.f)
+            {
+                const float fps = static_cast<float>(frameCounter) / fpsTimer; 
+                const float frameTimeMs = 1000.f / fps; 
+
+                std::cout << "Fps: " << fps << " | Frame Time: " << frameTimeMs << " ms" << std::endl;
+
+                fpsTimer = 0;
+                frameCounter = 0; 
+            }
             
             // fullscreen
             if (m_input.WasKeyPressed(GLFW_KEY_F11))
