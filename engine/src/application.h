@@ -2,6 +2,8 @@
 
 #include "graphics/camera.h"
 
+#include "core/timer.h"
+
 #include "graphics/vulkan/vulkanCommands.h"
 #include "graphics/vulkan/vulkanContext.h"
 #include "graphics/vulkan/vulkanDevice.h"
@@ -31,12 +33,14 @@ namespace Engine
 
         private:
 
-            void UpdateCamera();
+            void UpdateCamera(float _deltaTime);
 
         private:
 
             Platform::cWindow m_window;
             Platform::cInput  m_input;
+
+            Core::cTimer m_Timer;
 
             GFX::cVulkanContext     m_vulkanContext;
             GFX::cVulkanDevice      m_vulkanDevice;
