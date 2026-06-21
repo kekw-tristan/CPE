@@ -4,8 +4,11 @@
 #include "graphics/vulkan/vulkanFrame.h"
 #include "graphics/vulkan/vulkanDepthBuffer.h"
 
-#include <array>
 #include <vulkan/vulkan.h>
+
+#include <array>
+#include <vector>
+
 
 namespace Engine::GFX
 {
@@ -29,10 +32,15 @@ namespace Engine::GFX
 
         public:
         
-            void Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline, cVulkanMesh& _rMesh);  
+            void Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline);  
             void ShutDown();  
             bool DrawFrame(const cCamera& _rCamera);
             void RecreateDepthBuffer();
+
+        public:
+
+            void SubmitMesh(const cVulkanMesh& _rMesh); 
+            void ClearSubmittedMeshes();
             
         private:
 
@@ -48,7 +56,6 @@ namespace Engine::GFX
             cVulkanSwapchain*   m_pSwapchain;
             cVulkanCommands*    m_pCommands;
             cVulkanPipeline*    m_pPipeline;
-            cVulkanMesh*        m_pMesh;
 
         private:
 
@@ -58,6 +65,8 @@ namespace Engine::GFX
             VkDescriptorPool m_pDescriptorPool;
 
             cVulkanDepthBuffer m_depthBuffer;
+
+            std::vector<const cVulkanMesh*> m_submittedMeshes;
             
     };
 }  

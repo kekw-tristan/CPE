@@ -1,5 +1,7 @@
 #include "application.h"
 
+#include "graphics/vertex.h"
+
 #include "graphics/vulkan/vulkanBuffer.h"
 #include "graphics/vulkan/vulkanVertex.h"
 
@@ -18,207 +20,33 @@ namespace Engine
     
     cApplication::cApplication()
         : m_window(1280, 720, "Vulkan Engine")
+        , m_cubeMesh()
     {
         m_vulkanContext  .Init(m_window);
         m_vulkanDevice   .Init(m_vulkanContext);
         m_vulkanCommands .Init(m_vulkanDevice);
-    
-    std::vector<Engine::GFX::sVulkanVertex> vertices =
-        {
-            // Front face (+Z)
-            {
-                {-0.5f, -0.5f,  0.5f},
-                { 0.0f,  0.0f,  1.0f},
-                { 0.0f,  0.0f},
-                { 1.0f,  0.0f,  0.0f, 1.0f}
-            },
-            {
-                { 0.5f, -0.5f,  0.5f},
-                { 0.0f,  0.0f,  1.0f},
-                { 1.0f,  0.0f},
-                { 1.0f,  0.0f,  0.0f, 1.0f}
-            },
-            {
-                { 0.5f,  0.5f,  0.5f},
-                { 0.0f,  0.0f,  1.0f},
-                { 1.0f,  1.0f},
-                { 1.0f,  0.0f,  0.0f, 1.0f}
-            },
-            {
-                {-0.5f,  0.5f,  0.5f},
-                { 0.0f,  0.0f,  1.0f},
-                { 0.0f,  1.0f},
-                { 1.0f,  0.0f,  0.0f, 1.0f}
-            },
+        m_vulkanSwapchain.Init(m_vulkanContext, m_vulkanDevice, m_window);
+        m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
+        m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline);
 
-            // Back face (-Z)
-            {
-                { 0.5f, -0.5f, -0.5f},
-                { 0.0f,  0.0f, -1.0f},
-                { 0.0f,  0.0f},
-                { 0.0f,  1.0f,  0.0f, 1.0f}
-            },
-            {
-                {-0.5f, -0.5f, -0.5f},
-                { 0.0f,  0.0f, -1.0f},
-                { 1.0f,  0.0f},
-                { 0.0f,  1.0f,  0.0f, 1.0f}
-            },
-            {
-                {-0.5f,  0.5f, -0.5f},
-                { 0.0f,  0.0f, -1.0f},
-                { 1.0f,  1.0f},
-                { 0.0f,  1.0f,  0.0f, 1.0f}
-            },
-            {
-                { 0.5f,  0.5f, -0.5f},
-                { 0.0f,  0.0f, -1.0f},
-                { 0.0f,  1.0f},
-                { 0.0f,  1.0f,  0.0f, 1.0f}
-            },
 
-            // Left face (-X)
-            {
-                {-0.5f, -0.5f, -0.5f},
-                {-1.0f,  0.0f,  0.0f},
-                { 0.0f,  0.0f},
-                { 0.0f,  0.0f,  1.0f, 1.0f}
-            },
-            {
-                {-0.5f, -0.5f,  0.5f},
-                {-1.0f,  0.0f,  0.0f},
-                { 1.0f,  0.0f},
-                { 0.0f,  0.0f,  1.0f, 1.0f}
-            },
-            {
-                {-0.5f,  0.5f,  0.5f},
-                {-1.0f,  0.0f,  0.0f},
-                { 1.0f,  1.0f},
-                { 0.0f,  0.0f,  1.0f, 1.0f}
-            },
-            {
-                {-0.5f,  0.5f, -0.5f},
-                {-1.0f,  0.0f,  0.0f},
-                { 0.0f,  1.0f},
-                { 0.0f,  0.0f,  1.0f, 1.0f}
-            },
+        GFX::sCubeDesc cubeDesc; 
 
-            // Right face (+X)
-            {
-                { 0.5f, -0.5f,  0.5f},
-                { 1.0f,  0.0f,  0.0f},
-                { 0.0f,  0.0f},
-                { 1.0f,  1.0f,  0.0f, 1.0f}
-            },
-            {
-                { 0.5f, -0.5f, -0.5f},
-                { 1.0f,  0.0f,  0.0f},
-                { 1.0f,  0.0f},
-                { 1.0f,  1.0f,  0.0f, 1.0f}
-            },
-            {
-                { 0.5f,  0.5f, -0.5f},
-                { 1.0f,  0.0f,  0.0f},
-                { 1.0f,  1.0f},
-                { 1.0f,  1.0f,  0.0f, 1.0f}
-            },
-            {
-                { 0.5f,  0.5f,  0.5f},
-                { 1.0f,  0.0f,  0.0f},
-                { 0.0f,  1.0f},
-                { 1.0f,  1.0f,  0.0f, 1.0f}
-            },
+        cubeDesc.width = 1.f; 
+        cubeDesc.height = 1.f; 
+        cubeDesc.depth = 1.f; 
+        cubeDesc.color = { 1.f, 0.2f, 0.1f, 1.f };
 
-            // Top face (+Y)
-            {
-                {-0.5f,  0.5f,  0.5f},
-                { 0.0f,  1.0f,  0.0f},
-                { 0.0f,  0.0f},
-                { 1.0f,  0.0f,  1.0f, 1.0f}
-            },
-            {
-                { 0.5f,  0.5f,  0.5f},
-                { 0.0f,  1.0f,  0.0f},
-                { 1.0f,  0.0f},
-                { 1.0f,  0.0f,  1.0f, 1.0f}
-            },
-            {
-                { 0.5f,  0.5f, -0.5f},
-                { 0.0f,  1.0f,  0.0f},
-                { 1.0f,  1.0f},
-                { 1.0f,  0.0f,  1.0f, 1.0f}
-            },
-            {
-                {-0.5f,  0.5f, -0.5f},
-                { 0.0f,  1.0f,  0.0f},
-                { 0.0f,  1.0f},
-                { 1.0f,  0.0f,  1.0f, 1.0f}
-            },
+        GFX::sMeshData cubeData = GFX::cMeshGenerator::CreateCube(cubeDesc);
 
-            // Bottom face (-Y)
-            {
-                {-0.5f, -0.5f, -0.5f},
-                { 0.0f, -1.0f,  0.0f},
-                { 0.0f,  0.0f},
-                { 0.0f,  1.0f,  1.0f, 1.0f}
-            },
-            {
-                { 0.5f, -0.5f, -0.5f},
-                { 0.0f, -1.0f,  0.0f},
-                { 1.0f,  0.0f},
-                { 0.0f,  1.0f,  1.0f, 1.0f}
-            },
-            {
-                { 0.5f, -0.5f,  0.5f},
-                { 0.0f, -1.0f,  0.0f},
-                { 1.0f,  1.0f},
-                { 0.0f,  1.0f,  1.0f, 1.0f}
-            },
-            {
-                {-0.5f, -0.5f,  0.5f},
-                { 0.0f, -1.0f,  0.0f},
-                { 0.0f,  1.0f},
-                { 0.0f,  1.0f,  1.0f, 1.0f}
-            }
-        };
-
-        std::vector<uint32_t> indices =
-        {
-            // Front
-            0, 1, 2,
-            2, 3, 0,
-
-            // Back
-            4, 5, 6,
-            6, 7, 4,
-
-            // Left
-            8, 9, 10,
-            10, 11, 8,
-
-            // Right
-            12, 13, 14,
-            14, 15, 12,
-
-            // Top
-            16, 17, 18,
-            18, 19, 16,
-
-            // Bottom
-            20, 21, 22,
-            22, 23, 20
-        };
-
-        m_quadMesh.Create(
+        m_cubeMesh.Create(
             m_vulkanDevice,
             m_vulkanCommands,
-            vertices,
-            indices
+            cubeData.vertices,
+            cubeData.indices
         );
-        m_vulkanSwapchain.Init(m_vulkanContext, m_vulkanDevice, m_window);
-        
-        m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
-        m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline, m_quadMesh);
+
+        m_vulkanRenderer.SubmitMesh(m_cubeMesh);
 
         m_camera.LookAt(
             2.0f, 1.5f, 3.0f,
@@ -242,13 +70,15 @@ namespace Engine
     {
         m_vulkanDevice.WaitIdle();
 
-        m_quadMesh       .Shutdown(m_vulkanDevice);
+        m_cubeMesh       .Shutdown(m_vulkanDevice);
         m_vulkanRenderer .ShutDown();
         m_vulkanPipeline .Shutdown(m_vulkanDevice);
         m_vulkanCommands .Shutdown(m_vulkanDevice);
         m_vulkanSwapchain.Shutdown(m_vulkanDevice);
         m_vulkanDevice   .Shutdown();
         m_vulkanContext  .Shutdown();
+
+        
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
