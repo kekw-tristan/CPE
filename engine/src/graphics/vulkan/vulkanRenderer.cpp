@@ -21,13 +21,12 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline, cVulkanMesh& _rMesh)
+    void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline)
     {
         m_pDevice    = &_rDevice;
         m_pSwapchain = &_rSwapChain;
         m_pCommands  = &_rCommands;
         m_pPipeline  = &_rPipeline;
-        m_pMesh      = &_rMesh;
 
         m_currentFrame = 0;
 
@@ -91,7 +90,6 @@ namespace Engine::GFX
 
         m_currentFrame = 0;
 
-        m_pMesh      = nullptr;
         m_pPipeline  = nullptr;
         m_pCommands  = nullptr;
         m_pSwapchain = nullptr;
@@ -130,7 +128,7 @@ namespace Engine::GFX
 
         UpdateFrameUniformBuffer(frame, _rCamera);
 
-        VkCommandBuffer commandBuffer = m_pCommands->GetCommandBuffer(); 
+        VkCommandBuffer commandBuffer = frame.pCommandBuffer; 
 
         vkResetCommandBuffer(commandBuffer, 0); 
         RecordCommandBuffer(commandBuffer, imageIndex, frame);
@@ -182,6 +180,8 @@ namespace Engine::GFX
             throw std::runtime_error("Failed to present swapchain image.");
         }
 
+        m_currentFrame = (m_currentFrame + 1) % c_maxNumberOfFrames;
+
         return true;
     }
 
@@ -194,6 +194,25 @@ namespace Engine::GFX
         m_depthBuffer.ShutDown(*m_pDevice);
 
         m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::SubmitMesh(const cVulkanMesh&_rMesh)
+    {
+        if (!_rMesh.IsValid())
+        {
+            return;
+        }
+
+        m_submittedMeshes.push_back(&_rMesh);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::ClearSubmittedMeshes()
+    {
+        m_submittedMeshes.clear();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -302,7 +321,13 @@ namespace Engine::GFX
 
         vkCmdBindDescriptorSets(_pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(), 0, 1, &_rFrame.frameDescriptorSet, 0, nullptr);
 
-        m_pMesh->Draw(commandBuffer);
+        for (const cVulkanMesh* pMesh : m_submittedMeshes)
+        {
+            if (pMesh != nullptr && pMesh->IsValid())
+            {
+                pMesh->Draw(_pCommandBuffer);
+            }
+        }
 
         vkCmdEndRendering(commandBuffer);
 
@@ -370,6 +395,19 @@ namespace Engine::GFX
             {
                 throw std::runtime_error("Failed to create in-flight fence!");
             }
+
+            VkCommandBufferAllocateInfo commandBufferAllocInfo{};
+
+            commandBufferAllocInfo.sType                = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            commandBufferAllocInfo.commandPool          = m_pCommands->GetCommandPool();
+            commandBufferAllocInfo.level                = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            commandBufferAllocInfo.commandBufferCount   = 1;
+
+            if (vkAllocateCommandBuffers(device, &commandBufferAllocInfo, &rFrame.pCommandBuffer) != VK_SUCCESS)
+            {
+                throw std::runtime_error("Failed to allocate frame command buffer!");
+            }
+
 
             rFrame.frameUniformedBuffer.Create(*m_pDevice, sizeof(sFrameUniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         

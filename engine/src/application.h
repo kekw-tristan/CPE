@@ -1,8 +1,9 @@
 #pragma once
 
-#include "graphics/camera.h"
-
 #include "core/timer.h"
+
+#include "graphics/camera.h"
+#include "graphics/meshCache.h"
 
 #include "graphics/vulkan/vulkanCommands.h"
 #include "graphics/vulkan/vulkanContext.h"
@@ -48,8 +49,10 @@ namespace Engine
             GFX::cVulkanCommands    m_vulkanCommands; 
             GFX::cVulkanRenderer    m_vulkanRenderer;
             GFX::cVulkanPipeline    m_vulkanPipeline;
-            GFX::cVulkanMesh        m_quadMesh;
 
             GFX::cCamera            m_camera;
+            GFX::cMeshCache         m_geometryCache;
+
+            GFX::cVulkanMesh        m_cubeMesh; 
     };
 }

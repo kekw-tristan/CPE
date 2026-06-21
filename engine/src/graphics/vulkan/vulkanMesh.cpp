@@ -11,7 +11,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanMesh::Create(cVulkanDevice &_rDevice, cVulkanCommands& _rCommands,const std::vector<sVulkanVertex> &_rVertices, const std::vector<uint32_t> &_rIndices)
+    void cVulkanMesh::Create(cVulkanDevice& _rDevice, cVulkanCommands& _rCommands,const std::vector<sVertex>& _rVertices, const std::vector<uint32_t>& _rIndices)
     {
         if (_rVertices.empty())
         {
@@ -81,7 +81,7 @@ namespace Engine::GFX
 
     bool cVulkanMesh::IsValid() const
     {
-        return false;
+        return m_indexCount > 0;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
