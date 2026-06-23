@@ -1,58 +1,46 @@
 #pragma once
 
-#include "core/timer.h"
-
-#include "graphics/camera.h"
-#include "graphics/meshCache.h"
-
-#include "graphics/vulkan/vulkanCommands.h"
-#include "graphics/vulkan/vulkanContext.h"
-#include "graphics/vulkan/vulkanDevice.h"
-#include "graphics/vulkan/vulkanMesh.h"
-#include "graphics/vulkan/vulkanPipeline.h"
-#include "graphics/vulkan/vulkanRenderer.h"
-#include "graphics/vulkan/vulkanSwapchain.h"
-
-#include "platform/input.h"
-#include "platform/window.h"
+#include <memory>
 
 namespace Engine
 {
+    namespace Logic
+    {
+        class cApplicationIntern;
+    }
+
+    struct sAppConfig
+    {
+        int width; 
+        int height; 
+        const char* _pTitle;
+    };
+
     class cApplication
     {
-        public:
-
-            cApplication();
-           ~cApplication();
-
-            cApplication(const cApplication&)               = delete;
-            cApplication& operator=(const cApplication&)    = delete;
 
         public:
-        
-            void Run();
+
+            explicit cApplication(sAppConfig& _rAppConfig);
+            virtual ~cApplication();
+
+            cApplication(const cApplication&)               = delete; 
+            cApplication& operator=(const cApplication&)    = delete; 
+
+        public:
+
+            void Run(); 
+
+        protected:
+
+            virtual void OnInit()                   {};
+            virtual void OnShutdown()               {};          
+            virtual void OnUpdate(float _deltaTime) {}; 
+            virtual void OnDraw()                   {};            
 
         private:
 
-            void UpdateCamera(float _deltaTime);
+            std::unique_ptr<Logic::cApplicationIntern> m_pAppIntern; 
 
-        private:
-
-            Platform::cWindow m_window;
-            Platform::cInput  m_input;
-
-            Core::cTimer m_Timer;
-
-            GFX::cVulkanContext     m_vulkanContext;
-            GFX::cVulkanDevice      m_vulkanDevice;
-            GFX::cVulkanSwapchain   m_vulkanSwapchain;
-            GFX::cVulkanCommands    m_vulkanCommands; 
-            GFX::cVulkanRenderer    m_vulkanRenderer;
-            GFX::cVulkanPipeline    m_vulkanPipeline;
-
-            GFX::cCamera            m_camera;
-            GFX::cMeshCache         m_geometryCache;
-
-            GFX::cVulkanMesh        m_cubeMesh; 
     };
 }
