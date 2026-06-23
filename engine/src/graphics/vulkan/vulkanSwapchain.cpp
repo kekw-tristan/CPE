@@ -257,14 +257,6 @@ namespace Engine::GFX
 
     VkPresentModeKHR cVulkanSwapchain::ChoosePresentMode(const std::vector<VkPresentModeKHR> &_rAvailablePresentModes) const
     {
-        for (const VkPresentModeKHR& availablePresentMode : _rAvailablePresentModes)
-        {
-            if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-            {
-                return availablePresentMode;
-            }
-        }
-
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
