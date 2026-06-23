@@ -4,20 +4,26 @@
 
 #include <iostream>
 
+// -------------------------------------------------------------------------------------------------------------------------
 
 namespace Engine
 {
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     cApplication::cApplication(sAppConfig& _rAppConfig)
         : m_pAppIntern(std::make_unique<Logic::cApplicationIntern>(_rAppConfig))
     {
     }
 
+    // -------------------------------------------------------------------------------------------------------------------------
 
     cApplication::~cApplication()
     {
     }
 
-
+    // -------------------------------------------------------------------------------------------------------------------------
+    
     void cApplication::Run()
     {
         OnInit();
@@ -27,8 +33,25 @@ namespace Engine
             m_pAppIntern->Update();
             OnUpdate(m_pAppIntern->GetDeltaTime());
 
-            m_pAppIntern->Draw();
+
+            if (!m_pAppIntern->BeginFrame(m_pAppIntern->GetCamera()))
+            {
+                m_pAppIntern->RecreateSwapchain();
+                continue;
+            }
+         
             OnDraw();
+            
+            if (!m_pAppIntern->EndFrame())
+            {
+                m_pAppIntern->RecreateSwapchain();
+                continue;
+            }
         }
     }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
 }
+
+// -------------------------------------------------------------------------------------------------------------------------

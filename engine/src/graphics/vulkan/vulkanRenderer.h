@@ -34,21 +34,30 @@ namespace Engine::GFX
         
             void Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline);  
             void ShutDown();  
-            bool DrawFrame(const cCamera& _rCamera);
             void RecreateDepthBuffer();
 
         public:
 
             void SubmitMesh(const cVulkanMesh& _rMesh); 
             void ClearSubmittedMeshes();
+
+        public:
+
+            bool BeginFrame(const cCamera& _rCamera);
+            bool EndFrame();
+
+        private:
+
+            void BeginDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex, sVulkanFrame& _rFrame); 
+            void EndDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex);
             
         private:
 
-            void RecordCommandBuffer(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex, sVulkanFrame& _rFrame);
             void CreateFrameResources();
             void CreateDescriptorPool();
             void CreateDescriptorSets();
             void UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera);
+            void DrawSubmittedInstances(VkCommandBuffer _pCommandBuffer);
             
         private:
 
@@ -67,6 +76,8 @@ namespace Engine::GFX
             cVulkanDepthBuffer m_depthBuffer;
 
             std::vector<const cVulkanMesh*> m_submittedMeshes;
-            
+
+            bool m_hasFrameStarted; 
+            uint32_t m_imageIndex;
     };
 }  

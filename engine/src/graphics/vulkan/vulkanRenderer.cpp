@@ -29,6 +29,7 @@ namespace Engine::GFX
         m_pPipeline  = &_rPipeline;
 
         m_currentFrame = 0;
+        m_hasFrameStarted = false; 
 
         m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
 
@@ -98,95 +99,6 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    bool cVulkanRenderer::DrawFrame(const cCamera& _rCamera)
-    {
-        VkDevice        device          = m_pDevice->GetDevice();
-        sVulkanFrame&   frame           = m_frames[m_currentFrame];
-
-        vkWaitForFences(device, 1, &frame.inFlightFence, VK_TRUE, UINT64_MAX); 
-        
-
-        uint32_t imageIndex = 0; 
-
-        VkResult acquireResult = vkAcquireNextImageKHR(
-            device, 
-            m_pSwapchain->GetSwapchain(),
-            UINT64_MAX,frame.imageAvailableSemaphore,
-            VK_NULL_HANDLE,
-            &imageIndex
-        );
-
-        if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
-        {
-            return false;
-        }
-
-        if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR)
-        {
-            throw std::runtime_error("Failed to acquire swapchain image!");
-        }
-
-        UpdateFrameUniformBuffer(frame, _rCamera);
-
-        VkCommandBuffer commandBuffer = frame.pCommandBuffer; 
-
-        vkResetCommandBuffer(commandBuffer, 0); 
-        RecordCommandBuffer(commandBuffer, imageIndex, frame);
-
-        vkResetFences(device, 1, &frame.inFlightFence);
-
-        VkSemaphore          waitSemaphores[]   = { frame.imageAvailableSemaphore };
-        VkSemaphore          signalSemaphores[] = { frame.renderFinishedSemaphore };
-        VkPipelineStageFlags waitStages[]       = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-
-        VkSubmitInfo submitInfo{};
-
-        submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.waitSemaphoreCount   = 1;
-        submitInfo.pWaitSemaphores      = waitSemaphores;
-        submitInfo.pWaitDstStageMask    = waitStages;
-        submitInfo.commandBufferCount   = 1;
-        submitInfo.pCommandBuffers      = &commandBuffer;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores    = signalSemaphores;
-
-        VkResult submitResult = vkQueueSubmit(m_pDevice->GetGraphicsQueue(), 1, &submitInfo, frame.inFlightFence);
-
-        if (submitResult != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to submit draw command buffer!");
-        }
-
-        VkSwapchainKHR swapchains[] = { m_pSwapchain->GetSwapchain() };
-
-         VkPresentInfoKHR presentInfo{};
-
-        presentInfo.sType               = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        presentInfo.waitSemaphoreCount  = 1;
-        presentInfo.pWaitSemaphores     = signalSemaphores;
-        presentInfo.swapchainCount      = 1;
-        presentInfo.pSwapchains         = swapchains;
-        presentInfo.pImageIndices       = &imageIndex;
-
-        VkResult presentResult = vkQueuePresentKHR(m_pDevice->GetPresentQueue(), &presentInfo);
-
-        if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
-        {
-            return false;
-        }
-
-        if (presentResult != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to present swapchain image.");
-        }
-
-        m_currentFrame = (m_currentFrame + 1) % c_maxNumberOfFrames;
-
-        return true;
-    }
-
-    // -------------------------------------------------------------------------------------------------------------------------
-
     void cVulkanRenderer::RecreateDepthBuffer()
     {
         m_pDevice->WaitIdle();
@@ -217,9 +129,46 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::RecordCommandBuffer(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex, sVulkanFrame& _rFrame)
+    bool cVulkanRenderer::BeginFrame(const cCamera &_rCamera)
     {
-        VkCommandBuffer commandBuffer = _pCommandBuffer;
+        if (m_hasFrameStarted)
+        {
+            throw std::runtime_error("BeginFrame() called while frame is already started!");
+        }
+
+        VkDevice        device          = m_pDevice->GetDevice();
+        sVulkanFrame&   frame           = m_frames[m_currentFrame];
+        
+        m_imageIndex = 0;
+
+        vkWaitForFences(device, 1, &frame.inFlightFence, VK_TRUE, UINT64_MAX); 
+        
+         
+        VkResult acquireResult = vkAcquireNextImageKHR(
+            device, 
+            m_pSwapchain->GetSwapchain(),
+            UINT64_MAX,frame.imageAvailableSemaphore,
+            VK_NULL_HANDLE,
+            &m_imageIndex
+        );
+
+        if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            return false;
+        }
+
+         m_hasFrameStarted = true;
+
+        if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR)
+        {
+            throw std::runtime_error("Failed to acquire swapchain image!");
+        }
+
+        UpdateFrameUniformBuffer(frame, _rCamera);
+
+        VkCommandBuffer commandBuffer = frame.pCommandBuffer; 
+
+        vkResetCommandBuffer(commandBuffer, 0); 
 
         VkCommandBufferBeginInfo beginInfo{}; 
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -229,6 +178,90 @@ namespace Engine::GFX
             throw std::runtime_error("Failed to begin recording command buffer!");
         }
 
+        BeginDraw(commandBuffer, m_imageIndex, frame); 
+
+        return true;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool cVulkanRenderer::EndFrame()
+    {
+        if (!m_hasFrameStarted)
+        {
+            throw std::runtime_error("EndFrame() called without BeginFrame()!");
+        }
+
+        VkDevice device = m_pDevice->GetDevice();
+        sVulkanFrame& rFrame = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+
+        DrawSubmittedInstances(pCommandBuffer);
+        EndDraw(pCommandBuffer, m_imageIndex);
+
+        if (vkEndCommandBuffer(pCommandBuffer) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to end command buffer!");
+        }
+
+        vkResetFences(device, 1, &rFrame.inFlightFence);
+
+        VkSemaphore          waitSemaphores[]   = { rFrame.imageAvailableSemaphore };
+        VkSemaphore          signalSemaphores[] = { rFrame.renderFinishedSemaphore };
+        VkPipelineStageFlags waitStages[]       = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+        VkSubmitInfo submitInfo{};
+
+        submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.waitSemaphoreCount   = 1;
+        submitInfo.pWaitSemaphores      = waitSemaphores;
+        submitInfo.pWaitDstStageMask    = waitStages;
+        submitInfo.commandBufferCount   = 1;
+        submitInfo.pCommandBuffers      = &pCommandBuffer;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores    = signalSemaphores;
+
+        VkResult submitResult = vkQueueSubmit(m_pDevice->GetGraphicsQueue(), 1, &submitInfo, rFrame.inFlightFence);
+
+        if (submitResult != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to submit draw command buffer!");
+        }
+
+        VkSwapchainKHR swapchains[] = { m_pSwapchain->GetSwapchain() };
+
+         VkPresentInfoKHR presentInfo{};
+
+        presentInfo.sType               = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.waitSemaphoreCount  = 1;
+        presentInfo.pWaitSemaphores     = signalSemaphores;
+        presentInfo.swapchainCount      = 1;
+        presentInfo.pSwapchains         = swapchains;
+        presentInfo.pImageIndices       = &m_imageIndex;
+
+        m_hasFrameStarted   = false; 
+        m_hasFrameStarted   = false;
+        m_currentFrame      = (m_currentFrame + 1) % c_maxNumberOfFrames;
+
+        VkResult presentResult = vkQueuePresentKHR(m_pDevice->GetPresentQueue(), &presentInfo);
+
+        if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
+        {
+            return false;
+        }
+
+        if (presentResult != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to present swapchain image.");
+        }
+
+        return true;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::BeginDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex, sVulkanFrame& _rFrame)
+    {
         VkImage     swapchainImage     = m_pSwapchain->GetImages()[_imageIndex];
         VkImageView swapchainImageView = m_pSwapchain->GetImageViews()[_imageIndex];
         VkExtent2D  extent             = m_pSwapchain->GetExtent();
@@ -250,7 +283,7 @@ namespace Engine::GFX
         barrierToColorAttachment.dstAccessMask                      = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
         vkCmdPipelineBarrier(
-            commandBuffer,
+            _pCommandBuffer,
             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             0,
@@ -295,41 +328,40 @@ namespace Engine::GFX
         renderingInfo.pDepthAttachment      = &depthAttachment;
         renderingInfo.pStencilAttachment    = nullptr;
 
-        vkCmdBeginRendering(commandBuffer, &renderingInfo);
+        vkCmdBeginRendering(_pCommandBuffer, &renderingInfo);
 
         VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width  = static_cast<float>(extent.width);
-        viewport.height = static_cast<float>(extent.height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
+        viewport.x          = 0.0f;
+        viewport.y          = 0.0f;
+        viewport.width      = static_cast<float>(extent.width);
+        viewport.height     = static_cast<float>(extent.height);
+        viewport.minDepth   = 0.0f;
+        viewport.maxDepth   = 1.0f;
 
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetViewport(_pCommandBuffer, 0, 1, &viewport);
 
         VkRect2D scissor{};
         scissor.offset = { 0, 0 };
         scissor.extent = extent;
 
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        vkCmdSetScissor(_pCommandBuffer, 0, 1, &scissor);
 
         vkCmdBindPipeline(
-            commandBuffer,
+            _pCommandBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             m_pPipeline->GetPipeline()
         );
 
         vkCmdBindDescriptorSets(_pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(), 0, 1, &_rFrame.frameDescriptorSet, 0, nullptr);
+    }
 
-        for (const cVulkanMesh* pMesh : m_submittedMeshes)
-        {
-            if (pMesh != nullptr && pMesh->IsValid())
-            {
-                pMesh->Draw(_pCommandBuffer);
-            }
-        }
+    // -------------------------------------------------------------------------------------------------------------------------
 
-        vkCmdEndRendering(commandBuffer);
+    void cVulkanRenderer::EndDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex)
+    {
+        vkCmdEndRendering(_pCommandBuffer);
+
+        VkImage swapchainImage = m_pSwapchain->GetImages()[_imageIndex];
 
         VkImageMemoryBarrier barrierToPresent{};
 
@@ -348,7 +380,7 @@ namespace Engine::GFX
         barrierToPresent.dstAccessMask                      = 0;
 
         vkCmdPipelineBarrier(
-            commandBuffer,
+            _pCommandBuffer,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
             0,
@@ -356,11 +388,6 @@ namespace Engine::GFX
             0, nullptr,
             1, &barrierToPresent
         );
-
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to record command buffer!");
-        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -518,6 +545,19 @@ namespace Engine::GFX
         frameData.clipPlanes[3] = 0.0f;
 
         _rFrame.frameUniformedBuffer.Write(&frameData, sizeof(sFrameUniformData), 0);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::DrawSubmittedInstances(VkCommandBuffer _pCommandBuffer)
+    {
+        for (const cVulkanMesh* pMesh : m_submittedMeshes)
+        {
+            if (pMesh != nullptr && pMesh->IsValid())
+            {
+                pMesh->Draw(_pCommandBuffer);
+            }
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
