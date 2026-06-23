@@ -85,6 +85,20 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    bool cApplicationIntern::BeginFrame(GFX::cCamera& _rCamera)
+    {
+        return m_vulkanRenderer.BeginFrame(_rCamera);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool cApplicationIntern::EndFrame()
+    {
+        return m_vulkanRenderer.EndFrame();        
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     bool cApplicationIntern::GetShouldClose()
     {
         return m_window.ShouldClose();
@@ -111,23 +125,27 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cApplicationIntern::Draw()
+    float cApplicationIntern::GetDeltaTime()
     {
-        bool isFrameOk = m_vulkanRenderer.DrawFrame(m_camera);
-
-        if (!isFrameOk || m_window.WasResized())
-        {
-            m_window.ResetRezisedFlag();
-            m_vulkanSwapchain.Recreate(m_vulkanContext, m_vulkanDevice, m_window);
-            m_vulkanRenderer.RecreateDepthBuffer();
-        }
+        return m_Timer.GetDeltaTime();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    float cApplicationIntern::GetDeltaTime()
+    void cApplicationIntern::RecreateSwapchain()
     {
-        return m_Timer.GetDeltaTime();
+        m_vulkanDevice.WaitIdle();
+
+        m_window.ResetRezisedFlag();
+        m_vulkanSwapchain.Recreate(m_vulkanContext, m_vulkanDevice, m_window);
+        m_vulkanRenderer.RecreateDepthBuffer();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    GFX::cCamera &cApplicationIntern::GetCamera()
+    {
+        return m_camera;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

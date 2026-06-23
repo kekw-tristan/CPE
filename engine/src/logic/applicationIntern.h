@@ -35,11 +35,13 @@ namespace Engine::Logic
 
         public:
 
+            bool BeginFrame(GFX::cCamera& _rCamera);
+            bool EndFrame();
             bool GetShouldClose();
             void Update();
-            void Draw();
             float GetDeltaTime();
-            
+            void RecreateSwapchain();
+            GFX::cCamera& GetCamera();
 
         private:
 
