@@ -3,6 +3,7 @@
 #include "graphics/camera.h"
 #include "graphics/frameUniformData.h"
 #include "graphics/gfxConfig.h"
+#include "graphics/pushConstants.h"
 
 #include "graphics/vulkan/vulkanDevice.h"
 #include "graphics/vulkan/vulkanMesh.h"
@@ -259,15 +260,24 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::Draw(cVulkanMesh* _pMesh)
+    void cVulkanRenderer::Draw(cVulkanMesh* _pMesh, std::array<float, 16>& _rWorldMatrix)
     {
-        sVulkanFrame& rFrame = m_frames[m_currentFrame];
-        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
-
-        if (_pMesh != nullptr && _pMesh->IsValid())
+        
+        if (_pMesh == nullptr || !_pMesh->IsValid())
         {
-            _pMesh->Draw(pCommandBuffer);
+            return;
         }
+
+        sVulkanFrame& rFrame            = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+
+        sPushConstants pushConstants; 
+
+        std::memcpy(pushConstants.worldMatrix, _rWorldMatrix.data(), sizeof(float) * 16);
+
+        vkCmdPushConstants(pCommandBuffer, m_pPipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(sPushConstants), &pushConstants);
+        
+        _pMesh->Draw(pCommandBuffer);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

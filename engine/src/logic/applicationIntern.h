@@ -17,6 +17,7 @@
 #include "platform/window.h"
 
 #include <vector>
+#include <array>
 
 namespace Engine
 {
@@ -53,7 +54,7 @@ namespace Engine::Logic
 
             GFX::MeshHandle CreateMesh(GFX::sMeshData& _rMeshData);
             void SubmitMesh(GFX::MeshHandle _pHandle);
-            void Draw(GFX::MeshHandle _pHandle);
+            void Draw(GFX::MeshHandle _pHandle, std::array<float, 16>& _rWorldMatrix);
 
         private:
 

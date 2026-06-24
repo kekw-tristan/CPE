@@ -40,8 +40,24 @@ class cGame : public Engine::cApplication
 
         void OnDraw() override
         {
+            std::array<float, 16> worldMatrixA =
+            {
+                1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+               -2.0f, 0.0f, 0.0f, 1.0f
+            };
             
-            Engine::GFX::Draw(m_cubeMesh);
+            std::array<float, 16> worldMatrixB =
+            {
+                1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                2.0f, 0.0f, 0.0f, 1.0f
+            };
+
+            Engine::GFX::Draw(m_cubeMesh, worldMatrixA);
+            Engine::GFX::Draw(m_cubeMesh, worldMatrixB);
         }
 
         void OnShutdown() override

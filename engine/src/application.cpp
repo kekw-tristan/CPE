@@ -61,10 +61,14 @@ namespace Engine
 
 namespace Engine::GFX
 {
+    // -------------------------------------------------------------------------------------------------------------------------
+
     MeshHandle CreateMesh(sMeshData& _rMeshData)
     {
         return s_pApplicationIntern->CreateMesh(_rMeshData);
     }
+
+    // -------------------------------------------------------------------------------------------------------------------------
 
     void SubmitMesh(MeshHandle _pMeshHandle)
     {
@@ -80,9 +84,16 @@ namespace Engine::GFX
 
         s_pApplicationIntern->SubmitMesh(_pMeshHandle);
     }
+
+    // -------------------------------------------------------------------------------------------------------------------------
     
-    void Draw(MeshHandle _pMeshHandle)
+    void Draw(MeshHandle _pMeshHandle, std::array<float, 16>& _rWorldMatrix)
     {
-        s_pApplicationIntern->Draw(_pMeshHandle);   
+        s_pApplicationIntern->Draw(_pMeshHandle, _rWorldMatrix);   
     }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
 }
+
+// -------------------------------------------------------------------------------------------------------------------------
