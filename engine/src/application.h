@@ -44,3 +44,14 @@ namespace Engine
 
     };
 }
+
+namespace Engine::GFX
+{
+    using MeshHandle = void*;
+
+    struct sMeshData;
+
+    MeshHandle CreateMesh(sMeshData& _rMeshData); 
+    void SubmitMesh(MeshHandle _rMeshData);
+    void Draw(MeshHandle _rMeshData);
+}

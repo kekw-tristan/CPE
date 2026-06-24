@@ -16,9 +16,16 @@
 #include "platform/input.h"
 #include "platform/window.h"
 
+#include <vector>
+
 namespace Engine
 {
     struct sAppConfig; 
+}
+
+namespace Engine::GFX
+{
+    using MeshHandle = void*;
 }
 
 namespace Engine::Logic
@@ -43,6 +50,11 @@ namespace Engine::Logic
             void RecreateSwapchain();
             GFX::cCamera& GetCamera();
 
+
+            GFX::MeshHandle CreateMesh(GFX::sMeshData& _rMeshData);
+            void SubmitMesh(GFX::MeshHandle _pHandle);
+            void Draw(GFX::MeshHandle _pHandle);
+
         private:
 
             void UpdateCamera(float _deltaTime);
@@ -64,6 +76,6 @@ namespace Engine::Logic
             GFX::cCamera            m_camera;
             GFX::cMeshCache         m_geometryCache;
 
-            GFX::cVulkanMesh        m_cubeMesh; 
+            std::vector<std::unique_ptr<GFX::cVulkanMesh>> m_vulkanMeshes;
     };
 }

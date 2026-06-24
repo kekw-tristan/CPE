@@ -9,11 +9,14 @@
 namespace Engine
 {
 
+    static Logic::cApplicationIntern* s_pApplicationIntern = nullptr;
+
     // -------------------------------------------------------------------------------------------------------------------------
 
     cApplication::cApplication(sAppConfig& _rAppConfig)
         : m_pAppIntern(std::make_unique<Logic::cApplicationIntern>(_rAppConfig))
     {
+        s_pApplicationIntern = m_pAppIntern.get(); 
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -55,3 +58,31 @@ namespace Engine
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
+
+namespace Engine::GFX
+{
+    MeshHandle CreateMesh(sMeshData& _rMeshData)
+    {
+        return s_pApplicationIntern->CreateMesh(_rMeshData);
+    }
+
+    void SubmitMesh(MeshHandle _pMeshHandle)
+    {
+        if (s_pApplicationIntern == nullptr)
+        {
+            throw std::runtime_error("Application Inter does not exist yet!");
+        }
+
+        if (_pMeshHandle == nullptr)
+        {
+            throw std::runtime_error("Submitted Mesh nullptr!");
+        }
+
+        s_pApplicationIntern->SubmitMesh(_pMeshHandle);
+    }
+    
+    void Draw(MeshHandle _pMeshHandle)
+    {
+        s_pApplicationIntern->Draw(_pMeshHandle);   
+    }
+}
