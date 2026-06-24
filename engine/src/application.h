@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <memory>
 
 namespace Engine
@@ -53,5 +54,5 @@ namespace Engine::GFX
 
     MeshHandle CreateMesh(sMeshData& _rMeshData); 
     void SubmitMesh(MeshHandle _rMeshData);
-    void Draw(MeshHandle _rMeshData);
+    void Draw(MeshHandle _rMeshData, std::array<float, 16>& _rWorldMatrix);
 }

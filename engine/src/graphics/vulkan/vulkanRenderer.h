@@ -45,21 +45,20 @@ namespace Engine::GFX
 
             bool BeginFrame(const cCamera& _rCamera);
             bool EndFrame();
-            void Draw(cVulkanMesh* _pMesh); 
+            void Draw(cVulkanMesh* _pMesh, std::array<float, 16>& _rWorldMatrix); 
 
         private:
 
             void BeginDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex, sVulkanFrame& _rFrame); 
             void EndDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex);
-           
-            
+
         private:
 
             void CreateFrameResources();
             void CreateDescriptorPool();
             void CreateDescriptorSets();
             void UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera);
-            
+
         private:
 
             cVulkanDevice*      m_pDevice;

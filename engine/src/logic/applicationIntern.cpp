@@ -153,11 +153,11 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cApplicationIntern::Draw(GFX::MeshHandle _pHandle)
+    void cApplicationIntern::Draw(GFX::MeshHandle _pHandle, std::array<float, 16>& _rWorldMatrix)
     {
         GFX::cVulkanMesh* pVulkanMesh = static_cast<GFX::cVulkanMesh*>(_pHandle);
 
-        m_vulkanRenderer.Draw(pVulkanMesh);
+        m_vulkanRenderer.Draw(pVulkanMesh, _rWorldMatrix);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

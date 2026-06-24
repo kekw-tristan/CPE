@@ -11,6 +11,14 @@ cbuffer FrameUniformBuffer : register(b0)
     float4 clipPlanes;
 };
 
+struct ObjectPushConstants
+{
+    row_major float4x4 worldMatrix;
+};
+
+[[vk::push_constant]]
+ObjectPushConstants objectData;
+
 struct VSInput
 {
     float3 position : POSITION;
@@ -30,7 +38,12 @@ VSOutput VSMain(VSInput input)
 {
     VSOutput output;
 
-    output.position = mul(viewProj, float4(input.position, 1.0f));
+    float4 localPosition = float4(input.position, 1.0f);
+
+    float4 worldPosition = mul(localPosition, objectData.worldMatrix);
+
+    output.position = mul(viewProj, worldPosition);
+
     output.texCoord = input.texCoord;
     output.color    = input.color;
 
