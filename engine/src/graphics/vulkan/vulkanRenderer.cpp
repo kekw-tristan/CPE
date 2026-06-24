@@ -196,7 +196,6 @@ namespace Engine::GFX
         sVulkanFrame& rFrame = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
 
-        DrawSubmittedInstances(pCommandBuffer);
         EndDraw(pCommandBuffer, m_imageIndex);
 
         if (vkEndCommandBuffer(pCommandBuffer) != VK_SUCCESS)
@@ -256,6 +255,19 @@ namespace Engine::GFX
         }
 
         return true;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::Draw(cVulkanMesh* _pMesh)
+    {
+        sVulkanFrame& rFrame = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+
+        if (_pMesh != nullptr && _pMesh->IsValid())
+        {
+            _pMesh->Draw(pCommandBuffer);
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -520,7 +532,7 @@ namespace Engine::GFX
 
     void cVulkanRenderer::UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera)
         {
-              sFrameUniformData frameData{};
+        sFrameUniformData frameData{};
 
         const float width  = static_cast<float>(m_pSwapchain->GetExtent().width);
         const float height = static_cast<float>(m_pSwapchain->GetExtent().height);
@@ -545,19 +557,6 @@ namespace Engine::GFX
         frameData.clipPlanes[3] = 0.0f;
 
         _rFrame.frameUniformedBuffer.Write(&frameData, sizeof(sFrameUniformData), 0);
-    }
-
-    // -------------------------------------------------------------------------------------------------------------------------
-
-    void cVulkanRenderer::DrawSubmittedInstances(VkCommandBuffer _pCommandBuffer)
-    {
-        for (const cVulkanMesh* pMesh : m_submittedMeshes)
-        {
-            if (pMesh != nullptr && pMesh->IsValid())
-            {
-                pMesh->Draw(_pCommandBuffer);
-            }
-        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

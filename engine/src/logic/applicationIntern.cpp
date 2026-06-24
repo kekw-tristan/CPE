@@ -22,7 +22,6 @@ namespace Engine::Logic
     
     cApplicationIntern::cApplicationIntern(sAppConfig& _rAppConf)
         : m_window(1280, 720, "Vulkan Engine")
-        , m_cubeMesh()
     {
         m_vulkanContext  .Init(m_window);
         m_vulkanDevice   .Init(m_vulkanContext);
@@ -30,25 +29,6 @@ namespace Engine::Logic
         m_vulkanSwapchain.Init(m_vulkanContext, m_vulkanDevice, m_window);
         m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
         m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline);
-
-
-        GFX::sCubeDesc cubeDesc; 
-
-        cubeDesc.width = 1.f; 
-        cubeDesc.height = 1.f; 
-        cubeDesc.depth = 1.f; 
-        cubeDesc.color = { 1.f, 0.2f, 0.1f, 1.f };
-
-        GFX::sMeshData cubeData = GFX::cMeshGenerator::CreateCube(cubeDesc);
-
-        m_cubeMesh.Create(
-            m_vulkanDevice,
-            m_vulkanCommands,
-            cubeData.vertices,
-            cubeData.indices
-        );
-
-        m_vulkanRenderer.SubmitMesh(m_cubeMesh);
 
         m_camera.LookAt(
             2.0f, 1.5f, 3.0f,
@@ -72,15 +52,16 @@ namespace Engine::Logic
     {
         m_vulkanDevice.WaitIdle();
 
-        m_cubeMesh       .Shutdown(m_vulkanDevice);
+        for (const std::unique_ptr<GFX::cVulkanMesh>& pMesh : m_vulkanMeshes)
+        {
+            pMesh->Shutdown(m_vulkanDevice);
+        }
         m_vulkanRenderer .ShutDown();
         m_vulkanPipeline .Shutdown(m_vulkanDevice);
         m_vulkanCommands .Shutdown(m_vulkanDevice);
         m_vulkanSwapchain.Shutdown(m_vulkanDevice);
         m_vulkanDevice   .Shutdown();
-        m_vulkanContext  .Shutdown();
-
-        
+        m_vulkanContext  .Shutdown(); 
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -146,6 +127,37 @@ namespace Engine::Logic
     GFX::cCamera &cApplicationIntern::GetCamera()
     {
         return m_camera;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    GFX::MeshHandle cApplicationIntern::CreateMesh(GFX::sMeshData &_rMeshData)
+    {
+        std::unique_ptr<GFX::cVulkanMesh> pMesh = std::make_unique<GFX::cVulkanMesh>();
+
+        pMesh->Create(m_vulkanDevice, m_vulkanCommands, _rMeshData.vertices, _rMeshData.indices);
+
+        const uint32_t meshIndex = static_cast<uint32_t>(m_vulkanMeshes.size()); 
+
+        m_vulkanMeshes.push_back(std::move(pMesh));
+
+        return static_cast<GFX::MeshHandle>(m_vulkanMeshes.back().get());
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::SubmitMesh(GFX::MeshHandle _pHandle)
+    {
+        m_vulkanRenderer.SubmitMesh(*static_cast<GFX::cVulkanMesh*>(_pHandle));
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::Draw(GFX::MeshHandle _pHandle)
+    {
+        GFX::cVulkanMesh* pVulkanMesh = static_cast<GFX::cVulkanMesh*>(_pHandle);
+
+        m_vulkanRenderer.Draw(pVulkanMesh);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
