@@ -37,6 +37,7 @@ namespace Engine::GFX
         CreateFrameResources();
         CreateDescriptorPool();
         CreateDescriptorSets();
+        CreateRenderFinishedSemaphores();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -59,12 +60,6 @@ namespace Engine::GFX
                 vkDestroySemaphore(device, rFrame.imageAvailableSemaphore, nullptr);
                 rFrame.imageAvailableSemaphore = VK_NULL_HANDLE;
             }
-            
-            if (rFrame.renderFinishedSemaphore != VK_NULL_HANDLE)
-            {
-                vkDestroySemaphore(device, rFrame.renderFinishedSemaphore, nullptr);
-                rFrame.renderFinishedSemaphore = VK_NULL_HANDLE;
-            }
 
             if (rFrame.inFlightFence != VK_NULL_HANDLE)
             {
@@ -83,6 +78,16 @@ namespace Engine::GFX
                 rFrame.frameUniformedBuffer.Shutdown(*m_pDevice);
             }
         }
+
+        for (VkSemaphore sem : m_renderFinishedSemaphores)
+        {
+            if (sem != VK_NULL_HANDLE)
+            {
+                vkDestroySemaphore(m_pDevice->GetDevice(), sem, nullptr);
+            }
+        }
+        
+        m_renderFinishedSemaphores.clear();
 
         if (m_pDescriptorPool != VK_NULL_HANDLE)
         {
@@ -165,6 +170,13 @@ namespace Engine::GFX
             throw std::runtime_error("Failed to acquire swapchain image!");
         }
 
+        if (m_imagesInFlight[m_imageIndex] != VK_NULL_HANDLE)
+        {
+            vkWaitForFences(device, 1, &m_imagesInFlight[m_imageIndex], VK_TRUE, UINT64_MAX);
+        }
+
+        m_imagesInFlight[m_imageIndex] = frame.inFlightFence;
+
         UpdateFrameUniformBuffer(frame, _rCamera);
 
         VkCommandBuffer commandBuffer = frame.pCommandBuffer; 
@@ -207,7 +219,7 @@ namespace Engine::GFX
         vkResetFences(device, 1, &rFrame.inFlightFence);
 
         VkSemaphore          waitSemaphores[]   = { rFrame.imageAvailableSemaphore };
-        VkSemaphore          signalSemaphores[] = { rFrame.renderFinishedSemaphore };
+        VkSemaphore          signalSemaphores[] = { m_renderFinishedSemaphores[m_imageIndex] };
         VkPipelineStageFlags waitStages[]       = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
         VkSubmitInfo submitInfo{};
@@ -435,11 +447,6 @@ namespace Engine::GFX
                 throw std::runtime_error("Failed to create image available semaphore!");
             }
         
-            if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &rFrame.renderFinishedSemaphore) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to create render finished semaphore!");
-            }
-        
             if (vkCreateFence(device, &fenceInfo, nullptr, &rFrame.inFlightFence) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to create in-flight fence!");
@@ -464,6 +471,25 @@ namespace Engine::GFX
         }
 
         std::cout << "Vulkan sync objects created." << std::endl;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::CreateRenderFinishedSemaphores()
+    {
+        uint32_t imageCount = m_pSwapchain->GetImageCount(); 
+        VkDevice device = m_pDevice->GetDevice();
+
+        m_renderFinishedSemaphores.resize(imageCount);
+        m_imagesInFlight.resize(imageCount, VK_NULL_HANDLE);
+
+        for (int index = 0; index < imageCount; ++index)
+        {
+            VkSemaphoreCreateInfo semaphoreInfo{};
+            semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+            vkCreateSemaphore(device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[index]);
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

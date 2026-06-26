@@ -90,6 +90,13 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    uint32_t cVulkanSwapchain::GetImageCount() const
+    {
+        return m_images.size();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     const std::vector<VkImage> &cVulkanSwapchain::GetImages() const
     {
         return m_images;

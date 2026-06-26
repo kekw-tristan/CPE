@@ -55,6 +55,7 @@ namespace Engine::GFX
         private:
 
             void CreateFrameResources();
+            void CreateRenderFinishedSemaphores(); 
             void CreateDescriptorPool();
             void CreateDescriptorSets();
             void UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera);
@@ -76,6 +77,8 @@ namespace Engine::GFX
             cVulkanDepthBuffer m_depthBuffer;
 
             std::vector<const cVulkanMesh*> m_submittedMeshes;
+            std::vector<VkSemaphore> m_renderFinishedSemaphores;  
+            std::vector<VkFence> m_imagesInFlight;  
 
             bool m_hasFrameStarted; 
             uint32_t m_imageIndex;
