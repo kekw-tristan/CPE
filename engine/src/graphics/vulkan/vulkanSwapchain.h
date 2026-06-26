@@ -42,6 +42,7 @@ namespace Engine::GFX
             VkSwapchainKHR  GetSwapchain()   const;
             VkFormat        GetImageFormat() const;
             VkExtent2D      GetExtent()      const;
+            uint32_t        GetImageCount()  const; 
 
             const std::vector<VkImage>&     GetImages()     const; 
             const std::vector<VkImageView>& GetImageViews() const; 

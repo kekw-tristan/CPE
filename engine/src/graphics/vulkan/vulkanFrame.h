@@ -11,8 +11,7 @@ namespace Engine::GFX
         VkCommandBuffer pCommandBuffer = VK_NULL_HANDLE;
         VkFence         inFlightFence  = VK_NULL_HANDLE;
         
-        VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE; 
-        VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
+        VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
 
         cVulkanBuffer frameUniformedBuffer;
         VkDescriptorSet frameDescriptorSet = VK_NULL_HANDLE;
