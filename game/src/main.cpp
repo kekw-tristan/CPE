@@ -1,9 +1,14 @@
 #include "application.h"
 
+#include "container/pool.h"
+
 #include "graphics/meshGenerator.h"
+#include "graphics/instanceData.h"
 
 #include <iostream>
 #include <stdexcept>
+
+constexpr int c_instancesPerPage = 800;
 
 class cGame : public Engine::cApplication
 {
@@ -31,6 +36,28 @@ class cGame : public Engine::cApplication
             m_cubeMesh = Engine::GFX::CreateMesh(cubeData);
 
             Engine::GFX::SubmitMesh(m_cubeMesh);
+
+            
+
+            for (int index = 0; index < c_instancesPerPage * 2; ++index)
+            {
+                Engine::GFX::sInstanceData* pInstanceData = m_pool.Create();
+
+                std::array<float, 16> worldMatrixA =
+                {
+                    1.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 1.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 1.0f, 0.0f,
+                    static_cast<float>(index * 2), 0.0f, 0.0f, 1.0f
+                };
+
+                pInstanceData->worldMatrix = worldMatrixA; 
+                pInstanceData->color = {1.f, 0.f, 0.f, 1.f};
+
+                m_instances.push_back(pInstanceData);
+            }
+
+            
         }
 
         void OnUpdate(float deltaTime) override
@@ -40,24 +67,10 @@ class cGame : public Engine::cApplication
 
         void OnDraw() override
         {
-            std::array<float, 16> worldMatrixA =
+            for (auto* pInstanceData : m_instances)
             {
-                1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 1.0f, 0.0f,
-               -2.0f, 0.0f, 0.0f, 1.0f
-            };
-            
-            std::array<float, 16> worldMatrixB =
-            {
-                1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 1.0f, 0.0f,
-                2.0f, 0.0f, 0.0f, 1.0f
-            };
-
-            Engine::GFX::Draw(m_cubeMesh, worldMatrixA);
-            Engine::GFX::Draw(m_cubeMesh, worldMatrixB);
+                Engine::GFX::Draw(m_cubeMesh, pInstanceData->worldMatrix);
+            }
         }
 
         void OnShutdown() override
@@ -68,6 +81,8 @@ class cGame : public Engine::cApplication
         private:
 
             Engine::GFX::MeshHandle m_cubeMesh;
+            Engine::Container::cPool<Engine::GFX::sInstanceData, c_instancesPerPage> m_pool;
+            std::vector<Engine::GFX::sInstanceData*> m_instances;
 };
 
 int main()
