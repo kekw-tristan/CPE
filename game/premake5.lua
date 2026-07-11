@@ -1,36 +1,85 @@
 project "game"
-    location "game"
+    location (path.join(RootDir, "game"))
+
     kind "ConsoleApp"
     language "C++"
     cppdialect "C++20"
     staticruntime "off"
 
-    targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-    objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+    debugdir (RootDir)
+
+    targetdir (
+        path.join(
+            RootDir,
+            "bin",
+            outputdir,
+            "%{prj.name}"
+        )
+    )
+
+    objdir (
+        path.join(
+            RootDir,
+            "bin-int",
+            outputdir,
+            "%{prj.name}"
+        )
+    )
 
     files
     {
-        "src/**.h",
-        "src/**.hpp",
-        "src/**.cpp"
+        path.join(RootDir, "game", "src", "**.h"),
+        path.join(RootDir, "game", "src", "**.hpp"),
+        path.join(RootDir, "game", "src", "**.cpp")
     }
 
     includedirs
     {
-        "../engine/src"
+        IncludeDir["Engine"]
     }
 
     links
     {
-        "engine",
-        "vulkan",
-        "glfw"
+        "engine"
     }
+
+    filter "system:windows"
+        systemversion "latest"
+
+        defines
+        {
+            "GAME_PLATFORM_WINDOWS",
+            "NOMINMAX",
+            "WIN32_LEAN_AND_MEAN",
+            "GLFW_INCLUDE_NONE"
+        }
+
+        includedirs
+        {
+            IncludeDir["VulkanSDK"]
+        }
+
+        libdirs
+        {
+            LibraryDir["VulkanSDK"]
+        }
+
+        links
+        {
+            "vulkan-1"
+        }
 
     filter "system:linux"
         defines
         {
-            "GAME_PLATFORM_LINUX"
+            "GAME_PLATFORM_LINUX",
+            "GLFW_INCLUDE_NONE"
+        }
+
+        links
+        {
+            "vulkan",
+            "glfw"
         }
 
     filter "configurations:Debug"
@@ -38,6 +87,8 @@ project "game"
         {
             "GAME_DEBUG"
         }
+
+        runtime "Debug"
         symbols "On"
 
     filter "configurations:Release"
@@ -45,6 +96,8 @@ project "game"
         {
             "GAME_RELEASE"
         }
+
+        runtime "Release"
         optimize "On"
 
     filter "configurations:Dist"
@@ -52,4 +105,8 @@ project "game"
         {
             "GAME_DIST"
         }
+
+        runtime "Release"
         optimize "Full"
+
+    filter {}
