@@ -23,7 +23,7 @@ namespace Engine::Container
             void Destroy(T* _pInstance)
             {
                 _pInstance->~T();
-                m_allocator.FreeChunk();
+                m_allocator.FreeChunk(static_cast<void*>(_pInstance));
             }
 
         private:

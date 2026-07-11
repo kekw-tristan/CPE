@@ -10,6 +10,11 @@ namespace Engine
         class cApplicationIntern;
     }
 
+    namespace GFX
+    {
+        class cCamera; 
+    }
+
     struct sAppConfig
     {
         int width; 
@@ -55,4 +60,11 @@ namespace Engine::GFX
     MeshHandle CreateMesh(sMeshData& _rMeshData); 
     void SubmitMesh(MeshHandle _rMeshData);
     void Draw(MeshHandle _rMeshData, std::array<float, 16>& _rWorldMatrix);
+
+    cCamera& GetCamera();
+}
+
+namespace Engine::Platform
+{
+    bool IsKeyDown(int _key); 
 }

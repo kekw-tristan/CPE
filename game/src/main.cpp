@@ -2,6 +2,7 @@
 
 #include "container/pool.h"
 
+#include "graphics/camera.h"
 #include "graphics/meshGenerator.h"
 #include "graphics/instanceData.h"
 
@@ -9,6 +10,12 @@
 #include <stdexcept>
 
 constexpr int c_instancesPerPage = 800;
+
+constexpr int c_shiftKey        = 340;
+constexpr int c_downArrowKey    = 264; 
+constexpr int c_upArrowKey      = 265; 
+constexpr int c_leftArrowKey    = 263; 
+constexpr int c_rightArrowKey   = 262; 
 
 class cGame : public Engine::cApplication
 {
@@ -34,6 +41,7 @@ class cGame : public Engine::cApplication
             Engine::GFX::sMeshData cubeData = Engine::GFX::cMeshGenerator::CreateCube(cubeDesc);
 
             m_cubeMesh = Engine::GFX::CreateMesh(cubeData);
+            std::cout << "Mesh: " << cubeData.pDebugName << std::endl;
 
             Engine::GFX::SubmitMesh(m_cubeMesh);
 
@@ -60,9 +68,62 @@ class cGame : public Engine::cApplication
             
         }
 
-        void OnUpdate(float deltaTime) override
+        void OnUpdate(float _deltaTime) override
         {
-            // Wird jeden Frame aufgerufen
+            using namespace Engine::GFX;
+            using namespace Engine::Platform;
+
+            float moveSpeed = 3.0f;
+
+            if (IsKeyDown(c_shiftKey))
+            {
+                moveSpeed = 8.0f;
+            }
+
+            const float moveAmount = moveSpeed * _deltaTime;
+
+            cCamera& rCamera = GetCamera();
+
+            if (IsKeyDown('W'))
+            {
+                rCamera.MoveForward(moveAmount);
+            }
+
+            if (IsKeyDown('S'))
+            {
+                rCamera.MoveForward(-moveAmount);
+            }
+
+            if (IsKeyDown('A'))
+            {
+                rCamera.MoveRight(-moveAmount);
+            }
+
+            if (IsKeyDown('D'))
+            {
+                rCamera.MoveRight(moveAmount);
+            }
+
+
+            if (IsKeyDown(c_downArrowKey))
+            {
+                rCamera.AddPitch(-100 * _deltaTime);
+            };
+
+            if (IsKeyDown(c_upArrowKey))
+            {
+                rCamera.AddPitch(100 * _deltaTime);
+            };
+
+            if (IsKeyDown(c_leftArrowKey))
+            {
+                rCamera.AddYaw(-100 * _deltaTime);
+            };
+
+            if (IsKeyDown(c_rightArrowKey))
+            {
+                rCamera.AddYaw(100 * _deltaTime);
+            };
         }
 
         void OnDraw() override
@@ -75,7 +136,10 @@ class cGame : public Engine::cApplication
 
         void OnShutdown() override
         {
-            // Wird am Ende aufgerufen
+            for (auto* pInstance : m_instances)
+            {
+                m_pool.Destroy(pInstance);
+            }
         }
 
         private:
