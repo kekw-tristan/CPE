@@ -51,11 +51,10 @@ project "game"
     }
 
     filter "system:windows"
-        systemversion "latest"
-
         defines
         {
             "GAME_PLATFORM_WINDOWS",
+            "GAME_ASSET_PATH=\"assets\"",
             "NOMINMAX",
             "WIN32_LEAN_AND_MEAN",
             "GLFW_INCLUDE_NONE"
@@ -77,9 +76,10 @@ project "game"
         }
 
     filter "system:linux"
-        defines
+    defines
         {
             "GAME_PLATFORM_LINUX",
+            "GAME_ASSET_PATH=\"game/assets\"",
             "GLFW_INCLUDE_NONE"
         }
 
