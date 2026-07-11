@@ -19,8 +19,8 @@ namespace Engine::GFX
 
     void cVulkanPipeline::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapchain)
     {
-        auto vertShaderCode = ReadFile("game/assets/shaders/bin/main.vert.spv");
-        auto fragShaderCode = ReadFile("game/assets/shaders/bin/main.frag.spv");
+        auto vertShaderCode = ReadFile("assets/shaders/bin/main.vert.spv");
+        auto fragShaderCode = ReadFile("assets/shaders/bin/main.frag.spv");
 
         VkShaderModule vertShaderModule = CreateShaderModule(_rDevice, vertShaderCode);
         VkShaderModule fragShaderModule = CreateShaderModule(_rDevice, fragShaderCode);
