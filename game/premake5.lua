@@ -6,8 +6,6 @@ project "game"
     cppdialect "C++20"
     staticruntime "off"
 
-    debugdir (RootDir)
-
     targetdir (
         path.join(
             RootDir,
@@ -26,6 +24,8 @@ project "game"
         )
     )
 
+    debugdir "%{cfg.targetdir}"
+
     files
     {
         path.join(RootDir, "game", "src", "**.h"),
@@ -41,6 +41,13 @@ project "game"
     links
     {
         "engine"
+    }
+
+    postbuildcommands
+    {
+        '{COPYDIR} "' ..
+        path.join(RootDir, "game", "assets") ..
+        '" "%{cfg.targetdir}/assets"'
     }
 
     filter "system:windows"
