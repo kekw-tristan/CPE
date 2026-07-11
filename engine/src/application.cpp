@@ -33,9 +33,8 @@ namespace Engine
 
         while(!m_pAppIntern->GetShouldClose())
         {
-            m_pAppIntern->Update();
             OnUpdate(m_pAppIntern->GetDeltaTime());
-
+            m_pAppIntern->Update();
 
             if (!m_pAppIntern->BeginFrame(m_pAppIntern->GetCamera()))
             {
@@ -94,6 +93,22 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    cCamera& GetCamera()
+    {
+        return s_pApplicationIntern->GetCamera();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
+
+
+namespace Engine::Platform
+{
+    bool Engine::Platform::IsKeyDown(int _key)
+    {
+        return s_pApplicationIntern->IsKeydown(_key);
+    }
+}

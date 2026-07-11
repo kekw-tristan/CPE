@@ -56,9 +56,9 @@ namespace Engine::Logic
             void SubmitMesh(GFX::MeshHandle _pHandle);
             void Draw(GFX::MeshHandle _pHandle, std::array<float, 16>& _rWorldMatrix);
 
-        private:
+        public:
 
-            void UpdateCamera(float _deltaTime);
+            bool IsKeydown(int _key) const;
 
         private:
 

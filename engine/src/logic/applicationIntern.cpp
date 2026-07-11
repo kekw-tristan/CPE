@@ -95,8 +95,6 @@ namespace Engine::Logic
 
         const float deltaTime = m_Timer.GetDeltaTime();
 
-        UpdateCamera(deltaTime);
-
         // fullscreen
         if (m_input.WasKeyPressed(GLFW_KEY_F11))
         {
@@ -124,7 +122,7 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    GFX::cCamera &cApplicationIntern::GetCamera()
+    GFX::cCamera& cApplicationIntern::GetCamera()
     {
         return m_camera;
     }
@@ -162,65 +160,9 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cApplicationIntern::UpdateCamera(float _deltaTime)
+    bool cApplicationIntern::IsKeydown(int _key) const
     {
-        float moveSpeed = 3.0f;
-
-        if (m_input.IsKeyDown(GLFW_KEY_LEFT_SHIFT))
-        {
-            moveSpeed = 8.0f;
-        }
-        
-        const float moveAmount = moveSpeed * _deltaTime;
-
-        if (m_input.IsKeyDown(GLFW_KEY_W))
-        {
-            m_camera.MoveForward(moveAmount);
-        }
-
-        if (m_input.IsKeyDown(GLFW_KEY_S))
-        {
-            m_camera.MoveForward(-moveAmount);
-        }
-
-        if (m_input.IsKeyDown(GLFW_KEY_D))
-        {
-            m_camera.MoveRight(moveAmount);
-        }
-
-        if (m_input.IsKeyDown(GLFW_KEY_A))
-        {
-            m_camera.MoveRight(-moveAmount);
-        }
-
-        if (m_input.IsKeyDown(GLFW_KEY_E))
-        {
-            m_camera.MoveUp(moveAmount);
-        }
-
-        if (m_input.IsKeyDown(GLFW_KEY_Q))
-        {
-            m_camera.MoveUp(-moveAmount);
-        }
-
-        if (m_input.WasMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT))
-        {
-            m_input.SetMouseCaptured(true);
-        }
-
-        if (m_input.WasKeyPressed(GLFW_KEY_ESCAPE))
-        {
-            m_input.SetMouseCaptured(false);
-        }
-
-        if (m_input.IsMouseCaptured())
-        {
-            const float mouseSensitivity = 0.12f;
-
-            m_camera.AddYaw(static_cast<float>(m_input.GetMouseDeltaX()) * mouseSensitivity);
-
-            m_camera.AddPitch(-static_cast<float>(m_input.GetMouseDeltaY()) * mouseSensitivity);
-        }
+        return m_input.IsKeyDown(_key);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
