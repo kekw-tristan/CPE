@@ -1,4 +1,5 @@
-cbuffer FrameUniformBuffer : register(b0)
+[[vk::binding(0, 0)]]
+cbuffer FrameUniformBuffer
 {
     float4x4 viewMatrix;
     float4x4 projMatrix;
@@ -11,13 +12,17 @@ cbuffer FrameUniformBuffer : register(b0)
     float4 clipPlanes;
 };
 
-struct ObjectPushConstants
+
+struct InstanceData
 {
     row_major float4x4 worldMatrix;
+    float4 color;
 };
 
-[[vk::push_constant]]
-ObjectPushConstants objectData;
+
+[[vk::binding(1, 0)]]
+StructuredBuffer<InstanceData> instances;
+
 
 struct VSInput
 {
@@ -27,6 +32,7 @@ struct VSInput
     float4 color    : COLOR0;
 };
 
+
 struct VSOutput
 {
     float4 position : SV_Position;
@@ -34,21 +40,31 @@ struct VSOutput
     float4 color    : COLOR0;
 };
 
-VSOutput VSMain(VSInput input)
+
+VSOutput VSMain(
+    VSInput input,
+    uint instanceID : SV_InstanceID)
 {
     VSOutput output;
 
+    InstanceData instance = instances[instanceID];
+
     float4 localPosition = float4(input.position, 1.0f);
 
-    float4 worldPosition = mul(localPosition, objectData.worldMatrix);
+    float4 worldPosition =
+        mul(localPosition, instance.worldMatrix);
 
-    output.position = mul(viewProj, worldPosition);
+    output.position =
+        mul(viewProj, worldPosition);
 
     output.texCoord = input.texCoord;
-    output.color    = input.color;
+
+    // Instanzfarbe statt Mesh-Farbe
+    output.color = instance.color;
 
     return output;
 }
+
 
 float4 PSMain(VSOutput input) : SV_Target
 {

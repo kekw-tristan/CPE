@@ -124,14 +124,18 @@ class cGame : public Engine::cApplication
             {
                 rCamera.AddYaw(100 * _deltaTime);
             };
+
+            Engine::GFX::UpdateInstanceBuffer(m_instances);
         }
 
         void OnDraw() override
         {
-            for (auto* pInstanceData : m_instances)
-            {
-                Engine::GFX::Draw(m_cubeMesh, pInstanceData->worldMatrix);
-            }
+            //for (auto* pInstanceData : m_instances)
+            //{
+            //    Engine::GFX::Draw(m_cubeMesh, pInstanceData->worldMatrix);
+            //}
+
+            Engine::GFX::DrawMeshIntances(m_cubeMesh, m_instances);
         }
 
         void OnShutdown() override

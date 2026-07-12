@@ -11,6 +11,9 @@ rm -rf engine/bin-int
 rm -rf game/bin
 rm -rf game/bin-int
 
+rm -rf bin
+rm -rf bin-int
+
 # Premake generated GNU Make files / folders
 rm -f Makefile
 rm -f engine.make

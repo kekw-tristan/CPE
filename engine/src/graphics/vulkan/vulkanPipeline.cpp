@@ -10,6 +10,10 @@
 #include <stdexcept>
 #include <array>
 
+#include <filesystem>
+#include <iostream>
+
+
 // -------------------------------------------------------------------------------------------------------------------------
 
 namespace Engine::GFX
@@ -19,8 +23,10 @@ namespace Engine::GFX
 
     void cVulkanPipeline::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapchain)
     {
-        auto vertShaderCode = ReadFile("assets/shaders/bin/main.vert.spv");
-        auto fragShaderCode = ReadFile("assets/shaders/bin/main.frag.spv");
+        std::cout << std::filesystem::current_path() << std::endl;
+
+        auto vertShaderCode = ReadFile("./game/assets/shaders/bin/main.vert.spv");
+        auto fragShaderCode = ReadFile("./game/assets/shaders/bin/main.frag.spv");
 
         VkShaderModule vertShaderModule = CreateShaderModule(_rDevice, vertShaderCode);
         VkShaderModule fragShaderModule = CreateShaderModule(_rDevice, fragShaderCode);
@@ -121,19 +127,13 @@ namespace Engine::GFX
             GetFrameUniformDescriptorSetLayout()
         };
 
-        VkPushConstantRange pushConstantRange{};
-        
-        pushConstantRange.stageFlags    = VK_SHADER_STAGE_VERTEX_BIT;
-        pushConstantRange.offset        = 0;
-        pushConstantRange.size          = sizeof(sPushConstants); 
-
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         
         pipelineLayoutInfo.sType                    = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount           = 1;
         pipelineLayoutInfo.pSetLayouts              = setLayouts;
-        pipelineLayoutInfo.pushConstantRangeCount   = 1;
-        pipelineLayoutInfo.pPushConstantRanges      = &pushConstantRange;
+        pipelineLayoutInfo.pushConstantRangeCount   = 0;
+        pipelineLayoutInfo.pPushConstantRanges      = nullptr;
 
         if (vkCreatePipelineLayout(_rDevice.GetDevice(), &pipelineLayoutInfo, nullptr, &m_pPipelineLayout) != VK_SUCCESS)
         {
@@ -236,7 +236,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    std::vector<char> cVulkanPipeline::ReadFile(const std::string &_rFileName)
+    std::vector<char> cVulkanPipeline::ReadFile(const std::string& _rFileName)
     {
         std::ifstream file(_rFileName, std::ios::ate | std::ios::binary);
 
@@ -257,7 +257,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    VkShaderModule cVulkanPipeline::CreateShaderModule(cVulkanDevice &_rDevice, const std::vector<char> &_rCode)
+    VkShaderModule cVulkanPipeline::CreateShaderModule(cVulkanDevice &_rDevice, const std::vector<char>& _rCode)
     {
         VkShaderModuleCreateInfo createInfo{};
 
@@ -278,27 +278,34 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanPipeline::CreateFrameUniformDescriptorSetLayout(cVulkanDevice &_rDevice)
+    void cVulkanPipeline::CreateFrameUniformDescriptorSetLayout(cVulkanDevice& _rDevice)
     {
-        VkDescriptorSetLayoutBinding frameBinding{}; 
+        std::array<VkDescriptorSetLayoutBinding, 2> bindings{};
 
-        frameBinding.binding            = 0;
-        frameBinding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        frameBinding.descriptorCount    = 1;
-        frameBinding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
-        frameBinding.pImmutableSamplers = nullptr;
+        // Binding 0 - Frame Uniform Buffer
+        bindings[0].binding             = 0;
+        bindings[0].descriptorType      = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        bindings[0].descriptorCount     = 1;
+        bindings[0].stageFlags          = VK_SHADER_STAGE_VERTEX_BIT;
+        bindings[0].pImmutableSamplers  = nullptr;
+
+        // Binding 1 - Instance Storage Buffer
+        bindings[1].binding             = 1;
+        bindings[1].descriptorType      = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        bindings[1].descriptorCount     = 1;
+        bindings[1].stageFlags          = VK_SHADER_STAGE_VERTEX_BIT;
+        bindings[1].pImmutableSamplers  = nullptr;
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
 
         layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = 1;
-        layoutInfo.pBindings    = &frameBinding;
+        layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        layoutInfo.pBindings    = bindings.data();
 
         if (vkCreateDescriptorSetLayout(_rDevice.GetDevice(), &layoutInfo, nullptr, &m_pFrameUniformDescriptorSetLayout) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create frame uniform descriptor set layout");
         }
-
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

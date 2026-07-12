@@ -27,6 +27,7 @@ namespace Engine
 namespace Engine::GFX
 {
     using MeshHandle = void*;
+    struct sInstanceData;
 }
 
 namespace Engine::Logic
@@ -55,7 +56,10 @@ namespace Engine::Logic
             GFX::MeshHandle CreateMesh(GFX::sMeshData& _rMeshData);
             void SubmitMesh(GFX::MeshHandle _pHandle);
             void Draw(GFX::MeshHandle _pHandle, std::array<float, 16>& _rWorldMatrix);
-
+            void DrawMeshIntances(GFX::MeshHandle _pHandle, std::vector<GFX::sInstanceData*>& _rInstances);
+            void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
+            void BeginDraw(); 
+            
         public:
 
             bool IsKeydown(int _key) const;

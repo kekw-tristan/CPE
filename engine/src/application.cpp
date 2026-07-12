@@ -33,7 +33,6 @@ namespace Engine
 
         while(!m_pAppIntern->GetShouldClose())
         {
-            OnUpdate(m_pAppIntern->GetDeltaTime());
             m_pAppIntern->Update();
 
             if (!m_pAppIntern->BeginFrame(m_pAppIntern->GetCamera()))
@@ -41,8 +40,12 @@ namespace Engine
                 m_pAppIntern->RecreateSwapchain();
                 continue;
             }
-         
+           
+            OnUpdate(m_pAppIntern->GetDeltaTime());
+
+            m_pAppIntern->BeginDraw();
             OnDraw();
+            
             
             if (!m_pAppIntern->EndFrame())
             {
@@ -93,6 +96,20 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void DrawMeshIntances(MeshHandle _pHandle, std::vector<sInstanceData*>& _rInstances)
+    {
+        s_pApplicationIntern->DrawMeshIntances(_pHandle, _rInstances);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances)
+    {
+        s_pApplicationIntern->UpdateInstanceBuffer(_rInstances);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     cCamera& GetCamera()
     {
         return s_pApplicationIntern->GetCamera();
@@ -107,7 +124,7 @@ namespace Engine::GFX
 
 namespace Engine::Platform
 {
-    bool Engine::Platform::IsKeyDown(int _key)
+    bool IsKeyDown(int _key)
     {
         return s_pApplicationIntern->IsKeydown(_key);
     }
