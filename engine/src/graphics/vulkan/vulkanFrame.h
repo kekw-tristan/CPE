@@ -15,5 +15,8 @@ namespace Engine::GFX
 
         cVulkanBuffer frameUniformedBuffer;
         VkDescriptorSet frameDescriptorSet = VK_NULL_HANDLE;
+
+        cVulkanBuffer instanceBuffer;
+        cVulkanBuffer instanceBufferStaging;
     };
 }

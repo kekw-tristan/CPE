@@ -2,6 +2,7 @@
 
 #include <array>
 #include <memory>
+#include<vector>
 
 namespace Engine
 {
@@ -13,6 +14,7 @@ namespace Engine
     namespace GFX
     {
         class cCamera; 
+        struct sInstanceData;
     }
 
     struct sAppConfig
@@ -60,6 +62,9 @@ namespace Engine::GFX
     MeshHandle CreateMesh(sMeshData& _rMeshData); 
     void SubmitMesh(MeshHandle _rMeshData);
     void Draw(MeshHandle _rMeshData, std::array<float, 16>& _rWorldMatrix);
+    void DrawMeshIntances(MeshHandle _pHandle, std::vector<sInstanceData*>& _rInstances);
+
+    void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
 
     cCamera& GetCamera();
 }

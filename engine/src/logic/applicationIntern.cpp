@@ -160,6 +160,29 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cApplicationIntern::DrawMeshIntances(GFX::MeshHandle _pHandle, std::vector<GFX::sInstanceData*>& _rInstances)
+    {
+        GFX::cVulkanMesh* pVulkanMesh = static_cast<GFX::cVulkanMesh*>(_pHandle);
+
+        m_vulkanRenderer.DrawMeshIntances(pVulkanMesh, _rInstances);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances)
+    {
+        m_vulkanRenderer.UpdateInstanceBuffer(_rInstances);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::BeginDraw()
+    {
+        m_vulkanRenderer.BeginDraw();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     bool cApplicationIntern::IsKeydown(int _key) const
     {
         return m_input.IsKeyDown(_key);

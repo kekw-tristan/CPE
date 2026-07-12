@@ -3,6 +3,7 @@
 #include "graphics/camera.h"
 #include "graphics/frameUniformData.h"
 #include "graphics/gfxConfig.h"
+#include "graphics/instanceData.h"
 #include "graphics/pushConstants.h"
 
 #include "graphics/vulkan/vulkanDevice.h"
@@ -77,6 +78,9 @@ namespace Engine::GFX
             {
                 rFrame.frameUniformedBuffer.Shutdown(*m_pDevice);
             }
+
+            rFrame.instanceBuffer.Shutdown(*m_pDevice);
+            rFrame.instanceBufferStaging.Shutdown(*m_pDevice);
         }
 
         for (VkSemaphore sem : m_renderFinishedSemaphores)
@@ -191,8 +195,6 @@ namespace Engine::GFX
             throw std::runtime_error("Failed to begin recording command buffer!");
         }
 
-        BeginDraw(commandBuffer, m_imageIndex, frame); 
-
         return true;
     }
 
@@ -294,10 +296,64 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::BeginDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex, sVulkanFrame& _rFrame)
+    void cVulkanRenderer::DrawMeshIntances(cVulkanMesh* _pMesh, std::vector<sInstanceData*>& _rInstances)
     {
-        VkImage     swapchainImage     = m_pSwapchain->GetImages()[_imageIndex];
-        VkImageView swapchainImageView = m_pSwapchain->GetImageViews()[_imageIndex];
+        sVulkanFrame& rFrame            = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+        
+        VkBuffer vertexBuffers[]    = { _pMesh->GetVertexBuffer().GetBuffer() };
+        VkDeviceSize offsets[]      = { 0 };
+
+        vkCmdBindVertexBuffers(pCommandBuffer, 0, 1, vertexBuffers, offsets);
+
+        vkCmdBindIndexBuffer(pCommandBuffer, _pMesh->GetIndexBuffer().GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(), 0, 1, &rFrame.frameDescriptorSet, 0, nullptr);
+
+        vkCmdDrawIndexed(pCommandBuffer, _pMesh->GetIndexCount(), static_cast<uint32_t>(_rInstances.size()), 0, 0, 0);
+
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::UpdateInstanceBuffer(std::vector<sInstanceData *>& _rInstances)
+    {
+        sVulkanFrame& rFrame            = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+
+        // upload instances 
+
+        std::vector<sInstanceData> uploadData;
+        uploadData.reserve(_rInstances.size());
+
+        for (sInstanceData* instance : _rInstances)
+        {
+            uploadData.push_back(*instance);
+        }
+
+        VkDeviceSize numberOfInstances = sizeof(sInstanceData) * _rInstances.size(); 
+
+        rFrame.instanceBufferStaging.Write(uploadData.data(), numberOfInstances);
+        
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+        copyRegion.size      = numberOfInstances;
+
+        vkCmdCopyBuffer(pCommandBuffer, rFrame.instanceBufferStaging.GetBuffer(), rFrame.instanceBuffer.GetBuffer(), 1, &copyRegion);
+
+
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::BeginDraw()
+    {
+        sVulkanFrame& rFrame            = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+
+        VkImage     swapchainImage     = m_pSwapchain->GetImages()[m_imageIndex];
+        VkImageView swapchainImageView = m_pSwapchain->GetImageViews()[m_imageIndex];
         VkExtent2D  extent             = m_pSwapchain->GetExtent();
 
         VkImageMemoryBarrier barrierToColorAttachment{};
@@ -317,7 +373,7 @@ namespace Engine::GFX
         barrierToColorAttachment.dstAccessMask                      = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
         vkCmdPipelineBarrier(
-            _pCommandBuffer,
+            pCommandBuffer,
             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             0,
@@ -362,7 +418,7 @@ namespace Engine::GFX
         renderingInfo.pDepthAttachment      = &depthAttachment;
         renderingInfo.pStencilAttachment    = nullptr;
 
-        vkCmdBeginRendering(_pCommandBuffer, &renderingInfo);
+        vkCmdBeginRendering(pCommandBuffer, &renderingInfo);
 
         VkViewport viewport{};
         viewport.x          = 0.0f;
@@ -372,21 +428,21 @@ namespace Engine::GFX
         viewport.minDepth   = 0.0f;
         viewport.maxDepth   = 1.0f;
 
-        vkCmdSetViewport(_pCommandBuffer, 0, 1, &viewport);
+        vkCmdSetViewport(pCommandBuffer, 0, 1, &viewport);
 
         VkRect2D scissor{};
         scissor.offset = { 0, 0 };
         scissor.extent = extent;
 
-        vkCmdSetScissor(_pCommandBuffer, 0, 1, &scissor);
+        vkCmdSetScissor(pCommandBuffer, 0, 1, &scissor);
 
         vkCmdBindPipeline(
-            _pCommandBuffer,
+            pCommandBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             m_pPipeline->GetPipeline()
         );
 
-        vkCmdBindDescriptorSets(_pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(), 0, 1, &_rFrame.frameDescriptorSet, 0, nullptr);
+        vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(), 0, 1, &rFrame.frameDescriptorSet, 0, nullptr);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -466,8 +522,13 @@ namespace Engine::GFX
 
 
             rFrame.frameUniformedBuffer.Create(*m_pDevice, sizeof(sFrameUniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        
             rFrame.frameUniformedBuffer.Map(*m_pDevice, sizeof(sFrameUniformData), 0);
+
+            rFrame.instanceBuffer.Create(*m_pDevice, sizeof(sInstanceData) * 10000, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            rFrame.instanceBufferStaging.Create(*m_pDevice, sizeof(sInstanceData) * 10000, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            rFrame.instanceBufferStaging.Map(*m_pDevice, sizeof(sInstanceData) * 10000, 0);
+
+
         }
 
         std::cout << "Vulkan sync objects created." << std::endl;
@@ -496,16 +557,22 @@ namespace Engine::GFX
 
     void cVulkanRenderer::CreateDescriptorPool()
     {
-        VkDescriptorPoolSize poolSize{};
-        
-        poolSize.type               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount    = c_maxNumberOfFrames;
+
+        std::array<VkDescriptorPoolSize, 2> poolSizes{};
+        // Binding 0 - Frame Uniform Buffer
+        poolSizes[0].type               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[0].descriptorCount    = c_maxNumberOfFrames;
+
+
+        // Binding 1 - Instance Storage Buffer
+        poolSizes[1].type               = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        poolSizes[1].descriptorCount    = c_maxNumberOfFrames;
 
         VkDescriptorPoolCreateInfo poolInfo{};
 
         poolInfo.sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount  = 1;
-        poolInfo.pPoolSizes     = &poolSize;
+        poolInfo.poolSizeCount  = poolSizes.size();
+        poolInfo.pPoolSizes     = poolSizes.data();
         poolInfo.maxSets        = c_maxNumberOfFrames;
 
         if (vkCreateDescriptorPool(m_pDevice->GetDevice(), &poolInfo, nullptr, &m_pDescriptorPool) != VK_SUCCESS)
@@ -543,23 +610,36 @@ namespace Engine::GFX
         {
             m_frames[index].frameDescriptorSet = descriptorSets[index];
 
-            VkDescriptorBufferInfo bufferInfo{};
+            VkDescriptorBufferInfo frameBufferInfo{};
 
-            bufferInfo.buffer   = m_frames[index].frameUniformedBuffer.GetBuffer();
-            bufferInfo.offset   = 0;
-            bufferInfo.range    = sizeof(sFrameUniformData);
+            frameBufferInfo.buffer   = m_frames[index].frameUniformedBuffer.GetBuffer();
+            frameBufferInfo.offset   = 0;
+            frameBufferInfo.range    = sizeof(sFrameUniformData);
 
-            VkWriteDescriptorSet descriptorWrite{};
+            VkDescriptorBufferInfo instanceBufferInfo{};
 
-            descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet          = m_frames[index].frameDescriptorSet;
-            descriptorWrite.dstBinding      = 0;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pBufferInfo     = &bufferInfo;
+            instanceBufferInfo.buffer   = m_frames[index].instanceBuffer.GetBuffer();
+            instanceBufferInfo.offset   = 0;
+            instanceBufferInfo.range    = sizeof(sInstanceData) * 10000;
 
-            vkUpdateDescriptorSets(m_pDevice->GetDevice(), 1, &descriptorWrite, 0, nullptr);
+            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+
+            descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[0].dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrites[0].dstBinding      = 0;
+            descriptorWrites[0].dstArrayElement = 0;
+            descriptorWrites[0].descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrites[0].descriptorCount = 1;
+            descriptorWrites[0].pBufferInfo     = &frameBufferInfo;
+
+            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[1].dstSet = m_frames[index].frameDescriptorSet;
+            descriptorWrites[1].dstBinding = 1;
+            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            descriptorWrites[1].descriptorCount = 1;
+            descriptorWrites[1].pBufferInfo = &instanceBufferInfo;
+
+            vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
 
     }

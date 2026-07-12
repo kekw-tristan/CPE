@@ -32,6 +32,13 @@ namespace Engine::GFX
             void Draw(VkCommandBuffer _pCommandBuffer)const;
             bool IsValid() const;
 
+        public:
+
+            cVulkanBuffer& GetVertexBuffer(); 
+            cVulkanBuffer& GetIndexBuffer();
+
+            uint32_t GetIndexCount();
+            
         private:
 
             cVulkanBuffer m_vertexBuffer;
