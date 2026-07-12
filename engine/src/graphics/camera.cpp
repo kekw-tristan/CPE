@@ -20,7 +20,7 @@ namespace Engine::GFX
         , m_pitchDegrees(0.f)
         , m_fov(60.f)
         , m_nearPlane(0.1) 
-        , m_farPlane(100.f)
+        , m_farPlane(10000.f)
     {
     }
 

@@ -24,7 +24,7 @@ project "game"
         )
     )
 
-    debugdir "%{cfg.targetdir}"
+    debugdir(RootDir)
 
     files
     {
