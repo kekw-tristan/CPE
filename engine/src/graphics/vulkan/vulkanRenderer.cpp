@@ -524,9 +524,9 @@ namespace Engine::GFX
             rFrame.frameUniformedBuffer.Create(*m_pDevice, sizeof(sFrameUniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             rFrame.frameUniformedBuffer.Map(*m_pDevice, sizeof(sFrameUniformData), 0);
 
-            rFrame.instanceBuffer.Create(*m_pDevice, sizeof(sInstanceData) * 10000, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            rFrame.instanceBufferStaging.Create(*m_pDevice, sizeof(sInstanceData) * 10000, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-            rFrame.instanceBufferStaging.Map(*m_pDevice, sizeof(sInstanceData) * 10000, 0);
+            rFrame.instanceBuffer.Create(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            rFrame.instanceBufferStaging.Create(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            rFrame.instanceBufferStaging.Map(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, 0);
 
 
         }
@@ -620,7 +620,7 @@ namespace Engine::GFX
 
             instanceBufferInfo.buffer   = m_frames[index].instanceBuffer.GetBuffer();
             instanceBufferInfo.offset   = 0;
-            instanceBufferInfo.range    = sizeof(sInstanceData) * 10000;
+            instanceBufferInfo.range    = sizeof(sInstanceData) * c_maxNumberOfInstances;
 
             std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
 

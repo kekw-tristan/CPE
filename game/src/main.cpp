@@ -46,26 +46,77 @@ class cGame : public Engine::cApplication
             Engine::GFX::SubmitMesh(m_cubeMesh);
 
             
+            constexpr int c_gridSize = 100;
+            constexpr float c_spacing = 2.0f;
 
-            for (int index = 0; index < c_instancesPerPage * 2; ++index)
+            constexpr std::size_t c_instanceCount =
+                static_cast<std::size_t>(c_gridSize) *
+                c_gridSize *
+                c_gridSize;
+
+            m_instances.reserve(c_instanceCount);
+
+            constexpr float c_gridOffset =
+                static_cast<float>(c_gridSize - 1) *
+                c_spacing *
+                0.5f;
+
+            for (int zIndex = 0; zIndex < c_gridSize; ++zIndex)
             {
-                Engine::GFX::sInstanceData* pInstanceData = m_pool.Create();
-
-                std::array<float, 16> worldMatrixA =
+                for (int yIndex = 0; yIndex < c_gridSize; ++yIndex)
                 {
-                    1.0f, 0.0f, 0.0f, 0.0f,
-                    0.0f, 1.0f, 0.0f, 0.0f,
-                    0.0f, 0.0f, 1.0f, 0.0f,
-                    static_cast<float>(index * 2), 0.0f, 0.0f, 1.0f
-                };
+                    for (int xIndex = 0; xIndex < c_gridSize; ++xIndex)
+                    {
+                        Engine::GFX::sInstanceData* pInstanceData =
+                            m_pool.Create();
 
-                pInstanceData->worldMatrix = worldMatrixA; 
-                pInstanceData->color = {1.f, 0.f, 0.f, 1.f};
+                        if (pInstanceData == nullptr)
+                        {
+                            std::cerr
+                                << "Instance pool exhausted after "
+                                << m_instances.size()
+                                << " instances.\n";
 
-                m_instances.push_back(pInstanceData);
+                            return;
+                        }
+
+                        const float x = static_cast<float>(xIndex) * c_spacing - c_gridOffset;
+
+                        const float y = static_cast<float>(yIndex) * c_spacing - c_gridOffset;
+
+                        const float z = static_cast<float>(zIndex) * c_spacing - c_gridOffset;
+
+                        pInstanceData->worldMatrix =
+                        {
+                            1.0f, 0.0f, 0.0f, 0.0f,
+                            0.0f, 1.0f, 0.0f, 0.0f,
+                            0.0f, 0.0f, 1.0f, 0.0f,
+                            x,    y,    z,    1.0f
+                        };
+
+                        const float xFactor = static_cast<float>(xIndex) / static_cast<float>(c_gridSize - 1);
+
+                        const float yFactor = static_cast<float>(yIndex) / static_cast<float>(c_gridSize - 1);
+
+                        const float zFactor = static_cast<float>(zIndex) / static_cast<float>(c_gridSize - 1);
+
+                        // Unten = 1.0, oben = 0.15
+                        const float brightness = 1.0f - yFactor * 0.85f;
+
+                        pInstanceData->color =
+                        {
+                            xFactor,
+                            - yFactor,
+                            zFactor,
+                            1.0f
+                        };
+
+                        m_instances.push_back(pInstanceData);
+                    }
+                }
             }
 
-            
+            std::cout << "Created " << m_instances.size() << " instances.\n";
         }
 
         void OnUpdate(float _deltaTime) override

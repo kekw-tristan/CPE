@@ -1,5 +1,11 @@
-# Building & Running
+# Blog
 
+## 12.7.2026
+So far it's possible to render 1 Million cube instances with 1 draw call. 
+
+![million cubes](blogImages/millionCubes.png)
+
+# Building & Running
 ## Requirements
 
 Before building the project, install the required dependencies.
