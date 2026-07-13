@@ -11,7 +11,6 @@
 #include <limits>
 #include <stdexcept>
 
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include "vulkanSwapchain.h"
 
@@ -92,7 +91,7 @@ namespace Engine::GFX
 
     uint32_t cVulkanSwapchain::GetImageCount() const
     {
-        return m_images.size();
+        return static_cast<uint32_t>(m_images.size());
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

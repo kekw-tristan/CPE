@@ -29,7 +29,6 @@ namespace Engine::GFX
 
             void Create(cVulkanDevice& _rDevice, cVulkanCommands& _rCommands, const std::vector<sVertex>& _rVertices, const std::vector<uint32_t>& _rIndices);
             void Shutdown(cVulkanDevice& _rDevice); 
-            void Draw(VkCommandBuffer _pCommandBuffer)const;
             bool IsValid() const;
 
         public:

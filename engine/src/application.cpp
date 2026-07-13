@@ -88,13 +88,6 @@ namespace Engine::GFX
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
-    
-    void Draw(MeshHandle _pMeshHandle, std::array<float, 16>& _rWorldMatrix)
-    {
-        s_pApplicationIntern->Draw(_pMeshHandle, _rWorldMatrix);   
-    }
-
-    // -------------------------------------------------------------------------------------------------------------------------
 
     void DrawMeshIntances(MeshHandle _pHandle, std::vector<sInstanceData*>& _rInstances)
     {

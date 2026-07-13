@@ -47,7 +47,6 @@ namespace Engine::GFX
 
             bool BeginFrame(const cCamera& _rCamera);
             bool EndFrame();
-            void Draw(cVulkanMesh* _pMesh, std::array<float, 16>& _rWorldMatrix); 
             void DrawMeshIntances(cVulkanMesh* _pMesh, std::vector<sInstanceData*>& _rInstances);
             void UpdateInstanceBuffer(std::vector<sInstanceData*>& _rInstances); 
             void BeginDraw(); 
