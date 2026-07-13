@@ -155,7 +155,7 @@ namespace Engine::GFX
         
         for (int index = 0; index < 3; ++index)
         {
-            bounds.center[index] = (bounds.min[index] + bounds.max[index]) * 0.5;
+            bounds.center[index] = (bounds.min[index] + bounds.max[index]) * 0.5f;
             bounds.size[index]   = bounds.max[index] - bounds.min[index];
         }
 

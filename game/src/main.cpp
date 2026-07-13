@@ -31,92 +31,81 @@ class cGame : public Engine::cApplication
 
         void OnInit() override
         {
-            Engine::GFX::sCubeDesc cubeDesc; 
+            Engine::GFX::sCubeDesc cubeDesc;
 
-            cubeDesc.width  = 1.f; 
-            cubeDesc.height = 1.f; 
-            cubeDesc.depth  = 1.f; 
-            cubeDesc.color  = { 0.f, 0.2f, 0.1f, 1.f };
+            cubeDesc.width  = 1.0f;
+            cubeDesc.height = 1.0f;
+            cubeDesc.depth  = 1.0f;
+            cubeDesc.color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-            Engine::GFX::sMeshData cubeData = Engine::GFX::cMeshGenerator::CreateCube(cubeDesc);
+            Engine::GFX::sMeshData cubeData =
+                Engine::GFX::cMeshGenerator::CreateCube(cubeDesc);
 
             m_cubeMesh = Engine::GFX::CreateMesh(cubeData);
-            std::cout << "Mesh: " << cubeData.pDebugName << std::endl;
+
+            std::cout << "Mesh: " << cubeData.pDebugName << '\n';
 
             Engine::GFX::SubmitMesh(m_cubeMesh);
 
-            
-            constexpr int c_gridSize = 100;
-            constexpr float c_spacing = 2.0f;
+            // Es werden nur noch zwei Instanzen benötigt.
+            m_instances.reserve(2);
 
-            constexpr std::size_t c_instanceCount =
-                static_cast<std::size_t>(c_gridSize) *
-                c_gridSize *
-                c_gridSize;
+            Engine::GFX::sInstanceData* pFirstCube = m_pool.Create();
 
-            m_instances.reserve(c_instanceCount);
-
-            constexpr float c_gridOffset =
-                static_cast<float>(c_gridSize - 1) *
-                c_spacing *
-                0.5f;
-
-            for (int zIndex = 0; zIndex < c_gridSize; ++zIndex)
+            if (pFirstCube == nullptr)
             {
-                for (int yIndex = 0; yIndex < c_gridSize; ++yIndex)
-                {
-                    for (int xIndex = 0; xIndex < c_gridSize; ++xIndex)
-                    {
-                        Engine::GFX::sInstanceData* pInstanceData =
-                            m_pool.Create();
-
-                        if (pInstanceData == nullptr)
-                        {
-                            std::cerr
-                                << "Instance pool exhausted after "
-                                << m_instances.size()
-                                << " instances.\n";
-
-                            return;
-                        }
-
-                        const float x = static_cast<float>(xIndex) * c_spacing - c_gridOffset;
-
-                        const float y = static_cast<float>(yIndex) * c_spacing - c_gridOffset;
-
-                        const float z = static_cast<float>(zIndex) * c_spacing - c_gridOffset;
-
-                        pInstanceData->worldMatrix =
-                        {
-                            1.0f, 0.0f, 0.0f, 0.0f,
-                            0.0f, 1.0f, 0.0f, 0.0f,
-                            0.0f, 0.0f, 1.0f, 0.0f,
-                            x,    y,    z,    1.0f
-                        };
-
-                        const float xFactor = static_cast<float>(xIndex) / static_cast<float>(c_gridSize - 1);
-
-                        const float yFactor = static_cast<float>(yIndex) / static_cast<float>(c_gridSize - 1);
-
-                        const float zFactor = static_cast<float>(zIndex) / static_cast<float>(c_gridSize - 1);
-
-                        // Unten = 1.0, oben = 0.15
-                        const float brightness = 1.0f - yFactor * 0.85f;
-
-                        pInstanceData->color =
-                        {
-                            xFactor,
-                            - yFactor,
-                            zFactor,
-                            1.0f
-                        };
-
-                        m_instances.push_back(pInstanceData);
-                    }
-                }
+                std::cerr << "Could not create first cube instance.\n";
+                return;
             }
 
-            std::cout << "Created " << m_instances.size() << " instances.\n";
+            pFirstCube->worldMatrix =
+            {
+                1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+               -1.5f, 0.0f, 0.0f, 1.0f
+            };
+
+            pFirstCube->color =
+            {
+                0.0f,
+                0.8f,
+                0.2f,
+                1.0f
+            };
+
+            m_instances.push_back(pFirstCube);
+
+            Engine::GFX::sInstanceData* pSecondCube = m_pool.Create();
+
+            if (pSecondCube == nullptr)
+            {
+                std::cerr << "Could not create second cube instance.\n";
+                return;
+            }
+
+            pSecondCube->worldMatrix =
+            {
+                1.5f, 0.0f, 0.0f, 0.0f,  // X-Skalierung
+                0.0f, 0.75f, 0.0f, 0.0f, // Y-Skalierung
+                0.0f, 0.0f, 0.5f, 0.0f,  // Z-Skalierung
+                1.5f, 0.0f, 0.0f, 1.0f   // Position
+            };
+
+            pSecondCube->color =
+            {
+                1.0f,
+                0.3f,
+                0.0f,
+                1.0f
+            };
+
+            m_instances.push_back(pSecondCube);
+
+            std::cout
+                << "Created "
+                << m_instances.size()
+                << " cube instances.\n";
         }
 
         void OnUpdate(float _deltaTime) override

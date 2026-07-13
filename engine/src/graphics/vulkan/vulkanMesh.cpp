@@ -67,18 +67,6 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanMesh::Draw(VkCommandBuffer _pCommandBuffer) const
-    {
-        VkBuffer vertexBuffers[]    = { m_vertexBuffer.GetBuffer() };
-        VkDeviceSize offsets[]      = { 0 };
-
-        vkCmdBindVertexBuffers  (_pCommandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer    (_pCommandBuffer, m_indexBuffer.GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed        (_pCommandBuffer, m_indexCount, 1, 0, 0, 0);
-    }
-
-    // -------------------------------------------------------------------------------------------------------------------------
-
     bool cVulkanMesh::IsValid() const
     {
         return m_indexCount > 0;

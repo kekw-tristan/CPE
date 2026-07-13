@@ -274,28 +274,6 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::Draw(cVulkanMesh* _pMesh, std::array<float, 16>& _rWorldMatrix)
-    {
-        
-        if (_pMesh == nullptr || !_pMesh->IsValid())
-        {
-            return;
-        }
-
-        sVulkanFrame& rFrame            = m_frames[m_currentFrame];
-        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
-
-        sPushConstants pushConstants; 
-
-        std::memcpy(pushConstants.worldMatrix, _rWorldMatrix.data(), sizeof(float) * 16);
-
-        vkCmdPushConstants(pCommandBuffer, m_pPipeline->GetPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(sPushConstants), &pushConstants);
-        
-        _pMesh->Draw(pCommandBuffer);
-    }
-
-    // -------------------------------------------------------------------------------------------------------------------------
-
     void cVulkanRenderer::DrawMeshIntances(cVulkanMesh* _pMesh, std::vector<sInstanceData*>& _rInstances)
     {
         sVulkanFrame& rFrame            = m_frames[m_currentFrame];
@@ -544,7 +522,7 @@ namespace Engine::GFX
         m_renderFinishedSemaphores.resize(imageCount);
         m_imagesInFlight.resize(imageCount, VK_NULL_HANDLE);
 
-        for (int index = 0; index < imageCount; ++index)
+        for (uint32_t index = 0; index < imageCount; ++index)
         {
             VkSemaphoreCreateInfo semaphoreInfo{};
             semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -571,7 +549,7 @@ namespace Engine::GFX
         VkDescriptorPoolCreateInfo poolInfo{};
 
         poolInfo.sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount  = poolSizes.size();
+        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
         poolInfo.pPoolSizes     = poolSizes.data();
         poolInfo.maxSets        = c_maxNumberOfFrames;
 

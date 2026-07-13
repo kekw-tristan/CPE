@@ -3,11 +3,12 @@
 #include "application.h"
 
 #include "graphics/vertex.h"
+#include "graphics/instanceData.h"
+#include "graphics/meshData.h"
 
 #include "graphics/vulkan/vulkanBuffer.h"
 #include "graphics/vulkan/vulkanVertex.h"
 
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <iostream>
 
@@ -147,15 +148,6 @@ namespace Engine::Logic
     void cApplicationIntern::SubmitMesh(GFX::MeshHandle _pHandle)
     {
         m_vulkanRenderer.SubmitMesh(*static_cast<GFX::cVulkanMesh*>(_pHandle));
-    }
-
-    // -------------------------------------------------------------------------------------------------------------------------
-
-    void cApplicationIntern::Draw(GFX::MeshHandle _pHandle, std::array<float, 16>& _rWorldMatrix)
-    {
-        GFX::cVulkanMesh* pVulkanMesh = static_cast<GFX::cVulkanMesh*>(_pHandle);
-
-        m_vulkanRenderer.Draw(pVulkanMesh, _rWorldMatrix);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

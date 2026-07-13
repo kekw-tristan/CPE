@@ -3,7 +3,6 @@
 #include "core/timer.h"
 
 #include "graphics/camera.h"
-#include "graphics/meshCache.h"
 
 #include "graphics/vulkan/vulkanCommands.h"
 #include "graphics/vulkan/vulkanContext.h"
@@ -28,6 +27,7 @@ namespace Engine::GFX
 {
     using MeshHandle = void*;
     struct sInstanceData;
+    struct sMeshData;
 }
 
 namespace Engine::Logic
@@ -55,7 +55,6 @@ namespace Engine::Logic
 
             GFX::MeshHandle CreateMesh(GFX::sMeshData& _rMeshData);
             void SubmitMesh(GFX::MeshHandle _pHandle);
-            void Draw(GFX::MeshHandle _pHandle, std::array<float, 16>& _rWorldMatrix);
             void DrawMeshIntances(GFX::MeshHandle _pHandle, std::vector<GFX::sInstanceData*>& _rInstances);
             void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
             void BeginDraw(); 
@@ -79,7 +78,6 @@ namespace Engine::Logic
             GFX::cVulkanPipeline    m_vulkanPipeline;
 
             GFX::cCamera            m_camera;
-            GFX::cMeshCache         m_geometryCache;
 
             std::vector<std::unique_ptr<GFX::cVulkanMesh>> m_vulkanMeshes;
     };
