@@ -31,15 +31,22 @@ class cGame : public Engine::cApplication
 
         void OnInit() override
         {
-            Engine::GFX::sCubeDesc cubeDesc;
+            // currently not used
+            //Engine::GFX::sCubeDesc cubeDesc;
+            //
+            //cubeDesc.width  = 1.0f;
+            // 
+            // 
 
-            cubeDesc.width  = 1.0f;
-            cubeDesc.height = 1.0f;
-            cubeDesc.depth  = 1.0f;
-            cubeDesc.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+            Engine::GFX::sPyramidDesc pyramidDesc; 
 
-            Engine::GFX::sMeshData cubeData =
-                Engine::GFX::cMeshGenerator::CreateCube(cubeDesc);
+            pyramidDesc.baseCornerCount = 4; 
+            pyramidDesc.baseRadius      = 0.5f;
+            pyramidDesc.height          = 1.f;
+            pyramidDesc.rotationRadians = 2.f;
+
+            // currently used as pyramid :)
+            Engine::GFX::sMeshData cubeData = Engine::GFX::cMeshGenerator::CreatePyramid(pyramidDesc);
 
             m_cubeMesh = Engine::GFX::CreateMesh(cubeData);
 
@@ -170,11 +177,6 @@ class cGame : public Engine::cApplication
 
         void OnDraw() override
         {
-            //for (auto* pInstanceData : m_instances)
-            //{
-            //    Engine::GFX::Draw(m_cubeMesh, pInstanceData->worldMatrix);
-            //}
-
             Engine::GFX::DrawMeshIntances(m_cubeMesh, m_instances);
         }
 

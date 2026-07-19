@@ -23,8 +23,6 @@ namespace Engine::GFX
 
     void cVulkanPipeline::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapchain)
     {
-        std::cout << std::filesystem::current_path() << std::endl;
-
         auto vertShaderCode = ReadFile("./game/assets/shaders/bin/main.vert.spv");
         auto fragShaderCode = ReadFile("./game/assets/shaders/bin/main.frag.spv");
 

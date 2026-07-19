@@ -1,15 +1,18 @@
 #pragma once 
 
+#include "math/vector3.h"
+
 #include <array>
 
 namespace Engine::GFX
 {
+    using Engine::Math::cVec3f;
+
     struct sVertex
     {
-        std::array<float, 3> position;
-        std::array<float, 3> normal;
+        cVec3f position;
+        cVec3f normal;
         std::array<float, 2> uv;
-        std::array<float, 4> color;
     };
 }
 
