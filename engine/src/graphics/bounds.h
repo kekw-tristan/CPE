@@ -1,15 +1,18 @@
-#pragma once 
+#pragma once
 
-#include <array> 
+#include "math/vector3.h"
 
 namespace Engine::GFX
 {
-    struct sBounds 
+    using Engine::Math::cVec3f;
+
+    struct sBounds
     {
-        std::array<float, 3> min;
-        std::array<float, 3> max;
-        std::array<float, 3> center;
-        std::array<float, 3> size;
-        float radius;
+        cVec3f min{};
+        cVec3f max{};
+        cVec3f center{};
+        cVec3f size{};
+
+        float radius = 0.0f;
     };
 }

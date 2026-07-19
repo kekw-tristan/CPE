@@ -24,9 +24,9 @@ namespace Engine::GFX
             return bindingDescription;
         }
 
-        static std::array<VkVertexInputAttributeDescription, 4> GetAttributeDescriptions()
+        static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions()
         {
-            std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+            std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
             attributeDescriptions[0].binding    = 0;
             attributeDescriptions[0].location   = 0;
@@ -42,11 +42,6 @@ namespace Engine::GFX
             attributeDescriptions[2].location   = 2;
             attributeDescriptions[2].format     = VK_FORMAT_R32G32_SFLOAT;
             attributeDescriptions[2].offset     = offsetof(sVulkanVertex, vertex.uv);
-
-            attributeDescriptions[3].binding    = 0;
-            attributeDescriptions[3].location   = 3;
-            attributeDescriptions[3].format     = VK_FORMAT_R32G32B32A32_SFLOAT;
-            attributeDescriptions[3].offset     = offsetof(sVulkanVertex, vertex.color);
 
             return attributeDescriptions;
         }

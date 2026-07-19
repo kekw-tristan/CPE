@@ -28,6 +28,7 @@ namespace Engine::Core
             using TimePoint = std::chrono::time_point<Clock>;
 
         private:
+
             TimePoint m_startTime;
             TimePoint m_previousTime;
             TimePoint m_currentTime;
