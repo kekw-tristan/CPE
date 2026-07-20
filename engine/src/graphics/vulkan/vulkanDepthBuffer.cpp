@@ -115,8 +115,6 @@ namespace Engine::GFX
         {
             throw std::runtime_error("Failed to bind Vulkan depth image memory!");
         }
-
-
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

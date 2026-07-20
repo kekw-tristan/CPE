@@ -1,8 +1,9 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <memory>
-#include<vector>
+#include <vector>
 
 namespace Engine
 {
@@ -61,7 +62,7 @@ namespace Engine::GFX
 
     MeshHandle CreateMesh(sMeshData& _rMeshData); 
     void SubmitMesh(MeshHandle _rMeshData);
-    void DrawMeshIntances(MeshHandle _pHandle, std::vector<sInstanceData*>& _rInstances);
+    void DrawMeshIntances(MeshHandle _pHandle, uint32_t _instanceCount, uint32_t _firstInstances = 0);
 
     void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
 

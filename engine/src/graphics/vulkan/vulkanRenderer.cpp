@@ -274,7 +274,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::DrawMeshIntances(cVulkanMesh* _pMesh, std::vector<sInstanceData*>& _rInstances)
+    void cVulkanRenderer::DrawMeshIntances(cVulkanMesh* _pMesh, uint32_t _instanceCount, uint32_t _firstInstance)
     {
         sVulkanFrame& rFrame            = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
@@ -288,7 +288,7 @@ namespace Engine::GFX
 
         vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(), 0, 1, &rFrame.frameDescriptorSet, 0, nullptr);
 
-        vkCmdDrawIndexed(pCommandBuffer, _pMesh->GetIndexCount(), static_cast<uint32_t>(_rInstances.size()), 0, 0, 0);
+        vkCmdDrawIndexed(pCommandBuffer, _pMesh->GetIndexCount(), _instanceCount, 0, 0, _firstInstance);
 
     }
 

@@ -152,11 +152,11 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cApplicationIntern::DrawMeshIntances(GFX::MeshHandle _pHandle, std::vector<GFX::sInstanceData*>& _rInstances)
+    void cApplicationIntern::DrawMeshIntances(GFX::MeshHandle _pHandle, uint32_t _instanceCount, uint32_t _firstInstance)
     {
         GFX::cVulkanMesh* pVulkanMesh = static_cast<GFX::cVulkanMesh*>(_pHandle);
 
-        m_vulkanRenderer.DrawMeshIntances(pVulkanMesh, _rInstances);
+        m_vulkanRenderer.DrawMeshIntances(pVulkanMesh, _instanceCount, _firstInstance);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

@@ -55,7 +55,7 @@ namespace Engine::Logic
 
             GFX::MeshHandle CreateMesh(GFX::sMeshData& _rMeshData);
             void SubmitMesh(GFX::MeshHandle _pHandle);
-            void DrawMeshIntances(GFX::MeshHandle _pHandle, std::vector<GFX::sInstanceData*>& _rInstances);
+            void DrawMeshIntances(GFX::MeshHandle _pHandle,  uint32_t _instanceCount, uint32_t _firstInstance = 0);
             void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
             void BeginDraw(); 
             
