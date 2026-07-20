@@ -37,6 +37,7 @@ namespace Engine::GFX
             float GetFarPlane() const noexcept;
 
             void LookAt(float _eyeX, float _eyeY, float _eyeZ, float _targetX, float _targetY, float _targetZ) noexcept;
+            void SetThirdPersonPosition(float _targetX, float _targetY, float _targetZ, float _distance, float _height) noexcept;
 
         private:
 

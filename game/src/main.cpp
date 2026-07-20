@@ -7,15 +7,19 @@
 #include "graphics/instanceData.h"
 
 #include <iostream>
+#include <random>
 #include <stdexcept>
+#include <unordered_map>
+
 
 constexpr int c_instancesPerPage = 800;
 
 constexpr int c_shiftKey        = 340;
-constexpr int c_downArrowKey    = 264; 
-constexpr int c_upArrowKey      = 265; 
-constexpr int c_leftArrowKey    = 263; 
-constexpr int c_rightArrowKey   = 262; 
+constexpr int c_downArrowKey    = 264;
+constexpr int c_upArrowKey      = 265;
+constexpr int c_leftArrowKey    = 263;
+constexpr int c_rightArrowKey   = 262;
+
 
 class cGame : public Engine::cApplication
 {
@@ -27,182 +31,336 @@ class cGame : public Engine::cApplication
         {
         }
 
+
     protected:
+
 
         void OnInit() override
         {
-             
             Engine::GFX::sCubeDesc cubeDesc;
-            
+
             cubeDesc.width  = 1.0f;
             cubeDesc.depth  = 1.0f;
             cubeDesc.height = 1.0f;
-             
-            Engine::GFX::sPyramidDesc pyramidDesc; 
 
-            pyramidDesc.baseCornerCount = 4; 
+
+            Engine::GFX::sPyramidDesc pyramidDesc;
+
+            pyramidDesc.baseCornerCount = 4;
             pyramidDesc.baseRadius      = 0.5f;
-            pyramidDesc.height          = 3.f;
-            pyramidDesc.rotationRadians = 2.f;
+            pyramidDesc.height          = 3.0f;
+            pyramidDesc.rotationRadians = 2.0f;
 
-            Engine::GFX::sMeshData cubeData     = Engine::GFX::cMeshGenerator::CreateCube(cubeDesc);
-            Engine::GFX::sMeshData pyramidData  = Engine::GFX::cMeshGenerator::CreatePyramid(pyramidDesc);
+
+            Engine::GFX::sMeshData cubeData = Engine::GFX::cMeshGenerator::CreateCube(cubeDesc);
+            Engine::GFX::sMeshData pyramidData = Engine::GFX::cMeshGenerator::CreatePyramid(pyramidDesc);
+
 
             m_cubeMesh = Engine::GFX::CreateMesh(cubeData);
             m_pyramidMesh = Engine::GFX::CreateMesh(pyramidData);
 
-            std::cout << "Mesh: " << cubeData.pDebugName << '\n';
 
             Engine::GFX::SubmitMesh(m_cubeMesh);
             Engine::GFX::SubmitMesh(m_pyramidMesh);
 
-            m_instances.reserve(4);
 
-            Engine::GFX::sInstanceData* pFirstCube = m_pool.Create();
 
-            if (pFirstCube == nullptr)
-            {
-                std::cerr << "Could not create first cube instance.\n";
-                return;
-            }
+            m_playerInstance = m_pool.Create();
 
-            pFirstCube->worldMatrix =
+            m_playerPosition = Engine::Math::cVec3f(0.0f, 0.0f, 0.0f);
+
+
+            m_playerInstance->worldMatrix =
             {
                 1.0f, 0.0f, 0.0f, 0.0f,
                 0.0f, 1.0f, 0.0f, 0.0f,
                 0.0f, 0.0f, 1.0f, 0.0f,
-               -1.5f, 0.0f, 0.0f, 1.0f
+                0.0f, 0.0f, 0.0f, 1.0f
             };
 
-            pFirstCube->color =
-            {
-                0.0f,
-                0.8f,
-                0.2f,
-                1.0f
-            };
 
-            m_instances.push_back(pFirstCube);
-
-            Engine::GFX::sInstanceData* pSecondCube = m_pool.Create();
-
-            if (pSecondCube == nullptr)
-            {
-                std::cerr << "Could not create second cube instance.\n";
-                return;
-            }
-
-            pSecondCube->worldMatrix =
-            {
-                1.5f, 0.0f, 0.0f, 0.0f,  // X-Skalierung
-                0.0f, 0.75f, 0.0f, 0.0f, // Y-Skalierung
-                0.0f, 0.0f, 0.5f, 0.0f,  // Z-Skalierung
-                1.5f, 0.0f, 0.0f, 1.0f   // Position
-            };
-
-            pSecondCube->color =
+            m_playerInstance->color =
             {
                 1.0f,
-                0.3f,
+                0.0f,
                 0.0f,
                 1.0f
             };
 
-            m_instances.push_back(pSecondCube);
 
-            std::cout
-                << "Created "
-                << m_instances.size()
-                << " cube instances.\n";
+            m_meshInstances[m_cubeMesh].push_back(m_playerInstance);
+
+
+
+            std::random_device randomDevice;
+            std::mt19937 randomGenerator(randomDevice());
+
+
+            std::uniform_real_distribution<float> positionDistribution(-20.0f, 20.0f);
+            std::uniform_real_distribution<float> scaleDistribution(0.3f, 2.0f);
+            std::uniform_real_distribution<float> colorDistribution(0.0f, 1.0f);
+            std::uniform_int_distribution<int> meshDistribution(0, 1);
+
+
+            constexpr int instanceCount = 200;
+
+
+            for(int index = 0; index < instanceCount; ++index)
+            {
+                Engine::GFX::sInstanceData* pInstance = m_pool.Create();
+
+                if(pInstance == nullptr)
+                {
+                    std::cerr << "Could not create instance.\n";
+                    return;
+                }
+
+
+                float x = positionDistribution(randomGenerator);
+                float y = positionDistribution(randomGenerator) * 0.2f;
+                float z = positionDistribution(randomGenerator);
+
+                float scale = scaleDistribution(randomGenerator);
+
+
+                pInstance->worldMatrix =
+                {
+                    scale, 0.0f, 0.0f, 0.0f,
+                    0.0f, scale, 0.0f, 0.0f,
+                    0.0f, 0.0f, scale, 0.0f,
+                    x,     y,     z,   1.0f
+                };
+
+
+                pInstance->color =
+                {
+                    colorDistribution(randomGenerator),
+                    colorDistribution(randomGenerator),
+                    colorDistribution(randomGenerator),
+                    1.0f
+                };
+
+
+                if(meshDistribution(randomGenerator) == 0)
+                {
+                    m_meshInstances[m_cubeMesh].push_back(pInstance);
+                }
+                else
+                {
+                    m_meshInstances[m_pyramidMesh].push_back(pInstance);
+                }
+            }
+
+
+            RebuildInstanceList();
+
+
+            std::cout << "Created " << m_instances.size() << " random instances.\n";
         }
+
+
 
         void OnUpdate(float _deltaTime) override
         {
-            using namespace Engine::GFX;
             using namespace Engine::Platform;
 
-            float moveSpeed = 3.0f;
 
-            if (IsKeyDown(c_shiftKey))
-            {
-                moveSpeed = 8.0f;
-            }
-
-            const float moveAmount = moveSpeed * _deltaTime;
-
-            cCamera& rCamera = GetCamera();
-
-            if (IsKeyDown('W'))
-            {
-                rCamera.MoveForward(moveAmount);
-            }
-
-            if (IsKeyDown('S'))
-            {
-                rCamera.MoveForward(-moveAmount);
-            }
-
-            if (IsKeyDown('A'))
-            {
-                rCamera.MoveRight(-moveAmount);
-            }
-
-            if (IsKeyDown('D'))
-            {
-                rCamera.MoveRight(moveAmount);
-            }
+            UpdatePlayer(_deltaTime);
 
 
-            if (IsKeyDown(c_downArrowKey))
+            Engine::GFX::cCamera& rCamera = Engine::GFX::GetCamera();
+
+
+            if(IsKeyDown(c_downArrowKey))
             {
                 rCamera.AddPitch(-100 * _deltaTime);
-            };
+            }
 
-            if (IsKeyDown(c_upArrowKey))
+
+            if(IsKeyDown(c_upArrowKey))
             {
                 rCamera.AddPitch(100 * _deltaTime);
-            };
+            }
 
-            if (IsKeyDown(c_leftArrowKey))
+
+            if(IsKeyDown(c_leftArrowKey))
             {
                 rCamera.AddYaw(-100 * _deltaTime);
-            };
+            }
 
-            if (IsKeyDown(c_rightArrowKey))
+
+            if(IsKeyDown(c_rightArrowKey))
             {
                 rCamera.AddYaw(100 * _deltaTime);
-            };
+            }
+
+            UpdateThirdPersonCamera();
 
             Engine::GFX::UpdateInstanceBuffer(m_instances);
         }
 
         void OnDraw() override
         {
-            Engine::GFX::DrawMeshIntances(m_cubeMesh, 1, 0);
-            Engine::GFX::DrawMeshIntances(m_pyramidMesh, 1, 1);
+            uint32_t firstInstance = 0;
+
+
+            for(auto& [mesh, instances] : m_meshInstances)
+            {
+                Engine::GFX::DrawMeshIntances(mesh, static_cast<uint32_t>(instances.size()), firstInstance);
+
+                firstInstance += static_cast<uint32_t>(instances.size());
+            }
         }
+
+
 
         void OnShutdown() override
         {
-            for (auto* pInstance : m_instances)
+            for(auto* pInstance : m_instances)
             {
                 m_pool.Destroy(pInstance);
             }
         }
 
-        private:
 
-            Engine::GFX::MeshHandle m_cubeMesh;
-            Engine::GFX::MeshHandle m_pyramidMesh;
-            Engine::Container::cPool<Engine::GFX::sInstanceData, c_instancesPerPage> m_pool;
-            std::vector<Engine::GFX::sInstanceData*> m_instances;
+
+    private:
+
+
+        void UpdatePlayer(float _deltaTime)
+{
+    using namespace Engine::Platform;
+
+
+    float speed = 5.0f;
+
+
+    Engine::GFX::cCamera& rCamera = Engine::GFX::GetCamera();
+
+
+    float direction[4];
+
+    rCamera.GetDirection(direction);
+
+
+    Engine::Math::cVec3f forward(
+        direction[0],
+        0.0f,
+        direction[2]);
+
+
+    forward.normalize();
+
+
+    Engine::Math::cVec3f right(
+        -forward.z(),
+        0.0f,
+        forward.x());
+
+
+    Engine::Math::cVec3f movement;
+
+
+    if(IsKeyDown('W'))
+    {
+        movement += forward * speed * _deltaTime;
+    }
+
+
+    if(IsKeyDown('S'))
+    {
+        movement -= forward * speed * _deltaTime;
+    }
+
+
+    if(IsKeyDown('A'))
+    {
+        movement -= right * speed * _deltaTime;
+    }
+
+
+    if(IsKeyDown('D'))
+    {
+        movement += right * speed * _deltaTime;
+    }
+
+
+    m_playerPosition += movement;
+
+
+    m_playerInstance->worldMatrix =
+    {
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        m_playerPosition.x(),
+        m_playerPosition.y(),
+        m_playerPosition.z(),
+        1.0f
+    };
+}
+        void UpdateThirdPersonCamera()
+        {
+            Engine::GFX::cCamera& rCamera = Engine::GFX::GetCamera();
+        
+        
+            rCamera.SetThirdPersonPosition(
+                m_playerPosition.x(),
+                m_playerPosition.y(),
+                m_playerPosition.z(),
+                8.0f,
+                5.0f);
+        }
+
+        void RebuildInstanceList()
+        {
+            m_instances.clear();
+
+
+            for(auto& [mesh, instances] : m_meshInstances)
+            {
+                for(auto* pInstance : instances)
+                {
+                    m_instances.push_back(pInstance);
+                }
+            }
+
+
+            std::cout << "GPU Instance order rebuilt: " << m_instances.size() << "\n";
+        }
+
+
+
+    private:
+
+
+        Engine::GFX::MeshHandle m_cubeMesh;
+        Engine::GFX::MeshHandle m_pyramidMesh;
+
+
+        Engine::GFX::sInstanceData* m_playerInstance;
+
+
+        Engine::Math::cVec3f m_playerPosition;
+
+
+        Engine::Container::cPool<Engine::GFX::sInstanceData, c_instancesPerPage> m_pool;
+
+
+        std::vector<Engine::GFX::sInstanceData*> m_instances;
+
+
+        std::unordered_map<Engine::GFX::MeshHandle, std::vector<Engine::GFX::sInstanceData*>> m_meshInstances;
+
 };
+
+
 
 int main()
 {
     try
     {
-        Engine::sAppConfig config = { 1280, 720, "Game" };
+        Engine::sAppConfig config = {1280, 720, "Game"};
 
         cGame game(config);
         game.Run();
@@ -211,5 +369,5 @@ int main()
     {
         std::cerr << "Fatal error: " << e.what() << std::endl;
         return -1;
-    }    
+    }
 }

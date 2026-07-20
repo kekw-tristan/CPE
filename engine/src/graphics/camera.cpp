@@ -271,4 +271,19 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cCamera::SetThirdPersonPosition(float _targetX, float _targetY, float _targetZ, float _distance, float _height) noexcept
+    {
+        Engine::Math::cVec3f forward = GetForwardInternal();
+
+
+        m_position =
+        {
+            _targetX - forward.x() * _distance,
+            _targetY + _height,
+            _targetZ - forward.z() * _distance
+        };
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
 }

@@ -1,5 +1,10 @@
 # Blog
 
+## 20.7.2026
+It's possilbe to render multiple meshes now.
+
+![million cubes](blogImages/multipleMeshes.png)
+
 ## 12.7.2026
 So far it's possible to render 1 Million cube instances with 1 draw call. 
 
