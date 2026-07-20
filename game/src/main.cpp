@@ -163,39 +163,41 @@ class cGame : public Engine::cApplication
         void OnUpdate(float _deltaTime) override
         {
             using namespace Engine::Platform;
-
-
-            UpdatePlayer(_deltaTime);
-
-
+        
+        
             Engine::GFX::cCamera& rCamera = Engine::GFX::GetCamera();
-
-
+        
+        
             if(IsKeyDown(c_downArrowKey))
             {
                 rCamera.AddPitch(-100 * _deltaTime);
             }
-
-
+        
+        
             if(IsKeyDown(c_upArrowKey))
             {
                 rCamera.AddPitch(100 * _deltaTime);
             }
-
-
+        
+        
             if(IsKeyDown(c_leftArrowKey))
             {
                 rCamera.AddYaw(-100 * _deltaTime);
             }
-
-
+        
+        
             if(IsKeyDown(c_rightArrowKey))
             {
                 rCamera.AddYaw(100 * _deltaTime);
             }
-
+        
+        
+            UpdatePlayer(_deltaTime);
+        
+        
             UpdateThirdPersonCamera();
-
+        
+        
             Engine::GFX::UpdateInstanceBuffer(m_instances);
         }
 
@@ -228,93 +230,118 @@ class cGame : public Engine::cApplication
 
 
         void UpdatePlayer(float _deltaTime)
-{
-    using namespace Engine::Platform;
+        {
+            using namespace Engine::Platform;
+        
+        
+            float speed = 5.0f;
+        
+        
+            Engine::GFX::cCamera& rCamera = Engine::GFX::GetCamera();
+        
+        
+            float direction[4];
+        
+            rCamera.GetDirection(direction);
+        
+        
+            Engine::Math::cVec3f forward(
+                direction[0],
+                0.0f,
+                direction[2]);
+            
+            
+            forward.normalize();
+            
+            
+            Engine::Math::cVec3f right(
+                -forward.z(),
+                0.0f,
+                forward.x());
+            
+            
+            Engine::Math::cVec3f movement;
+            
+            
+            if(IsKeyDown('W'))
+            {
+                movement += forward * speed * _deltaTime;
+            }
+        
+        
+            if(IsKeyDown('S'))
+            {
+                movement -= forward * speed * _deltaTime;
+            }
+        
+        
+            if(IsKeyDown('A'))
+            {
+                movement -= right * speed * _deltaTime;
+            }
+        
+        
+            if(IsKeyDown('D'))
+            {
+                movement += right * speed * _deltaTime;
+            }
+        
+        
+            m_playerPosition += movement;
+        
+        
+            m_playerInstance->worldMatrix =
+            {
+                1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                m_playerPosition.x(),
+                m_playerPosition.y(),
+                m_playerPosition.z(),
+                1.0f
+            };
+        }
 
-
-    float speed = 5.0f;
-
-
-    Engine::GFX::cCamera& rCamera = Engine::GFX::GetCamera();
-
-
-    float direction[4];
-
-    rCamera.GetDirection(direction);
-
-
-    Engine::Math::cVec3f forward(
-        direction[0],
-        0.0f,
-        direction[2]);
-
-
-    forward.normalize();
-
-
-    Engine::Math::cVec3f right(
-        -forward.z(),
-        0.0f,
-        forward.x());
-
-
-    Engine::Math::cVec3f movement;
-
-
-    if(IsKeyDown('W'))
-    {
-        movement += forward * speed * _deltaTime;
-    }
-
-
-    if(IsKeyDown('S'))
-    {
-        movement -= forward * speed * _deltaTime;
-    }
-
-
-    if(IsKeyDown('A'))
-    {
-        movement -= right * speed * _deltaTime;
-    }
-
-
-    if(IsKeyDown('D'))
-    {
-        movement += right * speed * _deltaTime;
-    }
-
-
-    m_playerPosition += movement;
-
-
-    m_playerInstance->worldMatrix =
-    {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        m_playerPosition.x(),
-        m_playerPosition.y(),
-        m_playerPosition.z(),
-        1.0f
-    };
-}
         void UpdateThirdPersonCamera()
         {
             Engine::GFX::cCamera& rCamera = Engine::GFX::GetCamera();
         
         
-            rCamera.SetThirdPersonPosition(
-                m_playerPosition.x(),
-                m_playerPosition.y(),
-                m_playerPosition.z(),
-                8.0f,
-                5.0f);
+            float distance = 8.0f;
+        
+        
+            float direction[4];
+        
+            rCamera.GetDirection(direction);
+        
+        
+            Engine::Math::cVec3f forward(
+                direction[0],
+                0.0f,
+                direction[2]);
+            
+            
+            forward.normalize();
+            
+            
+            Engine::Math::cVec3f cameraPosition =
+            {
+                m_playerPosition.x() - forward.x() * distance,
+                m_playerPosition.y() + 5.0f,
+                m_playerPosition.z() - forward.z() * distance
+            };
+        
+        
+            rCamera.SetPosition(
+                cameraPosition.x(),
+                cameraPosition.y(),
+                cameraPosition.z());
         }
+
 
         void RebuildInstanceList()
         {
-            m_instances.clear();
+                m_instances.clear();
 
 
             for(auto& [mesh, instances] : m_meshInstances)
