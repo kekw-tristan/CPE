@@ -31,30 +31,31 @@ class cGame : public Engine::cApplication
 
         void OnInit() override
         {
-            // currently not used
-            //Engine::GFX::sCubeDesc cubeDesc;
-            //
-            //cubeDesc.width  = 1.0f;
-            // 
-            // 
-
+             
+            Engine::GFX::sCubeDesc cubeDesc;
+            
+            cubeDesc.width  = 1.0f;
+            cubeDesc.depth  = 1.0f;
+            cubeDesc.height = 1.0f;
+             
             Engine::GFX::sPyramidDesc pyramidDesc; 
 
             pyramidDesc.baseCornerCount = 4; 
             pyramidDesc.baseRadius      = 0.5f;
-            pyramidDesc.height          = 1.f;
+            pyramidDesc.height          = 3.f;
             pyramidDesc.rotationRadians = 2.f;
 
-            // currently used as pyramid :)
-            Engine::GFX::sMeshData cubeData = Engine::GFX::cMeshGenerator::CreatePyramid(pyramidDesc);
+            Engine::GFX::sMeshData cubeData     = Engine::GFX::cMeshGenerator::CreateCube(cubeDesc);
+            Engine::GFX::sMeshData pyramidData  = Engine::GFX::cMeshGenerator::CreatePyramid(pyramidDesc);
 
             m_cubeMesh = Engine::GFX::CreateMesh(cubeData);
+            m_pyramidMesh = Engine::GFX::CreateMesh(pyramidData);
 
             std::cout << "Mesh: " << cubeData.pDebugName << '\n';
 
             Engine::GFX::SubmitMesh(m_cubeMesh);
+            Engine::GFX::SubmitMesh(m_pyramidMesh);
 
-            // Es werden nur noch zwei Instanzen benötigt.
             m_instances.reserve(2);
 
             Engine::GFX::sInstanceData* pFirstCube = m_pool.Create();
@@ -178,6 +179,7 @@ class cGame : public Engine::cApplication
         void OnDraw() override
         {
             Engine::GFX::DrawMeshIntances(m_cubeMesh, m_instances);
+            Engine::GFX::DrawMeshIntances(m_pyramidMesh, m_instances);
         }
 
         void OnShutdown() override
@@ -191,6 +193,7 @@ class cGame : public Engine::cApplication
         private:
 
             Engine::GFX::MeshHandle m_cubeMesh;
+            Engine::GFX::MeshHandle m_pyramidMesh;
             Engine::Container::cPool<Engine::GFX::sInstanceData, c_instancesPerPage> m_pool;
             std::vector<Engine::GFX::sInstanceData*> m_instances;
 };
