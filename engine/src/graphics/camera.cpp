@@ -271,17 +271,23 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cCamera::SetThirdPersonPosition(float _targetX, float _targetY, float _targetZ, float _distance, float _height) noexcept
+    void cCamera::SetThirdPerson(float _targetX, float _targetY, float _targetZ, float _distance, float _height) noexcept
     {
-        Engine::Math::cVec3f forward = GetForwardInternal();
-
-
-        m_position =
-        {
-            _targetX - forward.x() * _distance,
-            _targetY + _height,
-            _targetZ - forward.z() * _distance
-        };
+        float yawRadians = m_yawDegrees * 0.0174532925f;
+    
+    
+        float cameraX = _targetX + std::sin(yawRadians) * _distance;
+        float cameraY = _targetY + _height;
+        float cameraZ = _targetZ + std::cos(yawRadians) * _distance;
+    
+    
+        LookAt(
+            cameraX,
+            cameraY,
+            cameraZ,
+            _targetX,
+            _targetY,
+            _targetZ);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
