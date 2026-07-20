@@ -89,9 +89,9 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void DrawMeshIntances(MeshHandle _pHandle, std::vector<sInstanceData*>& _rInstances)
+    void DrawMeshIntances(MeshHandle _pHandle, uint32_t _instanceCount, uint32_t _firstInstance)
     {
-        s_pApplicationIntern->DrawMeshIntances(_pHandle, _rInstances);
+        s_pApplicationIntern->DrawMeshIntances(_pHandle, _instanceCount, _firstInstance);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

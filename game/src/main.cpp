@@ -56,7 +56,7 @@ class cGame : public Engine::cApplication
             Engine::GFX::SubmitMesh(m_cubeMesh);
             Engine::GFX::SubmitMesh(m_pyramidMesh);
 
-            m_instances.reserve(2);
+            m_instances.reserve(4);
 
             Engine::GFX::sInstanceData* pFirstCube = m_pool.Create();
 
@@ -178,8 +178,8 @@ class cGame : public Engine::cApplication
 
         void OnDraw() override
         {
-            Engine::GFX::DrawMeshIntances(m_cubeMesh, m_instances);
-            Engine::GFX::DrawMeshIntances(m_pyramidMesh, m_instances);
+            Engine::GFX::DrawMeshIntances(m_cubeMesh, 1, 0);
+            Engine::GFX::DrawMeshIntances(m_pyramidMesh, 1, 1);
         }
 
         void OnShutdown() override
