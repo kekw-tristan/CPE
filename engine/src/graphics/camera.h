@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Math/matrix4x4.h"
-#include "Math/vector3.h"
+#include "math/matrix4x4.h"
+#include "math/vector3.h"
 
 namespace Engine::GFX
 {
