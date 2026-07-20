@@ -625,7 +625,7 @@ namespace Engine::GFX
     // -------------------------------------------------------------------------------------------------------------------------
 
     void cVulkanRenderer::UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera)
-        {
+    {
         sFrameUniformData frameData{};
 
         const float width  = static_cast<float>(m_pSwapchain->GetExtent().width);

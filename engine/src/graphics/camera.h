@@ -1,56 +1,59 @@
-#pragma once 
+#pragma once
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-
-#include <glm/glm.hpp>
+#include "Math/matrix4x4.h"
+#include "Math/vector3.h"
 
 namespace Engine::GFX
 {
     class cCamera
     {
+
         public:
 
             cCamera();
-           ~cCamera() = default;
+            ~cCamera() = default;
 
         public:
 
-            void SetPosition(float _x, float _y, float _z);
-            void SetRotation(float _yawDegrees, float _pitchDegrees);
-            void SetPerspective(float _fov, float _nearPlane, float _farPlane);
+            void SetPosition(float _x, float _y, float _z) noexcept;
+            void SetRotation(float _yawDegrees, float _pitchDegrees) noexcept;
+            void SetPerspective(float _fov, float _nearPlane, float _farPlane) noexcept;
 
-            void MoveForward(float _amount);
-            void MoveRight(float _amount); 
-            void MoveUp(float _amount); 
+            void MoveForward(float _amount) noexcept;
+            void MoveRight(float _amount) noexcept;
+            void MoveUp(float _amount) noexcept;
 
-            void AddYaw(float _amountDegrees);
-            void AddPitch(float _amountDegrees);
+            void AddYaw(float _amountDegrees) noexcept;
+            void AddPitch(float _amountDegrees) noexcept;
 
-            void GetViewMatrix(float* _pOut16) const;
-            void GetProjectionMatrix(float _aspectRatio, float* _pOut16) const;
-            void GetViewProjectionMatrix(float _aspectRatio, float* _pOut16) const;
+            void GetViewMatrix(float* _pOut16) const noexcept;
+            void GetProjectionMatrix(float _aspectRatio, float* _pOut16) const noexcept;
+            void GetViewProjectionMatrix(float _aspectRatio, float* _pOut16) const noexcept;
 
-            void GetPosition(float* _pOut4) const;
-            void GetDirection(float* _pOut4) const;
+            void GetPosition(float* _pOut4) const noexcept;
+            void GetDirection(float* _pOut4) const noexcept;
 
-            float GetNearPlane() const;
-            float GetFarPlane() const;
+            float GetNearPlane() const noexcept;
+            float GetFarPlane() const noexcept;
 
-            void LookAt(float _eyeX, float _eyeY, float _eyeZ, float _targetX, float _targetY, float _targetZ);
-
-        private:
-
-            glm::vec3 GetForwardInternal() const;
-            glm::vec3 GetRightInternal() const;
+            void LookAt(float _eyeX, float _eyeY, float _eyeZ, float _targetX, float _targetY, float _targetZ) noexcept;
 
         private:
 
-            glm::vec3 m_position;
+            Engine::Math::cMatrix4x4f GetViewMatrixInternal() const noexcept;
+            Engine::Math::cMatrix4x4f GetProjectionMatrixInternal(float _aspectRatio) const noexcept;
 
-            float m_yawDegrees;
-            float m_pitchDegrees;
-            float m_fov; 
-            float m_nearPlane; 
-            float m_farPlane;
+            Engine::Math::cVec3f GetForwardInternal() const noexcept;
+            Engine::Math::cVec3f GetRightInternal() const noexcept;
+
+        private:
+
+            Engine::Math::cVec3f m_position{};
+
+            float m_yawDegrees{};
+            float m_pitchDegrees{};
+            float m_fov{};
+            float m_nearPlane{};
+            float m_farPlane{};
     };
 }
