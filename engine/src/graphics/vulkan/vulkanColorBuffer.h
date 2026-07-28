@@ -10,29 +10,35 @@ namespace Engine::GFX
     class cVulkanSwapchain;
     class cVulkanCommands;
 
-    class cVulkanDepthBuffer
+
+    class cVulkanColorBuffer
     {
 
         public:
 
-            cVulkanDepthBuffer();
-            ~cVulkanDepthBuffer()   = default;
+            cVulkanColorBuffer();
+            ~cVulkanColorBuffer() = default;
 
-            cVulkanDepthBuffer(const cVulkanDepthBuffer&)               = delete;
-            cVulkanDepthBuffer& operator=(const cVulkanDepthBuffer&)    = delete;
+
+            cVulkanColorBuffer(const cVulkanColorBuffer&) = delete;
+            cVulkanColorBuffer& operator=(const cVulkanColorBuffer&) = delete;
+
 
         public:
 
             void Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapchain, cVulkanCommands& _rCommands);
             void ShutDown(cVulkanDevice& _rDevice);
 
+
         public:
-        
-            VkImageView GetImageView()  const; 
-            VkFormat    GetFormat()     const;
+
+            VkImageView GetImageView() const;
+            VkFormat GetFormat() const;
+
 
         private:
 
             cVulkanImage m_image;
+
     };
 }

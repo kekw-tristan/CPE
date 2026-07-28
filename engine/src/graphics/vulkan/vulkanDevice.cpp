@@ -82,6 +82,13 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    VkSampleCountFlagBits cVulkanDevice::GetMSAASamples() const
+    {
+        return m_msaaSamples;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     const sQueueFamilyIndices&  cVulkanDevice::GetQueueFamilyIndices() const
     {
         return m_queueFamilyIndices;
@@ -128,8 +135,9 @@ namespace Engine::GFX
         {
             if (IsDeviceSuitable(device, _rContext.GetSurface()))
             {
-                m_pPhysicalDevice   = device;
+                m_pPhysicalDevice    = device;
                 m_queueFamilyIndices = FindQueueFamilies(device, _rContext.GetSurface());
+                m_msaaSamples        = GetMaxUsabelSampleCount();
 
                 VkPhysicalDeviceProperties properties{};
                 vkGetPhysicalDeviceProperties(device, &properties);
@@ -275,8 +283,27 @@ namespace Engine::GFX
         }
 
         return requiredExtensions.empty();
-    } 
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
     
+    VkSampleCountFlagBits cVulkanDevice::GetMaxUsabelSampleCount()
+    {
+        VkPhysicalDeviceProperties properties;
+        vkGetPhysicalDeviceProperties(m_pPhysicalDevice, &properties);
+
+        VkSampleCountFlags counts = properties.limits.framebufferColorSampleCounts & properties.limits.framebufferDepthSampleCounts;
+
+        if (counts & VK_SAMPLE_COUNT_64_BIT) return VK_SAMPLE_COUNT_64_BIT;
+        if (counts & VK_SAMPLE_COUNT_32_BIT) return VK_SAMPLE_COUNT_32_BIT;
+        if (counts & VK_SAMPLE_COUNT_16_BIT) return VK_SAMPLE_COUNT_16_BIT;
+        if (counts & VK_SAMPLE_COUNT_8_BIT)  return VK_SAMPLE_COUNT_8_BIT;
+        if (counts & VK_SAMPLE_COUNT_4_BIT)  return VK_SAMPLE_COUNT_4_BIT;
+        if (counts & VK_SAMPLE_COUNT_2_BIT)  return VK_SAMPLE_COUNT_2_BIT;
+
+        return VK_SAMPLE_COUNT_1_BIT;
+    }
+
     // -------------------------------------------------------------------------------------------------------------------------
 }
 

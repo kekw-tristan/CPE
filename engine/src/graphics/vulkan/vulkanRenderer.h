@@ -1,6 +1,8 @@
 #pragma once
 
 #include "graphics/gfxConfig.h"
+
+#include "graphics/vulkan/vulkanColorBuffer.h"
 #include "graphics/vulkan/vulkanFrame.h"
 #include "graphics/vulkan/vulkanDepthBuffer.h"
 
@@ -8,7 +10,6 @@
 
 #include <array>
 #include <vector>
-
 
 namespace Engine::GFX
 {
@@ -37,6 +38,7 @@ namespace Engine::GFX
             void Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline);  
             void ShutDown();  
             void RecreateDepthBuffer();
+            void RecreateColorBuffer();
 
         public:
 
@@ -78,7 +80,8 @@ namespace Engine::GFX
             VkDescriptorPool m_pDescriptorPool;
 
             cVulkanDepthBuffer m_depthBuffer;
-
+            cVulkanColorBuffer m_colorBuffer;
+            
             std::vector<const cVulkanMesh*> m_submittedMeshes;
             std::vector<VkSemaphore> m_renderFinishedSemaphores;  
             std::vector<VkFence> m_imagesInFlight;  

@@ -47,6 +47,8 @@ namespace Engine::GFX
             VkQueue GetGraphicsQueue() const;
             VkQueue GetPresentQueue()  const;
 
+            VkSampleCountFlagBits GetMSAASamples() const;
+
             const sQueueFamilyIndices&  GetQueueFamilyIndices() const;
             uint32_t FindMemoryType(uint32_t _typeFilter, VkMemoryPropertyFlags _properties) const;
 
@@ -59,6 +61,8 @@ namespace Engine::GFX
             sQueueFamilyIndices FindQueueFamilies(VkPhysicalDevice _pDevice, VkSurfaceKHR);
             bool CheckDeviceExtensionSupport(VkPhysicalDevice _pDevice);
 
+            VkSampleCountFlagBits GetMaxUsabelSampleCount();
+
         private:
 
             VkPhysicalDevice    m_pPhysicalDevice;
@@ -69,5 +73,6 @@ namespace Engine::GFX
 
             sQueueFamilyIndices m_queueFamilyIndices;
 
+            VkSampleCountFlagBits m_msaaSamples;
     };
 }

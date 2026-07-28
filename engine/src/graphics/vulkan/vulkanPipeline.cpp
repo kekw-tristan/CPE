@@ -88,7 +88,7 @@ namespace Engine::GFX
         
         multisampling.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisampling.sampleShadingEnable   = VK_FALSE;
-        multisampling.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT;
+        multisampling.rasterizationSamples  = _rDevice.GetMSAASamples();
 
         VkPipelineColorBlendAttachmentState colorBlendAttachment{};
         
