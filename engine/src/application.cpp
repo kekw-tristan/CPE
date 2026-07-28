@@ -33,6 +33,12 @@ namespace Engine
 
         while(!m_pAppIntern->GetShouldClose())
         {
+            if (m_pAppIntern->WasResized())
+            {
+                m_pAppIntern->RecreateSwapchain();
+                continue;
+            }
+
             m_pAppIntern->Update();
 
             if (!m_pAppIntern->BeginFrame(m_pAppIntern->GetCamera()))

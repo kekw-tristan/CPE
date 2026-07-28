@@ -51,7 +51,7 @@ namespace Engine::Logic
             float GetDeltaTime();
             void RecreateSwapchain();
             GFX::cCamera& GetCamera();
-
+            bool WasResized();
 
             GFX::MeshHandle CreateMesh(GFX::sMeshData& _rMeshData);
             void SubmitMesh(GFX::MeshHandle _pHandle);
