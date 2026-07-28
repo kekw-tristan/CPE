@@ -1,33 +1,36 @@
-#include "vulkanDepthBuffer.h"
+#include "vulkanColorBuffer.h"
 
-#include "graphics/vulkan/vulkanDevice.h"
-#include "graphics/vulkan/vulkanSwapchain.h"
-#include "graphics/vulkan/vulkanCommands.h"
+#include "vulkanImage.h"
+#include "vulkanDevice.h"
+#include "vulkanSwapchain.h"
+#include "vulkanCommands.h"
 
-#include <stdexcept>
+#include <iostream>
 
 // -------------------------------------------------------------------------------------------------------------------------
 
 namespace Engine::GFX
 {
+
     // -------------------------------------------------------------------------------------------------------------------------
 
-    cVulkanDepthBuffer::cVulkanDepthBuffer()
-        : m_image()
+    cVulkanColorBuffer::cVulkanColorBuffer()
     {
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanDepthBuffer::Init(cVulkanDevice &_rDevice, cVulkanSwapchain &_rSwapchain, cVulkanCommands &_rCommands)
+    void cVulkanColorBuffer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapchain, cVulkanCommands& _rCommands)
     {
+        VkExtent2D extent = _rSwapchain.GetExtent();
+
         m_image.Create(
             _rDevice,
-            _rSwapchain.GetExtent().width,
-            _rSwapchain.GetExtent().height,
-            VK_FORMAT_D32_SFLOAT,
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-            VK_IMAGE_ASPECT_DEPTH_BIT,
+            extent.width,
+            extent.height,
+            _rSwapchain.GetImageFormat(),
+            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
             _rDevice.GetMSAASamples()
         );
 
@@ -37,30 +40,30 @@ namespace Engine::GFX
             _rDevice,
             commandBuffer,
             VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            VK_IMAGE_ASPECT_DEPTH_BIT
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            VK_IMAGE_ASPECT_COLOR_BIT
         );
-
+        
         _rCommands.EndSingleTimeCommands(_rDevice, commandBuffer);
-    }
+    }   
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanDepthBuffer::ShutDown(cVulkanDevice &_rDevice)
+    void cVulkanColorBuffer::ShutDown(cVulkanDevice& _rDevice)
     {
         m_image.Destroy(_rDevice);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    VkImageView cVulkanDepthBuffer::GetImageView() const
+    VkImageView cVulkanColorBuffer::GetImageView() const
     {
         return m_image.GetImageView();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    VkFormat cVulkanDepthBuffer::GetFormat() const
+    VkFormat cVulkanColorBuffer::GetFormat() const
     {
         return m_image.GetFormat();
     }

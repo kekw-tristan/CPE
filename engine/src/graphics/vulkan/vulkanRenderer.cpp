@@ -33,9 +33,11 @@ namespace Engine::GFX
         m_currentFrame = 0;
         m_hasFrameStarted = false; 
 
-        m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
-
         CreateFrameResources();
+
+        m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
+        m_colorBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
+        
         CreateDescriptorPool();
         CreateDescriptorSets();
         CreateRenderFinishedSemaphores();
@@ -53,6 +55,7 @@ namespace Engine::GFX
         VkDevice device = m_pDevice->GetDevice(); 
 
         m_depthBuffer.ShutDown(*m_pDevice);
+        m_colorBuffer.ShutDown(*m_pDevice);
 
         for (sVulkanFrame& rFrame : m_frames)
         {
@@ -116,6 +119,17 @@ namespace Engine::GFX
         m_depthBuffer.ShutDown(*m_pDevice);
 
         m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::RecreateColorBuffer()
+    {
+        m_pDevice->WaitIdle();
+
+        m_colorBuffer.ShutDown(*m_pDevice);
+
+        m_colorBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -369,12 +383,15 @@ namespace Engine::GFX
 
         VkRenderingAttachmentInfo colorAttachment{};
 
-        colorAttachment.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        colorAttachment.imageView   = swapchainImageView;
-        colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
-        colorAttachment.clearValue  = clearValue;
+        colorAttachment.sType               = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        colorAttachment.imageView           = m_colorBuffer.GetImageView();
+        colorAttachment.imageLayout         = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorAttachment.loadOp              = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp             = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.clearValue          = clearValue;
+        colorAttachment.resolveMode         = VK_RESOLVE_MODE_AVERAGE_BIT;
+        colorAttachment.resolveImageView    = swapchainImageView;
+        colorAttachment.resolveImageLayout  = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         VkRenderingAttachmentInfo depthAttachment{};
 

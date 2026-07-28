@@ -119,6 +119,7 @@ namespace Engine::Logic
         m_window.ResetRezisedFlag();
         m_vulkanSwapchain.Recreate(m_vulkanContext, m_vulkanDevice, m_window);
         m_vulkanRenderer.RecreateDepthBuffer();
+        m_vulkanRenderer.RecreateColorBuffer();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
