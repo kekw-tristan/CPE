@@ -62,7 +62,7 @@ namespace Engine::Logic
         m_vulkanCommands .Shutdown(m_vulkanDevice);
         m_vulkanSwapchain.Shutdown(m_vulkanDevice);
         m_vulkanDevice   .Shutdown();
-        m_vulkanContext  .Shutdown(); 
+        m_vulkanContext  .Shutdown();   
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -127,6 +127,13 @@ namespace Engine::Logic
     GFX::cCamera& cApplicationIntern::GetCamera()
     {
         return m_camera;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool cApplicationIntern::WasResized()
+    {
+        return m_window.WasResized();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
