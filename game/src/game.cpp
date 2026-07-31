@@ -1,5 +1,8 @@
 #include "game.h"
 
+#include "graphics/shapeModel/shapeModelDesc.h"
+#include "graphics/shapeModel/shapeModelManager.h"
+
 // -------------------------------------------------------------------------------------------------------------------------
 
 cGame::cGame(Engine::sAppConfig& _rAppConfig)
@@ -11,6 +14,7 @@ cGame::cGame(Engine::sAppConfig& _rAppConfig)
     , m_pool()
     , m_instances()
     , m_meshInstances()
+    , m_playerShapeInstance()
 {
 }
 
@@ -18,6 +22,53 @@ cGame::cGame(Engine::sAppConfig& _rAppConfig)
 
 void cGame::OnInit()
 {
+    using namespace Engine::GFX;
+
+    Engine::GFX::sShapePartDesc head =
+    {
+        .meshType = Engine::GFX::sMeshTypes::Pyramid,
+        .transform =
+        {
+            .position   = {0.0f, 1.0f, 0.0f},
+            .scale      = {1.0f, 1.0f, 1.0f},
+            .rotation   = {0.f,  0.0f, 0.0f}
+
+        },
+        .color = {1.0f, 1.0f, 0.0f, 1.0f}
+    };
+
+    Engine::GFX::sShapePartDesc body =
+    {
+        .meshType = Engine::GFX::sMeshTypes::Cube,
+        .transform =
+        {
+            .position   = {0.0f, 0.0f, 0.0f},
+            .scale      = {1.0f, 1.0f, 1.0f},
+            .rotation   = {0.0f, 0.0f, 0.0f}
+
+        },
+        .color = {1.0f, 0.0f, 0.0f, 1.0f}
+    };
+
+    sShapeModelDesc shapeModelDesc;
+
+    shapeModelDesc.pDebugName = "player"; 
+    shapeModelDesc.shapes.push_back(head);
+    shapeModelDesc.shapes.push_back(body);
+
+    ShapeModelHandle playerHandle = ShapeModelManager::CreateShapeModel(shapeModelDesc);
+
+    sShapeInstance playerInstance = 
+    {
+        .modelHandle = playerHandle,
+        .transform = 
+        {
+            .position   = {0.0f, 0.0f, 0.0f},
+            .scale      = {1.0f, 1.0f, 1.0f},
+            .rotation   = {0.0f, 0.0f, 0.0f}
+        }
+    };
+
     Engine::GFX::sCubeDesc cubeDesc;
 
     cubeDesc.width = 1.0f;
@@ -30,8 +81,7 @@ void cGame::OnInit()
     pyramidDesc.baseCornerCount = 4;
     pyramidDesc.baseRadius = 0.5f;
     pyramidDesc.height = 3.0f;
-    pyramidDesc.rotationRadians = 2.0f;
-
+    pyramidDesc.rotationRadians = 0.7854f;
 
     Engine::GFX::sMeshData cubeData = Engine::GFX::cMeshGenerator::CreateCube(cubeDesc);
     Engine::GFX::sMeshData pyramidData = Engine::GFX::cMeshGenerator::CreatePyramid(pyramidDesc);
@@ -40,103 +90,15 @@ void cGame::OnInit()
     m_cubeMesh = Engine::GFX::CreateMesh(cubeData);
     m_pyramidMesh = Engine::GFX::CreateMesh(pyramidData);
 
-
     Engine::GFX::SubmitMesh(m_cubeMesh);
     Engine::GFX::SubmitMesh(m_pyramidMesh);
 
+    m_playerShapeInstance = playerInstance;
 
-
-    m_playerInstance = m_pool.Create();
-
-    m_playerPosition = Engine::Math::cVec3f(0.0f, 0.0f, 0.0f);
-
-
-    m_playerInstance->worldMatrix =
-    {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-
-
-    m_playerInstance->color =
-    {
-        1.0f,
-        0.0f,
-        0.0f,
-        1.0f
-    };
-
-
-    m_meshInstances[m_cubeMesh].push_back(m_playerInstance);
-
-
-
-    std::random_device randomDevice;
-    std::mt19937 randomGenerator(randomDevice());
-
-
-    std::uniform_real_distribution<float> positionDistribution(-20.0f, 20.0f);
-    std::uniform_real_distribution<float> scaleDistribution(0.3f, 2.0f);
-    std::uniform_real_distribution<float> colorDistribution(0.0f, 1.0f);
-    std::uniform_int_distribution<int> meshDistribution(0, 1);
-
-
-    constexpr int instanceCount = 200;
-
-
-    for (int index = 0; index < instanceCount; ++index)
-    {
-        Engine::GFX::sInstanceData* pInstance = m_pool.Create();
-
-        if (pInstance == nullptr)
-        {
-            std::cerr << "Could not create instance.\n";
-            return;
-        }
-
-
-        float x = positionDistribution(randomGenerator);
-        float y = positionDistribution(randomGenerator) * 0.2f;
-        float z = positionDistribution(randomGenerator);
-
-        float scale = scaleDistribution(randomGenerator);
-
-
-        pInstance->worldMatrix =
-        {
-            scale, 0.0f, 0.0f, 0.0f,
-            0.0f, scale, 0.0f, 0.0f,
-            0.0f, 0.0f, scale, 0.0f,
-            x,     y,     z,   1.0f
-        };
-
-
-        pInstance->color =
-        {
-            colorDistribution(randomGenerator),
-            colorDistribution(randomGenerator),
-            colorDistribution(randomGenerator),
-            1.0f
-        };
-
-
-        if (meshDistribution(randomGenerator) == 0)
-        {
-            m_meshInstances[m_cubeMesh].push_back(pInstance);
-        }
-        else
-        {
-            m_meshInstances[m_pyramidMesh].push_back(pInstance);
-        }
-    }
-
+    BuildRenderInstances(m_playerShapeInstance);
 
     RebuildInstanceList();
 
-
-    std::cout << "Created " << m_instances.size() << " random instances.\n";
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -270,16 +232,7 @@ void cGame::UpdatePlayer(float _deltaTime)
     m_playerPosition += movement;
 
 
-    m_playerInstance->worldMatrix =
-    {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        m_playerPosition.x(),
-        m_playerPosition.y(),
-        m_playerPosition.z(),
-        1.0f
-    };
+    
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -337,6 +290,76 @@ void cGame::RebuildInstanceList()
 
 
     std::cout << "GPU Instance order rebuilt: " << m_instances.size() << "\n";
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+Engine::GFX::MeshHandle cGame::GetMesh(Engine::GFX::sMeshTypes::Enum _type)
+{
+    using namespace Engine::GFX; 
+
+    switch (_type)
+    {
+        case sMeshTypes::Cube:
+            return m_cubeMesh;
+
+        case sMeshTypes::Pyramid:
+            return m_pyramidMesh;
+    }
+
+    return nullptr;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance)
+{
+    using namespace Engine::GFX;
+    using namespace Engine::Math;
+
+    sShapeModelDesc& model = ShapeModelManager::GetShapeModel(_rShapeInstance.modelHandle);
+
+    cMatrix4x4f instanceMatrix = CreateTransformMatrix(_rShapeInstance.transform);
+
+    for (const sShapePartDesc& part : model.shapes)
+    {
+        sInstanceData* pInstance = m_pool.Create();
+
+        Math::cMatrix4x4f partMatrix = CreateTransformMatrix(part.transform); 
+
+
+        pInstance->worldMatrix = instanceMatrix * partMatrix;
+
+        pInstance->color =
+        {
+            part.color[0],
+            part.color[1],
+            part.color[2],
+            part.color[3]
+        };
+
+        MeshHandle mesh = GetMesh(part.meshType);
+
+        m_meshInstances[mesh].push_back(pInstance);
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+Math::cMatrix4x4f cGame::CreateTransformMatrix(const GFX::sTransform& _rTransform)
+{
+    using namespace Engine::Math;
+
+    cMatrix4x4f translation = cMatrix4x4f::translation(_rTransform.position);
+    
+    cMatrix4x4f scale       = cMatrix4x4f::scale(_rTransform.scale);
+
+    cMatrix4x4f rotation    =
+          cMatrix4x4f::rotationX(_rTransform.rotation.x())
+        * cMatrix4x4f::rotationY(_rTransform.rotation.y())
+        * cMatrix4x4f::rotationZ(_rTransform.rotation.z());
+
+    return translation * rotation * scale;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

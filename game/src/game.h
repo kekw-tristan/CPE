@@ -3,8 +3,11 @@
 #include "container/pool.h"
 
 #include "graphics/camera.h"
-#include "graphics/meshGenerator.h"
 #include "graphics/instanceData.h"
+
+#include "graphics/shapeModel/meshGenerator.h"
+#include "graphics/shapeModel/shapeInstance.h"
+#include "graphics/shapeModel/meshType.h"
 
 #include <iostream>
 #include <random>
@@ -12,15 +15,20 @@
 #include <unordered_map>
 
 
-constexpr int c_instancesPerPage = 800;
+constexpr int c_instancesPerPage    = 800;
 
-constexpr int c_shiftKey = 340;
-constexpr int c_downArrowKey = 264;
-constexpr int c_upArrowKey = 265;
-constexpr int c_leftArrowKey = 263;
-constexpr int c_rightArrowKey = 262;
+constexpr int c_shiftKey            = 340;
+constexpr int c_downArrowKey        = 264;
+constexpr int c_upArrowKey          = 265;
+constexpr int c_leftArrowKey        = 263;
+constexpr int c_rightArrowKey       = 262;
 
 using namespace Engine;
+
+namespace Engine::GFX
+{
+    struct sTransform;
+}
 
 class cGame : public cApplication
 {
@@ -43,6 +51,12 @@ class cGame : public cApplication
         void UpdatePlayer(float _deltaTime);
         void UpdateThirdPersonCamera();
         void RebuildInstanceList();
+
+    private:
+
+        Engine::GFX::MeshHandle GetMesh(Engine::GFX::sMeshTypes::Enum _type);
+        void BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance);
+        Math::cMatrix4x4f CreateTransformMatrix(const GFX::sTransform& _rTransform);
     
     private:
     
@@ -59,5 +73,7 @@ class cGame : public cApplication
         std::vector<GFX::sInstanceData*> m_instances;
     
         std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData*>> m_meshInstances;
+
+        GFX::sShapeInstance m_playerShapeInstance;
     
 };

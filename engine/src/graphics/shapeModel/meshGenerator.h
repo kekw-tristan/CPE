@@ -8,18 +8,7 @@
 
 namespace Engine::GFX
 {
-
-    struct sMeshTypes
-    {
-        enum Enum
-        {
-            Cube,
-            Pyramid,
-            NumberOfElements,
-            Undefined = -1
-        };
-    };
-
+    
     struct sCubeDesc
     {
         float width     = 1.0f;
