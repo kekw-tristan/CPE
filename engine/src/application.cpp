@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+#include <imgui.h>
+
 // -------------------------------------------------------------------------------------------------------------------------
 
 namespace Engine
@@ -52,7 +54,12 @@ namespace Engine
             m_pAppIntern->BeginDraw();
             OnDraw();
             
+            ImGui::Begin("Debug Window");
+
+            ImGui::Text("Hello Vulkan + ImGui!");
             
+            ImGui::End();
+
             if (!m_pAppIntern->EndFrame())
             {
                 m_pAppIntern->RecreateSwapchain();

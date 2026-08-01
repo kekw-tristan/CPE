@@ -6,6 +6,8 @@
 #include "graphics/instanceData.h"
 #include "graphics/pushConstants.h"
 
+#include "graphics/imgui/imguiManager.h"
+
 #include "graphics/vulkan/vulkanDevice.h"
 #include "graphics/vulkan/vulkanMesh.h"
 #include "graphics/vulkan/vulkanPipeline.h"
@@ -39,6 +41,7 @@ namespace Engine::GFX
         m_colorBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
         
         CreateDescriptorPool();
+        CreateImGuiDescriptorPool();
         CreateDescriptorSets();
         CreateRenderFinishedSemaphores();
     }
@@ -100,6 +103,12 @@ namespace Engine::GFX
         {
             vkDestroyDescriptorPool(device, m_pDescriptorPool, nullptr);
             m_pDescriptorPool = VK_NULL_HANDLE;
+        }
+
+        if (m_pImGuiDescriptorPool != VK_NULL_HANDLE)
+        {
+            vkDestroyDescriptorPool(device, m_pImGuiDescriptorPool, nullptr);
+            m_pImGuiDescriptorPool = VK_NULL_HANDLE;
         }
 
         m_currentFrame = 0;
@@ -209,6 +218,8 @@ namespace Engine::GFX
             throw std::runtime_error("Failed to begin recording command buffer!");
         }
 
+        Engine::GFX::ImGuiManager::BeginFrame();
+
         return true;
     }
 
@@ -224,6 +235,8 @@ namespace Engine::GFX
         VkDevice device = m_pDevice->GetDevice();
         sVulkanFrame& rFrame = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+
+        GFX::ImGuiManager::EndFrame(pCommandBuffer); 
 
         EndDraw(pCommandBuffer, m_imageIndex);
 
@@ -442,6 +455,13 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    VkDescriptorPool cVulkanRenderer::GetImguiDescriptorPool()
+    {
+        return m_pImGuiDescriptorPool;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cVulkanRenderer::EndDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex)
     {
         vkCmdEndRendering(_pCommandBuffer);
@@ -573,6 +593,42 @@ namespace Engine::GFX
         if (vkCreateDescriptorPool(m_pDevice->GetDevice(), &poolInfo, nullptr, &m_pDescriptorPool) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to create Vulkan descriptor pool!");
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::CreateImGuiDescriptorPool()
+    {
+        std::array<VkDescriptorPoolSize, 11> poolSizes =
+        {
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+            VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}
+        };
+
+        VkDescriptorPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        poolInfo.maxSets = 1000;
+        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+        poolInfo.pPoolSizes = poolSizes.data();
+
+        if (vkCreateDescriptorPool(
+                m_pDevice->GetDevice(),
+                &poolInfo,
+                nullptr,
+                &m_pImGuiDescriptorPool) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create ImGui descriptor pool.");
         }
     }
 
