@@ -9,6 +9,8 @@
 #include "graphics/vulkan/vulkanBuffer.h"
 #include "graphics/vulkan/vulkanVertex.h"
 
+#include "graphics/imgui/imguiManager.h"
+
 #include <GLFW/glfw3.h>
 #include <iostream>
 
@@ -30,6 +32,30 @@ namespace Engine::Logic
         m_vulkanSwapchain.Init(m_vulkanContext, m_vulkanDevice, m_window);
         m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
         m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline);
+
+        GFX::sImGuiInitDesc imGuiInitDesc{};
+
+        imGuiInitDesc.pWindow = m_window.GetWindow();
+
+        imGuiInitDesc.instance       = m_vulkanContext.GetInstance();
+        imGuiInitDesc.physicalDevice = m_vulkanDevice.GetPhysicalDevice();
+        imGuiInitDesc.device         = m_vulkanDevice.GetDevice();
+
+        imGuiInitDesc.graphicsQueue       = m_vulkanDevice.GetGraphicsQueue();
+        imGuiInitDesc.graphicsQueueFamily = m_vulkanDevice.GetQueueFamilyIndices().graphicsFamily;
+
+        imGuiInitDesc.renderPass     = VK_NULL_HANDLE;
+        imGuiInitDesc.descriptorPool = m_vulkanRenderer.GetImguiDescriptorPool();
+
+        imGuiInitDesc.imageCount    = m_vulkanSwapchain.GetImageCount();
+        imGuiInitDesc.minImageCount = m_vulkanSwapchain.GetImageCount();
+
+        imGuiInitDesc.colorFormat = m_vulkanSwapchain.GetImageFormat();
+        imGuiInitDesc.depthFormat = VK_FORMAT_D32_SFLOAT;
+
+        imGuiInitDesc.msaaSamples = m_vulkanDevice.GetMSAASamples();
+
+        GFX::ImGuiManager::Init(imGuiInitDesc);
 
         m_camera.LookAt(
             2.0f, 1.5f, 3.0f,
@@ -53,6 +79,8 @@ namespace Engine::Logic
     {
         m_vulkanDevice.WaitIdle();
 
+        GFX::ImGuiManager::Shutdown(); 
+
         for (const std::unique_ptr<GFX::cVulkanMesh>& pMesh : m_vulkanMeshes)
         {
             pMesh->Shutdown(m_vulkanDevice);
@@ -63,6 +91,7 @@ namespace Engine::Logic
         m_vulkanSwapchain.Shutdown(m_vulkanDevice);
         m_vulkanDevice   .Shutdown();
         m_vulkanContext  .Shutdown();   
+
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -101,6 +130,7 @@ namespace Engine::Logic
         {
             m_window.ToggleFullscreen();
         }
+
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

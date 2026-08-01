@@ -66,3 +66,5 @@ logs/
 # Local scripts/config
 *.local
 .env
+
+*.ini

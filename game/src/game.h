@@ -49,6 +49,7 @@ class cGame : public cApplication
     private:
     
         void UpdatePlayer(float _deltaTime);
+        void UpdateFreeCam(float _deltaTime);
         void UpdateThirdPersonCamera();
         void RebuildInstanceList();
 

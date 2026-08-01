@@ -138,7 +138,7 @@ void cGame::OnUpdate(float _deltaTime)
     UpdatePlayer(_deltaTime);
 
 
-    UpdateThirdPersonCamera();
+    UpdateFreeCam(_deltaTime);
 
 
     Engine::GFX::UpdateInstanceBuffer(m_instances);
@@ -233,6 +233,96 @@ void cGame::UpdatePlayer(float _deltaTime)
 
 
     
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::UpdateFreeCam(float _deltaTime)
+{
+    using namespace Engine::Platform;
+
+    Engine::GFX::cCamera& rCamera = Engine::GFX::GetCamera();
+
+    constexpr float speed = 10.0f;
+
+
+    float direction[4];
+    rCamera.GetDirection(direction);
+
+
+    Engine::Math::cVec3f forward(
+        direction[0],
+        direction[1],
+        direction[2]
+    );
+
+    forward.normalize();
+
+
+    Engine::Math::cVec3f right(
+        -forward.z(),
+        0.0f,
+        forward.x()
+    );
+
+    right.normalize();
+
+
+    Engine::Math::cVec3f movement;
+
+
+    if (IsKeyDown('W'))
+    {
+        movement += forward * speed * _deltaTime;
+    }
+
+    if (IsKeyDown('S'))
+    {
+        movement -= forward * speed * _deltaTime;
+    }
+
+    if (IsKeyDown('A'))
+    {
+        movement -= right * speed * _deltaTime;
+    }
+
+    if (IsKeyDown('D'))
+    {
+        movement += right * speed * _deltaTime;
+    }
+
+
+    if (IsKeyDown('Q'))
+    {
+        movement += Engine::Math::cVec3f(0.0f, -speed * _deltaTime, 0.0f);
+    }
+
+    if (IsKeyDown('E'))
+    {
+        movement += Engine::Math::cVec3f(0.0f, speed * _deltaTime, 0.0f);
+    }
+
+
+    if (!movement.isZero())
+    {
+        float position[4];
+
+        rCamera.GetPosition(position);
+
+        Engine::Math::cVec3f cameraPosition(
+            position[0],
+            position[1],
+            position[2]
+        );
+
+        cameraPosition += movement;
+
+        rCamera.SetPosition(
+            cameraPosition.x(),
+            cameraPosition.y(),
+            cameraPosition.z()
+        );
+    }
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

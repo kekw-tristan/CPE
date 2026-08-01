@@ -53,6 +53,10 @@ namespace Engine::GFX
             void UpdateInstanceBuffer(std::vector<sInstanceData*>& _rInstances); 
             void BeginDraw(); 
 
+        public:
+
+            VkDescriptorPool GetImguiDescriptorPool();
+
         private:
 
             void EndDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex);
@@ -62,6 +66,7 @@ namespace Engine::GFX
             void CreateFrameResources();
             void CreateRenderFinishedSemaphores(); 
             void CreateDescriptorPool();
+            void CreateImGuiDescriptorPool();
             void CreateDescriptorSets();
             void UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera);
 
@@ -78,6 +83,7 @@ namespace Engine::GFX
             int m_currentFrame; 
 
             VkDescriptorPool m_pDescriptorPool;
+            VkDescriptorPool m_pImGuiDescriptorPool;
 
             cVulkanDepthBuffer m_depthBuffer;
             cVulkanColorBuffer m_colorBuffer;

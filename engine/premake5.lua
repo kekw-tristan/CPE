@@ -28,12 +28,24 @@ project "engine"
     {
         path.join(RootDir, "engine", "src", "**.h"),
         path.join(RootDir, "engine", "src", "**.hpp"),
-        path.join(RootDir, "engine", "src", "**.cpp")
+        path.join(RootDir, "engine", "src", "**.cpp"),
+    
+        path.join(RootDir, "external", "imgui-docking", "*.h"),
+        path.join(RootDir, "external", "imgui-docking", "*.cpp"),
+    
+        path.join(RootDir, "external", "imgui-docking", "backends", "imgui_impl_glfw.h"),
+        path.join(RootDir, "external", "imgui-docking", "backends", "imgui_impl_glfw.cpp"),
+    
+        path.join(RootDir, "external", "imgui-docking", "backends", "imgui_impl_vulkan.h"),
+        path.join(RootDir, "external", "imgui-docking", "backends", "imgui_impl_vulkan.cpp")
     }
 
     includedirs
     {
-        IncludeDir["Engine"]
+        IncludeDir["Engine"],
+    
+        path.join(RootDir, "external", "imgui-docking"),
+        path.join(RootDir, "external", "imgui-docking", "backends")
     }
 
     filter "system:windows"
