@@ -12,6 +12,8 @@
 #include "graphics/vulkan/vulkanRenderer.h"
 #include "graphics/vulkan/vulkanSwapchain.h"
 
+#include "graphics/imgui/frameStatsWindow.h"
+
 #include "platform/input.h"
 #include "platform/window.h"
 
@@ -26,6 +28,7 @@ namespace Engine
 namespace Engine::GFX
 {
     using MeshHandle = void*;
+    
     struct sInstanceData;
     struct sMeshData;
 }
@@ -65,6 +68,10 @@ namespace Engine::Logic
 
         private:
 
+            void InitializeImGui();
+
+        private:
+
             Platform::cWindow m_window;
             Platform::cInput  m_input;
 
@@ -80,5 +87,9 @@ namespace Engine::Logic
             GFX::cCamera            m_camera;
 
             std::vector<std::unique_ptr<GFX::cVulkanMesh>> m_vulkanMeshes;
+
+        private:
+
+            GFX::cFrameStatsWindow m_frameStatsWindow;
     };
 }

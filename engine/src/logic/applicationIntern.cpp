@@ -10,6 +10,7 @@
 #include "graphics/vulkan/vulkanVertex.h"
 
 #include "graphics/imgui/imguiManager.h"
+#include "graphics/imgui/imguiWindowManager.h"
 
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -33,29 +34,7 @@ namespace Engine::Logic
         m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
         m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline);
 
-        GFX::sImGuiInitDesc imGuiInitDesc{};
-
-        imGuiInitDesc.pWindow = m_window.GetWindow();
-
-        imGuiInitDesc.instance       = m_vulkanContext.GetInstance();
-        imGuiInitDesc.physicalDevice = m_vulkanDevice.GetPhysicalDevice();
-        imGuiInitDesc.device         = m_vulkanDevice.GetDevice();
-
-        imGuiInitDesc.graphicsQueue       = m_vulkanDevice.GetGraphicsQueue();
-        imGuiInitDesc.graphicsQueueFamily = m_vulkanDevice.GetQueueFamilyIndices().graphicsFamily;
-
-        imGuiInitDesc.renderPass     = VK_NULL_HANDLE;
-        imGuiInitDesc.descriptorPool = m_vulkanRenderer.GetImguiDescriptorPool();
-
-        imGuiInitDesc.imageCount    = m_vulkanSwapchain.GetImageCount();
-        imGuiInitDesc.minImageCount = m_vulkanSwapchain.GetImageCount();
-
-        imGuiInitDesc.colorFormat = m_vulkanSwapchain.GetImageFormat();
-        imGuiInitDesc.depthFormat = VK_FORMAT_D32_SFLOAT;
-
-        imGuiInitDesc.msaaSamples = m_vulkanDevice.GetMSAASamples();
-
-        GFX::ImGuiManager::Init(imGuiInitDesc);
+        InitializeImGui();
 
         m_camera.LookAt(
             2.0f, 1.5f, 3.0f,
@@ -98,6 +77,9 @@ namespace Engine::Logic
 
     bool cApplicationIntern::BeginFrame(GFX::cCamera& _rCamera)
     {
+        m_frameStatsWindow.GetFrameWindowStats().drawCalls = 0;
+        m_frameStatsWindow.GetFrameWindowStats().instances = 0;
+
         return m_vulkanRenderer.BeginFrame(_rCamera);
     }
 
@@ -131,6 +113,7 @@ namespace Engine::Logic
             m_window.ToggleFullscreen();
         }
 
+        m_frameStatsWindow.GetFrameWindowStats().deltaTime = deltaTime;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -192,6 +175,11 @@ namespace Engine::Logic
 
     void cApplicationIntern::DrawMeshIntances(GFX::MeshHandle _pHandle, uint32_t _instanceCount, uint32_t _firstInstance)
     {
+        auto& stats = m_frameStatsWindow.GetFrameWindowStats();
+
+        ++stats.drawCalls;
+        stats.instances += _instanceCount;
+
         GFX::cVulkanMesh* pVulkanMesh = static_cast<GFX::cVulkanMesh*>(_pHandle);
 
         m_vulkanRenderer.DrawMeshIntances(pVulkanMesh, _instanceCount, _firstInstance);
@@ -216,6 +204,41 @@ namespace Engine::Logic
     bool cApplicationIntern::IsKeydown(int _key) const
     {
         return m_input.IsKeyDown(_key);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::InitializeImGui()
+    {
+        // init desc
+
+        GFX::sImGuiInitDesc imGuiInitDesc{};
+
+        imGuiInitDesc.pWindow = m_window.GetWindow();
+
+        imGuiInitDesc.instance              = m_vulkanContext.GetInstance();
+        imGuiInitDesc.physicalDevice        = m_vulkanDevice.GetPhysicalDevice();
+        imGuiInitDesc.device                = m_vulkanDevice.GetDevice();
+
+        imGuiInitDesc.graphicsQueue         = m_vulkanDevice.GetGraphicsQueue();
+        imGuiInitDesc.graphicsQueueFamily   = m_vulkanDevice.GetQueueFamilyIndices().graphicsFamily;
+
+        imGuiInitDesc.renderPass            = VK_NULL_HANDLE;
+        imGuiInitDesc.descriptorPool        = m_vulkanRenderer.GetImguiDescriptorPool();
+
+        imGuiInitDesc.imageCount            = m_vulkanSwapchain.GetImageCount();
+        imGuiInitDesc.minImageCount         = m_vulkanSwapchain.GetImageCount();
+
+        imGuiInitDesc.colorFormat           = m_vulkanSwapchain.GetImageFormat();
+        imGuiInitDesc.depthFormat           = VK_FORMAT_D32_SFLOAT;
+
+        imGuiInitDesc.msaaSamples           = m_vulkanDevice.GetMSAASamples();
+
+        GFX::ImGuiManager::Init(imGuiInitDesc);
+
+        // add windows
+
+        GFX::ImGuiWindowManager::AddWindow(m_frameStatsWindow);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

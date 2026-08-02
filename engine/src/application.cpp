@@ -1,10 +1,11 @@
 #include "application.h"
 
+#include "graphics/imgui/imguiWindowManager.h"
+
 #include "logic/applicationIntern.h"
 
-#include <iostream>
-
 #include <imgui.h>
+#include <iostream>
 
 // -------------------------------------------------------------------------------------------------------------------------
 
@@ -40,25 +41,21 @@ namespace Engine
                 m_pAppIntern->RecreateSwapchain();
                 continue;
             }
-
-            m_pAppIntern->Update();
+            m_pAppIntern->Update();     
+            
 
             if (!m_pAppIntern->BeginFrame(m_pAppIntern->GetCamera()))
             {
                 m_pAppIntern->RecreateSwapchain();
                 continue;
             }
-           
-            OnUpdate(m_pAppIntern->GetDeltaTime());
+            
+            OnUpdate(m_pAppIntern->GetDeltaTime());     
 
             m_pAppIntern->BeginDraw();
             OnDraw();
             
-            ImGui::Begin("Debug Window");
-
-            ImGui::Text("Hello Vulkan + ImGui!");
-            
-            ImGui::End();
+            GFX::ImGuiWindowManager::Draw(); 
 
             if (!m_pAppIntern->EndFrame())
             {
