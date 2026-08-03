@@ -15,11 +15,11 @@ namespace Engine::GFX
     
         public:
     
-            void Draw() const; 
+            void Draw(); 
     
         protected:
     
-            virtual void OnDraw() const = 0;
+            virtual void OnDraw() = 0;
     
     };
 

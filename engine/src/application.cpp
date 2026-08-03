@@ -1,6 +1,7 @@
 #include "application.h"
 
 #include "graphics/imgui/imguiWindowManager.h"
+#include "graphics/imgui/modelEditorWindow.h"
 
 #include "logic/applicationIntern.h"
 
@@ -116,6 +117,13 @@ namespace Engine::GFX
     cCamera& GetCamera()
     {
         return s_pApplicationIntern->GetCamera();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    cModelEditorWindow& GetModelEitorWindow()
+    {
+        return s_pApplicationIntern->GetModelEitorWindow();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

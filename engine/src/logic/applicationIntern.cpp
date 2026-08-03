@@ -201,6 +201,13 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    GFX::cModelEditorWindow& cApplicationIntern::GetModelEitorWindow()
+    {
+        return m_modelEditorWindow;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     bool cApplicationIntern::IsKeydown(int _key) const
     {
         return m_input.IsKeyDown(_key);
@@ -239,6 +246,7 @@ namespace Engine::Logic
         // add windows
 
         GFX::ImGuiWindowManager::AddWindow(m_frameStatsWindow);
+        GFX::ImGuiWindowManager::AddWindow(m_modelEditorWindow);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

@@ -23,9 +23,10 @@ namespace Engine::GFX
         uint32_t imageCount     = 0;
         uint32_t minImageCount  = 0;
 
-        VkFormat colorFormat;
-        VkFormat depthFormat;
-        VkSampleCountFlagBits msaaSamples;
+        VkFormat colorFormat = VK_FORMAT_UNDEFINED;
+        VkFormat depthFormat = VK_FORMAT_UNDEFINED;
+
+        VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     };
 
     namespace ImGuiManager

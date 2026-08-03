@@ -13,6 +13,7 @@
 #include "graphics/vulkan/vulkanSwapchain.h"
 
 #include "graphics/imgui/frameStatsWindow.h"
+#include "graphics/imgui/modelEditorWindow.h"
 
 #include "platform/input.h"
 #include "platform/window.h"
@@ -61,6 +62,10 @@ namespace Engine::Logic
             void DrawMeshIntances(GFX::MeshHandle _pHandle, uint32_t _instanceCount, uint32_t _firstInstance = 0);
             void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
             void BeginDraw(); 
+
+        public:
+
+            GFX::cModelEditorWindow& GetModelEitorWindow();
             
         public:
 
@@ -90,6 +95,7 @@ namespace Engine::Logic
 
         private:
 
-            GFX::cFrameStatsWindow m_frameStatsWindow;
+            GFX::cFrameStatsWindow  m_frameStatsWindow;
+            GFX::cModelEditorWindow m_modelEditorWindow;
     };
 }

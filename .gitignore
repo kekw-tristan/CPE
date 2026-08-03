@@ -68,3 +68,4 @@ logs/
 .env
 
 *.ini
+vcpkg_installed/

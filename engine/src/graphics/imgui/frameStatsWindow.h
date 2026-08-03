@@ -25,12 +25,11 @@ namespace Engine::GFX
 
         public:
 
-            void SetDeltaTime(float _deltaTime);
             sFrameWindowStats& GetFrameWindowStats();
 
         protected:
 
-            void OnDraw() const override;
+            void OnDraw() override;
 
         private:
 

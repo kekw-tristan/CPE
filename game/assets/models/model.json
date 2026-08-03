@@ -1,0 +1,21 @@
+{
+    "name": "player",
+    "shapes": [
+        {
+            "name": "head",
+            "meshType": "Pyramid",
+            "position": [0.0, 1.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0],
+            "color": [1.0, 1.0, 0.0, 1.0]
+        },
+        {
+            "name": "body",
+            "meshType": "Cube",
+            "position": [0.0, 0.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0],
+            "color": [1.0, 0.0, 0.0, 1.0]
+        }
+    ]
+}

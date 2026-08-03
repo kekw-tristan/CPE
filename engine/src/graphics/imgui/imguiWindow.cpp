@@ -6,7 +6,7 @@ namespace Engine::GFX
 {
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void Engine::GFX::cImGuiWindow::Draw() const
+    void Engine::GFX::cImGuiWindow::Draw() 
     {
         OnDraw();
     }
