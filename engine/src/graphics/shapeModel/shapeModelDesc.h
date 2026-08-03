@@ -2,13 +2,14 @@
 
 #include "graphics/shapeModel/shapePartDesc.h"
 
+#include <string>
 #include <vector>
 
 namespace Engine::GFX
 {
     struct sShapeModelDesc
     {
-        const char* pDebugName; 
+        std::string pDebugName; 
         std::vector<sShapePartDesc> shapes;
     };
 }

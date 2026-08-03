@@ -2,6 +2,9 @@
 
 #include "graphics/shapeModel/shapeModelDesc.h"
 #include "graphics/shapeModel/shapeModelManager.h"
+#include "graphics/shapeModel/shapeModelLoader.h"
+
+#include "graphics/imgui/modelEditorWindow.h"
 
 // -------------------------------------------------------------------------------------------------------------------------
 
@@ -24,87 +27,66 @@ void cGame::OnInit()
 {
     using namespace Engine::GFX;
 
-    Engine::GFX::sShapePartDesc head =
-    {
-        .meshType = Engine::GFX::sMeshTypes::Pyramid,
-        .transform =
-        {
-            .position   = {0.0f, 1.0f, 0.0f},
-            .scale      = {1.0f, 1.0f, 1.0f},
-            .rotation   = {0.f,  0.0f, 0.0f}
-
-        },
-        .color = {1.0f, 1.0f, 0.0f, 1.0f}
-    };
-
-    Engine::GFX::sShapePartDesc body =
-    {
-        .meshType = Engine::GFX::sMeshTypes::Cube,
-        .transform =
-        {
-            .position   = {0.0f, 0.0f, 0.0f},
-            .scale      = {1.0f, 1.0f, 1.0f},
-            .rotation   = {0.0f, 0.0f, 0.0f}
-
-        },
-        .color = {1.0f, 0.0f, 0.0f, 1.0f}
-    };
-
     sShapeModelDesc shapeModelDesc;
+    std::string errorMessage;
 
-    shapeModelDesc.pDebugName = "player"; 
-    shapeModelDesc.shapes.push_back(head);
-    shapeModelDesc.shapes.push_back(body);
+    if (!ShapeModelLoader::LoadFromFile("./game/assets/models/model.json", shapeModelDesc, errorMessage))
+    {
+        std::cerr << "Failed to load model: " << errorMessage << '\n';
+        return;
+    }
 
     ShapeModelHandle playerHandle = ShapeModelManager::CreateShapeModel(shapeModelDesc);
 
-    sShapeInstance playerInstance = 
+    sShapeInstance playerInstance =
     {
         .modelHandle = playerHandle,
-        .transform = 
+        .transform =
         {
-            .position   = {0.0f, 0.0f, 0.0f},
-            .scale      = {1.0f, 1.0f, 1.0f},
-            .rotation   = {0.0f, 0.0f, 0.0f}
+            .position = { 0.0f, 0.0f, 0.0f },
+            .scale = { 1.0f, 1.0f, 1.0f },
+            .rotation = { 0.0f, 0.0f, 0.0f }
         }
     };
 
-    Engine::GFX::sCubeDesc cubeDesc;
-
+    sCubeDesc cubeDesc;
     cubeDesc.width = 1.0f;
     cubeDesc.depth = 1.0f;
     cubeDesc.height = 1.0f;
 
-
-    Engine::GFX::sPyramidDesc pyramidDesc;
-
+    sPyramidDesc pyramidDesc;
     pyramidDesc.baseCornerCount = 4;
     pyramidDesc.baseRadius = 0.5f;
     pyramidDesc.height = 3.0f;
     pyramidDesc.rotationRadians = 0.7854f;
 
-    Engine::GFX::sMeshData cubeData = Engine::GFX::cMeshGenerator::CreateCube(cubeDesc);
-    Engine::GFX::sMeshData pyramidData = Engine::GFX::cMeshGenerator::CreatePyramid(pyramidDesc);
+    sMeshData cubeData = cMeshGenerator::CreateCube(cubeDesc);
+    sMeshData pyramidData = cMeshGenerator::CreatePyramid(pyramidDesc);
 
+    m_cubeMesh = CreateMesh(cubeData);
+    m_pyramidMesh = CreateMesh(pyramidData);
 
-    m_cubeMesh = Engine::GFX::CreateMesh(cubeData);
-    m_pyramidMesh = Engine::GFX::CreateMesh(pyramidData);
-
-    Engine::GFX::SubmitMesh(m_cubeMesh);
-    Engine::GFX::SubmitMesh(m_pyramidMesh);
+    SubmitMesh(m_cubeMesh);
+    SubmitMesh(m_pyramidMesh);
 
     m_playerShapeInstance = playerInstance;
 
+    GetModelEitorWindow().SetModelChangedCallback([this](const Engine::GFX::sShapeModelDesc& _rModel) { QueueEditedModel(_rModel); });
+
     BuildRenderInstances(m_playerShapeInstance);
-
     RebuildInstanceList();
-
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
 
 void cGame::OnUpdate(float _deltaTime) 
 {
+    if (m_hasPendingModelUpdate)
+    {
+        ApplyEditedModel(m_pendingEditedModel);
+        m_hasPendingModelUpdate = false;
+    }
+
     using namespace Engine::Platform;
 
 
@@ -380,6 +362,41 @@ void cGame::RebuildInstanceList()
 
 
     std::cout << "GPU Instance order rebuilt: " << m_instances.size() << "\n";
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::QueueEditedModel(const Engine::GFX::sShapeModelDesc& _rModel)
+{
+    m_pendingEditedModel = _rModel;
+    m_hasPendingModelUpdate = true;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::ApplyEditedModel(const Engine::GFX::sShapeModelDesc& _rModel)
+{
+    using namespace Engine::GFX;
+
+    sShapeModelDesc& rRuntimeModel = ShapeModelManager::GetShapeModel(m_playerShapeInstance.modelHandle);
+    rRuntimeModel = _rModel;
+
+    ClearRenderInstances();
+    BuildRenderInstances(m_playerShapeInstance);
+    RebuildInstanceList();
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::ClearRenderInstances()
+{
+    for (Engine::GFX::sInstanceData* pInstance : m_instances)
+    {
+        m_pool.Destroy(pInstance);
+    }
+
+    m_instances.clear();
+    m_meshInstances.clear();
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

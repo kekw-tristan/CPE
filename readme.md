@@ -1,67 +1,40 @@
+# CPE
+
+A Vulkan rendering engine written in C++20.
+
 # Blog
 
 ## 20.7.2026
-It's possilbe to render multiple meshes now.
 
-![million cubes](blogImages/multipleMeshes.png)
+It is now possible to render multiple meshes.
+
+![Multiple meshes](blogImages/multipleMeshes.png)
 
 ## 12.7.2026
-So far it's possible to render 1 Million cube instances with 1 draw call. 
 
-![million cubes](blogImages/millionCubes.png)
+The engine can render one million cube instances with a single draw call.
 
-# Building & Running
-## Requirements
+![One million cubes](blogImages/millionCubes.png)
 
-Before building the project, install the required dependencies.
-
----
+# Building and Running
 
 ## Linux
 
 Tested on Fedora.
 
-### Build Tools
+### Install dependencies
 
 ```bash
-sudo dnf install make gcc-c++
+sudo dnf install make gcc-c++ glm-devel glfw-devel json-devel vulkan-loader-devel vulkan-headers vulkan-validation-layers
 ```
 
-### Libraries
-
-```bash
-sudo dnf install \
-    glm-devel \
-    vulkan-loader-devel \
-    vulkan-headers \
-    vulkan-validation-layers \
-    glfw-devel
-```
-
-### DirectX Shader Compiler (DXC)
-
-Download the latest Linux release from:
-
-https://github.com/microsoft/DirectXShaderCompiler/releases
-
-Extract the archive:
+Install the DirectX Shader Compiler:
 
 ```bash
 tar -xf linux_dxc*.tar.gz
-```
-
-Install the compiler and its shared libraries:
-
-```bash
 sudo cp bin/dxc /usr/local/bin/
 sudo cp lib/libdxcompiler.so* /usr/local/lib/
 sudo ldconfig
-```
-
-Verify the installation:
-
-```bash
-dxc --version
 ```
 
 ### Build
@@ -69,28 +42,12 @@ dxc --version
 From the project root:
 
 ```bash
-cd ProjectFolder
-```
-
-Generate the project files:
-
-```bash
 ./scripts/generateProjects.sh
-```
-
-Compile the shaders:
-
-```bash
 ./scripts/compileShaders.sh
-```
-
-Build the project:
-
-```bash
 make config=debug
 ```
 
-Available build configurations:
+Available configurations:
 
 ```text
 debug
@@ -100,171 +57,48 @@ dist
 
 ### Run
 
-Start the debug build:
-
 ```bash
 ./bin/Debug-linux-x86_64/game/game
 ```
 
----
-
 ## Windows
 
-### Build Tools
+### Requirements
 
-Install Visual Studio 2022 with the following workload:
+Install:
 
-```text
-Desktop development with C++
-```
+* Visual Studio 2022 with **Desktop development with C++**
+* Vulkan SDK
+* Git
 
-Make sure the following components are installed:
-
-```text
-MSVC v143 C++ build tools
-Windows 10 SDK or Windows 11 SDK
-```
-
-### Vulkan SDK
-
-Download and install the Vulkan SDK from:
-
-https://vulkan.lunarg.com/sdk/home
-
-The installer should create the following environment variable:
-
-```text
-VULKAN_SDK
-```
-
-Open a new PowerShell or Command Prompt window after installation and verify it:
+### Set up vcpkg
 
 ```powershell
-$env:VULKAN_SDK
-```
-
-You can also verify that the Vulkan compiler tools are available:
-
-```powershell
-& "$env:VULKAN_SDK\Bin\dxc.exe" --version
-```
-
-### vcpkg
-
-Clone vcpkg:
-
-```powershell
-cd C:\Users\YourUser\dev
-git clone https://github.com/microsoft/vcpkg.git
-cd vcpkg
-```
-
-Bootstrap vcpkg:
-
-```powershell
+git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+cd C:\vcpkg
 .\bootstrap-vcpkg.bat
-```
-
-Install GLFW and GLM:
-
-```powershell
-.\vcpkg.exe install glfw3:x64-windows glm:x64-windows
-```
-
-Enable the user-wide Visual Studio integration:
-
-```powershell
 .\vcpkg.exe integrate install
 ```
 
-This command only needs to be run once for the current Windows user.
-
-The generated Visual Studio projects can then use installed vcpkg libraries without manually configuring their include and library directories.
-
-Verify the installed packages:
-
-```powershell
-.\vcpkg.exe list
-```
-
-The output should contain:
-
-```text
-glfw3:x64-windows
-glm:x64-windows
-```
+The dependencies declared in `vcpkg.json` are installed automatically during the Visual Studio build.
 
 ### Build
 
 From the project root:
 
 ```powershell
-cd C:\Path\To\CPE
-```
-
-Generate the Visual Studio 2022 solution:
-
-```powershell
 .\scripts\generateProjects.bat
-```
-
-Compile the shaders:
-
-```powershell
 .\scripts\compileShaders.bat
-```
-
-Open the generated solution:
-
-```powershell
 Start-Process .\CPE.sln
 ```
 
-In Visual Studio, select one of the following configurations:
+In Visual Studio:
 
-```text
-Debug
-Release
-Dist
-```
-
-Make sure the platform is set to:
-
-```text
-x64
-```
-
-Build the solution using:
-
-```text
-Build → Build Solution
-```
-
-Alternatively, use the keyboard shortcut:
-
-```text
-Ctrl+Shift+B
-```
-
-### Run
-
-Set `game` as the startup project in Visual Studio:
-
-```text
-Right-click game → Set as Startup Project
-```
-
-Run the project without the debugger:
-
-```text
-Ctrl+F5
-```
-
-Or run it with the debugger:
-
-```text
-F5
-```
+1. Select `Debug`, `Release` or `Dist`.
+2. Select the `x64` platform.
+3. Set `game` as the startup project.
+4. Build with `Ctrl+Shift+B`.
+5. Run with `F5` or `Ctrl+F5`.
 
 The debug executable is generated at:
 
@@ -272,171 +106,43 @@ The debug executable is generated at:
 bin\Debug-windows-x86_64\game\game.exe
 ```
 
-The working directory is configured through Premake, allowing the game to load assets and compiled shaders using project-relative paths.
+# Shader Compilation
 
----
-
-## Shader Compilation
-
-The HLSL shader source is located at:
+Shader source:
 
 ```text
 game/assets/shaders/main.hlsl
 ```
 
-It contains the following entry points:
-
-```text
-VSMain
-PSMain
-```
-
-The shader scripts generate:
+Generated SPIR-V files:
 
 ```text
 game/assets/shaders/bin/main.vert.spv
 game/assets/shaders/bin/main.frag.spv
 ```
 
-### Linux
+Compile manually when required:
 
 ```bash
 ./scripts/compileShaders.sh
 ```
 
-### Windows
-
 ```powershell
 .\scripts\compileShaders.bat
 ```
 
-The shader compiler uses the following profiles:
+# Cleaning
 
-```text
-VSMain → vs_6_0
-PSMain → ps_6_0
-```
-
-The generated SPIR-V files are loaded by the Vulkan renderer at runtime.
-
----
-
-## Cleaning Generated Files
-
-### Linux
+## Linux
 
 ```bash
 ./scripts/clean.sh
 ```
 
-### Windows
+## Windows
 
-Close Visual Studio before cleaning the project because Visual Studio may keep files inside `.vs` locked.
-
-Then run:
+Close Visual Studio and run:
 
 ```powershell
 .\scripts\clean.bat
 ```
-
-The clean scripts remove generated files such as:
-
-```text
-bin
-bin-int
-.vs
-CPE.sln
-*.vcxproj
-*.vcxproj.filters
-*.vcxproj.user
-```
-
-Source files, assets, shaders and Premake files are not removed.
-
----
-
-## Troubleshooting
-
-### `VULKAN_SDK` Is Not Set
-
-Close and reopen PowerShell, Command Prompt and Visual Studio after installing the Vulkan SDK.
-
-Verify the variable:
-
-```powershell
-$env:VULKAN_SDK
-```
-
-### GLFW or GLM Headers Cannot Be Found
-
-Verify that the packages are installed:
-
-```powershell
-cd C:\Users\YourUser\dev\vcpkg
-.\vcpkg.exe list
-```
-
-Install missing packages:
-
-```powershell
-.\vcpkg.exe install glfw3:x64-windows glm:x64-windows
-```
-
-Enable the Visual Studio integration:
-
-```powershell
-.\vcpkg.exe integrate install
-```
-
-Restart Visual Studio afterwards.
-
-### `glfw3.dll` Cannot Be Found
-
-The default `x64-windows` vcpkg triplet uses the dynamic GLFW library.
-
-The DLL is normally located at:
-
-```text
-vcpkg\installed\x64-windows\bin\glfw3.dll
-```
-
-For debug builds:
-
-```text
-vcpkg\installed\x64-windows\debug\bin\glfw3.dll
-```
-
-Ensure that the appropriate DLL is copied next to `game.exe` during the build.
-
-### Shader Files Cannot Be Opened
-
-Compile the shaders before running the game:
-
-```powershell
-.\scripts\compileShaders.bat
-```
-
-Verify that these files exist:
-
-```text
-game/assets/shaders/bin/main.vert.spv
-game/assets/shaders/bin/main.frag.spv
-```
-
-Also ensure that the Visual Studio working directory is generated correctly through the Premake configuration.
-
-### Premake Cannot Be Found
-
-The Windows Premake executable should be located at:
-
-```text
-scripts\premake5.exe
-```
-
-The Linux Premake executable should be located at:
-
-```text
-scripts/premake5
-```
-
-Generate the project files through the provided scripts instead of calling Premake directly.

@@ -60,6 +60,8 @@ namespace Engine::GFX
 
     struct sMeshData;
 
+    class  cModelEditorWindow;
+
     MeshHandle CreateMesh(sMeshData& _rMeshData); 
     void SubmitMesh(MeshHandle _rMeshData);
     void DrawMeshIntances(MeshHandle _pHandle, uint32_t _instanceCount, uint32_t _firstInstances = 0);
@@ -67,6 +69,8 @@ namespace Engine::GFX
     void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
 
     cCamera& GetCamera();
+
+    cModelEditorWindow& GetModelEitorWindow();
 }
 
 namespace Engine::Platform

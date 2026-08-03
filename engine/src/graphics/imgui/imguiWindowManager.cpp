@@ -25,8 +25,8 @@ namespace Engine::GFX
 
             public:
 
-                void AddWindow(const cImGuiWindow&); 
-                void Draw() const;
+                void AddWindow(cImGuiWindow& _rWindow); 
+                void Draw();
 
             private:
 
@@ -38,7 +38,7 @@ namespace Engine::GFX
 
             private:
 
-                std::vector<const cImGuiWindow*> m_imguiWindows;
+                std::vector<cImGuiWindow*> m_imguiWindows;
 
         };
 
@@ -61,14 +61,14 @@ namespace Engine::GFX
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void cImGuiWindowManager::AddWindow(const cImGuiWindow& _rWindow)
+        void cImGuiWindowManager::AddWindow(cImGuiWindow& _rWindow)
         {
             m_imguiWindows.push_back(&_rWindow);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void cImGuiWindowManager::Draw() const
+        void cImGuiWindowManager::Draw() 
         {
             for (auto* pWindow : m_imguiWindows)
             {
@@ -88,7 +88,7 @@ namespace Engine::GFX
     {
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void AddWindow(const cImGuiWindow& _rWindow)
+        void AddWindow(cImGuiWindow& _rWindow)
         {
             cImGuiWindowManager::GetInstance().AddWindow(_rWindow);
         }

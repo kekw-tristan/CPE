@@ -6,7 +6,7 @@ namespace Engine::GFX
 
     namespace ImGuiWindowManager
     {
-        void AddWindow(const cImGuiWindow& _rWindow);
+        void AddWindow(cImGuiWindow& _rWindow);
         void Draw();
     }
 }

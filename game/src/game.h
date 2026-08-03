@@ -8,6 +8,7 @@
 #include "graphics/shapeModel/meshGenerator.h"
 #include "graphics/shapeModel/shapeInstance.h"
 #include "graphics/shapeModel/meshType.h"
+#include "graphics/shapeModel/shapeModelDesc.h"
 
 #include <iostream>
 #include <random>
@@ -53,6 +54,10 @@ class cGame : public cApplication
         void UpdateThirdPersonCamera();
         void RebuildInstanceList();
 
+        void QueueEditedModel(const Engine::GFX::sShapeModelDesc& _rModel);
+        void ApplyEditedModel(const Engine::GFX::sShapeModelDesc& _rModel);
+        void ClearRenderInstances();
+
     private:
 
         Engine::GFX::MeshHandle GetMesh(Engine::GFX::sMeshTypes::Enum _type);
@@ -76,5 +81,8 @@ class cGame : public cApplication
         std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData*>> m_meshInstances;
 
         GFX::sShapeInstance m_playerShapeInstance;
+
+        GFX::sShapeModelDesc m_pendingEditedModel;
+        bool m_hasPendingModelUpdate = false;
     
 };
