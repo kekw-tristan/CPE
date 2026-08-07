@@ -1,7 +1,5 @@
 #include "vulkanPipeline.h"
 
-#include "graphics/pushConstants.h"
-
 #include "graphics/vulkan/vulkanDevice.h"
 #include "graphics/vulkan/vulkanSwapchain.h"
 #include "graphics/vulkan/vulkanVertex.h"

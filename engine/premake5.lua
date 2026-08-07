@@ -29,7 +29,8 @@ project "engine"
     {
         IncludeDir["Engine"],
         path.join(RootDir, "external", "imgui-docking"),
-        path.join(RootDir, "external", "imgui-docking", "backends")
+        path.join(RootDir, "external", "imgui-docking", "backends"),
+        path.join(RootDir, "vcpkg_installed", "x64-linux", "include")
     }
 
     filter "system:windows"

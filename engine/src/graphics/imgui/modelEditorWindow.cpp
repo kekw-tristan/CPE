@@ -1,18 +1,22 @@
 #include "modelEditorWindow.h"
-
 #include "graphics/shapeModel/shapeModelLoader.h"
-
 #include <imgui.h>
-
 #include <cstdio>
 #include <utility>
 
+// -------------------------------------------------------------------------------------------------------------------------
+
 namespace Engine::GFX
 {
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cModelEditorWindow::SetModelChangedCallback(ModelChangedCallback _callback)
     {
         m_modelChangedCallback = std::move(_callback);
     }
+
+    // -------------------------------------------------------------------------------------------------------------------------
 
     void cModelEditorWindow::OnDraw()
     {
@@ -21,9 +25,12 @@ namespace Engine::GFX
         ImGui::Text("File: %s", m_currentFilePath.string().c_str());
 
         if (ImGui::Button("Load Model"))
-        {
             LoadModel(m_currentFilePath);
-        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Save Model"))
+            SaveModel(m_currentFilePath);
 
         if (m_modelChanged)
         {
@@ -39,6 +46,16 @@ namespace Engine::GFX
 
         if (m_modelLoaded)
         {
+            ImGui::Separator();
+
+            if (ImGui::Button("Add Cube"))
+                AddCube();
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Add Pyramid"))
+                AddPyramid();
+
             ImGui::Separator();
 
             ImGui::BeginChild("ShapeList", ImVec2(180.0f, 0.0f), true);
@@ -61,6 +78,8 @@ namespace Engine::GFX
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cModelEditorWindow::LoadModel(const std::filesystem::path& _rFilePath)
     {
         sShapeModelDesc loadedModel;
@@ -80,6 +99,71 @@ namespace Engine::GFX
         m_selectedShapeIndex = m_model.shapes.empty() ? -1 : 0;
     }
 
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::SaveModel(const std::filesystem::path& _rFilePath)
+    {
+        if (!m_modelLoaded)
+            return;
+
+        std::string errorMessage;
+
+        if (!ShapeModelLoader::SaveToFile(_rFilePath, m_model, errorMessage))
+        {
+            m_errorMessage = errorMessage;
+            return;
+        }
+
+        m_errorMessage.clear();
+        m_modelChanged = false;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::AddCube()
+    {
+        sShapePartDesc shape{};
+
+        shape.meshType = sMeshTypes::Cube;
+        shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
+
+        shape.color[0] = 1.0f;
+        shape.color[1] = 1.0f;
+        shape.color[2] = 1.0f;
+        shape.color[3] = 1.0f;
+
+        m_model.shapes.push_back(shape);
+        m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
+
+        MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::AddPyramid()
+    {
+        sShapePartDesc shape{};
+
+        shape.meshType = sMeshTypes::Pyramid;
+        shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
+
+        shape.color[0] = 1.0f;
+        shape.color[1] = 1.0f;
+        shape.color[2] = 1.0f;
+        shape.color[3] = 1.0f;
+
+        m_model.shapes.push_back(shape);
+        m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
+
+        MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cModelEditorWindow::DrawShapeList()
     {
         ImGui::TextUnformatted("Model Parts");
@@ -91,11 +175,11 @@ namespace Engine::GFX
             std::snprintf(label, sizeof(label), "Part %i", shapeIndex);
 
             if (ImGui::Selectable(label, shapeIndex == m_selectedShapeIndex))
-            {
                 m_selectedShapeIndex = shapeIndex;
-            }
         }
     }
+
+    // -------------------------------------------------------------------------------------------------------------------------
 
     void cModelEditorWindow::DrawInspector()
     {
@@ -119,12 +203,7 @@ namespace Engine::GFX
             MarkModelChanged();
         }
 
-        float position[] =
-        {
-            rShape.transform.position.x(),
-            rShape.transform.position.y(),
-            rShape.transform.position.z()
-        };
+        float position[] = { rShape.transform.position.x(), rShape.transform.position.y(), rShape.transform.position.z() };
 
         if (ImGui::DragFloat3("Position", position, 0.05f))
         {
@@ -132,12 +211,7 @@ namespace Engine::GFX
             MarkModelChanged();
         }
 
-        float rotation[] =
-        {
-            rShape.transform.rotation.x(),
-            rShape.transform.rotation.y(),
-            rShape.transform.rotation.z()
-        };
+        float rotation[] = { rShape.transform.rotation.x(), rShape.transform.rotation.y(), rShape.transform.rotation.z() };
 
         if (ImGui::DragFloat3("Rotation", rotation, 0.01f))
         {
@@ -145,12 +219,7 @@ namespace Engine::GFX
             MarkModelChanged();
         }
 
-        float scale[] =
-        {
-            rShape.transform.scale.x(),
-            rShape.transform.scale.y(),
-            rShape.transform.scale.z()
-        };
+        float scale[] = { rShape.transform.scale.x(), rShape.transform.scale.y(), rShape.transform.scale.z() };
 
         if (ImGui::DragFloat3("Scale", scale, 0.05f, 0.01f, 100.0f))
         {
@@ -159,14 +228,33 @@ namespace Engine::GFX
         }
 
         if (ImGui::ColorEdit4("Color", rShape.color))
+            MarkModelChanged();
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Remove Part"))
         {
+            m_model.shapes.erase(m_model.shapes.begin() + m_selectedShapeIndex);
+
+            if (m_model.shapes.empty())
+                m_selectedShapeIndex = -1;
+            else if (m_selectedShapeIndex >= static_cast<int>(m_model.shapes.size()))
+                m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
+
             MarkModelChanged();
         }
     }
+
+    // -------------------------------------------------------------------------------------------------------------------------
 
     void cModelEditorWindow::MarkModelChanged()
     {
         m_modelChanged = true;
         m_previewDirty = true;
     }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
 }
+
+// -------------------------------------------------------------------------------------------------------------------------
