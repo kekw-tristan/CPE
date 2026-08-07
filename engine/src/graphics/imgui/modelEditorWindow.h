@@ -11,38 +11,46 @@ namespace Engine::GFX
 {
     class cModelEditorWindow : public cImGuiWindow
     {
-    public:
-        using ModelChangedCallback = std::function<void(const sShapeModelDesc&)>;
+        public:
 
-        cModelEditorWindow() = default;
-        ~cModelEditorWindow() = default;
+            using ModelChangedCallback = std::function<void(const sShapeModelDesc&)>;
 
-        cModelEditorWindow(const cModelEditorWindow&) = delete;
-        cModelEditorWindow& operator=(const cModelEditorWindow&) = delete;
+            cModelEditorWindow() = default;
+            ~cModelEditorWindow() = default;
 
-        void SetModelChangedCallback(ModelChangedCallback _callback);
+            cModelEditorWindow(const cModelEditorWindow&) = delete;
+            cModelEditorWindow& operator=(const cModelEditorWindow&) = delete;
 
-    protected:
-        void OnDraw() override;
+            void SetModelChangedCallback(ModelChangedCallback _callback);
 
-    private:
-        void LoadModel(const std::filesystem::path& _rFilePath);
-        void DrawShapeList();
-        void DrawInspector();
-        void MarkModelChanged();
+        protected:
 
-    private:
-        sShapeModelDesc m_model;
+            void OnDraw() override;
 
-        std::filesystem::path m_currentFilePath = "./game/assets/models/model.json";
-        std::string m_errorMessage;
+        private:
+        
+            void LoadModel(const std::filesystem::path& _rFilePath);
+            void DrawShapeList();
+            void DrawInspector();
+            void MarkModelChanged();
 
-        ModelChangedCallback m_modelChangedCallback;
+            void SaveModel(const std::filesystem::path& _rFilePath); 
+            void AddCube(); 
+            void AddPyramid();
 
-        int m_selectedShapeIndex = -1;
+        private:
+            
+            sShapeModelDesc m_model;
 
-        bool m_modelLoaded = false;
-        bool m_modelChanged = false;
-        bool m_previewDirty = false;
+            std::filesystem::path m_currentFilePath = "./game/assets/models/model.json";
+            std::string m_errorMessage;
+
+            ModelChangedCallback m_modelChangedCallback;
+
+            int m_selectedShapeIndex = -1;
+
+            bool m_modelLoaded  = false;
+            bool m_modelChanged = false;
+            bool m_previewDirty = false;
     };
 }

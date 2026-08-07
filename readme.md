@@ -4,6 +4,11 @@ A Vulkan rendering engine written in C++20.
 
 # Blog
 
+## 8.8.2026
+
+Added a small model editor and a frame statistics ImGui window. Also added antialiasing.
+![Multiple meshes](blogImages/modelLoader.png)
+
 ## 20.7.2026
 
 It is now possible to render multiple meshes.
