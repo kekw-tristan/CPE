@@ -45,12 +45,13 @@ project "game"
 
     postbuildcommands
     {
-        '{COPYDIR} "' ..
-        path.join(RootDir, "game", "assets") ..
-        '" "%{cfg.targetdir}/assets"'
+        '{COPYDIR} "' .. path.join(RootDir, "game", "assets") .. '" "%{cfg.targetdir}/assets"'
     }
 
+
     filter "system:windows"
+        systemversion "latest"
+
         defines
         {
             "GAME_PLATFORM_WINDOWS",
@@ -75,8 +76,9 @@ project "game"
             "vulkan-1"
         }
 
+
     filter "system:linux"
-    defines
+        defines
         {
             "GAME_PLATFORM_LINUX",
             "GAME_ASSET_PATH=\"game/assets\"",
@@ -89,6 +91,7 @@ project "game"
             "glfw"
         }
 
+
     filter "configurations:Debug"
         defines
         {
@@ -97,6 +100,7 @@ project "game"
 
         runtime "Debug"
         symbols "On"
+
 
     filter "configurations:Release"
         defines
@@ -107,6 +111,7 @@ project "game"
         runtime "Release"
         optimize "On"
 
+
     filter "configurations:Dist"
         defines
         {
@@ -115,5 +120,10 @@ project "game"
 
         runtime "Release"
         optimize "Full"
+
+
+    filter { "system:windows", "configurations:Dist" }
+        staticruntime "on"
+
 
     filter {}

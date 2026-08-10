@@ -11,11 +11,13 @@ workspace "CPE"
 
     multiprocessorcompile "On"
 
+
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 RootDir = _MAIN_SCRIPT_DIR
 
 VulkanSDK = os.getenv("VULKAN_SDK")
+
 
 if os.host() == "windows" then
     if VulkanSDK == nil or VulkanSDK == "" then
@@ -34,6 +36,7 @@ if os.host() == "windows" then
     end
 end
 
+
 IncludeDir = {}
 IncludeDir["Engine"] = path.join(RootDir, "engine", "src")
 
@@ -44,7 +47,8 @@ if VulkanSDK ~= nil and VulkanSDK ~= "" then
     LibraryDir["VulkanSDK"] = path.join(VulkanSDK, "Lib")
 end
 
-filter "system:windows"
+
+filter { "system:windows", "configurations:Debug or Release" }
     vsprops
     {
         VcpkgEnabled = "true",
@@ -53,7 +57,17 @@ filter "system:windows"
         VcpkgTriplet = "x64-windows"
     }
 
+filter { "system:windows", "configurations:Dist" }
+    vsprops
+    {
+        VcpkgEnabled = "true",
+        VcpkgEnableManifest = "true",
+        VcpkgManifestInstall = "true",
+        VcpkgTriplet = "x64-windows-static"
+    }
+
 filter {}
+
 
 include "engine"
 include "game"

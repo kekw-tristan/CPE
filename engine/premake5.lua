@@ -29,9 +29,9 @@ project "engine"
     {
         IncludeDir["Engine"],
         path.join(RootDir, "external", "imgui-docking"),
-        path.join(RootDir, "external", "imgui-docking", "backends"),
-        path.join(RootDir, "vcpkg_installed", "x64-linux", "include")
+        path.join(RootDir, "external", "imgui-docking", "backends")
     }
+
 
     filter "system:windows"
         systemversion "latest"
@@ -59,6 +59,7 @@ project "engine"
             "vulkan-1"
         }
 
+
     filter "system:linux"
         pic "On"
 
@@ -68,10 +69,16 @@ project "engine"
             "GLFW_INCLUDE_NONE"
         }
 
+        includedirs
+        {
+            path.join(RootDir, "vcpkg_installed", "x64-linux", "include")
+        }
+
         links
         {
             "vulkan"
         }
+
 
     filter "configurations:Debug"
         defines
@@ -82,6 +89,7 @@ project "engine"
         runtime "Debug"
         symbols "On"
 
+
     filter "configurations:Release"
         defines
         {
@@ -91,6 +99,7 @@ project "engine"
         runtime "Release"
         optimize "On"
 
+
     filter "configurations:Dist"
         defines
         {
@@ -99,5 +108,10 @@ project "engine"
 
         runtime "Release"
         optimize "Full"
+
+
+    filter { "system:windows", "configurations:Dist" }
+        staticruntime "on"
+
 
     filter {}

@@ -57,7 +57,7 @@ void cGame::OnInit()
     sPyramidDesc pyramidDesc;
     pyramidDesc.baseCornerCount = 4;
     pyramidDesc.baseRadius = 0.5f;
-    pyramidDesc.height = 3.0f;
+    pyramidDesc.height = 1.0f;
     pyramidDesc.rotationRadians = 0.7854f;
 
     sMeshData cubeData = cMeshGenerator::CreateCube(cubeDesc);
@@ -458,15 +458,15 @@ Math::cMatrix4x4f cGame::CreateTransformMatrix(const GFX::sTransform& _rTransfor
     using namespace Engine::Math;
 
     cMatrix4x4f translation = cMatrix4x4f::translation(_rTransform.position);
-    
-    cMatrix4x4f scale       = cMatrix4x4f::scale(_rTransform.scale);
 
-    cMatrix4x4f rotation    =
-          cMatrix4x4f::rotationX(_rTransform.rotation.x())
+    cMatrix4x4f scale = cMatrix4x4f::scale(_rTransform.scale);
+
+    cMatrix4x4f rotation =
+        cMatrix4x4f::rotationX(_rTransform.rotation.x())
         * cMatrix4x4f::rotationY(_rTransform.rotation.y())
         * cMatrix4x4f::rotationZ(_rTransform.rotation.z());
 
-    return translation * rotation * scale;
+    return scale * rotation * translation;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

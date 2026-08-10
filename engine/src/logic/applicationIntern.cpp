@@ -114,6 +114,8 @@ namespace Engine::Logic
         }
 
         m_frameStatsWindow.GetFrameWindowStats().deltaTime = deltaTime;
+
+        m_modelEditorWindow.Update(m_input, m_camera);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
