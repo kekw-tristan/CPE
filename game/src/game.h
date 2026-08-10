@@ -66,10 +66,14 @@ class cGame : public cApplication
     
     private:
     
-        
-    
-        GFX::MeshHandle     m_cubeMesh;
-        GFX::MeshHandle     m_pyramidMesh;
+
+        GFX::MeshHandle m_planeMesh;
+        GFX::MeshHandle m_cubeMesh;
+        GFX::MeshHandle m_pyramidMesh;
+        GFX::MeshHandle m_sphereMesh;
+        GFX::MeshHandle m_cylinderMesh;
+        GFX::MeshHandle m_coneMesh;
+
         GFX::sInstanceData* m_playerInstance;
 
         Math::cVec3f m_playerPosition;

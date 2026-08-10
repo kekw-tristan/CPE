@@ -18,90 +18,95 @@ namespace Engine::GFX
 
     class cModelEditorWindow : public cImGuiWindow
     {
-        public:
+    public:
 
-            using ModelChangedCallback = std::function<void(const sShapeModelDesc&)>;
+        using ModelChangedCallback = std::function<void(const sShapeModelDesc&)>;
 
-            cModelEditorWindow() = default;
-            ~cModelEditorWindow() = default;
+        cModelEditorWindow() = default;
+        ~cModelEditorWindow() = default;
 
-            cModelEditorWindow(const cModelEditorWindow&) = delete;
-            cModelEditorWindow& operator=(const cModelEditorWindow&) = delete;
+        cModelEditorWindow(const cModelEditorWindow&) = delete;
+        cModelEditorWindow& operator=(const cModelEditorWindow&) = delete;
 
-            void Update(const Platform::cInput& _rInput, const cCamera& _rCamera);
+        void Update(const Platform::cInput& _rInput, const cCamera& _rCamera);
 
-            void SetModelChangedCallback(ModelChangedCallback _callback);
+        void SetModelChangedCallback(ModelChangedCallback _callback);
 
-        protected:
+    protected:
 
-            void OnDraw() override;
+        void OnDraw() override;
 
-        private:
+    private:
 
-            enum class eTransformMode
-            {
-                None,
-                Move,
-                Rotate,
-                Scale
-            };
+        enum class eTransformMode
+        {
+            None,
+            Move,
+            Rotate,
+            Scale
+        };
 
-            enum class eTransformAxis
-            {
-                None,
-                X,
-                Y,
-                Z
-            };
+        enum class eTransformAxis
+        {
+            None,
+            X,
+            Y,
+            Z
+        };
 
-        private:
+    private:
 
-            void LoadModel(const std::filesystem::path& _rFilePath);
-            void SaveModel(const std::filesystem::path& _rFilePath);
+        void LoadModel(const std::filesystem::path& _rFilePath);
+        void SaveModel(const std::filesystem::path& _rFilePath);
 
-            void DrawShapeList();
-            void DrawInspector();
+        void DrawShapeList();
+        void DrawInspector();
 
-            void AddCube();
-            void AddPyramid();
-            void DuplicateSelectedShape();
-            void RemoveSelectedShape();
+        void AddPlane();
+        void AddCube();
+        void AddPyramid();
+        void AddSphere();
+        void AddCylinder();
+        void AddCone();
 
-            bool HasValidSelection() const;
+        void DuplicateSelectedShape();
+        void RemoveSelectedShape();
 
-            void BeginTransform(eTransformMode _mode);
-            void UpdateTransform(const Platform::cInput& _rInput, const cCamera& _rCamera);
-            void ConfirmTransform();
-            void CancelTransform();
+        bool HasValidSelection() const;
 
-            void MarkModelChanged();
+        void BeginTransform(eTransformMode _mode);
+        void UpdateTransform(const Platform::cInput& _rInput, const cCamera& _rCamera);
+        void ConfirmTransform();
+        void CancelTransform();
 
-        private:
+        void MarkModelChanged();
 
-            sShapeModelDesc m_model;
+    private:
 
-            std::string m_modelPath = "./game/assets/models/model.json";
-            std::string m_errorMessage;
+        sShapeModelDesc m_model;
 
-            ModelChangedCallback m_modelChangedCallback;
+        std::string m_modelPath = "./game/assets/models/model.json";
+        std::string m_errorMessage;
 
-            int m_selectedShapeIndex = -1;
+        ModelChangedCallback m_modelChangedCallback;
 
-            bool m_modelLoaded = false;
-            bool m_modelChanged = false;
-            bool m_previewDirty = false;
+        int m_selectedShapeIndex = -1;
 
-            eTransformMode m_transformMode = eTransformMode::None;
-            eTransformAxis m_transformAxis = eTransformAxis::None;
+        bool m_modelLoaded = false;
+        bool m_modelChanged = false;
+        bool m_previewDirty = false;
 
-            sShapePartDesc m_transformStartShape{};
+        eTransformMode m_transformMode = eTransformMode::None;
+        eTransformAxis m_transformAxis = eTransformAxis::None;
 
-            int m_transformShapeIndex = -1;
+        sShapePartDesc m_transformStartShape{};
 
-            double m_transformMouseDeltaX = 0.0;
-            double m_transformMouseDeltaY = 0.0;
+        int m_transformShapeIndex = -1;
 
-            bool m_transformStartModelChanged = false;
-            bool m_openAddPopup = false;
+        double m_transformMouseDeltaX = 0.0;
+        double m_transformMouseDeltaY = 0.0;
+
+        bool m_transformStartModelChanged = false;
+        bool m_openAddPopup = false;
     };
 }

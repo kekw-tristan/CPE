@@ -21,7 +21,7 @@ namespace Engine::GFX
     // -------------------------------------------------------------------------------------------------------------------------
 
     cCamera::cCamera()
-        : m_position(0.0f, 0.0f, 0.0f), m_yawDegrees(-90.0f), m_pitchDegrees(0.0f), m_fov(60.0f), m_nearPlane(0.1f), m_farPlane(10000.0f)
+        : m_position(0.0f, 0.0f, 0.0f), m_yawDegrees(-90.0f), m_pitchDegrees(0.0f), m_fov(60.0f), m_nearPlane(0.1f), m_farPlane(100000.f)
     {
     }
 

@@ -10,8 +10,12 @@
 
 cGame::cGame(Engine::sAppConfig& _rAppConfig)
     : cApplication(_rAppConfig)
+    , m_planeMesh()
     , m_cubeMesh()
     , m_pyramidMesh()
+    , m_sphereMesh()
+    , m_cylinderMesh()
+    , m_coneMesh()
     , m_playerInstance()
     , m_playerPosition()
     , m_pool()
@@ -43,31 +47,65 @@ void cGame::OnInit()
         .modelHandle = playerHandle,
         .transform =
         {
-            .position = { 0.0f, 0.0f, 0.0f },
-            .scale = { 1.0f, 1.0f, 1.0f },
-            .rotation = { 0.0f, 0.0f, 0.0f }
+            .position   = { 0.0f, 0.0f, 0.0f },
+            .scale      = { 1.0f, 1.0f, 1.0f },
+            .rotation   = { 0.0f, 0.0f, 0.0f }
         }
     };
 
+    sPlaneDesc planeDesc;
+    planeDesc.width = 1.0f;
+    planeDesc.depth = 1.0f;
+
     sCubeDesc cubeDesc;
-    cubeDesc.width = 1.0f;
-    cubeDesc.depth = 1.0f;
+    cubeDesc.width  = 1.0f;
     cubeDesc.height = 1.0f;
+    cubeDesc.depth  = 1.0f;
+
 
     sPyramidDesc pyramidDesc;
-    pyramidDesc.baseCornerCount = 4;
-    pyramidDesc.baseRadius = 0.5f;
-    pyramidDesc.height = 1.0f;
-    pyramidDesc.rotationRadians = 0.7854f;
+    pyramidDesc.width   = 1.0f;
+    pyramidDesc.height  = 1.0f;
+    pyramidDesc.depth   = 1.0f;
 
-    sMeshData cubeData = cMeshGenerator::CreateCube(cubeDesc);
-    sMeshData pyramidData = cMeshGenerator::CreatePyramid(pyramidDesc);
 
-    m_cubeMesh = CreateMesh(cubeData);
-    m_pyramidMesh = CreateMesh(pyramidData);
+    sSphereDesc sphereDesc;
+    sphereDesc.radius   = 0.5f;
+    sphereDesc.segments = 32;
+    sphereDesc.rings    = 16;
 
+
+    sCylinderDesc cylinderDesc;
+    cylinderDesc.radius     = 0.5f;
+    cylinderDesc.height     = 1.0f;
+    cylinderDesc.segments   = 32;
+
+
+    sConeDesc coneDesc;
+    coneDesc.radius     = 0.5f;
+    coneDesc.height     = 1.0f;
+    coneDesc.segments   = 32;
+
+    sMeshData planeData     = cMeshGenerator::CreatePlane(planeDesc);
+    sMeshData cubeData      = cMeshGenerator::CreateCube(cubeDesc);
+    sMeshData pyramidData   = cMeshGenerator::CreatePyramid(pyramidDesc);
+    sMeshData sphereData    = cMeshGenerator::CreateSphere(sphereDesc);
+    sMeshData cylinderData  = cMeshGenerator::CreateCylinder(cylinderDesc);
+    sMeshData coneData      = cMeshGenerator::CreateCone(coneDesc);
+
+    m_planeMesh     = CreateMesh(planeData);
+    m_cubeMesh      = CreateMesh(cubeData);
+    m_pyramidMesh   = CreateMesh(pyramidData);
+    m_sphereMesh    = CreateMesh(sphereData);
+    m_cylinderMesh  = CreateMesh(cylinderData);
+    m_coneMesh      = CreateMesh(coneData);
+
+    SubmitMesh(m_planeMesh);
     SubmitMesh(m_cubeMesh);
     SubmitMesh(m_pyramidMesh);
+    SubmitMesh(m_sphereMesh);
+    SubmitMesh(m_cylinderMesh);
+    SubmitMesh(m_coneMesh);
 
     m_playerShapeInstance = playerInstance;
 
@@ -75,6 +113,7 @@ void cGame::OnInit()
 
     BuildRenderInstances(m_playerShapeInstance);
     RebuildInstanceList();
+
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -403,18 +442,31 @@ void cGame::ClearRenderInstances()
 
 Engine::GFX::MeshHandle cGame::GetMesh(Engine::GFX::sMeshTypes::Enum _type)
 {
-    using namespace Engine::GFX; 
+    using namespace Engine::GFX;
 
     switch (_type)
     {
+        case sMeshTypes::Plane:
+            return m_planeMesh;
+
         case sMeshTypes::Cube:
             return m_cubeMesh;
 
         case sMeshTypes::Pyramid:
             return m_pyramidMesh;
-    }
 
-    return nullptr;
+        case sMeshTypes::Sphere:
+            return m_sphereMesh;
+
+        case sMeshTypes::Cylinder:
+            return m_cylinderMesh;
+
+        case sMeshTypes::Cone:
+            return m_coneMesh;
+
+        default:
+            return nullptr;
+    }
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

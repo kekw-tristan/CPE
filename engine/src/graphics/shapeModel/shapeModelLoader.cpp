@@ -3,7 +3,7 @@
 #include "shapeModelDesc.h"
 
 #include <fstream>
-#include <utility>
+#include <string>
 
 #include <nlohmann/json.hpp>
 
@@ -16,23 +16,47 @@ namespace Engine::GFX
 
     namespace
     {
-        
+
         // -------------------------------------------------------------------------------------------------------------------------
-        
+
         bool ParseMeshType(const std::string& _rMeshTypeName, sMeshTypes::Enum& _rMeshType)
         {
+            if (_rMeshTypeName == "Plane")
+            {
+                _rMeshType = sMeshTypes::Plane;
+                return true;
+            }
+
             if (_rMeshTypeName == "Cube")
             {
                 _rMeshType = sMeshTypes::Cube;
                 return true;
             }
-        
+
             if (_rMeshTypeName == "Pyramid")
             {
                 _rMeshType = sMeshTypes::Pyramid;
                 return true;
             }
-        
+
+            if (_rMeshTypeName == "Sphere")
+            {
+                _rMeshType = sMeshTypes::Sphere;
+                return true;
+            }
+
+            if (_rMeshTypeName == "Cylinder")
+            {
+                _rMeshType = sMeshTypes::Cylinder;
+                return true;
+            }
+
+            if (_rMeshTypeName == "Cone")
+            {
+                _rMeshType = sMeshTypes::Cone;
+                return true;
+            }
+
             return false;
         }
 
@@ -42,14 +66,26 @@ namespace Engine::GFX
         {
             switch (_meshType)
             {
-                case sMeshTypes::Cube:
-                    return "Cube";
-            
-                case sMeshTypes::Pyramid:
-                    return "Pyramid";
-            
-                default:
-                    return "Unknown";
+            case sMeshTypes::Plane:
+                return "Plane";
+
+            case sMeshTypes::Cube:
+                return "Cube";
+
+            case sMeshTypes::Pyramid:
+                return "Pyramid";
+
+            case sMeshTypes::Sphere:
+                return "Sphere";
+
+            case sMeshTypes::Cylinder:
+                return "Cylinder";
+
+            case sMeshTypes::Cone:
+                return "Cone";
+
+            default:
+                return "Unknown";
             }
         }
 
@@ -156,7 +192,9 @@ namespace Engine::GFX
                 shapeJson["position"] = Vec3ToJson(shapePart.transform.position);
                 shapeJson["rotation"] = Vec3ToJson(shapePart.transform.rotation);
                 shapeJson["scale"] = Vec3ToJson(shapePart.transform.scale);
-                shapeJson["color"] = {
+
+                shapeJson["color"] =
+                {
                     shapePart.color[0],
                     shapePart.color[1],
                     shapePart.color[2],
@@ -175,6 +213,7 @@ namespace Engine::GFX
             }
 
             _rErrorMessage.clear();
+
             return true;
         }
         catch (const nlohmann::json::exception& _rException)
@@ -189,4 +228,3 @@ namespace Engine::GFX
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
-

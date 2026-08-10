@@ -6,9 +6,15 @@ namespace Engine::GFX
     {
         enum Enum
         {
+            Plane,
             Cube,
             Pyramid,
+            Sphere,
+            Cylinder,
+            Cone,
+
             NumberOfElements,
+
             Undefined = -1
         };
     };

@@ -33,11 +33,23 @@ namespace Engine::GFX
         {
             switch (_meshType)
             {
+            case sMeshTypes::Plane:
+                return "Plane";
+
             case sMeshTypes::Cube:
                 return "Cube";
 
             case sMeshTypes::Pyramid:
                 return "Pyramid";
+
+            case sMeshTypes::Sphere:
+                return "Sphere";
+
+            case sMeshTypes::Cylinder:
+                return "Cylinder";
+
+            case sMeshTypes::Cone:
+                return "Cone";
 
             default:
                 return "Unknown";
@@ -290,11 +302,23 @@ namespace Engine::GFX
 
         if (ImGui::BeginPopup("AddShapePopup"))
         {
+            if (ImGui::MenuItem("Plane"))
+                AddPlane();
+
             if (ImGui::MenuItem("Cube"))
                 AddCube();
 
             if (ImGui::MenuItem("Pyramid"))
                 AddPyramid();
+
+            if (ImGui::MenuItem("Sphere"))
+                AddSphere();
+
+            if (ImGui::MenuItem("Cylinder"))
+                AddCylinder();
+
+            if (ImGui::MenuItem("Cone"))
+                AddCone();
 
             ImGui::EndPopup();
         }
@@ -375,19 +399,53 @@ namespace Engine::GFX
 
         if (ImGui::CollapsingHeader("Appearance", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            const char* meshTypeNames[] = { "Cube", "Pyramid" };
-
-            int selectedMeshType = rShape.meshType == sMeshTypes::Cube ? 0 : 1;
-
-            if (ImGui::Combo("Mesh Type", &selectedMeshType, meshTypeNames, 2))
+            const char* meshTypeNames[] =
             {
-                rShape.meshType = selectedMeshType == 0 ? sMeshTypes::Cube : sMeshTypes::Pyramid;
+                "Plane",
+                "Cube",
+                "Pyramid",
+                "Sphere",
+                "Cylinder",
+                "Cone"
+            };
+
+            int selectedMeshType = static_cast<int>(rShape.meshType);
+
+            if (selectedMeshType < 0 || selectedMeshType >= static_cast<int>(sMeshTypes::NumberOfElements))
+                selectedMeshType = 0;
+
+            if (ImGui::Combo("Mesh Type", &selectedMeshType, meshTypeNames, static_cast<int>(sMeshTypes::NumberOfElements)))
+            {
+                rShape.meshType = static_cast<sMeshTypes::Enum>(selectedMeshType);
                 MarkModelChanged();
             }
 
             if (ImGui::ColorEdit4("Color", rShape.color))
                 MarkModelChanged();
         }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::AddPlane()
+    {
+        sShapePartDesc shape{};
+
+        shape.meshType = sMeshTypes::Plane;
+
+        shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
+
+        shape.color[0] = 1.0f;
+        shape.color[1] = 1.0f;
+        shape.color[2] = 1.0f;
+        shape.color[3] = 1.0f;
+
+        m_model.shapes.push_back(shape);
+        m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
+
+        MarkModelChanged();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -420,6 +478,75 @@ namespace Engine::GFX
         sShapePartDesc shape{};
 
         shape.meshType = sMeshTypes::Pyramid;
+
+        shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
+
+        shape.color[0] = 1.0f;
+        shape.color[1] = 1.0f;
+        shape.color[2] = 1.0f;
+        shape.color[3] = 1.0f;
+
+        m_model.shapes.push_back(shape);
+        m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
+
+        MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::AddSphere()
+    {
+        sShapePartDesc shape{};
+
+        shape.meshType = sMeshTypes::Sphere;
+
+        shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
+
+        shape.color[0] = 1.0f;
+        shape.color[1] = 1.0f;
+        shape.color[2] = 1.0f;
+        shape.color[3] = 1.0f;
+
+        m_model.shapes.push_back(shape);
+        m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
+
+        MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::AddCylinder()
+    {
+        sShapePartDesc shape{};
+
+        shape.meshType = sMeshTypes::Cylinder;
+
+        shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
+
+        shape.color[0] = 1.0f;
+        shape.color[1] = 1.0f;
+        shape.color[2] = 1.0f;
+        shape.color[3] = 1.0f;
+
+        m_model.shapes.push_back(shape);
+        m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
+
+        MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::AddCone()
+    {
+        sShapePartDesc shape{};
+
+        shape.meshType = sMeshTypes::Cone;
 
         shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
         shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);

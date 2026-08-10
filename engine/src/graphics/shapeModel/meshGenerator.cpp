@@ -20,6 +20,35 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    sMeshData cMeshGenerator::CreatePlane(const sPlaneDesc& _rDesc)
+    {
+        sMeshData mesh{};
+        mesh.pDebugName = "GeneratedPlane";
+
+        const float halfWidth = std::max(_rDesc.width, 0.0f) * 0.5f;
+        const float halfDepth = std::max(_rDesc.depth, 0.0f) * 0.5f;
+
+        mesh.vertices =
+        {
+            {.position = { -halfWidth, 0.0f, -halfDepth }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 0.0f, 0.0f } },
+            {.position = { -halfWidth, 0.0f,  halfDepth }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 0.0f, 1.0f } },
+            {.position = {  halfWidth, 0.0f,  halfDepth }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 1.0f, 1.0f } },
+            {.position = {  halfWidth, 0.0f, -halfDepth }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 1.0f, 0.0f } }
+        };
+
+        mesh.indices =
+        {
+            0, 1, 2,
+            2, 3, 0
+        };
+
+        mesh.bounds = CalculateBounds(mesh.vertices);
+
+        return mesh;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     sMeshData cMeshGenerator::CreateCube(const sCubeDesc& _rDesc)
     {
         sMeshData mesh{};
@@ -28,9 +57,9 @@ namespace Engine::GFX
         mesh.vertices.reserve(24);
         mesh.indices.reserve(36);
 
-        const float halfWidth = _rDesc.width * 0.5f;
-        const float halfHeight = _rDesc.height * 0.5f;
-        const float halfDepth = _rDesc.depth * 0.5f;
+        const float halfWidth = std::max(_rDesc.width, 0.0f) * 0.5f;
+        const float halfHeight = std::max(_rDesc.height, 0.0f) * 0.5f;
+        const float halfDepth = std::max(_rDesc.depth, 0.0f) * 0.5f;
 
         const std::array<cVec3f, 24> positions =
         {
@@ -130,37 +159,29 @@ namespace Engine::GFX
         sMeshData mesh{};
         mesh.pDebugName = "GeneratedPyramid";
 
-        const int cornerCount = std::max(_rDesc.baseCornerCount, 3);
-        const float radius = std::max(_rDesc.baseRadius, 0.0f);
-        const float halfHeight = _rDesc.height * 0.5f;
-
-        mesh.vertices.reserve(cornerCount * 4 + 1);
-        mesh.indices.reserve(cornerCount * 6);
+        const float halfWidth = std::max(_rDesc.width, 0.0f) * 0.5f;
+        const float halfHeight = std::max(_rDesc.height, 0.0f) * 0.5f;
+        const float halfDepth = std::max(_rDesc.depth, 0.0f) * 0.5f;
 
         const cVec3f apex{ 0.0f, halfHeight, 0.0f };
-        const cVec3f baseCenter{ 0.0f, -halfHeight, 0.0f };
-        const cVec3f baseNormal{ 0.0f, -1.0f, 0.0f };
 
-        std::vector<cVec3f> basePositions;
-        basePositions.reserve(cornerCount);
-
-        for (int cornerIndex = 0; cornerIndex < cornerCount; ++cornerIndex)
+        const std::array<cVec3f, 4> basePositions =
         {
-            const float factor = static_cast<float>(cornerIndex) / static_cast<float>(cornerCount);
-            const float angle = _rDesc.rotationRadians + 2.0f * c_pi * factor;
+            cVec3f{ -halfWidth, -halfHeight,  halfDepth },
+            cVec3f{  halfWidth, -halfHeight,  halfDepth },
+            cVec3f{  halfWidth, -halfHeight, -halfDepth },
+            cVec3f{ -halfWidth, -halfHeight, -halfDepth }
+        };
 
-            const float x = std::sin(angle) * radius;
-            const float z = std::cos(angle) * radius;
+        mesh.vertices.reserve(16);
+        mesh.indices.reserve(18);
 
-            basePositions.emplace_back(x, -halfHeight, z);
-        }
-
-        for (int cornerIndex = 0; cornerIndex < cornerCount; ++cornerIndex)
+        for (int sideIndex = 0; sideIndex < 4; ++sideIndex)
         {
-            const int nextCornerIndex = (cornerIndex + 1) % cornerCount;
+            const int nextSideIndex = (sideIndex + 1) % 4;
 
-            const cVec3f& rCurrentPosition = basePositions[cornerIndex];
-            const cVec3f& rNextPosition = basePositions[nextCornerIndex];
+            const cVec3f& rCurrentPosition = basePositions[sideIndex];
+            const cVec3f& rNextPosition = basePositions[nextSideIndex];
 
             const cVec3f edge = rNextPosition - rCurrentPosition;
             const cVec3f apexDirection = apex - rCurrentPosition;
@@ -168,62 +189,274 @@ namespace Engine::GFX
 
             const uint32_t startIndex = static_cast<uint32_t>(mesh.vertices.size());
 
-            sVertex firstVertex{};
-            firstVertex.position = rCurrentPosition;
-            firstVertex.normal = normal;
-            firstVertex.uv = { 0.0f, 0.0f };
-
-            sVertex secondVertex{};
-            secondVertex.position = rNextPosition;
-            secondVertex.normal = normal;
-            secondVertex.uv = { 1.0f, 0.0f };
-
-            sVertex apexVertex{};
-            apexVertex.position = apex;
-            apexVertex.normal = normal;
-            apexVertex.uv = { 0.5f, 1.0f };
-
-            mesh.vertices.push_back(firstVertex);
-            mesh.vertices.push_back(secondVertex);
-            mesh.vertices.push_back(apexVertex);
+            mesh.vertices.push_back({ .position = rCurrentPosition, .normal = normal, .uv = { 0.0f, 0.0f } });
+            mesh.vertices.push_back({ .position = rNextPosition, .normal = normal, .uv = { 1.0f, 0.0f } });
+            mesh.vertices.push_back({ .position = apex, .normal = normal, .uv = { 0.5f, 1.0f } });
 
             mesh.indices.push_back(startIndex + 0);
             mesh.indices.push_back(startIndex + 1);
             mesh.indices.push_back(startIndex + 2);
         }
 
-        const uint32_t baseCenterIndex = static_cast<uint32_t>(mesh.vertices.size());
+        const uint32_t baseStartIndex = static_cast<uint32_t>(mesh.vertices.size());
+        const cVec3f baseNormal{ 0.0f, -1.0f, 0.0f };
 
-        sVertex centerVertex{};
-        centerVertex.position = baseCenter;
-        centerVertex.normal = baseNormal;
-        centerVertex.uv = { 0.5f, 0.5f };
+        mesh.vertices.push_back({ .position = basePositions[0], .normal = baseNormal, .uv = { 0.0f, 1.0f } });
+        mesh.vertices.push_back({ .position = basePositions[3], .normal = baseNormal, .uv = { 0.0f, 0.0f } });
+        mesh.vertices.push_back({ .position = basePositions[2], .normal = baseNormal, .uv = { 1.0f, 0.0f } });
+        mesh.vertices.push_back({ .position = basePositions[1], .normal = baseNormal, .uv = { 1.0f, 1.0f } });
 
-        mesh.vertices.push_back(centerVertex);
+        mesh.indices.push_back(baseStartIndex + 0);
+        mesh.indices.push_back(baseStartIndex + 1);
+        mesh.indices.push_back(baseStartIndex + 2);
 
-        const float inverseDiameter = radius > 0.0f ? 0.5f / radius : 0.0f;
+        mesh.indices.push_back(baseStartIndex + 2);
+        mesh.indices.push_back(baseStartIndex + 3);
+        mesh.indices.push_back(baseStartIndex + 0);
 
-        for (const cVec3f& rPosition : basePositions)
+        mesh.bounds = CalculateBounds(mesh.vertices);
+
+        return mesh;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMeshData cMeshGenerator::CreateSphere(const sSphereDesc& _rDesc)
+    {
+        sMeshData mesh{};
+        mesh.pDebugName = "GeneratedSphere";
+
+        const float radius = std::max(_rDesc.radius, 0.0f);
+        const int segments = std::max(_rDesc.segments, 3);
+        const int rings = std::max(_rDesc.rings, 2);
+
+        const int verticesPerRing = segments + 1;
+
+        mesh.vertices.reserve((rings + 1) * verticesPerRing);
+        mesh.indices.reserve(rings * segments * 6);
+
+        for (int ringIndex = 0; ringIndex <= rings; ++ringIndex)
         {
-            sVertex vertex{};
+            const float v = static_cast<float>(ringIndex) / static_cast<float>(rings);
+            const float phi = c_pi * v;
 
-            vertex.position = rPosition;
-            vertex.normal = baseNormal;
-            vertex.uv =
+            const float sinPhi = std::sin(phi);
+            const float cosPhi = std::cos(phi);
+
+            for (int segmentIndex = 0; segmentIndex <= segments; ++segmentIndex)
             {
-                0.5f + rPosition.x() * inverseDiameter,
-                0.5f + rPosition.z() * inverseDiameter
-            };
+                const float u = static_cast<float>(segmentIndex) / static_cast<float>(segments);
+                const float theta = 2.0f * c_pi * u;
 
-            mesh.vertices.push_back(vertex);
+                const float sinTheta = std::sin(theta);
+                const float cosTheta = std::cos(theta);
+
+                const cVec3f normal{ sinPhi * sinTheta, cosPhi, sinPhi * cosTheta };
+
+                sVertex vertex{};
+
+                vertex.position = normal * radius;
+                vertex.normal = normal;
+                vertex.uv = { u, v };
+
+                mesh.vertices.push_back(vertex);
+            }
         }
 
-        for (int cornerIndex = 0; cornerIndex < cornerCount; ++cornerIndex)
+        for (int ringIndex = 0; ringIndex < rings; ++ringIndex)
         {
-            const int nextCornerIndex = (cornerIndex + 1) % cornerCount;
+            for (int segmentIndex = 0; segmentIndex < segments; ++segmentIndex)
+            {
+                const uint32_t topLeft = static_cast<uint32_t>(ringIndex * verticesPerRing + segmentIndex);
+                const uint32_t bottomLeft = static_cast<uint32_t>((ringIndex + 1) * verticesPerRing + segmentIndex);
 
-            const uint32_t currentIndex = baseCenterIndex + 1 + static_cast<uint32_t>(cornerIndex);
-            const uint32_t nextIndex = baseCenterIndex + 1 + static_cast<uint32_t>(nextCornerIndex);
+                const uint32_t topRight = topLeft + 1;
+                const uint32_t bottomRight = bottomLeft + 1;
+
+                mesh.indices.push_back(topLeft);
+                mesh.indices.push_back(bottomLeft);
+                mesh.indices.push_back(bottomRight);
+
+                mesh.indices.push_back(bottomRight);
+                mesh.indices.push_back(topRight);
+                mesh.indices.push_back(topLeft);
+            }
+        }
+
+        mesh.bounds = CalculateBounds(mesh.vertices);
+
+        return mesh;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMeshData cMeshGenerator::CreateCylinder(const sCylinderDesc& _rDesc)
+    {
+        sMeshData mesh{};
+        mesh.pDebugName = "GeneratedCylinder";
+
+        const float radius = std::max(_rDesc.radius, 0.0f);
+        const float halfHeight = std::max(_rDesc.height, 0.0f) * 0.5f;
+        const int segments = std::max(_rDesc.segments, 3);
+
+        mesh.vertices.reserve(segments * 4 + 2);
+        mesh.indices.reserve(segments * 12);
+
+        for (int segmentIndex = 0; segmentIndex < segments; ++segmentIndex)
+        {
+            const int nextSegmentIndex = (segmentIndex + 1) % segments;
+
+            const float currentFactor = static_cast<float>(segmentIndex) / static_cast<float>(segments);
+            const float nextFactor = static_cast<float>(nextSegmentIndex) / static_cast<float>(segments);
+
+            const float currentAngle = currentFactor * 2.0f * c_pi;
+            const float nextAngle = nextFactor * 2.0f * c_pi;
+
+            const cVec3f currentNormal{ std::sin(currentAngle), 0.0f, std::cos(currentAngle) };
+            const cVec3f nextNormal{ std::sin(nextAngle), 0.0f, std::cos(nextAngle) };
+
+            const cVec3f bottomCurrent{ currentNormal.x() * radius, -halfHeight, currentNormal.z() * radius };
+            const cVec3f bottomNext{ nextNormal.x() * radius, -halfHeight, nextNormal.z() * radius };
+            const cVec3f topNext{ nextNormal.x() * radius, halfHeight, nextNormal.z() * radius };
+            const cVec3f topCurrent{ currentNormal.x() * radius, halfHeight, currentNormal.z() * radius };
+
+            const uint32_t startIndex = static_cast<uint32_t>(mesh.vertices.size());
+
+            mesh.vertices.push_back({ .position = bottomCurrent, .normal = currentNormal, .uv = { currentFactor, 0.0f } });
+            mesh.vertices.push_back({ .position = bottomNext, .normal = nextNormal, .uv = { nextFactor, 0.0f } });
+            mesh.vertices.push_back({ .position = topNext, .normal = nextNormal, .uv = { nextFactor, 1.0f } });
+            mesh.vertices.push_back({ .position = topCurrent, .normal = currentNormal, .uv = { currentFactor, 1.0f } });
+
+            mesh.indices.push_back(startIndex + 0);
+            mesh.indices.push_back(startIndex + 1);
+            mesh.indices.push_back(startIndex + 2);
+
+            mesh.indices.push_back(startIndex + 2);
+            mesh.indices.push_back(startIndex + 3);
+            mesh.indices.push_back(startIndex + 0);
+        }
+
+        const cVec3f topNormal{ 0.0f, 1.0f, 0.0f };
+        const uint32_t topCenterIndex = static_cast<uint32_t>(mesh.vertices.size());
+
+        mesh.vertices.push_back({ .position = { 0.0f, halfHeight, 0.0f }, .normal = topNormal, .uv = { 0.5f, 0.5f } });
+
+        for (int segmentIndex = 0; segmentIndex < segments; ++segmentIndex)
+        {
+            const float factor = static_cast<float>(segmentIndex) / static_cast<float>(segments);
+            const float angle = factor * 2.0f * c_pi;
+
+            const float x = std::sin(angle) * radius;
+            const float z = std::cos(angle) * radius;
+
+            mesh.vertices.push_back({ .position = { x, halfHeight, z }, .normal = topNormal, .uv = { 0.5f + x / (radius > 0.0f ? 2.0f * radius : 1.0f), 0.5f + z / (radius > 0.0f ? 2.0f * radius : 1.0f) } });
+        }
+
+        for (int segmentIndex = 0; segmentIndex < segments; ++segmentIndex)
+        {
+            const uint32_t currentIndex = topCenterIndex + 1 + static_cast<uint32_t>(segmentIndex);
+            const uint32_t nextIndex = topCenterIndex + 1 + static_cast<uint32_t>((segmentIndex + 1) % segments);
+
+            mesh.indices.push_back(topCenterIndex);
+            mesh.indices.push_back(currentIndex);
+            mesh.indices.push_back(nextIndex);
+        }
+
+        const cVec3f bottomNormal{ 0.0f, -1.0f, 0.0f };
+        const uint32_t bottomCenterIndex = static_cast<uint32_t>(mesh.vertices.size());
+
+        mesh.vertices.push_back({ .position = { 0.0f, -halfHeight, 0.0f }, .normal = bottomNormal, .uv = { 0.5f, 0.5f } });
+
+        for (int segmentIndex = 0; segmentIndex < segments; ++segmentIndex)
+        {
+            const float factor = static_cast<float>(segmentIndex) / static_cast<float>(segments);
+            const float angle = factor * 2.0f * c_pi;
+
+            const float x = std::sin(angle) * radius;
+            const float z = std::cos(angle) * radius;
+
+            mesh.vertices.push_back({ .position = { x, -halfHeight, z }, .normal = bottomNormal, .uv = { 0.5f + x / (radius > 0.0f ? 2.0f * radius : 1.0f), 0.5f + z / (radius > 0.0f ? 2.0f * radius : 1.0f) } });
+        }
+
+        for (int segmentIndex = 0; segmentIndex < segments; ++segmentIndex)
+        {
+            const uint32_t currentIndex = bottomCenterIndex + 1 + static_cast<uint32_t>(segmentIndex);
+            const uint32_t nextIndex = bottomCenterIndex + 1 + static_cast<uint32_t>((segmentIndex + 1) % segments);
+
+            mesh.indices.push_back(bottomCenterIndex);
+            mesh.indices.push_back(nextIndex);
+            mesh.indices.push_back(currentIndex);
+        }
+
+        mesh.bounds = CalculateBounds(mesh.vertices);
+
+        return mesh;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMeshData cMeshGenerator::CreateCone(const sConeDesc& _rDesc)
+    {
+        sMeshData mesh{};
+        mesh.pDebugName = "GeneratedCone";
+
+        const float radius = std::max(_rDesc.radius, 0.0f);
+        const float halfHeight = std::max(_rDesc.height, 0.0f) * 0.5f;
+        const int segments = std::max(_rDesc.segments, 3);
+
+        const cVec3f apex{ 0.0f, halfHeight, 0.0f };
+
+        mesh.vertices.reserve(segments * 4 + 1);
+        mesh.indices.reserve(segments * 6);
+
+        for (int segmentIndex = 0; segmentIndex < segments; ++segmentIndex)
+        {
+            const int nextSegmentIndex = (segmentIndex + 1) % segments;
+
+            const float currentFactor = static_cast<float>(segmentIndex) / static_cast<float>(segments);
+            const float nextFactor = static_cast<float>(nextSegmentIndex) / static_cast<float>(segments);
+
+            const float currentAngle = currentFactor * 2.0f * c_pi;
+            const float nextAngle = nextFactor * 2.0f * c_pi;
+
+            const cVec3f currentPosition{ std::sin(currentAngle) * radius, -halfHeight, std::cos(currentAngle) * radius };
+            const cVec3f nextPosition{ std::sin(nextAngle) * radius, -halfHeight, std::cos(nextAngle) * radius };
+
+            const cVec3f edge = nextPosition - currentPosition;
+            const cVec3f apexDirection = apex - currentPosition;
+            const cVec3f normal = edge.cross(apexDirection).normalized();
+
+            const uint32_t startIndex = static_cast<uint32_t>(mesh.vertices.size());
+
+            mesh.vertices.push_back({ .position = currentPosition, .normal = normal, .uv = { currentFactor, 0.0f } });
+            mesh.vertices.push_back({ .position = nextPosition, .normal = normal, .uv = { nextFactor, 0.0f } });
+            mesh.vertices.push_back({ .position = apex, .normal = normal, .uv = { (currentFactor + nextFactor) * 0.5f, 1.0f } });
+
+            mesh.indices.push_back(startIndex + 0);
+            mesh.indices.push_back(startIndex + 1);
+            mesh.indices.push_back(startIndex + 2);
+        }
+
+        const cVec3f baseNormal{ 0.0f, -1.0f, 0.0f };
+        const uint32_t baseCenterIndex = static_cast<uint32_t>(mesh.vertices.size());
+
+        mesh.vertices.push_back({ .position = { 0.0f, -halfHeight, 0.0f }, .normal = baseNormal, .uv = { 0.5f, 0.5f } });
+
+        for (int segmentIndex = 0; segmentIndex < segments; ++segmentIndex)
+        {
+            const float factor = static_cast<float>(segmentIndex) / static_cast<float>(segments);
+            const float angle = factor * 2.0f * c_pi;
+
+            const float x = std::sin(angle) * radius;
+            const float z = std::cos(angle) * radius;
+
+            mesh.vertices.push_back({ .position = { x, -halfHeight, z }, .normal = baseNormal, .uv = { 0.5f + x / (radius > 0.0f ? 2.0f * radius : 1.0f), 0.5f + z / (radius > 0.0f ? 2.0f * radius : 1.0f) } });
+        }
+
+        for (int segmentIndex = 0; segmentIndex < segments; ++segmentIndex)
+        {
+            const uint32_t currentIndex = baseCenterIndex + 1 + static_cast<uint32_t>(segmentIndex);
+            const uint32_t nextIndex = baseCenterIndex + 1 + static_cast<uint32_t>((segmentIndex + 1) % segments);
 
             mesh.indices.push_back(baseCenterIndex);
             mesh.indices.push_back(nextIndex);
@@ -242,9 +475,7 @@ namespace Engine::GFX
         sBounds bounds{};
 
         if (_rVertices.empty())
-        {
             return bounds;
-        }
 
         constexpr float c_floatMax = std::numeric_limits<float>::max();
         constexpr float c_floatMin = std::numeric_limits<float>::lowest();
@@ -278,9 +509,7 @@ namespace Engine::GFX
         for (const sVertex& rVertex : _rVertices)
         {
             const cVec3f difference = rVertex.position - bounds.center;
-            const float distanceSquared = difference.lengthSquared();
-
-            maximumRadiusSquared = std::max(maximumRadiusSquared, distanceSquared);
+            maximumRadiusSquared = std::max(maximumRadiusSquared, difference.lengthSquared());
         }
 
         bounds.radius = std::sqrt(maximumRadiusSquared);

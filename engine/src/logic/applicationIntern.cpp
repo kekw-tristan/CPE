@@ -44,7 +44,7 @@ namespace Engine::Logic
         m_camera.SetPerspective(
             60.0f,
             0.1f,
-            100.0f
+            10000.0f
         );
 
         m_Timer.Reset();
