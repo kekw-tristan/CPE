@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <vector>
 
+
 // -------------------------------------------------------------------------------------------------------------------------
 
 namespace Engine::GFX
@@ -18,6 +19,12 @@ namespace Engine::GFX
     // const expressions
 
     static constexpr const char* c_validationLayerName = "VK_LAYER_KHRONOS_validation";
+
+    #ifdef ENGINE_DEBUG
+        static constexpr bool c_enableValidationLayers = true;
+    #else
+        static constexpr bool c_enableValidationLayers = false;
+    #endif
 
     // -------------------------------------------------------------------------------------------------------------------------
     // vulkan debug callback
@@ -71,7 +78,11 @@ namespace Engine::GFX
     void cVulkanContext::Init(const Platform::cWindow& _rWindow)
     {
         CreateInstance(); 
-        CreateDebugMessenger();
+        if (c_enableValidationLayers)
+        {
+            CreateDebugMessenger();
+        }
+
         CreateSurface(_rWindow);
 
         std::cout << "vulkan context initialized." << std::endl;
@@ -118,11 +129,13 @@ namespace Engine::GFX
 
     void cVulkanContext::CreateInstance()
     {
-        if (!CheckValidationLayerSupport())
+        if (c_enableValidationLayers)
         {
-            throw std::runtime_error("Vulkan validation layer not available!");
+            if (!CheckValidationLayerSupport())
+            {
+                throw std::runtime_error("Vulkan validation layer not available!");
+            }
         }
-        
 
         VkApplicationInfo appInfo{}; 
 
@@ -144,7 +157,10 @@ namespace Engine::GFX
         std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
         std::vector<const char*> validationLayers = { c_validationLayerName };
 
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        if (c_enableValidationLayers)
+        {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
 
         VkInstanceCreateInfo createInfo{};
 
@@ -152,8 +168,17 @@ namespace Engine::GFX
         createInfo.pApplicationInfo         = &appInfo;
         createInfo.enabledExtensionCount    = static_cast<uint32_t>(extensions.size()); 
         createInfo.ppEnabledExtensionNames  = extensions.data();
-        createInfo.enabledLayerCount        = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames      = validationLayers.data(); 
+
+        if (c_enableValidationLayers)
+        {
+            createInfo.enabledLayerCount    = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames  = validationLayers.data();
+        }
+        else
+        {
+            createInfo.enabledLayerCount    = 0;
+            createInfo.ppEnabledLayerNames  = nullptr;
+        }
 
         VkResult result = vkCreateInstance(&createInfo, nullptr, &m_pInstance); 
 

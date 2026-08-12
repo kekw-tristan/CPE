@@ -57,14 +57,17 @@ filter { "system:windows", "configurations:Debug or Release" }
         VcpkgTriplet = "x64-windows"
     }
 
+
 filter { "system:windows", "configurations:Dist" }
     vsprops
     {
         VcpkgEnabled = "true",
         VcpkgEnableManifest = "true",
         VcpkgManifestInstall = "true",
-        VcpkgTriplet = "x64-windows-static"
+        VcpkgTriplet = "x64-windows-static",
+        VcpkgConfiguration = "Release"
     }
+
 
 filter {}
 

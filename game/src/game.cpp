@@ -34,7 +34,7 @@ void cGame::OnInit()
     sShapeModelDesc shapeModelDesc;
     std::string errorMessage;
 
-    if (!ShapeModelLoader::LoadFromFile("./game/assets/models/model.json", shapeModelDesc, errorMessage))
+    if (!ShapeModelLoader::LoadFromFile("assets/models/model.json", shapeModelDesc, errorMessage))
     {
         std::cerr << "Failed to load model: " << errorMessage << '\n';
         return;
