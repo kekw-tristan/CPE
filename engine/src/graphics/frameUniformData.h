@@ -11,4 +11,9 @@ struct sFrameUniformData
     
     float viewportSize[4];
     float clipPlanes[4];
+
+    uint32_t lightCount;
+    uint32_t materialCount;
+    uint32_t padding0;
+    uint32_t padding1;
 };

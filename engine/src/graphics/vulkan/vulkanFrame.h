@@ -18,5 +18,8 @@ namespace Engine::GFX
 
         cVulkanBuffer instanceBuffer;
         cVulkanBuffer instanceBufferStaging;
+
+        cVulkanBuffer lightBuffer; 
+        cVulkanBuffer lightStagingBuffer;
     };
 }

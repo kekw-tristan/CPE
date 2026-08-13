@@ -7,6 +7,12 @@
 
 #include "graphics/imgui/imguiManager.h"
 
+#include "graphics/light/light.h"
+#include "graphics/light/lightManager.h"
+
+#include "graphics/material/material.h"
+#include "graphics/material/materialManager.h"
+
 #include "graphics/vulkan/vulkanDevice.h"
 #include "graphics/vulkan/vulkanMesh.h"
 #include "graphics/vulkan/vulkanPipeline.h"
@@ -86,6 +92,9 @@ namespace Engine::GFX
 
             rFrame.instanceBuffer.Shutdown(*m_pDevice);
             rFrame.instanceBufferStaging.Shutdown(*m_pDevice);
+
+            rFrame.lightBuffer.Shutdown(*m_pDevice);
+            rFrame.lightStagingBuffer.Shutdown(*m_pDevice);
         }
 
         for (VkSemaphore sem : m_renderFinishedSemaphores)
@@ -219,6 +228,8 @@ namespace Engine::GFX
 
         Engine::GFX::ImGuiManager::BeginFrame();
 
+        UpdateLightBuffer();
+
         return true;
     }
 
@@ -335,18 +346,113 @@ namespace Engine::GFX
             uploadData.push_back(*instance);
         }
 
-        VkDeviceSize numberOfInstances = sizeof(sInstanceData) * _rInstances.size(); 
+        VkDeviceSize instancesSize = sizeof(sInstanceData) * _rInstances.size(); 
 
-        rFrame.instanceBufferStaging.Write(uploadData.data(), numberOfInstances);
+        rFrame.instanceBufferStaging.Write(uploadData.data(), instancesSize);
         
         VkBufferCopy copyRegion{};
         copyRegion.srcOffset = 0;
         copyRegion.dstOffset = 0;
-        copyRegion.size      = numberOfInstances;
+        copyRegion.size      = instancesSize;
 
         vkCmdCopyBuffer(pCommandBuffer, rFrame.instanceBufferStaging.GetBuffer(), rFrame.instanceBuffer.GetBuffer(), 1, &copyRegion);
 
+        VkBufferMemoryBarrier barrier{};
 
+        barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.buffer = rFrame.instanceBuffer.GetBuffer();
+        barrier.offset = 0;
+        barrier.size = instancesSize;
+
+        vkCmdPipelineBarrier(
+            pCommandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            1, &barrier,
+            0, nullptr
+        );
+
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::UpdateLightBuffer()
+    {
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+
+        const std::vector<sLight>& rLights = LightManager::GetLights();
+
+        if (rLights.empty())
+        {
+            return;
+        }
+
+        std::vector<sLightGPU> gpuLights(rLights.size());
+
+        for (size_t index = 0; index < rLights.size(); ++index)
+        {
+            const sLight& rLight = rLights[index];
+            sLightGPU& rGPULight = gpuLights[index];
+
+            rGPULight.positionRadius[0] = rLight.position.x();
+            rGPULight.positionRadius[1] = rLight.position.y();
+            rGPULight.positionRadius[2] = rLight.position.z();
+            rGPULight.positionRadius[3] = rLight.radius;
+
+            rGPULight.directionType[0] = rLight.direction.x();
+            rGPULight.directionType[1] = rLight.direction.y();
+            rGPULight.directionType[2] = rLight.direction.z();
+            rGPULight.directionType[3] = static_cast<float>(rLight.type);
+
+            rGPULight.colorIntensity[0] = rLight.color.x();
+            rGPULight.colorIntensity[1] = rLight.color.y();
+            rGPULight.colorIntensity[2] = rLight.color.z();
+            rGPULight.colorIntensity[3] = rLight.intensity;
+
+            rGPULight.spotData[0] = rLight.innerCone;
+            rGPULight.spotData[1] = rLight.outerCone;
+            rGPULight.spotData[2] = 0.0f;
+            rGPULight.spotData[3] = 0.0f;
+        }
+
+        VkDeviceSize lightSize = sizeof(sLightGPU) * gpuLights.size();
+
+        rFrame.lightStagingBuffer.Write(gpuLights.data(), lightSize);
+
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+        copyRegion.size = lightSize;
+
+        vkCmdCopyBuffer(pCommandBuffer, rFrame.lightStagingBuffer.GetBuffer(), rFrame.lightBuffer.GetBuffer(), 1, &copyRegion);
+    
+        VkBufferMemoryBarrier barrier{};
+
+        barrier.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        barrier.srcAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask       = VK_ACCESS_SHADER_READ_BIT;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.buffer              = rFrame.lightBuffer.GetBuffer();
+        barrier.offset              = 0;
+        barrier.size                = lightSize;
+
+        vkCmdPipelineBarrier(
+            pCommandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            1, &barrier,
+            0, nullptr
+        );
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -535,14 +641,19 @@ namespace Engine::GFX
             }
 
 
+            // frame data
             rFrame.frameUniformedBuffer.Create(*m_pDevice, sizeof(sFrameUniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             rFrame.frameUniformedBuffer.Map(*m_pDevice, sizeof(sFrameUniformData), 0);
 
+            // instances
             rFrame.instanceBuffer.Create(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
             rFrame.instanceBufferStaging.Create(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             rFrame.instanceBufferStaging.Map(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, 0);
 
-
+            // light
+            rFrame.lightBuffer.Create(*m_pDevice, sizeof(sLightGPU) * c_maxNumberOfLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            rFrame.lightStagingBuffer.Create(*m_pDevice, sizeof(sLightGPU) * c_maxNumberOfLights, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            rFrame.lightStagingBuffer.Map(*m_pDevice, sizeof(sLightGPU) * c_maxNumberOfLights, 0);
         }
 
         std::cout << "Vulkan sync objects created." << std::endl;
@@ -572,7 +683,7 @@ namespace Engine::GFX
     void cVulkanRenderer::CreateDescriptorPool()
     {
 
-        std::array<VkDescriptorPoolSize, 2> poolSizes{};
+        std::array<VkDescriptorPoolSize, 3> poolSizes{};
         // Binding 0 - Frame Uniform Buffer
         poolSizes[0].type               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount    = c_maxNumberOfFrames;
@@ -581,6 +692,10 @@ namespace Engine::GFX
         // Binding 1 - Instance Storage Buffer
         poolSizes[1].type               = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         poolSizes[1].descriptorCount    = c_maxNumberOfFrames;
+
+        // Binding 1 - Light Storage Buffer
+        poolSizes[2].type               = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        poolSizes[2].descriptorCount    = c_maxNumberOfFrames;
 
         VkDescriptorPoolCreateInfo poolInfo{};
 
@@ -672,7 +787,13 @@ namespace Engine::GFX
             instanceBufferInfo.offset   = 0;
             instanceBufferInfo.range    = sizeof(sInstanceData) * c_maxNumberOfInstances;
 
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+            VkDescriptorBufferInfo lightBufferInfo{};
+
+            lightBufferInfo.buffer  = m_frames[index].lightBuffer.GetBuffer();
+            lightBufferInfo.offset  = 0;
+            lightBufferInfo.range   = sizeof(sLightGPU) * c_maxNumberOfLights;
+
+            std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
 
             descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet          = m_frames[index].frameDescriptorSet;
@@ -682,12 +803,20 @@ namespace Engine::GFX
             descriptorWrites[0].descriptorCount = 1;
             descriptorWrites[0].pBufferInfo     = &frameBufferInfo;
 
-            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet = m_frames[index].frameDescriptorSet;
-            descriptorWrites[1].dstBinding = 1;
-            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            descriptorWrites[1].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[1].dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrites[1].dstBinding      = 1;
+            descriptorWrites[1].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pBufferInfo = &instanceBufferInfo;
+            descriptorWrites[1].pBufferInfo     = &instanceBufferInfo;
+
+            descriptorWrites[2].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[2].dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrites[2].dstBinding      = 2;
+            descriptorWrites[2].dstArrayElement = 0;
+            descriptorWrites[2].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            descriptorWrites[2].descriptorCount = 1;
+            descriptorWrites[2].pBufferInfo     = &lightBufferInfo;
 
             vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
@@ -721,6 +850,9 @@ namespace Engine::GFX
         frameData.clipPlanes[1] = _rCamera.GetFarPlane();
         frameData.clipPlanes[2] = 0.0f;
         frameData.clipPlanes[3] = 0.0f;
+
+        frameData.lightCount    = static_cast<uint32_t>(LightManager::GetLights().size());
+        frameData.materialCount = static_cast<uint32_t>(MaterialManager::GetMaterials().size());
 
         _rFrame.frameUniformedBuffer.Write(&frameData, sizeof(sFrameUniformData), 0);
     }

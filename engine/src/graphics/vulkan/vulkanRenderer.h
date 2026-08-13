@@ -51,6 +51,7 @@ namespace Engine::GFX
             bool EndFrame();
             void DrawMeshIntances(cVulkanMesh* _pMesh, uint32_t _instanceCount, uint32_t _firstInstance = 0);
             void UpdateInstanceBuffer(std::vector<sInstanceData*>& _rInstances); 
+            void UpdateLightBuffer();
             void BeginDraw(); 
 
         public:
