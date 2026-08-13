@@ -22,6 +22,11 @@ struct InstanceData
 {
     row_major float4x4 worldMatrix;
     float4 color;
+
+    int materialIndex;
+    int padding1;
+    int padding2;
+    int padding3;
 };
 
 
@@ -40,6 +45,18 @@ struct LightData
 
 [[vk::binding(2, 0)]]
 StructuredBuffer<LightData> lights;
+
+
+struct MaterialData
+{
+    float4 albedo;
+    float4 properties;
+    float4 emissiveColor;
+};
+
+
+[[vk::binding(3, 0)]]
+StructuredBuffer<MaterialData> materials;
 
 
 static const uint LIGHT_TYPE_DIRECTIONAL = 0;
@@ -62,6 +79,7 @@ struct VSOutput
     float3 worldNormal : NORMAL0;
     float2 texCoord : TEXCOORD0;
     float4 color : COLOR0;
+    uint materialIndex : MATERIAL_INDEX;
 };
 
 
@@ -75,27 +93,70 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
     output.position = mul(viewProj, worldPosition);
     output.worldPosition = worldPosition.xyz;
-    output.worldNormal = normalize(mul(input.normal, (float3x3) instance.worldMatrix));
+
+    float3x3 normalMatrix = (float3x3)instance.worldMatrix;
+    output.worldNormal = normalize(mul(input.normal, normalMatrix));
+
     output.texCoord = input.texCoord;
+
+    // Bleibt weiterhin im InstanceData, wird aber nicht mehr
+    // zur Bestimmung der Materialfarbe verwendet.
     output.color = instance.color;
+
+    output.materialIndex = instance.materialIndex;
 
     return output;
 }
 
 
-float3 EvaluateDirectionalLight(float3 normal, float3 albedo, LightData light)
+float3 EvaluateDirectionalLight(
+    float3 worldPosition,
+    float3 normal,
+    float3 albedo,
+    LightData light,
+    float roughness,
+    float metallic,
+    float lightWrap,
+    float shapeContrast)
 {
     float3 lightDirection = normalize(-light.directionType.xyz);
+
     float NdotL = saturate(dot(normal, lightDirection));
+
+    float wrappedNdotL = saturate((NdotL + lightWrap) / (1.0f + lightWrap));
+
+    float shapedNdotL = lerp(NdotL, wrappedNdotL, shapeContrast);
 
     float3 lightColor = light.colorIntensity.rgb;
     float lightIntensity = light.colorIntensity.w;
 
-    return albedo * lightColor * lightIntensity * NdotL;
+    float3 diffuse = albedo * lightColor * lightIntensity * shapedNdotL;
+
+    float3 viewDirection = normalize(cameraPosition.xyz - worldPosition);
+    float3 halfVector = normalize(lightDirection + viewDirection);
+
+    float NdotH = saturate(dot(normal, halfVector));
+
+    float specularPower = lerp(4.0f, 128.0f, 1.0f - roughness);
+    float specular = pow(NdotH, specularPower);
+
+    float3 specularColor = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metallic);
+
+    float3 specularContribution = specularColor * specular * lightColor * lightIntensity * NdotL;
+
+    return diffuse + specularContribution;
 }
 
 
-float3 EvaluatePointLight(float3 worldPosition, float3 normal, float3 albedo, LightData light)
+float3 EvaluatePointLight(
+    float3 worldPosition,
+    float3 normal,
+    float3 albedo,
+    LightData light,
+    float roughness,
+    float metallic,
+    float lightWrap,
+    float shapeContrast)
 {
     float3 toLight = light.positionRadius.xyz - worldPosition;
 
@@ -103,12 +164,15 @@ float3 EvaluatePointLight(float3 worldPosition, float3 normal, float3 albedo, Li
     float radius = light.positionRadius.w;
 
     if (distanceToLight >= radius)
-    {
         return float3(0.0f, 0.0f, 0.0f);
-    }
 
     float3 lightDirection = toLight / max(distanceToLight, 0.0001f);
+
     float NdotL = saturate(dot(normal, lightDirection));
+
+    float wrappedNdotL = saturate((NdotL + lightWrap) / (1.0f + lightWrap));
+
+    float shapedNdotL = lerp(NdotL, wrappedNdotL, shapeContrast);
 
     float attenuation = saturate(1.0f - distanceToLight / radius);
     attenuation *= attenuation;
@@ -116,11 +180,33 @@ float3 EvaluatePointLight(float3 worldPosition, float3 normal, float3 albedo, Li
     float3 lightColor = light.colorIntensity.rgb;
     float lightIntensity = light.colorIntensity.w;
 
-    return albedo * lightColor * lightIntensity * NdotL * attenuation;
+    float3 diffuse = albedo * lightColor * lightIntensity * shapedNdotL * attenuation;
+
+    float3 viewDirection = normalize(cameraPosition.xyz - worldPosition);
+    float3 halfVector = normalize(lightDirection + viewDirection);
+
+    float NdotH = saturate(dot(normal, halfVector));
+
+    float specularPower = lerp(4.0f, 128.0f, 1.0f - roughness);
+    float specular = pow(NdotH, specularPower);
+
+    float3 specularColor = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metallic);
+
+    float3 specularContribution = specularColor * specular * lightColor * lightIntensity * NdotL * attenuation;
+
+    return diffuse + specularContribution;
 }
 
 
-float3 EvaluateSpotLight(float3 worldPosition, float3 normal, float3 albedo, LightData light)
+float3 EvaluateSpotLight(
+    float3 worldPosition,
+    float3 normal,
+    float3 albedo,
+    LightData light,
+    float roughness,
+    float metallic,
+    float lightWrap,
+    float shapeContrast)
 {
     float3 toLight = light.positionRadius.xyz - worldPosition;
 
@@ -128,17 +214,21 @@ float3 EvaluateSpotLight(float3 worldPosition, float3 normal, float3 albedo, Lig
     float radius = light.positionRadius.w;
 
     if (distanceToLight >= radius)
-    {
         return float3(0.0f, 0.0f, 0.0f);
-    }
 
     float3 lightDirection = toLight / max(distanceToLight, 0.0001f);
+
     float NdotL = saturate(dot(normal, lightDirection));
+
+    float wrappedNdotL = saturate((NdotL + lightWrap) / (1.0f + lightWrap));
+
+    float shapedNdotL = lerp(NdotL, wrappedNdotL, shapeContrast);
 
     float attenuation = saturate(1.0f - distanceToLight / radius);
     attenuation *= attenuation;
 
     float3 spotDirection = normalize(light.directionType.xyz);
+
     float cosAngle = dot(-lightDirection, spotDirection);
 
     float innerCone = light.spotData.x;
@@ -149,37 +239,105 @@ float3 EvaluateSpotLight(float3 worldPosition, float3 normal, float3 albedo, Lig
     float3 lightColor = light.colorIntensity.rgb;
     float lightIntensity = light.colorIntensity.w;
 
-    return albedo * lightColor * lightIntensity * NdotL * attenuation * spotFactor;
+    float3 diffuse = albedo * lightColor * lightIntensity * shapedNdotL * attenuation * spotFactor;
+
+    float3 viewDirection = normalize(cameraPosition.xyz - worldPosition);
+    float3 halfVector = normalize(lightDirection + viewDirection);
+
+    float NdotH = saturate(dot(normal, halfVector));
+
+    float specularPower = lerp(4.0f, 128.0f, 1.0f - roughness);
+    float specular = pow(NdotH, specularPower);
+
+    float3 specularColor = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metallic);
+
+    float3 specularContribution = specularColor * specular * lightColor * lightIntensity * NdotL * attenuation * spotFactor;
+
+    return diffuse + specularContribution;
 }
 
 
 float4 PSMain(VSOutput input) : SV_Target
 {
     float3 normal = normalize(input.worldNormal);
-    float3 albedo = input.color.rgb;
 
-    // temp ambient light
+    // Material-Defaultwerte
+    float3 albedo = float3(1.0f, 1.0f, 1.0f);
+
+    float roughness = 0.5f;
+    float metallic = 0.0f;
+    float lightWrap = 0.0f;
+    float shapeContrast = 1.0f;
+    float ambientStrength = 1.0f;
+
+    float3 emissiveColor = float3(0.0f, 0.0f, 0.0f);
+    float emissiveStrength = 0.0f;
+
+    // Material anhand des Instance-Material-Index laden.
+    if (input.materialIndex >= 0 && input.materialIndex < materialCount)
+    {
+        MaterialData material = materials[input.materialIndex];
+
+        albedo = material.albedo.rgb;
+
+        roughness = saturate(material.properties.x);
+        metallic = saturate(material.properties.y);
+        lightWrap = saturate(material.properties.z);
+        shapeContrast = max(material.properties.w, 0.0f);
+
+        emissiveColor = material.emissiveColor.rgb;
+        emissiveStrength = material.emissiveColor.w;
+    }
+
     float3 ambientColor = float3(0.08f, 0.10f, 0.15f);
-    float3 finalColor = albedo * ambientColor;
+
+    float3 finalColor = albedo * ambientColor * ambientStrength;
 
     for (uint index = 0; index < lightCount; ++index)
     {
         LightData light = lights[index];
-        uint lightType = (uint) light.directionType.w;
+
+        uint lightType = (uint)light.directionType.w;
 
         if (lightType == LIGHT_TYPE_DIRECTIONAL)
         {
-            finalColor += EvaluateDirectionalLight(normal, albedo, light);
+            finalColor += EvaluateDirectionalLight(
+                input.worldPosition,
+                normal,
+                albedo,
+                light,
+                roughness,
+                metallic,
+                lightWrap,
+                shapeContrast);
         }
         else if (lightType == LIGHT_TYPE_POINT)
         {
-            finalColor += EvaluatePointLight(input.worldPosition, normal, albedo, light);
+            finalColor += EvaluatePointLight(
+                input.worldPosition,
+                normal,
+                albedo,
+                light,
+                roughness,
+                metallic,
+                lightWrap,
+                shapeContrast);
         }
         else if (lightType == LIGHT_TYPE_SPOT)
         {
-            finalColor += EvaluateSpotLight(input.worldPosition, normal, albedo, light);
+            finalColor += EvaluateSpotLight(
+                input.worldPosition,
+                normal,
+                albedo,
+                light,
+                roughness,
+                metallic,
+                lightWrap,
+                shapeContrast);
         }
     }
+
+    finalColor += emissiveColor * emissiveStrength;
 
     return float4(finalColor, input.color.a);
 }

@@ -5,6 +5,7 @@
 #include "graphics/shapeModel/meshType.h"
 
 #include <string>
+#include <cstdint>
 
 namespace Engine::GFX
 {
@@ -14,5 +15,6 @@ namespace Engine::GFX
         sMeshTypes::Enum    meshType; 
         sTransform          transform; 
         float               color[4];
+        uint32_t            materialIndex;
     };
 }

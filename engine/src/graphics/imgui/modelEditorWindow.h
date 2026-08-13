@@ -85,7 +85,7 @@ namespace Engine::GFX
 
         sShapeModelDesc m_model;
 
-        std::string m_modelPath = "assets/models/model.json";
+        std::string m_modelPath = "./assets/models/model.json";
         std::string m_errorMessage;
 
         ModelChangedCallback m_modelChangedCallback;

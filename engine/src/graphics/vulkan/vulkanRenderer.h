@@ -51,7 +51,6 @@ namespace Engine::GFX
             bool EndFrame();
             void DrawMeshIntances(cVulkanMesh* _pMesh, uint32_t _instanceCount, uint32_t _firstInstance = 0);
             void UpdateInstanceBuffer(std::vector<sInstanceData*>& _rInstances); 
-            void UpdateLightBuffer();
             void BeginDraw(); 
 
         public:
@@ -69,7 +68,11 @@ namespace Engine::GFX
             void CreateDescriptorPool();
             void CreateImGuiDescriptorPool();
             void CreateDescriptorSets();
+            void CreateMaterialBuffer();
+
             void UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera);
+            void UpdateLightBuffer();
+            void UpdateMaterialBuffer();
 
         private:
 
@@ -95,5 +98,8 @@ namespace Engine::GFX
 
             bool m_hasFrameStarted; 
             uint32_t m_imageIndex;
+
+            cVulkanBuffer m_materialBuffer;
+            cVulkanBuffer m_materialStagingBuffer;
     };
 }  

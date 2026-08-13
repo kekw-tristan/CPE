@@ -21,8 +21,8 @@ namespace Engine::GFX
 
     void cVulkanPipeline::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapchain)
     {
-        auto vertShaderCode = ReadFile("assets/shaders/bin/main.vert.spv");
-        auto fragShaderCode = ReadFile("assets/shaders/bin/main.frag.spv");
+        auto vertShaderCode = ReadFile("./assets/shaders/bin/main.vert.spv");
+        auto fragShaderCode = ReadFile("./assets/shaders/bin/main.frag.spv");
 
         VkShaderModule vertShaderModule = CreateShaderModule(_rDevice, vertShaderCode);
         VkShaderModule fragShaderModule = CreateShaderModule(_rDevice, fragShaderCode);
@@ -276,7 +276,7 @@ namespace Engine::GFX
 
     void cVulkanPipeline::CreateFrameUniformDescriptorSetLayout(cVulkanDevice& _rDevice)
     {
-        std::array<VkDescriptorSetLayoutBinding, 3> bindings{};
+        std::array<VkDescriptorSetLayoutBinding, 4> bindings{};
 
         // Binding 0 - Frame Uniform Buffer
         bindings[0].binding             = 0;
@@ -298,6 +298,13 @@ namespace Engine::GFX
         bindings[2].descriptorCount     = 1;
         bindings[2].stageFlags          = VK_SHADER_STAGE_FRAGMENT_BIT;
         bindings[2].pImmutableSamplers  = nullptr;
+
+        // Binding 3 - Material Storage Buffer
+        bindings[3].binding            = 3;
+        bindings[3].descriptorType     = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        bindings[3].descriptorCount    = 1;
+        bindings[3].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[3].pImmutableSamplers = nullptr;
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
 

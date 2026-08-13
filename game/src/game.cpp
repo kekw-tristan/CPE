@@ -4,6 +4,9 @@
 #include "graphics/shapeModel/shapeModelManager.h"
 #include "graphics/shapeModel/shapeModelLoader.h"
 
+#include "graphics/material/material.h"
+#include "graphics/material/materialManager.h"
+
 #include "graphics/light/light.h"
 #include "graphics/light/lightManager.h"
 
@@ -37,7 +40,7 @@ void cGame::OnInit()
     sShapeModelDesc shapeModelDesc;
     std::string errorMessage;
 
-    if (!ShapeModelLoader::LoadFromFile("assets/models/model.json", shapeModelDesc, errorMessage))
+    if (!ShapeModelLoader::LoadFromFile("./assets/models/model.json", shapeModelDesc, errorMessage))
     {
         std::cerr << "Failed to load model: " << errorMessage << '\n';
         return;
@@ -218,6 +221,149 @@ void cGame::OnInit()
     LightManager::CreateLight(purplePointLight);
     LightManager::CreateLight(cyanPointLight);
     LightManager::CreateLight(spotLight);
+
+    // materials
+
+    auto& materials = MaterialManager::GetMaterials();
+
+    materials.clear();
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Metal
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMaterial metal{};
+
+    metal.albedo = Math::cVec3f(0.55f, 0.57f, 0.60f);
+    metal.roughness = 0.25f;
+    metal.metallic = 1.0f;
+    metal.lightWrap = 0.0f;
+    metal.shapeContrast = 1.0f;
+    metal.ambientStrength = 0.15f;
+    metal.emissiveColor = Math::cVec3f(0.0f, 0.0f, 0.0f);
+    metal.emissiveStrength = 0.0f;
+
+    materials.push_back(metal);
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Plastic
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMaterial plastic{};
+
+    plastic.albedo = Math::cVec3f(0.15f, 0.18f, 0.22f);
+    plastic.roughness = 0.35f;
+    plastic.metallic = 0.0f;
+    plastic.lightWrap = 0.1f;
+    plastic.shapeContrast = 1.0f;
+    plastic.ambientStrength = 0.2f;
+    plastic.emissiveColor = Math::cVec3f(0.0f, 0.0f, 0.0f);
+    plastic.emissiveStrength = 0.0f;
+
+    materials.push_back(plastic);
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Stone
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMaterial stone{};
+
+    stone.albedo = Math::cVec3f(0.38f, 0.36f, 0.32f);
+    stone.roughness = 0.85f;
+    stone.metallic = 0.0f;
+    stone.lightWrap = 0.2f;
+    stone.shapeContrast = 1.4f;
+    stone.ambientStrength = 0.25f;
+    stone.emissiveColor = Math::cVec3f(0.0f, 0.0f, 0.0f);
+    stone.emissiveStrength = 0.0f;
+
+    materials.push_back(stone);
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Wood
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMaterial wood{};
+
+    wood.albedo = Math::cVec3f(0.36f, 0.12f, 0.035f);
+    wood.roughness = 0.75f;
+    wood.metallic = 0.0f;
+    wood.lightWrap = 0.15f;
+    wood.shapeContrast = 1.2f;
+    wood.ambientStrength = 0.25f;
+    wood.emissiveColor = Math::cVec3f(0.0f, 0.0f, 0.0f);
+    wood.emissiveStrength = 0.0f;
+
+    materials.push_back(wood);
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Gold
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMaterial gold{};
+
+    gold.albedo = Math::cVec3f(0.83f, 0.58f, 0.12f);
+    gold.roughness = 0.2f;
+    gold.metallic = 1.0f;
+    gold.lightWrap = 0.0f;
+    gold.shapeContrast = 1.0f;
+    gold.ambientStrength = 0.15f;
+    gold.emissiveColor = Math::cVec3f(0.0f, 0.0f, 0.0f);
+    gold.emissiveStrength = 0.0f;
+
+    materials.push_back(gold);
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Rubber
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMaterial rubber{};
+
+    rubber.albedo = Math::cVec3f(0.025f, 0.025f, 0.025f);
+    rubber.roughness = 0.95f;
+    rubber.metallic = 0.0f;
+    rubber.lightWrap = 0.1f;
+    rubber.shapeContrast = 1.5f;
+    rubber.ambientStrength = 0.2f;
+    rubber.emissiveColor = Math::cVec3f(0.0f, 0.0f, 0.0f);
+    rubber.emissiveStrength = 0.0f;
+
+    materials.push_back(rubber);
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Glass
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMaterial glass{};
+
+    glass.albedo = Math::cVec3f(0.65f, 0.85f, 1.0f);
+    glass.roughness = 0.05f;
+    glass.metallic = 0.0f;
+    glass.lightWrap = 0.0f;
+    glass.shapeContrast = 0.5f;
+    glass.ambientStrength = 0.1f;
+    glass.emissiveColor = Math::cVec3f(0.0f, 0.0f, 0.0f);
+    glass.emissiveStrength = 0.0f;
+
+    materials.push_back(glass);
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Emissive
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMaterial emissive{};
+
+    emissive.albedo = Math::cVec3f(0.1f, 0.2f, 1.0f);
+    emissive.roughness = 0.5f;
+    emissive.metallic = 0.0f;
+    emissive.lightWrap = 0.0f;
+    emissive.shapeContrast = 1.0f;
+    emissive.ambientStrength = 0.1f;
+    emissive.emissiveColor = Math::cVec3f(0.1f, 0.25f, 1.0f);
+    emissive.emissiveStrength = 5.0f;
+
+    materials.push_back(emissive);
+
 
 }
 
@@ -599,6 +745,8 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance)
             part.color[2],
             part.color[3]
         };
+
+        pInstance->materialIndex = part.materialIndex;
 
         MeshHandle mesh = GetMesh(part.meshType);
 

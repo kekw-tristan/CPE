@@ -10,5 +10,11 @@ namespace Engine::GFX
     {
         Math::cMatrix4x4f worldMatrix{};
         std::array<float, 4>  color;
+
+        int materialIndex;
+        int padding1;
+        int padding2;
+        int padding3;
+
     };
 }

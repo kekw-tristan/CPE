@@ -2,6 +2,10 @@
 
 #include "graphics/camera.h"
 #include "graphics/shapeModel/shapeModelLoader.h"
+
+#include "graphics/material/material.h"
+#include "graphics/material/materialManager.h"
+
 #include "platform/input.h"
 
 #include <imgui.h>
@@ -349,84 +353,150 @@ namespace Engine::GFX
             ImGui::TextUnformatted("No model part selected.");
             return;
         }
-
+    
         sShapePartDesc& rShape = m_model.shapes[m_selectedShapeIndex];
-
+    
         ImGui::Text("%s %i", GetMeshTypeName(rShape.meshType), m_selectedShapeIndex);
         ImGui::Separator();
-
+    
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Transform
+        // -------------------------------------------------------------------------------------------------------------------------
+    
         if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            float position[] =
-            {
-                rShape.transform.position.x(),
-                rShape.transform.position.y(),
-                rShape.transform.position.z()
-            };
-
+            float position[] = { rShape.transform.position.x(), rShape.transform.position.y(), rShape.transform.position.z() };
+        
             if (ImGui::DragFloat3("Position", position, 0.05f))
             {
                 rShape.transform.position = Math::cVec3f(position[0], position[1], position[2]);
                 MarkModelChanged();
             }
-
-            float rotation[] =
-            {
-                rShape.transform.rotation.x(),
-                rShape.transform.rotation.y(),
-                rShape.transform.rotation.z()
-            };
-
+        
+            float rotation[] = { rShape.transform.rotation.x(), rShape.transform.rotation.y(), rShape.transform.rotation.z() };
+        
             if (ImGui::DragFloat3("Rotation", rotation, 0.01f))
             {
                 rShape.transform.rotation = Math::cVec3f(rotation[0], rotation[1], rotation[2]);
                 MarkModelChanged();
             }
-
-            float scale[] =
-            {
-                rShape.transform.scale.x(),
-                rShape.transform.scale.y(),
-                rShape.transform.scale.z()
-            };
-
+        
+            float scale[] = { rShape.transform.scale.x(), rShape.transform.scale.y(), rShape.transform.scale.z() };
+        
             if (ImGui::DragFloat3("Scale", scale, 0.05f, 0.01f, 100.0f))
             {
                 rShape.transform.scale = Math::cVec3f(scale[0], scale[1], scale[2]);
                 MarkModelChanged();
             }
         }
-
+    
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Appearance
+        // -------------------------------------------------------------------------------------------------------------------------
+    
         if (ImGui::CollapsingHeader("Appearance", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            const char* meshTypeNames[] =
-            {
-                "Plane",
-                "Cube",
-                "Pyramid",
-                "Sphere",
-                "Cylinder",
-                "Cone"
-            };
-
+            const char* meshTypeNames[] = { "Plane", "Cube", "Pyramid", "Sphere", "Cylinder", "Cone" };
+        
             int selectedMeshType = static_cast<int>(rShape.meshType);
-
+        
             if (selectedMeshType < 0 || selectedMeshType >= static_cast<int>(sMeshTypes::NumberOfElements))
                 selectedMeshType = 0;
-
+        
             if (ImGui::Combo("Mesh Type", &selectedMeshType, meshTypeNames, static_cast<int>(sMeshTypes::NumberOfElements)))
             {
                 rShape.meshType = static_cast<sMeshTypes::Enum>(selectedMeshType);
                 MarkModelChanged();
             }
-
+        
             if (ImGui::ColorEdit4("Color", rShape.color))
                 MarkModelChanged();
         }
+    
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Material
+        // -------------------------------------------------------------------------------------------------------------------------
+    
+        ImGui::Separator();
+        ImGui::TextUnformatted("Material");
+    
+        auto& materials = MaterialManager::GetMaterials();
+    
+        if (materials.empty())
+        {
+            ImGui::TextDisabled("No materials available.");
+            return;
+        }
+    
+        if (rShape.materialIndex >= materials.size())
+            rShape.materialIndex = 0;
+    
+        int materialIndex = static_cast<int>(rShape.materialIndex);
+    
+        std::vector<std::string> materialNames;
+        materialNames.reserve(materials.size());
+    
+        for (int index = 0; index < static_cast<int>(materials.size()); ++index)
+            materialNames.push_back("Material " + std::to_string(index));
+    
+        std::vector<const char*> materialNamePointers;
+        materialNamePointers.reserve(materialNames.size());
+    
+        for (const std::string& name : materialNames)
+            materialNamePointers.push_back(name.c_str());
+    
+        if (ImGui::Combo("Material", &materialIndex, materialNamePointers.data(), static_cast<int>(materialNamePointers.size())))
+        {
+            rShape.materialIndex = static_cast<uint32_t>(materialIndex);
+            MarkModelChanged();
+        }
+    
+        sMaterial& rMaterial = materials[rShape.materialIndex];
+    
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Material Properties
+        // -------------------------------------------------------------------------------------------------------------------------
+    
+        if (ImGui::CollapsingHeader("Material Properties", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            float albedo[] = { rMaterial.albedo.x(), rMaterial.albedo.y(), rMaterial.albedo.z() };
+        
+            if (ImGui::ColorEdit3("Albedo", albedo))
+            {
+                rMaterial.albedo = Math::cVec3f(albedo[0], albedo[1], albedo[2]);
+                MarkModelChanged();
+            }
+        
+            if (ImGui::DragFloat("Roughness", &rMaterial.roughness, 0.01f, 0.0f, 1.0f))
+                MarkModelChanged();
+        
+            if (ImGui::DragFloat("Metallic", &rMaterial.metallic, 0.01f, 0.0f, 1.0f))
+                MarkModelChanged();
+        
+            if (ImGui::DragFloat("Light Wrap", &rMaterial.lightWrap, 0.01f, 0.0f, 1.0f))
+                MarkModelChanged();
+        
+            if (ImGui::DragFloat("Shape Contrast", &rMaterial.shapeContrast, 0.01f, 0.0f, 10.0f))
+                MarkModelChanged();
+        
+            if (ImGui::DragFloat("Ambient Strength", &rMaterial.ambientStrength, 0.01f, 0.0f, 10.0f))
+                MarkModelChanged();
+        
+            float emissiveColor[] = { rMaterial.emissiveColor.x(), rMaterial.emissiveColor.y(), rMaterial.emissiveColor.z() };
+        
+            if (ImGui::ColorEdit3("Emissive Color", emissiveColor))
+            {
+                rMaterial.emissiveColor = Math::cVec3f(emissiveColor[0], emissiveColor[1], emissiveColor[2]);
+                MarkModelChanged();
+            }
+        
+            if (ImGui::DragFloat("Emissive Strength", &rMaterial.emissiveStrength, 0.01f, 0.0f, 100.0f))
+                MarkModelChanged();
+        }
     }
-
+    
     // -------------------------------------------------------------------------------------------------------------------------
-
+    
     void cModelEditorWindow::AddPlane()
     {
         sShapePartDesc shape{};

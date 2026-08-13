@@ -131,7 +131,7 @@ namespace Engine::GFX
 
             for (const nlohmann::json& shapeJson : shapesJson)
             {
-                sShapePartDesc shapePart;
+                sShapePartDesc shapePart{};
 
                 const std::string meshTypeName = shapeJson.at("meshType").get<std::string>();
 
@@ -151,6 +151,8 @@ namespace Engine::GFX
                 shapePart.color[1] = colorJson.at(1).get<float>();
                 shapePart.color[2] = colorJson.at(2).get<float>();
                 shapePart.color[3] = colorJson.at(3).get<float>();
+
+                shapePart.materialIndex = shapeJson.value("materialIndex", 0u);
 
                 loadedModel.shapes.push_back(shapePart);
             }
@@ -200,6 +202,8 @@ namespace Engine::GFX
                     shapePart.color[2],
                     shapePart.color[3]
                 };
+
+                shapeJson["materialIndex"] = shapePart.materialIndex;
 
                 modelJson["shapes"].push_back(shapeJson);
             }

@@ -41,6 +41,7 @@ namespace Engine::GFX
         m_hasFrameStarted = false; 
 
         CreateFrameResources();
+        CreateMaterialBuffer();
 
         m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
         m_colorBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
@@ -64,6 +65,9 @@ namespace Engine::GFX
 
         m_depthBuffer.ShutDown(*m_pDevice);
         m_colorBuffer.ShutDown(*m_pDevice);
+
+        m_materialBuffer.Shutdown(*m_pDevice);
+        m_materialStagingBuffer.Shutdown(*m_pDevice);
 
         for (sVulkanFrame& rFrame : m_frames)
         {
@@ -229,6 +233,7 @@ namespace Engine::GFX
         Engine::GFX::ImGuiManager::BeginFrame();
 
         UpdateLightBuffer();
+        UpdateMaterialBuffer();
 
         return true;
     }
@@ -331,7 +336,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::UpdateInstanceBuffer(std::vector<sInstanceData *>& _rInstances)
+    void cVulkanRenderer::UpdateInstanceBuffer(std::vector<sInstanceData*>& _rInstances)
     {
         sVulkanFrame& rFrame            = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
@@ -371,7 +376,7 @@ namespace Engine::GFX
         vkCmdPipelineBarrier(
             pCommandBuffer,
             VK_PIPELINE_STAGE_TRANSFER_BIT,
-            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
             0,
             0, nullptr,
             1, &barrier,
@@ -443,6 +448,53 @@ namespace Engine::GFX
         barrier.buffer              = rFrame.lightBuffer.GetBuffer();
         barrier.offset              = 0;
         barrier.size                = lightSize;
+
+        vkCmdPipelineBarrier(
+            pCommandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            1, &barrier,
+            0, nullptr
+        );
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::UpdateMaterialBuffer()
+    {
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+
+        std::vector<sMaterial>& rMaterials = MaterialManager::GetMaterials();
+
+        if (rMaterials.empty())
+        {
+            return;
+        }
+
+        VkDeviceSize materialSize = sizeof(sMaterial) * rMaterials.size();
+
+        m_materialStagingBuffer.Write(rMaterials.data(), materialSize);
+
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+        copyRegion.size = materialSize;
+
+        vkCmdCopyBuffer(pCommandBuffer, m_materialStagingBuffer.GetBuffer(), m_materialBuffer.GetBuffer(), 1, &copyRegion);
+    
+        VkBufferMemoryBarrier barrier{};
+
+        barrier.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        barrier.srcAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask       = VK_ACCESS_SHADER_READ_BIT;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.buffer              = m_materialBuffer.GetBuffer();
+        barrier.offset              = 0;
+        barrier.size                = materialSize;
 
         vkCmdPipelineBarrier(
             pCommandBuffer,
@@ -683,19 +735,15 @@ namespace Engine::GFX
     void cVulkanRenderer::CreateDescriptorPool()
     {
 
-        std::array<VkDescriptorPoolSize, 3> poolSizes{};
-        // Binding 0 - Frame Uniform Buffer
-        poolSizes[0].type               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount    = c_maxNumberOfFrames;
+        std::array<VkDescriptorPoolSize, 2> poolSizes{};
 
+        // frame uniform buffer
+        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[0].descriptorCount = c_maxNumberOfFrames;
 
-        // Binding 1 - Instance Storage Buffer
-        poolSizes[1].type               = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        poolSizes[1].descriptorCount    = c_maxNumberOfFrames;
-
-        // Binding 1 - Light Storage Buffer
-        poolSizes[2].type               = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        poolSizes[2].descriptorCount    = c_maxNumberOfFrames;
+        // instance, light, material storage buffer 
+        poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        poolSizes[1].descriptorCount = c_maxNumberOfFrames * 3;
 
         VkDescriptorPoolCreateInfo poolInfo{};
 
@@ -793,7 +841,13 @@ namespace Engine::GFX
             lightBufferInfo.offset  = 0;
             lightBufferInfo.range   = sizeof(sLightGPU) * c_maxNumberOfLights;
 
-            std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+            VkDescriptorBufferInfo materialBufferInfo{};
+
+            materialBufferInfo.buffer   = m_materialBuffer.GetBuffer();
+            materialBufferInfo.offset   = 0;
+            materialBufferInfo.range    = sizeof(sMaterial) * c_maxNumberOfMaterials;
+
+            std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 
             descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet          = m_frames[index].frameDescriptorSet;
@@ -818,9 +872,27 @@ namespace Engine::GFX
             descriptorWrites[2].descriptorCount = 1;
             descriptorWrites[2].pBufferInfo     = &lightBufferInfo;
 
+            descriptorWrites[3].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[3].dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrites[3].dstBinding      = 3;
+            descriptorWrites[3].dstArrayElement = 0;
+            descriptorWrites[3].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            descriptorWrites[3].descriptorCount = 1;
+            descriptorWrites[3].pBufferInfo     = &materialBufferInfo;
+
             vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
 
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::CreateMaterialBuffer()
+    {
+        
+        m_materialBuffer.Create(*m_pDevice, sizeof(sMaterial) * c_maxNumberOfMaterials, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        m_materialStagingBuffer.Create(*m_pDevice, sizeof(sMaterial) * c_maxNumberOfMaterials, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        m_materialStagingBuffer.Map(*m_pDevice, sizeof(sMaterial) * c_maxNumberOfMaterials, 0);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
