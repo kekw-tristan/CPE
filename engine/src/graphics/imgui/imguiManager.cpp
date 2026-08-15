@@ -67,6 +67,7 @@ namespace Engine::GFX
 
             ImGui_ImplVulkan_InitInfo initInfo{};
 
+            initInfo.ApiVersion     = VK_API_VERSION_1_3;
             initInfo.Instance       = _rDesc.instance;
             initInfo.PhysicalDevice = _rDesc.physicalDevice;
             initInfo.Device         = _rDesc.device;

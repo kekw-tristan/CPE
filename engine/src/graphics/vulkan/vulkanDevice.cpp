@@ -154,31 +154,52 @@ namespace Engine::GFX
 
     void cVulkanDevice::CreateLogicalDevice()
     {
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos; 
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-        std::set<uint32_t> uniqueQueueFamilies = 
-        { 
-            m_queueFamilyIndices.graphicsFamily, 
-            m_queueFamilyIndices.presentFamily 
+        std::set<uint32_t> uniqueQueueFamilies =
+        {
+            m_queueFamilyIndices.graphicsFamily,
+            m_queueFamilyIndices.presentFamily
         };
 
         float queuePriority = 1.f;
 
-        for (uint32_t queueFamily: uniqueQueueFamilies)
+        for (uint32_t queueFamily : uniqueQueueFamilies)
         {
-            VkDeviceQueueCreateInfo queueCreateInfo{}; 
-            queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
-            queueCreateInfo.queueCount       = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            
+            VkDeviceQueueCreateInfo queueCreateInfo{};
+            queueCreateInfo.sType               = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex    = queueFamily;
+            queueCreateInfo.queueCount          = 1;
+            queueCreateInfo.pQueuePriorities    = &queuePriority;
+
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{};
-        
-        dynamicRenderingFeatures.sType              = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
-        dynamicRenderingFeatures.dynamicRendering   = VK_TRUE;
+        VkPhysicalDeviceProperties deviceProperties{};
+        vkGetPhysicalDeviceProperties(m_pPhysicalDevice, &deviceProperties);
+
+        if (deviceProperties.apiVersion < VK_API_VERSION_1_3)
+        {
+            throw std::runtime_error("GPU does not support Vulkan 1.3!");
+        }
+
+        VkPhysicalDeviceVulkan13Features supportedVulkan13Features{};
+        supportedVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+
+        VkPhysicalDeviceFeatures2 supportedFeatures{};
+        supportedFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        supportedFeatures.pNext = &supportedVulkan13Features;
+
+        vkGetPhysicalDeviceFeatures2(m_pPhysicalDevice, &supportedFeatures);
+
+        if (supportedVulkan13Features.dynamicRendering != VK_TRUE)
+        {
+            throw std::runtime_error("GPU does not support Vulkan dynamic rendering!");
+        }
+
+        VkPhysicalDeviceVulkan13Features vulkan13Features{};
+        vulkan13Features.sType              = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+        vulkan13Features.dynamicRendering   = VK_TRUE;
 
         VkPhysicalDeviceFeatures deviceFeatures{};
 
@@ -188,8 +209,8 @@ namespace Engine::GFX
         createInfo.pQueueCreateInfos        = queueCreateInfos.data();
         createInfo.pEnabledFeatures         = &deviceFeatures;
         createInfo.enabledExtensionCount    = static_cast<uint32_t>(c_deviceExtensions.size());
-        createInfo.ppEnabledExtensionNames  = c_deviceExtensions.data();
-        createInfo.pNext                    = &dynamicRenderingFeatures;
+        createInfo.ppEnabledExtensionNames = c_deviceExtensions.data();
+        createInfo.pNext = &vulkan13Features;
 
         VkResult result = vkCreateDevice(m_pPhysicalDevice, &createInfo, nullptr, &m_pDevice);
 
@@ -202,7 +223,7 @@ namespace Engine::GFX
         vkGetDeviceQueue(m_pDevice, m_queueFamilyIndices.presentFamily,  0, &m_pPresentQueue);
 
         std::cout << "Vulkan logical device created" << std::endl;
-    } 
+    }
     
     // -------------------------------------------------------------------------------------------------------------------------
 

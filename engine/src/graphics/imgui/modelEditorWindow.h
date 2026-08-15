@@ -59,8 +59,14 @@ namespace Engine::GFX
         void LoadModel(const std::filesystem::path& _rFilePath);
         void SaveModel(const std::filesystem::path& _rFilePath);
 
+        void DrawModelEditor();
+        void DrawMaterialEditor();
+
         void DrawShapeList();
         void DrawInspector();
+
+        void DrawMaterialList();
+        void DrawMaterialInspector();
 
         void AddPlane();
         void AddCube();
@@ -69,10 +75,13 @@ namespace Engine::GFX
         void AddCylinder();
         void AddCone();
 
+        void AddMaterial();
+
         void DuplicateSelectedShape();
         void RemoveSelectedShape();
 
         bool HasValidSelection() const;
+        bool HasValidMaterialSelection() const;
 
         void BeginTransform(eTransformMode _mode);
         void UpdateTransform(const Platform::cInput& _rInput, const cCamera& _rCamera);
@@ -80,6 +89,7 @@ namespace Engine::GFX
         void CancelTransform();
 
         void MarkModelChanged();
+        void MarkMaterialChanged();
 
     private:
 
@@ -91,9 +101,11 @@ namespace Engine::GFX
         ModelChangedCallback m_modelChangedCallback;
 
         int m_selectedShapeIndex = -1;
+        int m_selectedMaterialIndex = -1;
 
         bool m_modelLoaded = false;
         bool m_modelChanged = false;
+        bool m_materialsChanged = false;
         bool m_previewDirty = false;
 
         eTransformMode m_transformMode = eTransformMode::None;

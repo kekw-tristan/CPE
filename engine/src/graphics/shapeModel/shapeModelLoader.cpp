@@ -2,8 +2,13 @@
 
 #include "shapeModelDesc.h"
 
+#include "graphics/material/material.h"
+#include "graphics/material/materialManager.h"
+
 #include <fstream>
+#include <iostream>
 #include <string>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
@@ -105,6 +110,46 @@ namespace Engine::GFX
 
         // -------------------------------------------------------------------------------------------------------------------------
 
+        sMaterial ParseMaterial(const nlohmann::json& _rMaterialJson)
+        {
+            sMaterial material{};
+
+            material.albedo = ParseVec3(_rMaterialJson.at("albedo"));
+            material.roughness = _rMaterialJson.at("roughness").get<float>();
+            material.metallic = _rMaterialJson.at("metallic").get<float>();
+
+            material.lightWrap = _rMaterialJson.at("lightWrap").get<float>();
+            material.shapeContrast = _rMaterialJson.at("shapeContrast").get<float>();
+            material.ambientStrength = _rMaterialJson.at("ambientStrength").get<float>();
+
+            material.emissiveColor = ParseVec3(_rMaterialJson.at("emissiveColor"));
+            material.emissiveStrength = _rMaterialJson.at("emissiveStrength").get<float>();
+
+            return material;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        nlohmann::json MaterialToJson(const sMaterial& _rMaterial)
+        {
+            nlohmann::json materialJson;
+
+            materialJson["albedo"] = Vec3ToJson(_rMaterial.albedo);
+            materialJson["roughness"] = _rMaterial.roughness;
+            materialJson["metallic"] = _rMaterial.metallic;
+
+            materialJson["lightWrap"] = _rMaterial.lightWrap;
+            materialJson["shapeContrast"] = _rMaterial.shapeContrast;
+            materialJson["ambientStrength"] = _rMaterial.ambientStrength;
+
+            materialJson["emissiveColor"] = Vec3ToJson(_rMaterial.emissiveColor);
+            materialJson["emissiveStrength"] = _rMaterial.emissiveStrength;
+
+            return materialJson;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -126,6 +171,24 @@ namespace Engine::GFX
 
             sShapeModelDesc loadedModel;
             loadedModel.pDebugName = "";
+
+            std::vector<sMaterial> loadedMaterials;
+
+            // -------------------------------------------------------------------------------------------------------------------------
+            // Materials
+            // -------------------------------------------------------------------------------------------------------------------------
+
+            if (modelJson.contains("materials"))
+            {
+                const nlohmann::json& materialsJson = modelJson.at("materials");
+
+                for (const nlohmann::json& materialJson : materialsJson)
+                    loadedMaterials.push_back(ParseMaterial(materialJson));
+            }
+
+            // -------------------------------------------------------------------------------------------------------------------------
+            // Shapes
+            // -------------------------------------------------------------------------------------------------------------------------
 
             const nlohmann::json& shapesJson = modelJson.at("shapes");
 
@@ -158,6 +221,10 @@ namespace Engine::GFX
             }
 
             _rModelDesc = std::move(loadedModel);
+
+            if (modelJson.contains("materials"))
+                MaterialManager::GetMaterials() = std::move(loadedMaterials);
+
             _rErrorMessage.clear();
 
             return true;
@@ -184,6 +251,28 @@ namespace Engine::GFX
         try
         {
             nlohmann::json modelJson;
+
+            // -------------------------------------------------------------------------------------------------------------------------
+            // Materials
+            // -------------------------------------------------------------------------------------------------------------------------
+
+            modelJson["materials"] = nlohmann::json::array();
+
+            const auto& materials = MaterialManager::GetMaterials();
+
+            std::cout << "Material count: " << materials.size() << '\n';
+
+            for (const sMaterial& material : materials)
+                modelJson["materials"].push_back(MaterialToJson(material));
+
+            std::cout << "JSON material count: " << modelJson["materials"].size() << '\n';
+            std::cout << modelJson.dump(4) << '\n';
+            std::cout << "Saving to: " << std::filesystem::absolute(_rFilePath) << '\n';
+
+            // -------------------------------------------------------------------------------------------------------------------------
+            // Shapes
+            // -------------------------------------------------------------------------------------------------------------------------
+
             modelJson["shapes"] = nlohmann::json::array();
 
             for (const sShapePartDesc& shapePart : _rModelDesc.shapes)
