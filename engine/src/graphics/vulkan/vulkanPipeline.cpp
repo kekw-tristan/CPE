@@ -1,5 +1,6 @@
 #include "vulkanPipeline.h"
 
+#include "graphics/vulkan/shadowData.h"
 #include "graphics/vulkan/vulkanDevice.h"
 #include "graphics/vulkan/vulkanSwapchain.h"
 #include "graphics/vulkan/vulkanVertex.h"
@@ -182,6 +183,8 @@ namespace Engine::GFX
 
         vkDestroyShaderModule(_rDevice.GetDevice(), fragShaderModule, nullptr);
         vkDestroyShaderModule(_rDevice.GetDevice(), vertShaderModule, nullptr);
+
+        CreateShadowPipeline(_rDevice);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -207,6 +210,18 @@ namespace Engine::GFX
             vkDestroyDescriptorSetLayout(device, m_pFrameUniformDescriptorSetLayout, nullptr);
             m_pFrameUniformDescriptorSetLayout = VK_NULL_HANDLE;
         }
+
+        if (m_pShadowPipeline != VK_NULL_HANDLE)
+        {
+            vkDestroyPipeline(device, m_pShadowPipeline, nullptr);
+            m_pShadowPipeline = VK_NULL_HANDLE;
+        }
+
+        if (m_pShadowPipelineLayout != VK_NULL_HANDLE)
+        {
+            vkDestroyPipelineLayout(device, m_pShadowPipelineLayout, nullptr);
+            m_pShadowPipelineLayout = VK_NULL_HANDLE;
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -221,6 +236,20 @@ namespace Engine::GFX
     VkPipelineLayout cVulkanPipeline::GetPipelineLayout()
     {
         return m_pPipelineLayout;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    VkPipeline cVulkanPipeline::GetShadowPipeline()
+    {
+        return m_pShadowPipeline;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    VkPipelineLayout cVulkanPipeline::GetShadowPipelineLayout()
+    {
+        return m_pShadowPipelineLayout;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -276,7 +305,7 @@ namespace Engine::GFX
 
     void cVulkanPipeline::CreateFrameUniformDescriptorSetLayout(cVulkanDevice& _rDevice)
     {
-        std::array<VkDescriptorSetLayoutBinding, 4> bindings{};
+        std::array<VkDescriptorSetLayoutBinding, 7> bindings{};
 
         // Binding 0 - Frame Uniform Buffer
         bindings[0].binding             = 0;
@@ -306,6 +335,27 @@ namespace Engine::GFX
         bindings[3].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
         bindings[3].pImmutableSamplers = nullptr;
 
+        // Binding 4 - Shadow Data Storage Buffer
+        bindings[4].binding             = 4;
+        bindings[4].descriptorType      = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        bindings[4].descriptorCount     = 1;
+        bindings[4].stageFlags          = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[4].pImmutableSamplers  = nullptr;
+
+        // Binding 5 - Shadow Image
+        bindings[5].binding = 5;
+        bindings[5].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        bindings[5].descriptorCount = 1;
+        bindings[5].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[5].pImmutableSamplers = nullptr;
+
+        // Binding 6 - Shadow Sampler
+        bindings[6].binding = 6;
+        bindings[6].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+        bindings[6].descriptorCount = 1;
+        bindings[6].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[6].pImmutableSamplers = nullptr;
+
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
 
         layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -316,6 +366,155 @@ namespace Engine::GFX
         {
             throw std::runtime_error("Failed to create frame uniform descriptor set layout");
         }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanPipeline::CreateShadowPipeline(cVulkanDevice& _rDevice)
+    {
+        auto vertShaderCode = ReadFile("./assets/shaders/bin/shadow.vert.spv");
+
+        VkShaderModule vertShaderModule = CreateShaderModule(_rDevice, vertShaderCode);
+
+        VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+
+        vertShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertShaderStageInfo.stage   = VK_SHADER_STAGE_VERTEX_BIT;
+        vertShaderStageInfo.module  = vertShaderModule;
+        vertShaderStageInfo.pName   = "VSMain";
+
+        auto bindingDescription     = sVulkanVertex::GetBindingDescription();
+        auto attributeDescriptions  = sVulkanVertex::GetAttributeDescriptions();
+
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+
+        vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        vertexInputInfo.vertexBindingDescriptionCount   = 1;
+        vertexInputInfo.pVertexBindingDescriptions      = &bindingDescription;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.pVertexAttributeDescriptions    = attributeDescriptions.data();
+
+        VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+
+        inputAssembly.sType                     = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        inputAssembly.topology                  = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        inputAssembly.primitiveRestartEnable    = VK_FALSE;
+
+        VkPipelineViewportStateCreateInfo viewportState{};
+
+        viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        viewportState.viewportCount = 1;
+        viewportState.scissorCount  = 1;
+
+        VkPipelineRasterizationStateCreateInfo rasterizer{};
+
+        rasterizer.sType                    = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+        rasterizer.depthClampEnable         = VK_FALSE;
+        rasterizer.rasterizerDiscardEnable  = VK_FALSE;
+        rasterizer.polygonMode              = VK_POLYGON_MODE_FILL;
+        rasterizer.lineWidth                = 1.0f;
+        rasterizer.cullMode                 = VK_CULL_MODE_NONE;
+        rasterizer.frontFace                = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rasterizer.depthBiasEnable          = VK_FALSE;
+
+        VkPipelineMultisampleStateCreateInfo multisampling{};
+
+        multisampling.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        multisampling.sampleShadingEnable   = VK_FALSE;
+        multisampling.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT;
+
+        VkPipelineColorBlendStateCreateInfo colorBlending{};
+
+        colorBlending.sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        colorBlending.logicOpEnable     = VK_FALSE;
+        colorBlending.attachmentCount   = 0;
+        colorBlending.pAttachments      = nullptr;
+
+        std::array<VkDynamicState, 2> dynamicStates =
+        {
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR
+        };
+
+        VkPipelineDynamicStateCreateInfo dynamicState{};
+
+        dynamicState.sType              = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dynamicState.dynamicStateCount  = static_cast<uint32_t>(dynamicStates.size());
+        dynamicState.pDynamicStates     = dynamicStates.data();
+
+        VkPipelineDepthStencilStateCreateInfo depthStencil{};
+
+        depthStencil.sType                  = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depthStencil.depthTestEnable        = VK_TRUE;
+        depthStencil.depthWriteEnable       = VK_TRUE;
+        depthStencil.depthCompareOp         = VK_COMPARE_OP_LESS;
+        depthStencil.depthBoundsTestEnable  = VK_FALSE;
+        depthStencil.stencilTestEnable      = VK_FALSE;
+
+        VkDescriptorSetLayout setLayouts[] =
+        {
+            m_pFrameUniformDescriptorSetLayout
+        };
+
+        VkPushConstantRange pushConstantRange{};
+
+        pushConstantRange.stageFlags    = VK_SHADER_STAGE_VERTEX_BIT;
+        pushConstantRange.offset        = 0;
+        pushConstantRange.size          = sizeof(sShadowPushConstants);
+
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+
+        pipelineLayoutInfo.sType                    = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount           = 1;
+        pipelineLayoutInfo.pSetLayouts              = setLayouts;
+        pipelineLayoutInfo.pushConstantRangeCount   = 1;
+        pipelineLayoutInfo.pPushConstantRanges      = &pushConstantRange;
+
+        if (vkCreatePipelineLayout(_rDevice.GetDevice(), &pipelineLayoutInfo, nullptr, &m_pShadowPipelineLayout) != VK_SUCCESS)
+        {
+            vkDestroyShaderModule(_rDevice.GetDevice(), vertShaderModule, nullptr);
+
+            throw std::runtime_error("Failed to create shadow pipeline layout!");
+        }
+
+        VkPipelineRenderingCreateInfo pipelineRenderingInfo{};
+
+        pipelineRenderingInfo.sType                     = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+        pipelineRenderingInfo.colorAttachmentCount      = 0;
+        pipelineRenderingInfo.pColorAttachmentFormats   = nullptr;
+        pipelineRenderingInfo.depthAttachmentFormat     = VK_FORMAT_D32_SFLOAT;
+        pipelineRenderingInfo.stencilAttachmentFormat   = VK_FORMAT_UNDEFINED;
+
+        VkGraphicsPipelineCreateInfo pipelineInfo{};
+
+        pipelineInfo.sType                  = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineInfo.pNext                  = &pipelineRenderingInfo;
+        pipelineInfo.stageCount             = 1;
+        pipelineInfo.pStages                = &vertShaderStageInfo;
+        pipelineInfo.pVertexInputState      = &vertexInputInfo;
+        pipelineInfo.pInputAssemblyState    = &inputAssembly;
+        pipelineInfo.pViewportState         = &viewportState;
+        pipelineInfo.pRasterizationState    = &rasterizer;
+        pipelineInfo.pMultisampleState      = &multisampling;
+        pipelineInfo.pDepthStencilState     = &depthStencil;
+        pipelineInfo.pColorBlendState       = &colorBlending;
+        pipelineInfo.pDynamicState          = &dynamicState;
+        pipelineInfo.layout                 = m_pShadowPipelineLayout;
+        pipelineInfo.renderPass             = VK_NULL_HANDLE;
+        pipelineInfo.subpass                = 0;
+        pipelineInfo.basePipelineHandle     = VK_NULL_HANDLE;
+
+        if (vkCreateGraphicsPipelines(_rDevice.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pShadowPipeline) != VK_SUCCESS)
+        {
+            vkDestroyPipelineLayout(_rDevice.GetDevice(), m_pShadowPipelineLayout, nullptr);
+            m_pShadowPipelineLayout = VK_NULL_HANDLE;
+
+            vkDestroyShaderModule(_rDevice.GetDevice(), vertShaderModule, nullptr);
+
+            throw std::runtime_error("Failed to create shadow pipeline!");
+        }
+
+        vkDestroyShaderModule(_rDevice.GetDevice(), vertShaderModule, nullptr);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

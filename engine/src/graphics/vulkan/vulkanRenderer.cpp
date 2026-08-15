@@ -19,8 +19,10 @@
 #include "graphics/vulkan/vulkanSwapchain.h"
 #include "graphics/vulkan/vulkanCommands.h"
 
-#include <iostream>
+#include <algorithm>
+#include <cmath>
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -46,6 +48,8 @@ namespace Engine::GFX
         m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
         m_colorBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
         
+        m_shadowMap.Create(*m_pDevice, 2048, 2048, 8);
+
         CreateDescriptorPool();
         CreateImGuiDescriptorPool();
         CreateDescriptorSets();
@@ -65,6 +69,8 @@ namespace Engine::GFX
 
         m_depthBuffer.ShutDown(*m_pDevice);
         m_colorBuffer.ShutDown(*m_pDevice);
+
+        m_shadowMap.Destroy(*m_pDevice);
 
         m_materialBuffer.Shutdown(*m_pDevice);
         m_materialStagingBuffer.Shutdown(*m_pDevice);
@@ -99,6 +105,9 @@ namespace Engine::GFX
 
             rFrame.lightBuffer.Shutdown(*m_pDevice);
             rFrame.lightStagingBuffer.Shutdown(*m_pDevice);
+
+            rFrame.shadowBuffer.Shutdown(*m_pDevice);
+            rFrame.shadowStagingBuffer.Shutdown(*m_pDevice);
         }
 
         for (VkSemaphore sem : m_renderFinishedSemaphores)
@@ -231,7 +240,8 @@ namespace Engine::GFX
         }
 
         Engine::GFX::ImGuiManager::BeginFrame();
-
+        
+        UpdateShadowBuffer(_rCamera);
         UpdateLightBuffer();
         UpdateMaterialBuffer();
 
@@ -318,20 +328,21 @@ namespace Engine::GFX
 
     void cVulkanRenderer::DrawMeshIntances(cVulkanMesh* _pMesh, uint32_t _instanceCount, uint32_t _firstInstance)
     {
-        sVulkanFrame& rFrame            = m_frames[m_currentFrame];
+        if (m_renderPassType == sRenderPassType::None)
+        {
+            throw std::runtime_error("DrawMeshIntances() called outside of a render pass!");
+        }
+
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
-        
+
         VkBuffer vertexBuffers[]    = { _pMesh->GetVertexBuffer().GetBuffer() };
         VkDeviceSize offsets[]      = { 0 };
 
         vkCmdBindVertexBuffers(pCommandBuffer, 0, 1, vertexBuffers, offsets);
-
         vkCmdBindIndexBuffer(pCommandBuffer, _pMesh->GetIndexBuffer().GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(), 0, 1, &rFrame.frameDescriptorSet, 0, nullptr);
-
         vkCmdDrawIndexed(pCommandBuffer, _pMesh->GetIndexCount(), _instanceCount, 0, 0, _firstInstance);
-
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -425,6 +436,11 @@ namespace Engine::GFX
             rGPULight.spotData[1] = rLight.outerCone;
             rGPULight.spotData[2] = 0.0f;
             rGPULight.spotData[3] = 0.0f;
+
+            rGPULight.shadowIndex   = index < m_lightShadowIndices.size() ? m_lightShadowIndices[index] : -1;
+            rGPULight.padding0      = 0;
+            rGPULight.padding1      = 0;
+            rGPULight.padding2      = 0;
         }
 
         VkDeviceSize lightSize = sizeof(sLightGPU) * gpuLights.size();
@@ -509,10 +525,437 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cVulkanRenderer::UpdateShadowBuffer(const cCamera& _rCamera)
+    {
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+        
+        float cameraPosition[4];
+        _rCamera.GetPosition(cameraPosition);
+
+        std::vector<sLight>& rLights = LightManager::GetLights();
+
+        m_shadowData.clear();
+        m_shadowData.reserve(rLights.size());
+
+        Math::cVec3f shadowCenter =
+        {
+            cameraPosition[0],
+            cameraPosition[1],
+            cameraPosition[2]
+        };
+
+        m_lightShadowIndices.assign(rLights.size(), -1);
+
+
+        uint32_t nextLayer = 0;
+
+        for (uint32_t lightIndex = 0; lightIndex < static_cast<uint32_t>(rLights.size()); ++lightIndex)
+        {
+            sLight& rLight = rLights[lightIndex];
+            uint32_t requiredLayers = 0;
+
+            if (!rLight.castsShadow)
+            {
+                continue;
+            }
+
+            sShadowDataGPU shadow{};
+
+            shadow.lightIndex   = lightIndex;
+            shadow.firstLayer   = nextLayer;
+            shadow.matrixCount  = 0;
+            shadow.padding      = 0;
+
+            switch (rLight.type)
+            {
+                case sLightType::Directional:
+                {
+                    Math::cVec3f direction = rLight.direction;
+
+                    const float directionLength = std::sqrt(
+                        direction.x() * direction.x() +
+                        direction.y() * direction.y() +
+                        direction.z() * direction.z()
+                    );
+
+                    if (directionLength <= 0.0001f)
+                    {
+                        continue;
+                    }
+
+                    direction =
+                    {
+                        direction.x() / directionLength,
+                        direction.y() / directionLength,
+                        direction.z() / directionLength
+                    };
+
+                    const float lightDistance = 100.f;
+
+                    const Math::cVec3f lightPosition =
+                    {
+                        shadowCenter.x() - direction.x() * lightDistance,
+                        shadowCenter.y() - direction.y() * lightDistance,
+                        shadowCenter.z() - direction.z() * lightDistance
+                    };
+
+                    Math::cVec3f up = { 0.f, 1.f, 0.f };
+
+                    if (std::abs(direction.y()) > 0.99f)
+                    {
+                        up = { 0.f, 0.f, 1.f };
+                    }
+
+                    const Math::cMatrix4x4f lightView = Math::cMatrix4x4f::lookAtRH(lightPosition, shadowCenter, up);
+
+                    const float shadowExtent = 75.f;
+                    const float nearPlane = 0.1f;
+                    const float farPlane = 250.f;
+
+                    const Math::cMatrix4x4f lightProjection = Math::cMatrix4x4f::orthographicRH(
+                        -shadowExtent,
+                        shadowExtent,
+                        -shadowExtent,
+                        shadowExtent,
+                        nearPlane,
+                        farPlane
+                    );
+
+                    const Math::cMatrix4x4f lightViewProjection = lightView * lightProjection;
+
+                    shadow.viewProjection[0] = lightViewProjection;
+
+                    shadow.matrixCount = 1;
+
+                    requiredLayers = 1;
+                    break;
+                }
+
+                case sLightType::Spot:
+                {
+                    Math::cVec3f direction = rLight.direction;
+
+                    const float directionLength = std::sqrt(direction.x() * direction.x() + direction.y() * direction.y() + direction.z() * direction.z());
+
+                    if (directionLength <= 0.0001f)
+                    {
+                        continue;
+                    }
+
+                    direction =
+                    {
+                        direction.x() / directionLength,
+                        direction.y() / directionLength,
+                        direction.z() / directionLength
+                    };
+
+                    const Math::cVec3f lightTarget =
+                    {
+                        rLight.position.x() + direction.x(),
+                        rLight.position.y() + direction.y(),
+                        rLight.position.z() + direction.z()
+                    };
+
+                    Math::cVec3f up = { 0.f, 1.f, 0.f };
+
+                    if (std::abs(direction.y()) > 0.99f)
+                    {
+                        up = { 0.f, 0.f, 1.f };
+                    }
+
+                    const float outerCone = std::clamp(rLight.outerCone, -1.f, 1.f);
+                    const float outerAngle = std::acos(outerCone);
+                    const float fieldOfView = outerAngle * 2.f;
+
+                    const float nearPlane = 0.1f;
+                    const float farPlane = std::max(rLight.radius, nearPlane + 0.01f);
+
+                    const Math::cMatrix4x4f lightView = Math::cMatrix4x4f::lookAtRH(rLight.position, lightTarget, up);
+                    const Math::cMatrix4x4f lightProjection = Math::cMatrix4x4f::perspectiveRH(fieldOfView, 1.f, nearPlane, farPlane);
+                    const Math::cMatrix4x4f lightViewProjection = lightView * lightProjection;
+
+                    shadow.viewProjection[0] = lightViewProjection;
+
+                    shadow.matrixCount = 1;
+
+                    requiredLayers = 1;
+                    break;
+                }
+
+                case sLightType::Point:
+                {
+                    const float nearPlane = 0.1f;
+                    const float farPlane = std::max(rLight.radius, nearPlane + 0.01f);
+
+                    constexpr float c_pi = 3.14159265358979323846f;
+
+                    const Math::cMatrix4x4f lightProjection = Math::cMatrix4x4f::perspectiveRH(c_pi * 0.5f, 1.f, nearPlane, farPlane);
+
+                    const Math::cVec3f directions[6] =
+                    {
+                        {  1.f,  0.f,  0.f },
+                        { -1.f,  0.f,  0.f },
+                        {  0.f,  1.f,  0.f },
+                        {  0.f, -1.f,  0.f },
+                        {  0.f,  0.f,  1.f },
+                        {  0.f,  0.f, -1.f }
+                    };
+
+                    const Math::cVec3f upVectors[6] =
+                    {
+                        { 0.f, -1.f,  0.f },
+                        { 0.f, -1.f,  0.f },
+                        { 0.f,  0.f,  1.f },
+                        { 0.f,  0.f, -1.f },
+                        { 0.f, -1.f,  0.f },
+                        { 0.f, -1.f,  0.f }
+                    };
+
+                    for (uint32_t face = 0; face < 6; ++face)
+                    {
+                        const Math::cVec3f target =
+                        {
+                            rLight.position.x() + directions[face].x(),
+                            rLight.position.y() + directions[face].y(),
+                            rLight.position.z() + directions[face].z()
+                        };
+
+                        const Math::cMatrix4x4f lightView = Math::cMatrix4x4f::lookAtRH(rLight.position, target, upVectors[face]);
+
+                        shadow.viewProjection[face] = lightView * lightProjection;
+                    }
+
+                    shadow.matrixCount = 6;
+
+                    requiredLayers = 6;
+                    break;
+                }
+
+                default:
+                {
+                    continue;
+                }
+            }
+
+            if (nextLayer + requiredLayers > m_shadowMap.GetLayerCount())
+            {
+                continue;
+            }
+
+            shadow.firstLayer = nextLayer;
+
+            const int32_t shadowIndex = static_cast<int32_t>(m_shadowData.size());
+
+            m_lightShadowIndices[lightIndex] = shadowIndex;
+
+            m_shadowData.push_back(shadow);
+
+            nextLayer += requiredLayers;
+        }
+
+        if (m_shadowData.empty())
+        {
+            return;
+        }
+
+        const VkDeviceSize shadowDataSize = sizeof(sShadowDataGPU) * m_shadowData.size();
+
+        rFrame.shadowStagingBuffer.Write(m_shadowData.data(), shadowDataSize);
+
+        VkBufferCopy copyRegion{};
+
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+        copyRegion.size = shadowDataSize;
+
+        vkCmdCopyBuffer(pCommandBuffer, rFrame.shadowStagingBuffer.GetBuffer(), rFrame.shadowBuffer.GetBuffer(), 1, &copyRegion);
+
+        VkBufferMemoryBarrier barrier{};
+
+        barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.buffer = rFrame.shadowBuffer.GetBuffer();
+        barrier.offset = 0;
+        barrier.size = shadowDataSize;
+
+        vkCmdPipelineBarrier(
+            pCommandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            1, &barrier,
+            0, nullptr
+        );
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::BeginShadowRendering()
+    {
+        sVulkanFrame& rFrame = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+
+        m_shadowMap.GetImageResource().TransitionLayout(
+            *m_pDevice,
+            pCommandBuffer,
+            m_shadowMapLayout,
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            VK_IMAGE_ASPECT_DEPTH_BIT
+        );
+
+        m_shadowMapLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::EndShadowRendering()
+    {
+        sVulkanFrame& rFrame = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+
+        m_shadowMap.GetImageResource().TransitionLayout(
+            *m_pDevice,
+            pCommandBuffer,
+            m_shadowMapLayout,
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+            VK_IMAGE_ASPECT_DEPTH_BIT
+        );
+
+        m_shadowMapLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::BeginShadowDraw(uint32_t _shadowIndex, uint32_t _matrixIndex)
+    {
+        if (_shadowIndex >= m_shadowData.size())
+        {
+            throw std::runtime_error("Invalid shadow index!");
+        }
+
+        const sShadowDataGPU& shadow = m_shadowData[_shadowIndex];
+
+        if (_matrixIndex >= shadow.matrixCount)
+        {
+            throw std::runtime_error("Invalid shadow matrix index!");
+        }
+
+        const uint32_t layer = shadow.firstLayer + _matrixIndex;
+
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+
+        m_renderPassType = sRenderPassType::Shadow;
+
+        VkRenderingAttachmentInfo depthAttachment{};
+
+        depthAttachment.sType                   = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        depthAttachment.imageView               = m_shadowMap.GetLayerImageView(layer);
+        depthAttachment.imageLayout             = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depthAttachment.loadOp                  = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depthAttachment.storeOp                 = VK_ATTACHMENT_STORE_OP_STORE;
+        depthAttachment.clearValue.depthStencil = { 1.0f, 0 };
+
+        VkRenderingInfo renderingInfo{};
+
+        renderingInfo.sType                 = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        renderingInfo.renderArea.offset     = { 0, 0 };
+        renderingInfo.renderArea.extent     = { m_shadowMap.GetWidth(), m_shadowMap.GetHeight() };
+        renderingInfo.layerCount            = 1;
+        renderingInfo.colorAttachmentCount  = 0;
+        renderingInfo.pColorAttachments     = nullptr;
+        renderingInfo.pDepthAttachment      = &depthAttachment;
+        renderingInfo.pStencilAttachment    = nullptr;
+
+        vkCmdBeginRendering(pCommandBuffer, &renderingInfo);
+
+        VkViewport viewport{};
+
+        viewport.x          = 0.0f;
+        viewport.y          = 0.0f;
+        viewport.width      = static_cast<float>(m_shadowMap.GetWidth());
+        viewport.height     = static_cast<float>(m_shadowMap.GetHeight());
+        viewport.minDepth   = 0.0f;
+        viewport.maxDepth   = 1.0f;
+
+        vkCmdSetViewport(pCommandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+
+        scissor.offset = { 0, 0 };
+        scissor.extent = { m_shadowMap.GetWidth(), m_shadowMap.GetHeight() };
+
+        vkCmdSetScissor(pCommandBuffer, 0, 1, &scissor);
+
+        vkCmdBindPipeline(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetShadowPipeline());
+
+        vkCmdBindDescriptorSets(
+            pCommandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_pPipeline->GetShadowPipelineLayout(),
+            0,
+            1,
+            &rFrame.frameDescriptorSet,
+            0,
+            nullptr
+        );
+
+        sShadowPushConstants pushConstants{};
+
+        pushConstants.shadowIndex = _shadowIndex;
+        pushConstants.matrixIndex = _matrixIndex;
+
+        vkCmdPushConstants(
+            pCommandBuffer,
+            m_pPipeline->GetShadowPipelineLayout(),
+            VK_SHADER_STAGE_VERTEX_BIT,
+            0,
+            sizeof(sShadowPushConstants),
+            &pushConstants
+        );
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::DrawShadowMeshInstances(cVulkanMesh* _pMesh, uint32_t _instanceCount, uint32_t _firstInstance)
+    {
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+
+        VkBuffer vertexBuffers[]    = { _pMesh->GetVertexBuffer().GetBuffer() };
+        VkDeviceSize offsets[]      = { 0 };
+
+        vkCmdBindVertexBuffers(pCommandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(pCommandBuffer, _pMesh->GetIndexBuffer().GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(pCommandBuffer, _pMesh->GetIndexCount(), _instanceCount, 0, 0, _firstInstance);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::EndShadowDraw()
+    {
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+
+        vkCmdEndRendering(pCommandBuffer);
+
+        m_renderPassType = sRenderPassType::None;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cVulkanRenderer::BeginDraw()
     {
-        sVulkanFrame& rFrame            = m_frames[m_currentFrame];
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+
+        m_renderPassType = sRenderPassType::Main;
 
         VkImage     swapchainImage     = m_pSwapchain->GetImages()[m_imageIndex];
         VkImageView swapchainImageView = m_pSwapchain->GetImageViews()[m_imageIndex];
@@ -619,6 +1062,20 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    uint32_t cVulkanRenderer::GetShadowCount() const
+    {
+        return static_cast<uint32_t>(m_shadowData.size());
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    uint32_t cVulkanRenderer::GetShadowMatrixCount(uint32_t _shadowIndex) const
+    {
+        return m_shadowData[_shadowIndex].matrixCount;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cVulkanRenderer::EndDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex)
     {
         vkCmdEndRendering(_pCommandBuffer);
@@ -706,6 +1163,11 @@ namespace Engine::GFX
             rFrame.lightBuffer.Create(*m_pDevice, sizeof(sLightGPU) * c_maxNumberOfLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
             rFrame.lightStagingBuffer.Create(*m_pDevice, sizeof(sLightGPU) * c_maxNumberOfLights, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             rFrame.lightStagingBuffer.Map(*m_pDevice, sizeof(sLightGPU) * c_maxNumberOfLights, 0);
+            
+            // shadows
+            rFrame.shadowBuffer.Create(*m_pDevice, sizeof(sShadowDataGPU) * c_maxNumberOfLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            rFrame.shadowStagingBuffer.Create(*m_pDevice, sizeof(sShadowDataGPU) * c_maxNumberOfLights, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            rFrame.shadowStagingBuffer.Map(*m_pDevice, sizeof(sShadowDataGPU) * c_maxNumberOfLights, 0);
         }
 
         std::cout << "Vulkan sync objects created." << std::endl;
@@ -735,15 +1197,23 @@ namespace Engine::GFX
     void cVulkanRenderer::CreateDescriptorPool()
     {
 
-        std::array<VkDescriptorPoolSize, 2> poolSizes{};
+        std::array<VkDescriptorPoolSize, 4> poolSizes{};
 
         // frame uniform buffer
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = c_maxNumberOfFrames;
 
-        // instance, light, material storage buffer 
+        // instance, light, material, shadow storage buffer 
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        poolSizes[1].descriptorCount = c_maxNumberOfFrames * 3;
+        poolSizes[1].descriptorCount = c_maxNumberOfFrames * 4;
+
+        // shadow image
+        poolSizes[2].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        poolSizes[2].descriptorCount = c_maxNumberOfFrames;
+
+        // shadow sampler
+        poolSizes[3].type = VK_DESCRIPTOR_TYPE_SAMPLER;
+        poolSizes[3].descriptorCount = c_maxNumberOfFrames;
 
         VkDescriptorPoolCreateInfo poolInfo{};
 
@@ -847,7 +1317,25 @@ namespace Engine::GFX
             materialBufferInfo.offset   = 0;
             materialBufferInfo.range    = sizeof(sMaterial) * c_maxNumberOfMaterials;
 
-            std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
+            VkDescriptorBufferInfo shadowBufferInfo{};
+
+            shadowBufferInfo.buffer = m_frames[index].shadowBuffer.GetBuffer();
+            shadowBufferInfo.offset = 0;
+            shadowBufferInfo.range  = sizeof(sShadowDataGPU) * c_maxNumberOfLights;
+
+            VkDescriptorImageInfo shadowImageInfo{};
+
+            shadowImageInfo.sampler     = m_shadowMap.GetSampler();
+            shadowImageInfo.imageView   = m_shadowMap.GetImageView();
+            shadowImageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+            VkDescriptorImageInfo shadowSamplerInfo{};
+
+            shadowSamplerInfo.sampler       = m_shadowMap.GetSampler();
+            shadowSamplerInfo.imageView     = VK_NULL_HANDLE;
+            shadowSamplerInfo.imageLayout   = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            std::array<VkWriteDescriptorSet, 7> descriptorWrites{};
 
             descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet          = m_frames[index].frameDescriptorSet;
@@ -879,6 +1367,30 @@ namespace Engine::GFX
             descriptorWrites[3].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             descriptorWrites[3].descriptorCount = 1;
             descriptorWrites[3].pBufferInfo     = &materialBufferInfo;
+
+            descriptorWrites[4].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[4].dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrites[4].dstBinding      = 4;
+            descriptorWrites[4].dstArrayElement = 0;
+            descriptorWrites[4].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            descriptorWrites[4].descriptorCount = 1;
+            descriptorWrites[4].pBufferInfo     = &shadowBufferInfo;
+
+            descriptorWrites[5].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[5].dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrites[5].dstBinding      = 5;
+            descriptorWrites[5].dstArrayElement = 0;
+            descriptorWrites[5].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            descriptorWrites[5].descriptorCount = 1;
+            descriptorWrites[5].pImageInfo      = &shadowImageInfo;
+
+            descriptorWrites[6].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[6].dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrites[6].dstBinding      = 6;
+            descriptorWrites[6].dstArrayElement = 0;
+            descriptorWrites[6].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
+            descriptorWrites[6].descriptorCount = 1;
+            descriptorWrites[6].pImageInfo      = &shadowSamplerInfo;
 
             vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }

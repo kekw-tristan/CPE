@@ -18,6 +18,7 @@ namespace Engine::GFX
     , m_format   ()
     , m_width    (0)
     , m_height   (0)
+    , m_arrayLayers(1)
     {
     }
 
@@ -30,9 +31,12 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanImage::Create(cVulkanDevice& _rDevice, uint32_t _width, uint32_t _height, VkFormat _format, VkImageUsageFlags _usage, VkImageAspectFlags _aspect, VkSampleCountFlagBits _samples)
+    void cVulkanImage::Create(cVulkanDevice& _rDevice, uint32_t _width, uint32_t _height, VkFormat _format, VkImageUsageFlags _usage, VkImageAspectFlags _aspect, VkSampleCountFlagBits _samples, uint32_t _arrayLayers, VkImageViewType _viewType)
     {
         m_format = _format;
+        m_width  = _width; 
+        m_height = _height; 
+        m_arrayLayers = _arrayLayers;
 
         VkImageCreateInfo imageInfo{};
 
@@ -42,7 +46,7 @@ namespace Engine::GFX
         imageInfo.extent.height = _height;
         imageInfo.extent.depth  = 1;
         imageInfo.mipLevels     = 1;
-        imageInfo.arrayLayers   = 1;
+        imageInfo.arrayLayers   = m_arrayLayers;
         imageInfo.format        = _format;
         imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -78,13 +82,13 @@ namespace Engine::GFX
 
         viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image                           = m_image;
-        viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.viewType                        = _viewType;
         viewInfo.format                          = _format;
         viewInfo.subresourceRange.aspectMask     = _aspect;
         viewInfo.subresourceRange.baseMipLevel   = 0;
         viewInfo.subresourceRange.levelCount     = 1;
         viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount     = 1;
+        viewInfo.subresourceRange.layerCount     = _arrayLayers;
 
         if (vkCreateImageView(_rDevice.GetDevice(), &viewInfo, nullptr, &m_imageView) != VK_SUCCESS)
         {
@@ -121,6 +125,11 @@ namespace Engine::GFX
 
     void cVulkanImage::TransitionLayout(cVulkanDevice& _rDevice, VkCommandBuffer _pCommands, VkImageLayout _oldLayout, VkImageLayout _newLayout, VkImageAspectFlags _aspect)
     {
+        if (_oldLayout == _newLayout)
+        {
+            return;
+        }
+
         VkImageMemoryBarrier barrier{};
 
         barrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -134,24 +143,59 @@ namespace Engine::GFX
         barrier.subresourceRange.baseMipLevel   = 0;
         barrier.subresourceRange.levelCount     = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount     = 1;
+        barrier.subresourceRange.layerCount     = m_arrayLayers;
 
         VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
         if (_oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && _newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
         {
-            barrier.srcAccessMask   = 0;
-            barrier.dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            srcStage                = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            dstStage                = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+            srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         }
+
         else if (_oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && _newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         {
-            barrier.srcAccessMask   = 0;
-            barrier.dstAccessMask   = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            srcStage                = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            dstStage                = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        }
+
+        else if (_oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL && _newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            srcStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        }
+
+        else if (_oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL && _newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        }
+
+        else if (_oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL && _newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        }
+
+        else
+        {
+            throw std::runtime_error("Unsupported Vulkan image layout transition!");
         }
 
         vkCmdPipelineBarrier(_pCommands, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
@@ -176,6 +220,20 @@ namespace Engine::GFX
     VkFormat cVulkanImage::GetFormat() const
     {
         return m_format;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    uint32_t cVulkanImage::GetWidth() const
+    {
+        return m_width;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    uint32_t cVulkanImage::GetHeight() const
+    {
+        return m_height;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

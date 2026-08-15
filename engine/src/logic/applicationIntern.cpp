@@ -203,6 +203,48 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cApplicationIntern::BeginShadowRendering()
+    {
+        m_vulkanRenderer.BeginShadowRendering();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::EndShadowRendering()
+    {
+        m_vulkanRenderer.EndShadowRendering();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::BeginShadowDraw(uint32_t _shadowIndex, uint32_t _matrixIndex)
+    {
+        m_vulkanRenderer.BeginShadowDraw(_shadowIndex, _matrixIndex);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::EndShadowDraw()
+    {
+        m_vulkanRenderer.EndShadowDraw();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    uint32_t cApplicationIntern::GetShadowCount() const
+    {
+        return m_vulkanRenderer.GetShadowCount();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    uint32_t cApplicationIntern::GetShadowMatrixCount(uint32_t _shadowIndex) const
+    {
+        return m_vulkanRenderer.GetShadowMatrixCount(_shadowIndex);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     GFX::cModelEditorWindow& cApplicationIntern::GetModelEitorWindow()
     {
         return m_modelEditorWindow;

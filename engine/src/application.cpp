@@ -53,6 +53,25 @@ namespace Engine
             
             OnUpdate(m_pAppIntern->GetDeltaTime());     
 
+            m_pAppIntern->BeginShadowRendering();
+
+            for (uint32_t shadowIndex = 0; shadowIndex < m_pAppIntern->GetShadowCount(); ++shadowIndex)
+            {
+                const uint32_t matrixCount = m_pAppIntern->GetShadowMatrixCount(shadowIndex);
+
+                for (uint32_t matrixIndex = 0; matrixIndex < matrixCount; ++matrixIndex)
+                {
+                    m_pAppIntern->BeginShadowDraw(shadowIndex, matrixIndex);
+
+                    OnDraw();
+
+                    m_pAppIntern->EndShadowDraw();
+                }
+            }
+
+            m_pAppIntern->EndShadowRendering();
+
+
             m_pAppIntern->BeginDraw();
             OnDraw();
             

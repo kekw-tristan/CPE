@@ -21,5 +21,9 @@ namespace Engine::GFX
 
         cVulkanBuffer lightBuffer; 
         cVulkanBuffer lightStagingBuffer;
+
+        cVulkanBuffer shadowBuffer;
+        cVulkanBuffer shadowStagingBuffer;
+
     };
 }

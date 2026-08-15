@@ -63,6 +63,15 @@ namespace Engine::Logic
             void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
             void BeginDraw(); 
 
+            void BeginShadowRendering();
+            void EndShadowRendering();
+
+            void BeginShadowDraw(uint32_t _shadowIndex, uint32_t _matrixIndex);
+            void EndShadowDraw();
+
+            uint32_t GetShadowCount() const;
+            uint32_t GetShadowMatrixCount(uint32_t _shadowIndex) const;
+
         public:
 
             GFX::cModelEditorWindow& GetModelEitorWindow();

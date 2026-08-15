@@ -41,6 +41,11 @@ struct LightData
     float4 directionType;
     float4 colorIntensity;
     float4 spotData;
+    
+    int shadowIndex;
+    int padding0; 
+    int padding1;
+    int padding2;
 };
 
 
@@ -69,6 +74,24 @@ struct MaterialData
 [[vk::binding(3, 0)]]
 StructuredBuffer<MaterialData> materials;
 
+struct ShadowData
+{
+    row_major float4x4 viewProjection[6];
+
+    uint lightIndex;
+    uint firstLayer;
+    uint matrixCount;
+    uint padding;
+};
+
+[[vk::binding(4, 0)]]
+StructuredBuffer<ShadowData> shadows;
+
+[[vk::binding(5, 0)]]
+Texture2DArray<float> shadowMap;
+
+[[vk::binding(6, 0)]]
+SamplerState shadowSampler;
 
 static const float PI = 3.14159265359f;
 
@@ -187,6 +210,56 @@ float3 FresnelSchlick(float cosTheta, float3 F0)
     float factor = pow(1.0f - saturate(cosTheta), 5.0f);
 
     return F0 + (1.0f - F0) * factor;
+}
+
+// -----------------------------------------------------------------------------------------------------------------------------
+
+float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection, uint shadowIndex, uint matrixIndex)
+{
+    ShadowData shadowData = shadows[shadowIndex];
+
+    float4 lightSpacePosition = mul(float4(worldPosition, 1.0f), shadowData.viewProjection[matrixIndex]);
+
+    if (lightSpacePosition.w <= 0.0f)
+        return 0.0f;
+
+    float3 projectedCoords = lightSpacePosition.xyz / lightSpacePosition.w;
+
+    float2 shadowUV = projectedCoords.xy * 0.5f + 0.5f;
+    float currentDepth = projectedCoords.z;
+
+    if (shadowUV.x < 0.0f || shadowUV.x > 1.0f || shadowUV.y < 0.0f || shadowUV.y > 1.0f)
+        return 0.0f;
+
+    if (currentDepth < 0.0f || currentDepth > 1.0f)
+        return 0.0f;
+
+    uint layer = shadowData.firstLayer + matrixIndex;
+
+    float closestDepth = shadowMap.Sample(shadowSampler, float3(shadowUV, float(layer))).r;
+
+    float NdotL = saturate(dot(normal, lightDirection));
+    float bias = max(0.0015f * (1.0f - NdotL), 0.00015f);
+
+    return currentDepth - bias > closestDepth ? 1.0f : 0.0f;
+}
+
+uint GetPointShadowMatrixIndex(float3 worldPosition, float3 lightPosition)
+{
+    float3 direction = worldPosition - lightPosition;
+    float3 absDirection = abs(direction);
+
+    if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
+    {
+        return direction.x >= 0.0f ? 0 : 1;
+    }
+
+    if (absDirection.y >= absDirection.x && absDirection.y >= absDirection.z)
+    {
+        return direction.y >= 0.0f ? 2 : 3;
+    }
+
+    return direction.z >= 0.0f ? 4 : 5;
 }
 
 
@@ -501,15 +574,48 @@ float4 PSMain(VSOutput input) : SV_Target
 
         if (lightType == LIGHT_TYPE_DIRECTIONAL)
         {
-            finalColor += EvaluateDirectionalLight(input.worldPosition, normal, albedo, light, roughness, metallic, lightWrap, shapeContrast);
+            float3 contribution = EvaluateDirectionalLight(input.worldPosition, normal, albedo, light, roughness, metallic, lightWrap, shapeContrast);
+
+            if (light.shadowIndex >= 0)
+            {
+                float3 lightDirection = SafeNormalize(-light.directionType.xyz);
+                float shadow = CalculateShadow(input.worldPosition, normal, lightDirection, (uint) light.shadowIndex, 0);
+
+                contribution *= 1.0f - shadow;
+            }
+
+            finalColor += contribution;
         }
         else if (lightType == LIGHT_TYPE_POINT)
         {
-            finalColor += EvaluatePointLight(input.worldPosition, normal, albedo, light, roughness, metallic, lightWrap, shapeContrast);
+            float3 contribution = EvaluatePointLight(input.worldPosition, normal, albedo, light, roughness, metallic, lightWrap, shapeContrast);
+
+            if (light.shadowIndex >= 0)
+            {
+                float3 lightDirection = SafeNormalize(light.positionRadius.xyz - input.worldPosition);
+
+                uint matrixIndex = GetPointShadowMatrixIndex(input.worldPosition, light.positionRadius.xyz);
+
+                float shadow = CalculateShadow(input.worldPosition, normal, lightDirection, (uint) light.shadowIndex, matrixIndex);
+
+                contribution *= 1.0f - shadow;
+            }
+
+            finalColor += contribution;
         }
         else if (lightType == LIGHT_TYPE_SPOT)
         {
-            finalColor += EvaluateSpotLight(input.worldPosition, normal, albedo, light, roughness, metallic, lightWrap, shapeContrast);
+            float3 contribution = EvaluateSpotLight(input.worldPosition, normal, albedo, light, roughness, metallic, lightWrap, shapeContrast);
+
+            if (light.shadowIndex >= 0)
+            {
+                float3 lightDirection = SafeNormalize(light.positionRadius.xyz - input.worldPosition);
+                float shadow = CalculateShadow(input.worldPosition, normal, lightDirection, (uint) light.shadowIndex, 0);
+
+                contribution *= 1.0f - shadow;
+            }
+
+            finalColor += contribution;
         }
     }
 

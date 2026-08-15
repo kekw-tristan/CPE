@@ -338,6 +338,83 @@ namespace Engine::Math
             };
         }
 
+        static cMatrix4x4 lookAtRH(const cVector3<T>& _rEye, const cVector3<T>& _rTarget, const cVector3<T>& _rUp) noexcept
+        {
+            auto normalize = [](const cVector3<T>& _rVector)
+                {
+                    const T length = std::sqrt(_rVector.x() * _rVector.x() + _rVector.y() * _rVector.y() + _rVector.z() * _rVector.z());
+
+                    if (length <= T{ 0 })
+                    {
+                        return cVector3<T>{ T{}, T{}, T{} };
+                    }
+
+                    return cVector3<T>{ _rVector.x() / length, _rVector.y() / length, _rVector.z() / length };
+                };
+
+            auto dot = [](const cVector3<T>& _rA, const cVector3<T>& _rB)
+                {
+                    return _rA.x() * _rB.x() + _rA.y() * _rB.y() + _rA.z() * _rB.z();
+                };
+
+            auto cross = [](const cVector3<T>& _rA, const cVector3<T>& _rB)
+                {
+                    return cVector3<T>
+                    {
+                        _rA.y()* _rB.z() - _rA.z() * _rB.y(),
+                            _rA.z()* _rB.x() - _rA.x() * _rB.z(),
+                            _rA.x()* _rB.y() - _rA.y() * _rB.x()
+                    };
+                };
+
+            const cVector3<T> zAxis = normalize(
+                {
+                    _rEye.x() - _rTarget.x(),
+                    _rEye.y() - _rTarget.y(),
+                    _rEye.z() - _rTarget.z()
+                });
+
+            const cVector3<T> xAxis = normalize(cross(_rUp, zAxis));
+            const cVector3<T> yAxis = cross(zAxis, xAxis);
+
+            return
+            {
+                xAxis.x(),                  yAxis.x(),                  zAxis.x(),                  T{},
+                xAxis.y(),                  yAxis.y(),                  zAxis.y(),                  T{},
+                xAxis.z(),                  yAxis.z(),                  zAxis.z(),                  T{},
+                -dot(xAxis, _rEye),         -dot(yAxis, _rEye),         -dot(zAxis, _rEye),         T{1}
+            };
+        }
+
+        static cMatrix4x4 orthographicRH(T _left, T _right, T _bottom, T _top, T _nearPlane, T _farPlane) noexcept
+        {
+            return
+            {
+                T{2} / (_right - _left),     T{},                     T{},                                  T{},
+                T{},                         T{2} / (_top - _bottom), T{},                                  T{},
+                T{},                         T{},                     T{1} / (_nearPlane - _farPlane),      T{},
+                
+                -(_right + _left) / (_right - _left),
+                -(_top + _bottom) / (_top - _bottom),
+                _nearPlane / (_nearPlane - _farPlane),
+                T{1}
+            };
+        }
+
+        static cMatrix4x4 perspectiveRH(T _fieldOfView, T _aspectRatio, T _nearPlane, T _farPlane) noexcept
+        {
+            const T yScale = T{ 1 } / std::tan(_fieldOfView * T{ 0.5 });
+            const T xScale = yScale / _aspectRatio;
+
+            return
+            {
+                xScale, T{},    T{},                                                 T{},
+                T{},    yScale, T{},                                                 T{},
+                T{},    T{},    _farPlane / (_nearPlane - _farPlane),                T{-1},
+                T{},    T{},    (_nearPlane * _farPlane) / (_nearPlane - _farPlane), T{}
+            };
+        }
+
         friend constexpr cMatrix4x4 operator*(T _scalar, const cMatrix4x4& _rMatrix) noexcept
         {
             return _rMatrix * _scalar;

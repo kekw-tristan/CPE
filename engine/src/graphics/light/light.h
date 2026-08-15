@@ -32,6 +32,8 @@ namespace Engine::GFX
 
         float outerCone         = 0.f;
 
+        bool castsShadow = false;
+
     };
 
     struct sLightGPU
@@ -40,5 +42,10 @@ namespace Engine::GFX
         float directionType[4];
         float colorIntensity[4];
         float spotData[4];
+
+        int shadowIndex; 
+        int padding0; 
+        int padding1;
+        int padding2;
     };
 }

@@ -4,10 +4,15 @@ A Vulkan rendering engine written in C++20.
 
 # Blog
 
+## 15.8.2026
+
+Added shading and shadows.
+![ImGui Windows](blogImages/shadows.png)
+
 ## 8.8.2026
 
 Added a small model editor and a frame statistics ImGui window. Also added antialiasing.
-![Multiple meshes](blogImages/modelLoader.png)
+![ImGui Windows](blogImages/modelLoader.png)
 
 ## 20.7.2026
 

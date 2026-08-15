@@ -2,9 +2,11 @@
 
 #include "graphics/gfxConfig.h"
 
+#include "graphics/vulkan/shadowData.h"
 #include "graphics/vulkan/vulkanColorBuffer.h"
 #include "graphics/vulkan/vulkanFrame.h"
 #include "graphics/vulkan/vulkanDepthBuffer.h"
+#include "graphics/vulkan/shadowMap.h"
 
 #include <vulkan/vulkan.h>
 
@@ -22,6 +24,16 @@ namespace Engine::GFX
     class cVulkanSync;
     class cVulkanPipeline;
     class cVulkanMesh;
+
+    struct sRenderPassType
+    {
+        enum Enum
+        {
+            None,
+            Shadow,
+            Main
+        };
+    };
 
     class cVulkanRenderer
     {
@@ -57,6 +69,11 @@ namespace Engine::GFX
 
             VkDescriptorPool GetImguiDescriptorPool();
 
+        public:
+
+            uint32_t GetShadowCount() const;
+            uint32_t GetShadowMatrixCount(uint32_t _shadowIndex) const;
+
         private:
 
             void EndDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex);
@@ -73,6 +90,16 @@ namespace Engine::GFX
             void UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera);
             void UpdateLightBuffer();
             void UpdateMaterialBuffer();
+            void UpdateShadowBuffer(const cCamera& _rCamera);
+
+        public:
+
+            void BeginShadowRendering();
+            void EndShadowRendering();
+
+            void BeginShadowDraw(uint32_t _shadowIndex, uint32_t _matrixIndex);
+            void DrawShadowMeshInstances(cVulkanMesh* _pMesh, uint32_t _instanceCount, uint32_t _firstInstance);
+            void EndShadowDraw();
 
         private:
 
@@ -101,5 +128,12 @@ namespace Engine::GFX
 
             cVulkanBuffer m_materialBuffer;
             cVulkanBuffer m_materialStagingBuffer;
+
+            cShadowMap m_shadowMap;
+            std::vector<int32_t> m_lightShadowIndices; 
+            sRenderPassType::Enum m_renderPassType = sRenderPassType::None;
+
+            std::vector<sShadowDataGPU> m_shadowData;
+            VkImageLayout m_shadowMapLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     };
 }  

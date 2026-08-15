@@ -125,14 +125,43 @@ void cGame::OnInit()
    
     // main directional light
 
-    Engine::GFX::sLight directionalLight{};
+    Engine::GFX::sLight directionalLight0{};
+    
+    directionalLight0.type = Engine::GFX::sLightType::Directional;
+    directionalLight0.color = { 1.0f, 0.85f, 0.7f };
+    directionalLight0.intensity = 2.5f;
+    directionalLight0.direction = { -0.5f, -1.0f, -0.3f };
+    directionalLight0.castsShadow = true;
+    
+    LightManager::CreateLight(directionalLight0);
+    
 
-    directionalLight.type = Engine::GFX::sLightType::Directional;
-    directionalLight.color = { 0.8f, 0.8f, 0.8f};
-    directionalLight.intensity = 3.f;
-    directionalLight.direction = { -0.4f, -1.0f, -0.3f };   
+    constexpr float c_pi = 3.14159265358979323846f;
 
-    LightManager::CreateLight(directionalLight);
+    Engine::GFX::sLight spotLight{};
+
+    spotLight.type = Engine::GFX::sLightType::Spot;
+    spotLight.color = { 1.0f, 0.8f, 0.6f };
+    spotLight.intensity = 200.0f;
+    spotLight.position = { -4.f, 5.0f, -4.0f };
+    spotLight.direction = { -1.0f, -1.0f, -1.0f };
+    spotLight.radius = 20.0f;
+    spotLight.innerCone = std::cos(20.0f * c_pi / 180.0f);
+    spotLight.outerCone = std::cos(30.0f * c_pi / 180.0f);
+    spotLight.castsShadow = true;
+
+    LightManager::CreateLight(spotLight);
+
+    Engine::GFX::sLight pointLight{};
+
+    pointLight.type = Engine::GFX::sLightType::Point;
+    pointLight.color = { 1.0f, 0.65f, 0.35f };
+    pointLight.intensity = 50.0f;
+    pointLight.position = { 0.0f, 4.0f, 0.0f };
+    pointLight.radius = 25.0f;
+    pointLight.castsShadow = true;
+
+    LightManager::CreateLight(pointLight);
 
 }
 

@@ -16,8 +16,8 @@ namespace Engine::GFX
             cVulkanPipeline() = default;
            ~cVulkanPipeline() = default;
 
-            cVulkanPipeline(const cVulkanPipeline&)         = delete; 
-            cVulkanDevice& operator=(const cVulkanDevice&)  = delete;
+            cVulkanPipeline(const cVulkanPipeline&)          = delete; 
+            cVulkanPipeline& operator=(const cVulkanDevice&) = delete;
 
         public:
 
@@ -28,6 +28,10 @@ namespace Engine::GFX
 
             VkPipeline              GetPipeline(); 
             VkPipelineLayout        GetPipelineLayout();
+
+            VkPipeline              GetShadowPipeline(); 
+            VkPipelineLayout        GetShadowPipelineLayout();
+
             VkDescriptorSetLayout   GetFrameUniformDescriptorSetLayout();
 
         private:
@@ -35,11 +39,15 @@ namespace Engine::GFX
             static std::vector<char> ReadFile(const std::string& _rFileName);
             VkShaderModule CreateShaderModule(cVulkanDevice& _rDevice, const std::vector<char>& _rCode); 
             void CreateFrameUniformDescriptorSetLayout(cVulkanDevice& _rDevice);
+            void CreateShadowPipeline(cVulkanDevice& _rDevice);
 
         private:
 
             VkPipelineLayout m_pPipelineLayout;
             VkPipeline       m_pGraphicsPipeline; 
+
+            VkPipelineLayout m_pShadowPipelineLayout = VK_NULL_HANDLE;
+            VkPipeline       m_pShadowPipeline       = VK_NULL_HANDLE;
 
             VkDescriptorSetLayout m_pFrameUniformDescriptorSetLayout;
 
