@@ -220,7 +220,13 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
 {
     ShadowData shadowData = shadows[shadowIndex];
 
-    float4 lightSpacePosition = mul(float4(worldPosition, 1.0f), shadowData.viewProjection[matrixIndex]);
+    float NdotL = saturate(dot(normal, lightDirection));
+
+    float normalBias = 0.02f * (1.0f - NdotL);
+
+    float3 biasedWorldPosition = worldPosition + normal * normalBias;
+
+    float4 lightSpacePosition = mul(float4(biasedWorldPosition, 1.0f), shadowData.viewProjection[matrixIndex]);
 
     if (lightSpacePosition.w <= 0.0f)
         return 0.0f;
@@ -238,8 +244,7 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
     uint layer = shadowData.firstLayer + matrixIndex;
     
     float closestDepth  = shadowMap.Sample(shadowSampler, float3(shadowUV, float(layer))).r;
-    float NdotL         = saturate(dot(normal, lightDirection));
-    float bias          = max(0.0015f * (1.0f - NdotL), 0.00015f);
+    float bias          = max(0.00075f * (1.0f - NdotL), 0.000075f);
     float shadow        = 0.0f;
 
     uint width;

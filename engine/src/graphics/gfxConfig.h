@@ -22,5 +22,5 @@ namespace Engine::GFX
         300.f
     };
 
-    static constexpr uint32_t c_shadowMapResolution = 2048;
+    static constexpr uint32_t c_shadowMapResolution = 4096;
 }
