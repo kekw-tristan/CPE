@@ -77,6 +77,8 @@ StructuredBuffer<MaterialData> materials;
 struct ShadowData
 {
     row_major float4x4 viewProjection[6];
+    
+    float4 cascadeSplits;
 
     uint lightIndex;
     uint firstLayer;
@@ -103,20 +105,20 @@ static const uint LIGHT_TYPE_SPOT = 2;
 struct VSInput
 {
     float3 position : POSITION;
-    float3 normal : NORMAL;
+    float3 normal   : NORMAL;
     float2 texCoord : TEXCOORD0;
 };
 
 
 struct VSOutput
 {
-    float4 position : SV_Position;
-
+    float4 position      : SV_Position;
+                         
     float3 worldPosition : POSITION0;
-    float3 worldNormal : NORMAL0;
-
-    float2 texCoord : TEXCOORD0;
-    float4 color : COLOR0;
+    float3 worldNormal   : NORMAL0;
+                         
+    float2 texCoord      : TEXCOORD0;
+    float4 color         : COLOR0;
 
     nointerpolation int materialIndex : MATERIAL_INDEX;
 };
@@ -149,16 +151,14 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
     float4 worldPosition = mul(float4(input.position, 1.0f), instance.worldMatrix);
 
-    output.position = mul(viewProj, worldPosition);
-
+    output.position      = mul(viewProj, worldPosition);
     output.worldPosition = worldPosition.xyz;
 
     float3x3 normalMatrix = (float3x3) instance.worldMatrix;
-    output.worldNormal = SafeNormalize(mul(input.normal, normalMatrix));
-
-    output.texCoord = input.texCoord;
-    output.color = instance.color;
-
+    
+    output.worldNormal   = SafeNormalize(mul(input.normal, normalMatrix));
+    output.texCoord      = input.texCoord;
+    output.color         = instance.color;
     output.materialIndex = instance.materialIndex;
 
     return output;
@@ -171,11 +171,11 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
 float DistributionGGX(float NdotH, float roughness)
 {
-    float alpha = roughness * roughness;
-    float alphaSquared = alpha * alpha;
+    float alpha         = roughness * roughness;
+    float alphaSquared  = alpha     * alpha;
 
-    float denominator = NdotH * NdotH * (alphaSquared - 1.0f) + 1.0f;
-    denominator = PI * denominator * denominator;
+    float denominator   = NdotH * NdotH * (alphaSquared - 1.0f) + 1.0f;
+    denominator         = PI * denominator * denominator;
 
     return alphaSquared / max(denominator, 0.000001f);
 }
@@ -196,7 +196,7 @@ float GeometrySchlickGGX(float NdotV, float roughness)
 
 float GeometrySmith(float NdotV, float NdotL, float roughness)
 {
-    float geometryView = GeometrySchlickGGX(NdotV, roughness);
+    float geometryView  = GeometrySchlickGGX(NdotV, roughness);
     float geometryLight = GeometrySchlickGGX(NdotL, roughness);
 
     return geometryView * geometryLight;
@@ -213,6 +213,8 @@ float3 FresnelSchlick(float cosTheta, float3 F0)
 }
 
 // -----------------------------------------------------------------------------------------------------------------------------
+// Shadow
+// -----------------------------------------------------------------------------------------------------------------------------
 
 float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection, uint shadowIndex, uint matrixIndex)
 {
@@ -224,9 +226,8 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
         return 0.0f;
 
     float3 projectedCoords = lightSpacePosition.xyz / lightSpacePosition.w;
-
-    float2 shadowUV = projectedCoords.xy * 0.5f + 0.5f;
-    float currentDepth = projectedCoords.z;
+    float2 shadowUV        = projectedCoords.xy * 0.5f + 0.5f;
+    float  currentDepth    = projectedCoords.z;
 
     if (shadowUV.x < 0.0f || shadowUV.x > 1.0f || shadowUV.y < 0.0f || shadowUV.y > 1.0f)
         return 0.0f;
@@ -235,18 +236,42 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
         return 0.0f;
 
     uint layer = shadowData.firstLayer + matrixIndex;
+    
+    float closestDepth  = shadowMap.Sample(shadowSampler, float3(shadowUV, float(layer))).r;
+    float NdotL         = saturate(dot(normal, lightDirection));
+    float bias          = max(0.0015f * (1.0f - NdotL), 0.00015f);
+    float shadow        = 0.0f;
 
-    float closestDepth = shadowMap.Sample(shadowSampler, float3(shadowUV, float(layer))).r;
+    uint width;
+    uint height;
+    uint layers;
 
-    float NdotL = saturate(dot(normal, lightDirection));
-    float bias = max(0.0015f * (1.0f - NdotL), 0.00015f);
+    shadowMap.GetDimensions(width, height, layers);
 
-    return currentDepth - bias > closestDepth ? 1.0f : 0.0f;
+    float2 texelSize = 1.0f / float2(width, height);
+
+    [unroll]
+    for (int x = -1; x <= 1; ++x)
+    {
+        [unroll]
+        for (int y = -1; y <= 1; ++y)
+        {
+            float2 sampleUV = shadowUV + float2(x, y) * texelSize;
+            float closestDepth = shadowMap.Sample(shadowSampler, float3(sampleUV, float(layer))).r;
+
+            shadow += currentDepth - bias > closestDepth ? 1.0f : 0.0f;
+        }
+    }
+
+    return shadow / 9.0f;
+    
 }
+
+// -----------------------------------------------------------------------------------------------------------------------------
 
 uint GetPointShadowMatrixIndex(float3 worldPosition, float3 lightPosition)
 {
-    float3 direction = worldPosition - lightPosition;
+    float3 direction    = worldPosition - lightPosition;
     float3 absDirection = abs(direction);
 
     if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
@@ -262,6 +287,31 @@ uint GetPointShadowMatrixIndex(float3 worldPosition, float3 lightPosition)
     return direction.z >= 0.0f ? 4 : 5;
 }
 
+// -----------------------------------------------------------------------------------------------------------------------------
+
+uint GetDirectionalCascadeIndex(float viewDepth, ShadowData shadowData)
+{
+    if (viewDepth <= shadowData.cascadeSplits.x)
+        return 0;
+
+    if (viewDepth <= shadowData.cascadeSplits.y)
+        return 1;
+
+    if (viewDepth <= shadowData.cascadeSplits.z)
+        return 2;
+
+    if (viewDepth <= shadowData.cascadeSplits.w)
+        return 3;
+
+    return shadowData.matrixCount;
+}
+
+// -----------------------------------------------------------------------------------------------------------------------------
+
+float GetCameraViewDepth(float3 worldPosition)
+{
+    return dot(worldPosition - cameraPosition.xyz, SafeNormalize(cameraDirection.xyz));
+}
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Shape Lighting
@@ -269,7 +319,7 @@ uint GetPointShadowMatrixIndex(float3 worldPosition, float3 lightPosition)
 
 float EvaluateShapeDiffuse(float NdotLRaw, float lightWrap, float shapeContrast)
 {
-    lightWrap = saturate(lightWrap);
+    lightWrap     = saturate(lightWrap);
     shapeContrast = max(shapeContrast, 0.05f);
 
     float wrappedNdotL = saturate((NdotLRaw + lightWrap) / (1.0f + lightWrap));
@@ -294,11 +344,9 @@ float3 EvaluateSurfaceLight(
     float shapeContrast)
 {
     float3 viewDirection = SafeNormalize(cameraPosition.xyz - worldPosition);
-
-    float NdotLRaw = dot(normal, lightDirection);
-
-    float NdotL = saturate(NdotLRaw);
-    float NdotV = saturate(dot(normal, viewDirection));
+    float NdotLRaw       = dot(normal, lightDirection);
+    float NdotL          = saturate(NdotLRaw);
+    float NdotV          = saturate(dot(normal, viewDirection));
 
     float shapedNdotL = EvaluateShapeDiffuse(NdotLRaw, lightWrap, shapeContrast);
 
@@ -306,21 +354,20 @@ float3 EvaluateSurfaceLight(
         return float3(0.0f, 0.0f, 0.0f);
 
     float3 halfVector = SafeNormalize(viewDirection + lightDirection);
-
-    float NdotH = saturate(dot(normal, halfVector));
-    float VdotH = saturate(dot(viewDirection, halfVector));
+    float NdotH       = saturate(dot(normal, halfVector));
+    float VdotH       = saturate(dot(viewDirection, halfVector));
 
     roughness = clamp(roughness, 0.045f, 1.0f);
-    metallic = saturate(metallic);
+    metallic  = saturate(metallic);
 
     float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metallic);
 
-    float distribution = DistributionGGX(NdotH, roughness);
-    float geometry = GeometrySmith(NdotV, NdotL, roughness);
-    float3 fresnel = FresnelSchlick(VdotH, F0);
+    float distribution  = DistributionGGX(NdotH, roughness);
+    float geometry      = GeometrySmith(NdotV, NdotL, roughness);
+    float3 fresnel      = FresnelSchlick(VdotH, F0);
 
-    float3 specularNumerator = distribution * geometry * fresnel;
-    float specularDenominator = max(4.0f * NdotV * NdotL, 0.0001f);
+    float3 specularNumerator    = distribution * geometry * fresnel;
+    float  specularDenominator  = max(4.0f * NdotV * NdotL, 0.0001f);
 
     float3 specular = specularNumerator / specularDenominator;
 
@@ -329,7 +376,7 @@ float3 EvaluateSurfaceLight(
 
     float3 diffuse = kD * albedo / PI;
 
-    float3 diffuseContribution = diffuse * radiance * shapedNdotL;
+    float3 diffuseContribution  = diffuse * radiance * shapedNdotL;
     float3 specularContribution = specular * radiance * NdotL;
 
     return diffuseContribution + specularContribution;
@@ -350,10 +397,9 @@ float3 EvaluateDirectionalLight(
     float lightWrap,
     float shapeContrast)
 {
-    float3 lightDirection = SafeNormalize(-light.directionType.xyz);
-
-    float3 lightColor = light.colorIntensity.rgb;
-    float lightIntensity = light.colorIntensity.w;
+    float3 lightDirection   = SafeNormalize(-light.directionType.xyz);
+    float3 lightColor       = light.colorIntensity.rgb;
+    float  lightIntensity   = light.colorIntensity.w;
 
     float3 radiance = lightColor * lightIntensity;
 
@@ -388,15 +434,14 @@ float3 EvaluatePointLight(
     float3 lightDirection = toLight / distanceToLight;
 
     float normalizedDistance = distanceToLight / radius;
-
-    float rangeAttenuation = saturate(1.0f - normalizedDistance * normalizedDistance * normalizedDistance * normalizedDistance);
+    float rangeAttenuation   = saturate(1.0f - normalizedDistance * normalizedDistance * normalizedDistance * normalizedDistance);
+    
     rangeAttenuation *= rangeAttenuation;
 
-    float distanceAttenuation = 1.0f / (1.0f + distanceSquared);
+    float distanceAttenuation   = 1.0f / (1.0f + distanceSquared);
+    float attenuation           = rangeAttenuation * distanceAttenuation;
 
-    float attenuation = rangeAttenuation * distanceAttenuation;
-
-    float3 lightColor = light.colorIntensity.rgb;
+    float3 lightColor    = light.colorIntensity.rgb;
     float lightIntensity = light.colorIntensity.w;
 
     float3 radiance = lightColor * lightIntensity * attenuation;
@@ -578,10 +623,20 @@ float4 PSMain(VSOutput input) : SV_Target
 
             if (light.shadowIndex >= 0)
             {
-                float3 lightDirection = SafeNormalize(-light.directionType.xyz);
-                float shadow = CalculateShadow(input.worldPosition, normal, lightDirection, (uint) light.shadowIndex, 0);
+                uint shadowIndex = (uint) light.shadowIndex;
 
-                contribution *= 1.0f - shadow;
+                ShadowData shadowData = shadows[shadowIndex];
+
+                float viewDepth = GetCameraViewDepth(input.worldPosition);
+                uint cascadeIndex = GetDirectionalCascadeIndex(viewDepth, shadowData);
+
+                if (cascadeIndex < shadowData.matrixCount)
+                {
+                    float3 lightDirection = SafeNormalize(-light.directionType.xyz);
+                    float shadow = CalculateShadow(input.worldPosition, normal, lightDirection, shadowIndex, cascadeIndex);
+
+                    contribution *= 1.0f - shadow;
+                }
             }
 
             finalColor += contribution;

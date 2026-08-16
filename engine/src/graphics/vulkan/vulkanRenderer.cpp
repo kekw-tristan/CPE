@@ -19,6 +19,8 @@
 #include "graphics/vulkan/vulkanSwapchain.h"
 #include "graphics/vulkan/vulkanCommands.h"
 
+#include "math/util.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -48,7 +50,7 @@ namespace Engine::GFX
         m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
         m_colorBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
         
-        m_shadowMap.Create(*m_pDevice, 2048, 2048, 8);
+        m_shadowMap.Create(*m_pDevice, 4096, 4096, 8);
 
         CreateDescriptorPool();
         CreateImGuiDescriptorPool();
@@ -533,6 +535,12 @@ namespace Engine::GFX
         float cameraPosition[4];
         _rCamera.GetPosition(cameraPosition);
 
+        const float width       = static_cast<float>(m_pSwapchain->GetExtent().width);
+        const float height      = static_cast<float>(m_pSwapchain->GetExtent().height);
+        const float aspectRatio = height > 0.0f ? width / height : 1.0f;
+
+        const std::array<Math::cVec3f, 8> testCorners = Math::CalculateFrustumCorners(_rCamera, aspectRatio, 0.1f, 15.0f);
+
         std::vector<sLight>& rLights = LightManager::GetLights();
 
         m_shadowData.clear();
@@ -552,8 +560,8 @@ namespace Engine::GFX
 
         for (uint32_t lightIndex = 0; lightIndex < static_cast<uint32_t>(rLights.size()); ++lightIndex)
         {
-            sLight& rLight = rLights[lightIndex];
-            uint32_t requiredLayers = 0;
+            sLight&  rLight          = rLights[lightIndex];
+            uint32_t requiredLayers  = 0;
 
             if (!rLight.castsShadow)
             {
@@ -573,11 +581,7 @@ namespace Engine::GFX
                 {
                     Math::cVec3f direction = rLight.direction;
 
-                    const float directionLength = std::sqrt(
-                        direction.x() * direction.x() +
-                        direction.y() * direction.y() +
-                        direction.z() * direction.z()
-                    );
+                    const float directionLength = std::sqrt(direction.x() * direction.x() + direction.y() * direction.y() + direction.z() * direction.z());
 
                     if (directionLength <= 0.0001f)
                     {
@@ -591,44 +595,28 @@ namespace Engine::GFX
                         direction.z() / directionLength
                     };
 
-                    const float lightDistance = 100.f;
+                    const VkExtent2D extent = m_pSwapchain->GetExtent();
 
-                    const Math::cVec3f lightPosition =
+                    const float width       = static_cast<float>(extent.width);
+                    const float height      = static_cast<float>(extent.height);
+                    const float aspectRatio = height > 0.f ? width / height : 1.f;
+
+                    const float cameraNear = _rCamera.GetNearPlane();
+
+                    for (uint32_t cascadeIndex = 0; cascadeIndex < c_directionalCascadeCount; ++cascadeIndex)
                     {
-                        shadowCenter.x() - direction.x() * lightDistance,
-                        shadowCenter.y() - direction.y() * lightDistance,
-                        shadowCenter.z() - direction.z() * lightDistance
-                    };
+                        const float cascadeNear = cascadeIndex == 0 ? cameraNear : c_directionalCascadeSplits[cascadeIndex - 1];
+                        const float cascadeFar  = c_directionalCascadeSplits[cascadeIndex];
 
-                    Math::cVec3f up = { 0.f, 1.f, 0.f };
+                        const std::array<Math::cVec3f, 8> corners = Math::CalculateFrustumCorners(_rCamera, aspectRatio, cascadeNear, cascadeFar);
 
-                    if (std::abs(direction.y()) > 0.99f)
-                    {
-                        up = { 0.f, 0.f, 1.f };
+                        shadow.viewProjection[cascadeIndex] = CalculateDirectionalShadowMatrix(corners, direction);
+                        shadow.cascadeSplits[cascadeIndex]  = cascadeFar;
                     }
 
-                    const Math::cMatrix4x4f lightView = Math::cMatrix4x4f::lookAtRH(lightPosition, shadowCenter, up);
+                    shadow.matrixCount = c_directionalCascadeCount;
+                    requiredLayers = c_directionalCascadeCount;
 
-                    const float shadowExtent = 75.f;
-                    const float nearPlane = 0.1f;
-                    const float farPlane = 250.f;
-
-                    const Math::cMatrix4x4f lightProjection = Math::cMatrix4x4f::orthographicRH(
-                        -shadowExtent,
-                        shadowExtent,
-                        -shadowExtent,
-                        shadowExtent,
-                        nearPlane,
-                        farPlane
-                    );
-
-                    const Math::cMatrix4x4f lightViewProjection = lightView * lightProjection;
-
-                    shadow.viewProjection[0] = lightViewProjection;
-
-                    shadow.matrixCount = 1;
-
-                    requiredLayers = 1;
                     break;
                 }
 

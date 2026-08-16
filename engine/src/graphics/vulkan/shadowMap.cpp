@@ -47,15 +47,15 @@ namespace Engine::GFX
         {
             VkImageViewCreateInfo viewInfo{};
 
-            viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            viewInfo.image = m_depthImage.GetImage();
-            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            viewInfo.format = m_depthImage.GetFormat();
-            viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            viewInfo.subresourceRange.baseMipLevel = 0;
-            viewInfo.subresourceRange.levelCount = 1;
-            viewInfo.subresourceRange.baseArrayLayer = layer;
-            viewInfo.subresourceRange.layerCount = 1;
+            viewInfo.sType                              = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            viewInfo.image                              = m_depthImage.GetImage();
+            viewInfo.viewType                           = VK_IMAGE_VIEW_TYPE_2D;
+            viewInfo.format                             = m_depthImage.GetFormat();
+            viewInfo.subresourceRange.aspectMask        = VK_IMAGE_ASPECT_DEPTH_BIT;
+            viewInfo.subresourceRange.baseMipLevel      = 0;
+            viewInfo.subresourceRange.levelCount        = 1;
+            viewInfo.subresourceRange.baseArrayLayer    = layer;
+            viewInfo.subresourceRange.layerCount        = 1;
 
             if (vkCreateImageView(_rDevice.GetDevice(), &viewInfo, nullptr, &m_layerImageViews[layer]) != VK_SUCCESS)
             {
@@ -65,18 +65,18 @@ namespace Engine::GFX
 
         VkSamplerCreateInfo samplerInfo{};
 
-        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.magFilter = VK_FILTER_NEAREST;
-        samplerInfo.minFilter = VK_FILTER_NEAREST;
-        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        samplerInfo.anisotropyEnable = VK_FALSE;
-        samplerInfo.compareEnable = VK_FALSE;
-        samplerInfo.minLod = 0.0f;
-        samplerInfo.maxLod = 0.0f;
-        samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+        samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter               = VK_FILTER_NEAREST;
+        samplerInfo.minFilter               = VK_FILTER_NEAREST;
+        samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        samplerInfo.anisotropyEnable        = VK_FALSE;
+        samplerInfo.compareEnable           = VK_FALSE;
+        samplerInfo.minLod                  = 0.0f;
+        samplerInfo.maxLod                  = 0.0f;
+        samplerInfo.borderColor             = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
         samplerInfo.unnormalizedCoordinates = VK_FALSE;
 
         if (vkCreateSampler(_rDevice.GetDevice(), &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS)

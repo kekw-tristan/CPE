@@ -11,4 +11,14 @@ namespace Engine::GFX
     static constexpr uint32_t c_maxNumberOfMaterials    = 1000;
 
     static constexpr uint32_t c_maxShadowLayers = 16;
+
+    static constexpr uint32_t c_directionalCascadeCount = 4;
+
+    static constexpr float c_directionalCascadeSplits[c_directionalCascadeCount] =
+    {
+        30.0f,
+        70.0f,
+        150.0f,
+        300.f
+    };
 }

@@ -8,6 +8,8 @@ namespace Engine::GFX
 	{
 		Math::cMatrix4x4f viewProjection[6];
 
+		float cascadeSplits[4];
+
 		uint32_t lightIndex;
 		uint32_t firstLayer; 
 		uint32_t matrixCount; 
