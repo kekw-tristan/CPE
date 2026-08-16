@@ -610,7 +610,7 @@ namespace Engine::GFX
 
                         const std::array<Math::cVec3f, 8> corners = Math::CalculateFrustumCorners(_rCamera, aspectRatio, cascadeNear, cascadeFar);
 
-                        shadow.viewProjection[cascadeIndex] = CalculateDirectionalShadowMatrix(corners, direction);
+                        shadow.viewProjection[cascadeIndex] = CalculateDirectionalShadowMatrix(corners, direction, c_shadowMapResolution);
                         shadow.cascadeSplits[cascadeIndex]  = cascadeFar;
                     }
 
@@ -673,7 +673,7 @@ namespace Engine::GFX
 
                 case sLightType::Point:
                 {
-                    const float nearPlane = 0.1f;
+                    const float nearPlane = 0.00001f;
                     const float farPlane = std::max(rLight.radius, nearPlane + 0.01f);
 
                     constexpr float c_pi = 3.14159265358979323846f;
@@ -761,14 +761,14 @@ namespace Engine::GFX
 
         VkBufferMemoryBarrier barrier{};
 
-        barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        barrier.srcAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask       = VK_ACCESS_SHADER_READ_BIT;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.buffer = rFrame.shadowBuffer.GetBuffer();
-        barrier.offset = 0;
-        barrier.size = shadowDataSize;
+        barrier.buffer              = rFrame.shadowBuffer.GetBuffer();
+        barrier.offset              = 0;
+        barrier.size                = shadowDataSize;
 
         vkCmdPipelineBarrier(
             pCommandBuffer,
@@ -785,8 +785,8 @@ namespace Engine::GFX
 
     void cVulkanRenderer::BeginShadowRendering()
     {
-        sVulkanFrame& rFrame = m_frames[m_currentFrame];
-        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
 
         m_shadowMap.GetImageResource().TransitionLayout(
             *m_pDevice,
@@ -803,8 +803,8 @@ namespace Engine::GFX
 
     void cVulkanRenderer::EndShadowRendering()
     {
-        sVulkanFrame& rFrame = m_frames[m_currentFrame];
-        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
 
         m_shadowMap.GetImageResource().TransitionLayout(
             *m_pDevice,

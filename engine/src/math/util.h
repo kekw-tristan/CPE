@@ -74,7 +74,7 @@ namespace Engine::Math
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    Math::cMatrix4x4f CalculateDirectionalShadowMatrix(const std::array<Math::cVec3f, 8>& _rCorners, Math::cVec3f _lightDirection)
+    Math::cMatrix4x4f CalculateDirectionalShadowMatrix(const std::array<Math::cVec3f, 8>& _rCorners, Math::cVec3f _lightDirection, uint32_t _shadowResolution)
     {
         _lightDirection = _lightDirection.normalized();
 
@@ -92,8 +92,12 @@ namespace Engine::Math
         for (const Math::cVec3f& corner : _rCorners)
         {
             const Math::cVec3f offset = corner - center;
-            radius = std::max(radius, offset.length());
+            const float distance = std::sqrt(offset.x() * offset.x() + offset.y() * offset.y() + offset.z() * offset.z());
+
+            radius = std::max(radius, distance);
         }
+
+        radius = std::ceil(radius * 16.f) / 16.f;
 
         Math::cVec3f up = { 0.f, 1.f, 0.f };
 
@@ -102,44 +106,41 @@ namespace Engine::Math
             up = { 0.f, 0.f, 1.f };
         }
 
+        const Math::cVec3f lightRight = _lightDirection.cross(up).normalized();
+        const Math::cVec3f lightUp    = lightRight.cross(_lightDirection).normalized();
+
+        const float worldUnitsPerTexel = (radius * 2.f) / static_cast<float>(_shadowResolution);
+
+        const float centerX = center.dot(lightRight);
+        const float centerY = center.dot(lightUp);
+
+        const float snappedX = std::floor(centerX / worldUnitsPerTexel + 0.5f) * worldUnitsPerTexel;
+        const float snappedY = std::floor(centerY / worldUnitsPerTexel + 0.5f) * worldUnitsPerTexel;
+
+        center += lightRight * (snappedX - centerX);
+        center += lightUp    * (snappedY - centerY);
+
         const float depthPadding  = 10.f;
         const float lightDistance = radius + depthPadding;
 
-        const Math::cVec3f      lightPosition   = center - _lightDirection * lightDistance;
-        const Math::cMatrix4x4f lightView       = Math::cMatrix4x4f::lookAtRH(lightPosition, center, up);
+        const Math::cVec3f lightPosition  = center - _lightDirection * lightDistance;
+        const Math::cMatrix4x4f lightView = Math::cMatrix4x4f::lookAtRH(lightPosition, center, up);
 
-        float minX =  std::numeric_limits<float>::max();
-        float maxX = -std::numeric_limits<float>::max();
-        float minY =  std::numeric_limits<float>::max();
-        float maxY = -std::numeric_limits<float>::max();
-        float minZ =  std::numeric_limits<float>::max();
+        float minZ = std::numeric_limits<float>::max();
         float maxZ = -std::numeric_limits<float>::max();
 
         for (const Math::cVec3f& corner : _rCorners)
         {
             const Math::cVec3f lightSpaceCorner = lightView.transformPoint(corner);
 
-            minX = std::min(minX, lightSpaceCorner.x());
-            maxX = std::max(maxX, lightSpaceCorner.x());
-
-            minY = std::min(minY, lightSpaceCorner.y());
-            maxY = std::max(maxY, lightSpaceCorner.y());
-
             minZ = std::min(minZ, lightSpaceCorner.z());
             maxZ = std::max(maxZ, lightSpaceCorner.z());
         }
 
-        const float xyPadding = 1.f;
-
-        minX -= xyPadding;
-        maxX += xyPadding;
-        minY -= xyPadding;
-        maxY += xyPadding;
-
         const float nearPlane = std::max(0.1f, -maxZ - depthPadding);
         const float farPlane  = std::max(nearPlane + 0.1f, -minZ + depthPadding);
 
-        const Math::cMatrix4x4f lightProjection = Math::cMatrix4x4f::orthographicRH(minX, maxX, minY, maxY, nearPlane, farPlane);
+        const Math::cMatrix4x4f lightProjection = Math::cMatrix4x4f::orthographicRH(-radius, radius, -radius, radius, nearPlane, farPlane);
 
         return lightView * lightProjection;
     }

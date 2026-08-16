@@ -415,7 +415,10 @@ namespace Engine::GFX
         rasterizer.lineWidth                = 1.0f;
         rasterizer.cullMode                 = VK_CULL_MODE_NONE;
         rasterizer.frontFace                = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        rasterizer.depthBiasEnable          = VK_FALSE;
+        rasterizer.depthBiasEnable          = VK_TRUE;
+        rasterizer.depthBiasConstantFactor  = 1.25f;
+        rasterizer.depthBiasClamp           = 0.0f;
+        rasterizer.depthBiasSlopeFactor     = 1.75f;
 
         VkPipelineMultisampleStateCreateInfo multisampling{};
 
