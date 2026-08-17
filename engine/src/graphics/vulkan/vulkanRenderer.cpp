@@ -51,6 +51,8 @@ namespace Engine::GFX
         m_colorBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
         
         m_shadowMap.Create(*m_pDevice, 4096, 4096, 8);
+        m_environment.Create(*m_pDevice, *m_pCommands);
+        m_brdfLUT.Create(*m_pDevice, *m_pCommands);
 
         CreateDescriptorPool();
         CreateImGuiDescriptorPool();
@@ -73,6 +75,8 @@ namespace Engine::GFX
         m_colorBuffer.ShutDown(*m_pDevice);
 
         m_shadowMap.Destroy(*m_pDevice);
+        m_environment.Destroy(*m_pDevice);
+        m_brdfLUT.Destroy(*m_pDevice);
 
         m_materialBuffer.Shutdown(*m_pDevice);
         m_materialStagingBuffer.Shutdown(*m_pDevice);
@@ -1195,13 +1199,13 @@ namespace Engine::GFX
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         poolSizes[1].descriptorCount = c_maxNumberOfFrames * 4;
 
-        // shadow image
+        // shadow image + environment image + BRDF LUT + irradiance image
         poolSizes[2].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        poolSizes[2].descriptorCount = c_maxNumberOfFrames;
+        poolSizes[2].descriptorCount = c_maxNumberOfFrames * 4;
 
-        // shadow sampler
+        // shadow sampler + environment sampler + BRDF sampler
         poolSizes[3].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-        poolSizes[3].descriptorCount = c_maxNumberOfFrames;
+        poolSizes[3].descriptorCount = c_maxNumberOfFrames * 3;
 
         VkDescriptorPoolCreateInfo poolInfo{};
 
@@ -1323,7 +1327,37 @@ namespace Engine::GFX
             shadowSamplerInfo.imageView     = VK_NULL_HANDLE;
             shadowSamplerInfo.imageLayout   = VK_IMAGE_LAYOUT_UNDEFINED;
 
-            std::array<VkWriteDescriptorSet, 7> descriptorWrites{};
+            VkDescriptorImageInfo environmentImageInfo{};
+
+            environmentImageInfo.sampler     = VK_NULL_HANDLE;
+            environmentImageInfo.imageView   = m_environment.GetImageView();
+            environmentImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            VkDescriptorImageInfo environmentSamplerInfo{};
+
+            environmentSamplerInfo.sampler     = m_environment.GetSampler();
+            environmentSamplerInfo.imageView   = VK_NULL_HANDLE;
+            environmentSamplerInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            VkDescriptorImageInfo brdfImageInfo{};
+
+            brdfImageInfo.sampler       = VK_NULL_HANDLE;
+            brdfImageInfo.imageView     = m_brdfLUT.GetImageView();
+            brdfImageInfo.imageLayout   = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            VkDescriptorImageInfo brdfSamplerInfo{};
+
+            brdfSamplerInfo.sampler     = m_brdfLUT.GetSampler();
+            brdfSamplerInfo.imageView   = VK_NULL_HANDLE;
+            brdfSamplerInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            VkDescriptorImageInfo irradianceImageInfo{};
+
+            irradianceImageInfo.sampler     = VK_NULL_HANDLE;
+            irradianceImageInfo.imageView   = m_environment.GetIrradianceImageView();
+            irradianceImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            std::array<VkWriteDescriptorSet, 12> descriptorWrites{};
 
             descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet          = m_frames[index].frameDescriptorSet;
@@ -1379,6 +1413,46 @@ namespace Engine::GFX
             descriptorWrites[6].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
             descriptorWrites[6].descriptorCount = 1;
             descriptorWrites[6].pImageInfo      = &shadowSamplerInfo;
+
+            descriptorWrites[7].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[7].dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrites[7].dstBinding      = 7;
+            descriptorWrites[7].dstArrayElement = 0;
+            descriptorWrites[7].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            descriptorWrites[7].descriptorCount = 1;
+            descriptorWrites[7].pImageInfo      = &environmentImageInfo;
+
+            descriptorWrites[8].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[8].dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrites[8].dstBinding      = 8;
+            descriptorWrites[8].dstArrayElement = 0;
+            descriptorWrites[8].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
+            descriptorWrites[8].descriptorCount = 1;
+            descriptorWrites[8].pImageInfo      = &environmentSamplerInfo;
+
+            descriptorWrites[9].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[9].dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrites[9].dstBinding      = 9;
+            descriptorWrites[9].dstArrayElement = 0;
+            descriptorWrites[9].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            descriptorWrites[9].descriptorCount = 1;
+            descriptorWrites[9].pImageInfo      = &brdfImageInfo;
+
+            descriptorWrites[10].sType              = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[10].dstSet             = m_frames[index].frameDescriptorSet;
+            descriptorWrites[10].dstBinding         = 10;
+            descriptorWrites[10].dstArrayElement    = 0;
+            descriptorWrites[10].descriptorType     = VK_DESCRIPTOR_TYPE_SAMPLER;
+            descriptorWrites[10].descriptorCount    = 1;
+            descriptorWrites[10].pImageInfo         = &brdfSamplerInfo;
+
+            descriptorWrites[11].sType              = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[11].dstSet             = m_frames[index].frameDescriptorSet;
+            descriptorWrites[11].dstBinding         = 11;
+            descriptorWrites[11].dstArrayElement    = 0;
+            descriptorWrites[11].descriptorType     = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            descriptorWrites[11].descriptorCount    = 1;
+            descriptorWrites[11].pImageInfo         = &irradianceImageInfo;
 
             vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }

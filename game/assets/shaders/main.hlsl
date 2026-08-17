@@ -95,6 +95,21 @@ Texture2DArray<float> shadowMap;
 [[vk::binding(6, 0)]]
 SamplerState shadowSampler;
 
+[[vk::binding(7, 0)]]
+TextureCube<float4> environmentMap;
+
+[[vk::binding(8, 0)]]
+SamplerState environmentSampler;
+
+[[vk::binding(9, 0)]]
+Texture2D<float2> brdfLUT;
+
+[[vk::binding(10, 0)]]
+SamplerState brdfSampler;
+
+[[vk::binding(11, 0)]]
+TextureCube<float4> irradianceMap;
+
 static const float PI = 3.14159265359f;
 
 static const uint LIGHT_TYPE_DIRECTIONAL = 0;
@@ -137,7 +152,6 @@ float3 SafeNormalize(float3 value)
 
     return value * rsqrt(lengthSquared);
 }
-
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Vertex Shader
@@ -515,30 +529,49 @@ float3 EvaluateSpotLight(
 // Ambient
 // -----------------------------------------------------------------------------------------------------------------------------
 
-float3 EvaluateAmbient(float3 normal, float3 viewDirection, float3 albedo, float metallic, float ambientStrength)
+float3 EvaluateAmbient(float3 normal, float3 viewDirection, float3 albedo, float roughness, float metallic, float ambientStrength)
 {
-    const float3 groundColor = float3(0.015f, 0.018f, 0.025f);
-    const float3 skyColor = float3(0.075f, 0.095f, 0.150f);
-
-    float hemisphereFactor = saturate(normal.y * 0.5f + 0.5f);
-
-    float3 ambientColor = lerp(groundColor, skyColor, hemisphereFactor);
-
     float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metallic);
 
-    float3 diffuseAmbient = albedo * (1.0f - metallic);
-    float3 specularAmbient = F0 * 0.35f;
-
-    float3 ambient = (diffuseAmbient + specularAmbient) * ambientColor * ambientStrength;
-
     float NdotV = saturate(dot(normal, viewDirection));
-    float rimFactor = pow(1.0f - NdotV, 4.0f);
 
-    ambient += albedo * skyColor * rimFactor * 0.08f * ambientStrength;
+    float3 fresnel = FresnelSchlick(NdotV, F0);
 
-    return ambient;
+    float3 kS = fresnel;
+    float3 kD = (1.0f - kS) * (1.0f - metallic);
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Diffuse IBL
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    float3 irradiance = irradianceMap.SampleLevel(environmentSampler, normal, 0.0f).rgb;
+
+    float3 diffuseAmbient = kD * albedo * irradiance;
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Specular IBL
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    float3 reflectionDirection = reflect(-viewDirection, normal);
+
+    const float maxMipLevel = 7.0f;
+    float mipLevel = roughness * maxMipLevel;
+
+    float3 prefilteredColor = environmentMap.SampleLevel(environmentSampler, reflectionDirection, mipLevel).rgb;
+
+    float2 brdf = brdfLUT.Sample(brdfSampler, float2(NdotV, roughness)).rg;
+
+    float3 specularAmbient = prefilteredColor * (F0 * brdf.x + brdf.y);
+
+    return (diffuseAmbient + specularAmbient) * ambientStrength;
 }
 
+// -----------------------------------------------------------------------------------------------------------------------------
+
+float InterleavedGradientNoise(float2 position)
+{
+    return frac(52.9829189f * frac(dot(position, float2(0.06711056f, 0.00583715f))));
+}
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Tone Mapping
@@ -610,7 +643,7 @@ float4 PSMain(VSOutput input) : SV_Target
     // Ambient
     // -------------------------------------------------------------------------------------------------------------------------
 
-    float3 finalColor = EvaluateAmbient(normal, viewDirection, albedo, metallic, ambientStrength);
+    float3 finalColor = EvaluateAmbient(normal, viewDirection, albedo, roughness, metallic, ambientStrength);
 
     // -------------------------------------------------------------------------------------------------------------------------
     // Direct Lighting
@@ -691,5 +724,9 @@ float4 PSMain(VSOutput input) : SV_Target
 
     finalColor = ACESFilm(finalColor);
 
-    return float4(finalColor, input.color.a);
+    float dither = InterleavedGradientNoise(input.position.xy) - 0.5f;
+
+    finalColor += dither / 255.0f;
+
+    return float4(saturate(finalColor), input.color.a);
 }

@@ -305,7 +305,7 @@ namespace Engine::GFX
 
     void cVulkanPipeline::CreateFrameUniformDescriptorSetLayout(cVulkanDevice& _rDevice)
     {
-        std::array<VkDescriptorSetLayoutBinding, 7> bindings{};
+        std::array<VkDescriptorSetLayoutBinding, 12> bindings{};
 
         // Binding 0 - Frame Uniform Buffer
         bindings[0].binding             = 0;
@@ -343,18 +343,53 @@ namespace Engine::GFX
         bindings[4].pImmutableSamplers  = nullptr;
 
         // Binding 5 - Shadow Image
-        bindings[5].binding = 5;
-        bindings[5].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        bindings[5].descriptorCount = 1;
-        bindings[5].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-        bindings[5].pImmutableSamplers = nullptr;
+        bindings[5].binding             = 5;
+        bindings[5].descriptorType      = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        bindings[5].descriptorCount     = 1;
+        bindings[5].stageFlags          = VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[5].pImmutableSamplers  = nullptr;
 
         // Binding 6 - Shadow Sampler
-        bindings[6].binding = 6;
-        bindings[6].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-        bindings[6].descriptorCount = 1;
-        bindings[6].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-        bindings[6].pImmutableSamplers = nullptr;
+        bindings[6].binding             = 6;
+        bindings[6].descriptorType      = VK_DESCRIPTOR_TYPE_SAMPLER;
+        bindings[6].descriptorCount     = 1;
+        bindings[6].stageFlags          = VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[6].pImmutableSamplers  = nullptr;
+
+        // Binding 7 - Environment Image
+        bindings[7].binding             = 7;
+        bindings[7].descriptorType      = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        bindings[7].descriptorCount     = 1;
+        bindings[7].stageFlags          = VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[7].pImmutableSamplers  = nullptr;
+
+        // Binding 8 - Environment Sampler
+        bindings[8].binding             = 8;
+        bindings[8].descriptorType      = VK_DESCRIPTOR_TYPE_SAMPLER;
+        bindings[8].descriptorCount     = 1;
+        bindings[8].stageFlags          = VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[8].pImmutableSamplers  = nullptr;
+
+        // Binding 9 - BRDF LUT
+        bindings[9].binding             = 9;
+        bindings[9].descriptorType      = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        bindings[9].descriptorCount     = 1;
+        bindings[9].stageFlags          = VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[9].pImmutableSamplers  = nullptr;
+
+        // Binding 10 - BRDF LUT Sampler
+        bindings[10].binding            = 10;
+        bindings[10].descriptorType     = VK_DESCRIPTOR_TYPE_SAMPLER;
+        bindings[10].descriptorCount    = 1;
+        bindings[10].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[10].pImmutableSamplers = nullptr;
+
+        // Binding 11 - Irradiance Image
+        bindings[11].binding            = 11;
+        bindings[11].descriptorType     = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        bindings[11].descriptorCount    = 1;
+        bindings[11].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[11].pImmutableSamplers = nullptr;
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
 

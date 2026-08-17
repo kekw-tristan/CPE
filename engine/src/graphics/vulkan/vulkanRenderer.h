@@ -3,10 +3,12 @@
 #include "graphics/gfxConfig.h"
 
 #include "graphics/vulkan/shadowData.h"
+#include "graphics/vulkan/shadowMap.h"
 #include "graphics/vulkan/vulkanColorBuffer.h"
+#include "graphics/vulkan/vulkanEnvironment.h"
 #include "graphics/vulkan/vulkanFrame.h"
 #include "graphics/vulkan/vulkanDepthBuffer.h"
-#include "graphics/vulkan/shadowMap.h"
+#include "graphics/vulkan/vulkanBRDFLUT.h"
 
 #include <vulkan/vulkan.h>
 
@@ -135,5 +137,8 @@ namespace Engine::GFX
 
             std::vector<sShadowDataGPU> m_shadowData;
             VkImageLayout m_shadowMapLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            cVulkanEnvironment m_environment;
+            cVulkanBRDFLUT m_brdfLUT;
     };
 }  
