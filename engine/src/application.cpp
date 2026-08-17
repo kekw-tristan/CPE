@@ -35,23 +35,27 @@ namespace Engine
     {
         OnInit();
 
-        while(!m_pAppIntern->GetShouldClose())
+        while (!m_pAppIntern->GetShouldClose())
         {
             if (m_pAppIntern->WasResized())
             {
                 m_pAppIntern->RecreateSwapchain();
                 continue;
             }
-            m_pAppIntern->Update();     
-            
+
+            m_pAppIntern->Update();
 
             if (!m_pAppIntern->BeginFrame(m_pAppIntern->GetCamera()))
             {
                 m_pAppIntern->RecreateSwapchain();
                 continue;
             }
-            
-            OnUpdate(m_pAppIntern->GetDeltaTime());     
+
+            OnUpdate(m_pAppIntern->GetDeltaTime());
+
+            // ---------------------------------------------------------------------------------------------------------------------
+            // Shadows
+            // ---------------------------------------------------------------------------------------------------------------------
 
             m_pAppIntern->BeginShadowRendering();
 
@@ -71,11 +75,42 @@ namespace Engine
 
             m_pAppIntern->EndShadowRendering();
 
+            // ---------------------------------------------------------------------------------------------------------------------
+            // Reflection Probe
+            // ---------------------------------------------------------------------------------------------------------------------
+
+            for (uint32_t probeIndex = 0; probeIndex < m_pAppIntern->GetReflectionProbeCount(); ++probeIndex)
+            {
+                if (!m_pAppIntern->NeedsReflectionProbeUpdate(probeIndex))
+                {
+                    continue;
+                }
+
+                m_pAppIntern->BeginReflectionProbeRendering(probeIndex);
+
+                for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
+                {
+                    m_pAppIntern->BeginReflectionProbeDraw(faceIndex);
+
+                    OnDraw();
+
+                    m_pAppIntern->EndReflectionProbeDraw();
+                }
+
+                m_pAppIntern->EndReflectionProbeRendering();
+
+                m_pAppIntern->PrefilterReflectionProbe(probeIndex);
+            }
+
+            // ---------------------------------------------------------------------------------------------------------------------
+            // Main
+            // ---------------------------------------------------------------------------------------------------------------------
 
             m_pAppIntern->BeginDraw();
+
             OnDraw();
-            
-            GFX::ImGuiWindowManager::Draw(); 
+
+            GFX::ImGuiWindowManager::Draw();
 
             if (!m_pAppIntern->EndFrame())
             {

@@ -70,6 +70,16 @@ namespace Engine::Logic
             void BeginShadowDraw(uint32_t _shadowIndex, uint32_t _matrixIndex);
             void EndShadowDraw();
 
+            bool NeedsReflectionProbeUpdate(uint32_t _probeIndex) const;
+
+            void BeginReflectionProbeRendering(uint32_t _probeIndex);
+            void BeginReflectionProbeDraw(uint32_t _faceIndex);
+            void EndReflectionProbeDraw();
+            void EndReflectionProbeRendering();
+            void PrefilterReflectionProbe(uint32_t _probeIndex);
+
+            uint32_t GetReflectionProbeCount() const;
+
             uint32_t GetShadowCount() const;
             uint32_t GetShadowMatrixCount(uint32_t _shadowIndex) const;
 

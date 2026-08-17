@@ -232,6 +232,55 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    bool cApplicationIntern::NeedsReflectionProbeUpdate(uint32_t _probeIndex) const
+    {
+        return m_vulkanRenderer.NeedsReflectionProbeUpdate(_probeIndex);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::BeginReflectionProbeRendering(uint32_t _probeIndex)
+    {
+        m_vulkanRenderer.BeginReflectionProbeRendering(_probeIndex);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::BeginReflectionProbeDraw(uint32_t _faceIndex)
+    {
+        m_vulkanRenderer.BeginReflectionProbeDraw(_faceIndex);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::EndReflectionProbeDraw()
+    {
+        m_vulkanRenderer.EndReflectionProbeDraw();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::EndReflectionProbeRendering()
+    {
+        m_vulkanRenderer.EndReflectionProbeRendering();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::PrefilterReflectionProbe(uint32_t _probeIndex)
+    {
+        m_vulkanRenderer.PrefilterReflectionProbe(_probeIndex);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    uint32_t cApplicationIntern::GetReflectionProbeCount() const
+    {
+        return m_vulkanRenderer.GetReflectionProbeCount();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     uint32_t cApplicationIntern::GetShadowCount() const
     {
         return m_vulkanRenderer.GetShadowCount();

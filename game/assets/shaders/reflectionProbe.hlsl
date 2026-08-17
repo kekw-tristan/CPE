@@ -1,11 +1,6 @@
-static const uint MAX_REFLECTION_PROBES = 8;
-
-struct ReflectionProbeData
-{
-    float4 positionMaxMip;
-    float4 boxMinBlendDistance;
-    float4 boxMax;
-};
+// -----------------------------------------------------------------------------------------------------------------------------
+// Frame data
+// -----------------------------------------------------------------------------------------------------------------------------
 
 [[vk::binding(0, 0)]]
 cbuffer FrameUniformBuffer
@@ -22,12 +17,33 @@ cbuffer FrameUniformBuffer
 
     uint lightCount;
     uint materialCount;
-    uint reflectionProbeCount;
+    uint padding0;
     uint padding1;
 
-    ReflectionProbeData reflectionProbes[MAX_REFLECTION_PROBES];
+    float4 reflectionProbePosition;
+    float4 reflectionProbeBoxMin;
+    float4 reflectionProbeBoxMax;
 };
 
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// Reflection probe push constants
+// -----------------------------------------------------------------------------------------------------------------------------
+
+struct ReflectionProbePushConstants
+{
+    row_major float4x4 viewProjection;
+    float4 cameraPosition;
+};
+
+[[vk::push_constant]]
+ReflectionProbePushConstants probePushConstants;
+
+
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// Instance data
+// -----------------------------------------------------------------------------------------------------------------------------
 
 struct InstanceData
 {
@@ -46,15 +62,19 @@ struct InstanceData
 StructuredBuffer<InstanceData> instances;
 
 
+// -----------------------------------------------------------------------------------------------------------------------------
+// Light data
+// -----------------------------------------------------------------------------------------------------------------------------
+
 struct LightData
 {
     float4 positionRadius;
     float4 directionType;
     float4 colorIntensity;
     float4 spotData;
-    
+
     int shadowIndex;
-    int padding0; 
+    int padding0;
     int padding1;
     int padding2;
 };
@@ -63,6 +83,10 @@ struct LightData
 [[vk::binding(2, 0)]]
 StructuredBuffer<LightData> lights;
 
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// Material data
+// -----------------------------------------------------------------------------------------------------------------------------
 
 struct MaterialData
 {
@@ -85,10 +109,15 @@ struct MaterialData
 [[vk::binding(3, 0)]]
 StructuredBuffer<MaterialData> materials;
 
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// Shadow data
+// -----------------------------------------------------------------------------------------------------------------------------
+
 struct ShadowData
 {
     row_major float4x4 viewProjection[6];
-    
+
     float4 cascadeSplits;
 
     uint lightIndex;
@@ -97,32 +126,46 @@ struct ShadowData
     uint padding;
 };
 
+
 [[vk::binding(4, 0)]]
 StructuredBuffer<ShadowData> shadows;
+
 
 [[vk::binding(5, 0)]]
 Texture2DArray<float> shadowMap;
 
+
 [[vk::binding(6, 0)]]
 SamplerState shadowSampler;
+
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// IBL
+// -----------------------------------------------------------------------------------------------------------------------------
 
 [[vk::binding(7, 0)]]
 TextureCube<float4> environmentMap;
 
+
 [[vk::binding(8, 0)]]
 SamplerState environmentSampler;
+
 
 [[vk::binding(9, 0)]]
 Texture2D<float2> brdfLUT;
 
+
 [[vk::binding(10, 0)]]
 SamplerState brdfSampler;
+
 
 [[vk::binding(11, 0)]]
 TextureCube<float4> irradianceMap;
 
-[[vk::binding(12, 0)]]
-TextureCube<float4> reflectionProbeMaps[MAX_REFLECTION_PROBES];
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// Constants
+// -----------------------------------------------------------------------------------------------------------------------------
 
 static const float PI = 3.14159265359f;
 
@@ -131,23 +174,27 @@ static const uint LIGHT_TYPE_POINT = 1;
 static const uint LIGHT_TYPE_SPOT = 2;
 
 
+// -----------------------------------------------------------------------------------------------------------------------------
+// Vertex data
+// -----------------------------------------------------------------------------------------------------------------------------
+
 struct VSInput
 {
     float3 position : POSITION;
-    float3 normal   : NORMAL;
+    float3 normal : NORMAL;
     float2 texCoord : TEXCOORD0;
 };
 
 
 struct VSOutput
 {
-    float4 position      : SV_Position;
-                         
+    float4 position : SV_Position;
+
     float3 worldPosition : POSITION0;
-    float3 worldNormal   : NORMAL0;
-                         
-    float2 texCoord      : TEXCOORD0;
-    float4 color         : COLOR0;
+    float3 worldNormal : NORMAL0;
+
+    float2 texCoord : TEXCOORD0;
+    float4 color : COLOR0;
 
     nointerpolation int materialIndex : MATERIAL_INDEX;
 };
@@ -167,8 +214,9 @@ float3 SafeNormalize(float3 value)
     return value * rsqrt(lengthSquared);
 }
 
+
 // -----------------------------------------------------------------------------------------------------------------------------
-// Vertex Shader
+// Vertex shader
 // -----------------------------------------------------------------------------------------------------------------------------
 
 VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
@@ -179,14 +227,14 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
     float4 worldPosition = mul(float4(input.position, 1.0f), instance.worldMatrix);
 
-    output.position      = mul(viewProj, worldPosition);
+    output.position = mul(worldPosition, probePushConstants.viewProjection);
     output.worldPosition = worldPosition.xyz;
 
     float3x3 normalMatrix = (float3x3) instance.worldMatrix;
-    
-    output.worldNormal   = SafeNormalize(mul(input.normal, normalMatrix));
-    output.texCoord      = input.texCoord;
-    output.color         = instance.color;
+
+    output.worldNormal = SafeNormalize(mul(input.normal, normalMatrix));
+    output.texCoord = input.texCoord;
+    output.color = instance.color;
     output.materialIndex = instance.materialIndex;
 
     return output;
@@ -199,11 +247,11 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
 float DistributionGGX(float NdotH, float roughness)
 {
-    float alpha         = roughness * roughness;
-    float alphaSquared  = alpha     * alpha;
+    float alpha = roughness * roughness;
+    float alphaSquared = alpha * alpha;
 
-    float denominator   = NdotH * NdotH * (alphaSquared - 1.0f) + 1.0f;
-    denominator         = PI * denominator * denominator;
+    float denominator = NdotH * NdotH * (alphaSquared - 1.0f) + 1.0f;
+    denominator = PI * denominator * denominator;
 
     return alphaSquared / max(denominator, 0.000001f);
 }
@@ -224,7 +272,7 @@ float GeometrySchlickGGX(float NdotV, float roughness)
 
 float GeometrySmith(float NdotV, float NdotL, float roughness)
 {
-    float geometryView  = GeometrySchlickGGX(NdotV, roughness);
+    float geometryView = GeometrySchlickGGX(NdotV, roughness);
     float geometryLight = GeometrySchlickGGX(NdotL, roughness);
 
     return geometryView * geometryLight;
@@ -240,19 +288,19 @@ float3 FresnelSchlick(float cosTheta, float3 F0)
     return F0 + (1.0f - F0) * factor;
 }
 
+
 // -----------------------------------------------------------------------------------------------------------------------------
 
 float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
 {
     float factor = pow(1.0f - saturate(cosTheta), 5.0f);
 
-    float3 roughnessFresnel = max(float3(1.0f - roughness, 1.0f - roughness, 1.0f - roughness), F0);
-
-    return F0 + (roughnessFresnel - F0) * factor;
+    return F0 + (max(float3(1.0f - roughness, 1.0f - roughness, 1.0f - roughness), F0) - F0) * factor;
 }
 
+
 // -----------------------------------------------------------------------------------------------------------------------------
-// Shadow
+// Shadows
 // -----------------------------------------------------------------------------------------------------------------------------
 
 float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection, uint shadowIndex, uint matrixIndex)
@@ -271,8 +319,9 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
         return 0.0f;
 
     float3 projectedCoords = lightSpacePosition.xyz / lightSpacePosition.w;
-    float2 shadowUV        = projectedCoords.xy * 0.5f + 0.5f;
-    float  currentDepth    = projectedCoords.z;
+
+    float2 shadowUV = projectedCoords.xy * 0.5f + 0.5f;
+    float currentDepth = projectedCoords.z;
 
     if (shadowUV.x < 0.0f || shadowUV.x > 1.0f || shadowUV.y < 0.0f || shadowUV.y > 1.0f)
         return 0.0f;
@@ -281,10 +330,8 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
         return 0.0f;
 
     uint layer = shadowData.firstLayer + matrixIndex;
-    
-    float closestDepth  = shadowMap.Sample(shadowSampler, float3(shadowUV, float(layer))).r;
-    float bias          = max(0.00075f * (1.0f - NdotL), 0.000075f);
-    float shadow        = 0.0f;
+
+    float bias = max(0.00075f * (1.0f - NdotL), 0.000075f);
 
     uint width;
     uint height;
@@ -293,6 +340,8 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
     shadowMap.GetDimensions(width, height, layers);
 
     float2 texelSize = 1.0f / float2(width, height);
+
+    float shadow = 0.0f;
 
     [unroll]
     for (int x = -1; x <= 1; ++x)
@@ -308,28 +357,25 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
     }
 
     return shadow / 9.0f;
-    
 }
+
 
 // -----------------------------------------------------------------------------------------------------------------------------
 
 uint GetPointShadowMatrixIndex(float3 worldPosition, float3 lightPosition)
 {
-    float3 direction    = worldPosition - lightPosition;
+    float3 direction = worldPosition - lightPosition;
     float3 absDirection = abs(direction);
 
     if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
-    {
         return direction.x >= 0.0f ? 0 : 1;
-    }
 
     if (absDirection.y >= absDirection.x && absDirection.y >= absDirection.z)
-    {
         return direction.y >= 0.0f ? 2 : 3;
-    }
 
     return direction.z >= 0.0f ? 4 : 5;
 }
+
 
 // -----------------------------------------------------------------------------------------------------------------------------
 
@@ -350,20 +396,22 @@ uint GetDirectionalCascadeIndex(float viewDepth, ShadowData shadowData)
     return shadowData.matrixCount;
 }
 
+
 // -----------------------------------------------------------------------------------------------------------------------------
 
-float GetCameraViewDepth(float3 worldPosition)
+float GetMainCameraViewDepth(float3 worldPosition)
 {
     return dot(worldPosition - cameraPosition.xyz, SafeNormalize(cameraDirection.xyz));
 }
 
+
 // -----------------------------------------------------------------------------------------------------------------------------
-// Shape Lighting
+// Shape lighting
 // -----------------------------------------------------------------------------------------------------------------------------
 
 float EvaluateShapeDiffuse(float NdotLRaw, float lightWrap, float shapeContrast)
 {
-    lightWrap     = saturate(lightWrap);
+    lightWrap = saturate(lightWrap);
     shapeContrast = max(shapeContrast, 0.05f);
 
     float wrappedNdotL = saturate((NdotLRaw + lightWrap) / (1.0f + lightWrap));
@@ -379,6 +427,7 @@ float EvaluateShapeDiffuse(float NdotLRaw, float lightWrap, float shapeContrast)
 float3 EvaluateSurfaceLight(
     float3 worldPosition,
     float3 normal,
+    float3 viewDirection,
     float3 lightDirection,
     float3 radiance,
     float3 albedo,
@@ -387,10 +436,9 @@ float3 EvaluateSurfaceLight(
     float lightWrap,
     float shapeContrast)
 {
-    float3 viewDirection = SafeNormalize(cameraPosition.xyz - worldPosition);
-    float NdotLRaw       = dot(normal, lightDirection);
-    float NdotL          = saturate(NdotLRaw);
-    float NdotV          = saturate(dot(normal, viewDirection));
+    float NdotLRaw = dot(normal, lightDirection);
+    float NdotL = saturate(NdotLRaw);
+    float NdotV = saturate(dot(normal, viewDirection));
 
     float shapedNdotL = EvaluateShapeDiffuse(NdotLRaw, lightWrap, shapeContrast);
 
@@ -398,20 +446,21 @@ float3 EvaluateSurfaceLight(
         return float3(0.0f, 0.0f, 0.0f);
 
     float3 halfVector = SafeNormalize(viewDirection + lightDirection);
-    float NdotH       = saturate(dot(normal, halfVector));
-    float VdotH       = saturate(dot(viewDirection, halfVector));
+
+    float NdotH = saturate(dot(normal, halfVector));
+    float VdotH = saturate(dot(viewDirection, halfVector));
 
     roughness = clamp(roughness, 0.045f, 1.0f);
-    metallic  = saturate(metallic);
+    metallic = saturate(metallic);
 
     float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metallic);
 
-    float distribution  = DistributionGGX(NdotH, roughness);
-    float geometry      = GeometrySmith(NdotV, NdotL, roughness);
-    float3 fresnel      = FresnelSchlick(VdotH, F0);
+    float distribution = DistributionGGX(NdotH, roughness);
+    float geometry = GeometrySmith(NdotV, NdotL, roughness);
+    float3 fresnel = FresnelSchlick(VdotH, F0);
 
-    float3 specularNumerator    = distribution * geometry * fresnel;
-    float  specularDenominator  = max(4.0f * NdotV * NdotL, 0.0001f);
+    float3 specularNumerator = distribution * geometry * fresnel;
+    float specularDenominator = max(4.0f * NdotV * NdotL, 0.0001f);
 
     float3 specular = specularNumerator / specularDenominator;
 
@@ -420,7 +469,7 @@ float3 EvaluateSurfaceLight(
 
     float3 diffuse = kD * albedo / PI;
 
-    float3 diffuseContribution  = diffuse * radiance * shapedNdotL;
+    float3 diffuseContribution = diffuse * radiance * shapedNdotL;
     float3 specularContribution = specular * radiance * NdotL;
 
     return diffuseContribution + specularContribution;
@@ -428,12 +477,13 @@ float3 EvaluateSurfaceLight(
 
 
 // -----------------------------------------------------------------------------------------------------------------------------
-// Directional Light
+// Directional light
 // -----------------------------------------------------------------------------------------------------------------------------
 
 float3 EvaluateDirectionalLight(
     float3 worldPosition,
     float3 normal,
+    float3 viewDirection,
     float3 albedo,
     LightData light,
     float roughness,
@@ -441,23 +491,25 @@ float3 EvaluateDirectionalLight(
     float lightWrap,
     float shapeContrast)
 {
-    float3 lightDirection   = SafeNormalize(-light.directionType.xyz);
-    float3 lightColor       = light.colorIntensity.rgb;
-    float  lightIntensity   = light.colorIntensity.w;
+    float3 lightDirection = SafeNormalize(-light.directionType.xyz);
+
+    float3 lightColor = light.colorIntensity.rgb;
+    float lightIntensity = light.colorIntensity.w;
 
     float3 radiance = lightColor * lightIntensity;
 
-    return EvaluateSurfaceLight(worldPosition, normal, lightDirection, radiance, albedo, roughness, metallic, lightWrap, shapeContrast);
+    return EvaluateSurfaceLight(worldPosition, normal, viewDirection, lightDirection, radiance, albedo, roughness, metallic, lightWrap, shapeContrast);
 }
 
 
 // -----------------------------------------------------------------------------------------------------------------------------
-// Point Light
+// Point light
 // -----------------------------------------------------------------------------------------------------------------------------
 
 float3 EvaluatePointLight(
     float3 worldPosition,
     float3 normal,
+    float3 viewDirection,
     float3 albedo,
     LightData light,
     float roughness,
@@ -478,29 +530,31 @@ float3 EvaluatePointLight(
     float3 lightDirection = toLight / distanceToLight;
 
     float normalizedDistance = distanceToLight / radius;
-    float rangeAttenuation   = saturate(1.0f - normalizedDistance * normalizedDistance * normalizedDistance * normalizedDistance);
-    
+
+    float rangeAttenuation = saturate(1.0f - normalizedDistance * normalizedDistance * normalizedDistance * normalizedDistance);
     rangeAttenuation *= rangeAttenuation;
 
-    float distanceAttenuation   = 1.0f / (1.0f + distanceSquared);
-    float attenuation           = rangeAttenuation * distanceAttenuation;
+    float distanceAttenuation = 1.0f / (1.0f + distanceSquared);
 
-    float3 lightColor    = light.colorIntensity.rgb;
+    float attenuation = rangeAttenuation * distanceAttenuation;
+
+    float3 lightColor = light.colorIntensity.rgb;
     float lightIntensity = light.colorIntensity.w;
 
     float3 radiance = lightColor * lightIntensity * attenuation;
 
-    return EvaluateSurfaceLight(worldPosition, normal, lightDirection, radiance, albedo, roughness, metallic, lightWrap, shapeContrast);
+    return EvaluateSurfaceLight(worldPosition, normal, viewDirection, lightDirection, radiance, albedo, roughness, metallic, lightWrap, shapeContrast);
 }
 
 
 // -----------------------------------------------------------------------------------------------------------------------------
-// Spot Light
+// Spot light
 // -----------------------------------------------------------------------------------------------------------------------------
 
 float3 EvaluateSpotLight(
     float3 worldPosition,
     float3 normal,
+    float3 viewDirection,
     float3 albedo,
     LightData light,
     float roughness,
@@ -519,7 +573,6 @@ float3 EvaluateSpotLight(
         return float3(0.0f, 0.0f, 0.0f);
 
     float3 lightDirection = toLight / distanceToLight;
-
     float3 spotDirection = SafeNormalize(light.directionType.xyz);
 
     float cosAngle = dot(-lightDirection, spotDirection);
@@ -546,97 +599,18 @@ float3 EvaluateSpotLight(
 
     float3 radiance = lightColor * lightIntensity * attenuation;
 
-    return EvaluateSurfaceLight(worldPosition, normal, lightDirection, radiance, albedo, roughness, metallic, lightWrap, shapeContrast);
+    return EvaluateSurfaceLight(worldPosition, normal, viewDirection, lightDirection, radiance, albedo, roughness, metallic, lightWrap, shapeContrast);
 }
 
 
 // -----------------------------------------------------------------------------------------------------------------------------
-
-float3 BoxProjectReflection(
-    float3 worldPosition,
-    float3 reflectionDirection,
-    float3 probePosition,
-    float3 boxMin,
-    float3 boxMax)
-{
-    float3 direction = SafeNormalize(reflectionDirection);
-
-    bool insideBox =
-        worldPosition.x >= boxMin.x && worldPosition.x <= boxMax.x &&
-        worldPosition.y >= boxMin.y && worldPosition.y <= boxMax.y &&
-        worldPosition.z >= boxMin.z && worldPosition.z <= boxMax.z;
-
-    if (!insideBox)
-        return direction;
-
-    const float epsilon = 0.00001f;
-
-    float3 safeDirection;
-
-    safeDirection.x = abs(direction.x) > epsilon ? direction.x : (direction.x >= 0.0f ? epsilon : -epsilon);
-    safeDirection.y = abs(direction.y) > epsilon ? direction.y : (direction.y >= 0.0f ? epsilon : -epsilon);
-    safeDirection.z = abs(direction.z) > epsilon ? direction.z : (direction.z >= 0.0f ? epsilon : -epsilon);
-
-    float3 t0 = (boxMin - worldPosition) / safeDirection;
-    float3 t1 = (boxMax - worldPosition) / safeDirection;
-
-    float3 tFar = max(t0, t1);
-
-    float distanceToBox = min(tFar.x, min(tFar.y, tFar.z));
-
-    float3 intersectionPosition = worldPosition + direction * distanceToBox;
-
-    return SafeNormalize(intersectionPosition - probePosition);
-}
-
+// Ambient / global IBL
 // -----------------------------------------------------------------------------------------------------------------------------
 
-float GetReflectionProbeWeight(float3 worldPosition, float3 boxMin, float3 boxMax, float blendDistance)
-{
-    bool insideBox =
-        worldPosition.x >= boxMin.x && worldPosition.x <= boxMax.x &&
-        worldPosition.y >= boxMin.y && worldPosition.y <= boxMax.y &&
-        worldPosition.z >= boxMin.z && worldPosition.z <= boxMax.z;
-
-    if (!insideBox)
-        return 0.0f;
-
-    float3 distanceToMin = worldPosition - boxMin;
-    float3 distanceToMax = boxMax - worldPosition;
-
-    float edgeDistance = min(
-        min(distanceToMin.x, distanceToMax.x),
-        min(
-            min(distanceToMin.y, distanceToMax.y),
-            min(distanceToMin.z, distanceToMax.z)
-        )
-    );
-
-    if (blendDistance <= 0.0001f)
-        return 1.0f;
-
-    return saturate(edgeDistance / blendDistance);
-}
-
-// -----------------------------------------------------------------------------------------------------------------------------
-// Ambient
-// -----------------------------------------------------------------------------------------------------------------------------
-
-float3 EvaluateAmbient(
-    float3 worldPosition,
-    float3 normal,
-    float3 viewDirection,
-    float3 albedo,
-    float roughness,
-    float metallic,
-    float ambientStrength)
+float3 EvaluateAmbient(float3 normal, float3 viewDirection, float3 albedo, float roughness, float metallic, float ambientStrength)
 {
     roughness = clamp(roughness, 0.045f, 1.0f);
     metallic = saturate(metallic);
-
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Fresnel / material
-    // -------------------------------------------------------------------------------------------------------------------------
 
     float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metallic);
 
@@ -647,146 +621,34 @@ float3 EvaluateAmbient(
     float3 kS = fresnel;
     float3 kD = (1.0f - kS) * (1.0f - metallic);
 
-    // -------------------------------------------------------------------------------------------------------------------------
     // Diffuse IBL
-    // -------------------------------------------------------------------------------------------------------------------------
-
     float3 irradiance = irradianceMap.SampleLevel(environmentSampler, normal, 0.0f).rgb;
-
     float3 diffuseAmbient = kD * albedo * irradiance;
 
-    // -------------------------------------------------------------------------------------------------------------------------
     // Specular IBL
-    // -------------------------------------------------------------------------------------------------------------------------
-
     float3 reflectionDirection = reflect(-viewDirection, normal);
 
-    // Global environment is always the fallback.
-    const float maxEnvironmentMip = 7.0f;
+    const float maxMipLevel = 7.0f;
+    float mipLevel = roughness * maxMipLevel;
 
-    float environmentMipLevel = roughness * maxEnvironmentMip;
+    float3 prefilteredColor = environmentMap.SampleLevel(environmentSampler, reflectionDirection, mipLevel).rgb;
 
-    float3 environmentColor = environmentMap.SampleLevel(
-        environmentSampler,
-        reflectionDirection,
-        environmentMipLevel
-    ).rgb;
-
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Local reflection probes
-    // -------------------------------------------------------------------------------------------------------------------------
-
-    float3 localProbeColor = float3(0.0f, 0.0f, 0.0f);
-    float totalProbeWeight = 0.0f;
-
-    uint activeProbeCount = min(reflectionProbeCount, MAX_REFLECTION_PROBES);
-
-    for (uint probeIndex = 0; probeIndex < activeProbeCount; ++probeIndex)
-    {
-        ReflectionProbeData probe = reflectionProbes[probeIndex];
-
-        float probeWeight = GetReflectionProbeWeight(
-            worldPosition,
-            probe.boxMinBlendDistance.xyz,
-            probe.boxMax.xyz,
-            probe.boxMinBlendDistance.w
-        );
-
-        if (probeWeight <= 0.0f)
-            continue;
-
-        float3 correctedReflectionDirection = BoxProjectReflection(
-            worldPosition,
-            reflectionDirection,
-            probe.positionMaxMip.xyz,
-            probe.boxMinBlendDistance.xyz,
-            probe.boxMax.xyz
-        );
-
-        float mipLevel = roughness * probe.positionMaxMip.w;
-
-        float3 probeColor = reflectionProbeMaps[probeIndex].SampleLevel(
-            environmentSampler,
-            correctedReflectionDirection,
-            mipLevel
-        ).rgb;
-
-        localProbeColor += probeColor * probeWeight;
-        totalProbeWeight += probeWeight;
-    }
-
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Blend local probes with global environment
-    // -------------------------------------------------------------------------------------------------------------------------
-
-    float3 prefilteredColor = environmentColor;
-
-    if (totalProbeWeight > 0.0001f)
-    {
-        localProbeColor /= totalProbeWeight;
-
-        float localCoverage = saturate(totalProbeWeight);
-
-        prefilteredColor = lerp(
-            environmentColor,
-            localProbeColor,
-            localCoverage
-        );
-    }
-
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Split-sum BRDF
-    // -------------------------------------------------------------------------------------------------------------------------
-
-    float2 brdf = brdfLUT.SampleLevel(
-        brdfSampler,
-        float2(NdotV, roughness),
-        0.0f
-    ).rg;
+    float2 brdf = brdfLUT.SampleLevel(brdfSampler, float2(NdotV, roughness), 0.0f).rg;
 
     float3 specularAmbient = prefilteredColor * (F0 * brdf.x + brdf.y);
-
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Final ambient contribution
-    // -------------------------------------------------------------------------------------------------------------------------
 
     return (diffuseAmbient + specularAmbient) * ambientStrength;
 }
 
-// -----------------------------------------------------------------------------------------------------------------------------
-
-float InterleavedGradientNoise(float2 position)
-{
-    return frac(52.9829189f * frac(dot(position, float2(0.06711056f, 0.00583715f))));
-}
 
 // -----------------------------------------------------------------------------------------------------------------------------
-
-
-// -----------------------------------------------------------------------------------------------------------------------------
-// Tone Mapping
-// -----------------------------------------------------------------------------------------------------------------------------
-
-float3 ACESFilm(float3 color)
-{
-    const float a = 2.51f;
-    const float b = 0.03f;
-    const float c = 2.43f;
-    const float d = 0.59f;
-    const float e = 0.14f;
-
-    return saturate((color * (a * color + b)) / (color * (c * color + d) + e));
-}
-
-
-// -----------------------------------------------------------------------------------------------------------------------------
-// Pixel Shader
+// Pixel shader
 // -----------------------------------------------------------------------------------------------------------------------------
 
 float4 PSMain(VSOutput input) : SV_Target
 {
     float3 normal = SafeNormalize(input.worldNormal);
-    float3 viewDirection = SafeNormalize(cameraPosition.xyz - input.worldPosition);
+    float3 viewDirection = SafeNormalize(probePushConstants.cameraPosition.xyz - input.worldPosition);
 
     // -------------------------------------------------------------------------------------------------------------------------
     // Defaults
@@ -826,17 +688,16 @@ float4 PSMain(VSOutput input) : SV_Target
         emissiveStrength = max(material.emissiveColor.a, 0.0f);
     }
 
-    // Optional: Shape-/Instance-Farbe als Material-Tint verwenden.
     albedo *= input.color.rgb;
 
     // -------------------------------------------------------------------------------------------------------------------------
-    // Ambient
+    // Global IBL
     // -------------------------------------------------------------------------------------------------------------------------
 
-    float3 finalColor = EvaluateAmbient(input.worldPosition, normal, viewDirection, albedo, roughness, metallic, ambientStrength);
+    float3 finalColor = EvaluateAmbient(normal, viewDirection, albedo, roughness, metallic, ambientStrength);
 
     // -------------------------------------------------------------------------------------------------------------------------
-    // Direct Lighting
+    // Direct lighting
     // -------------------------------------------------------------------------------------------------------------------------
 
     for (uint index = 0; index < lightCount; ++index)
@@ -847,7 +708,7 @@ float4 PSMain(VSOutput input) : SV_Target
 
         if (lightType == LIGHT_TYPE_DIRECTIONAL)
         {
-            float3 contribution = EvaluateDirectionalLight(input.worldPosition, normal, albedo, light, roughness, metallic, lightWrap, shapeContrast);
+            float3 contribution = EvaluateDirectionalLight(input.worldPosition, normal, viewDirection, albedo, light, roughness, metallic, lightWrap, shapeContrast);
 
             if (light.shadowIndex >= 0)
             {
@@ -855,7 +716,8 @@ float4 PSMain(VSOutput input) : SV_Target
 
                 ShadowData shadowData = shadows[shadowIndex];
 
-                float viewDepth = GetCameraViewDepth(input.worldPosition);
+                // Die Directional-Shadow-Map ist weiterhin an die Main-Camera-CSMs gekoppelt.
+                float viewDepth = GetMainCameraViewDepth(input.worldPosition);
                 uint cascadeIndex = GetDirectionalCascadeIndex(viewDepth, shadowData);
 
                 if (cascadeIndex < shadowData.matrixCount)
@@ -871,7 +733,7 @@ float4 PSMain(VSOutput input) : SV_Target
         }
         else if (lightType == LIGHT_TYPE_POINT)
         {
-            float3 contribution = EvaluatePointLight(input.worldPosition, normal, albedo, light, roughness, metallic, lightWrap, shapeContrast);
+            float3 contribution = EvaluatePointLight(input.worldPosition, normal, viewDirection, albedo, light, roughness, metallic, lightWrap, shapeContrast);
 
             if (light.shadowIndex >= 0)
             {
@@ -888,11 +750,12 @@ float4 PSMain(VSOutput input) : SV_Target
         }
         else if (lightType == LIGHT_TYPE_SPOT)
         {
-            float3 contribution = EvaluateSpotLight(input.worldPosition, normal, albedo, light, roughness, metallic, lightWrap, shapeContrast);
+            float3 contribution = EvaluateSpotLight(input.worldPosition, normal, viewDirection, albedo, light, roughness, metallic, lightWrap, shapeContrast);
 
             if (light.shadowIndex >= 0)
             {
                 float3 lightDirection = SafeNormalize(light.positionRadius.xyz - input.worldPosition);
+
                 float shadow = CalculateShadow(input.worldPosition, normal, lightDirection, (uint) light.shadowIndex, 0);
 
                 contribution *= 1.0f - shadow;
@@ -908,15 +771,5 @@ float4 PSMain(VSOutput input) : SV_Target
 
     finalColor += emissiveColor * emissiveStrength;
 
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Tone Mapping
-    // -------------------------------------------------------------------------------------------------------------------------
-
-    finalColor = ACESFilm(finalColor);
-
-    float dither = InterleavedGradientNoise(input.position.xy) - 0.5f;
-
-    finalColor += dither / 255.0f;
-
-    return float4(saturate(finalColor), input.color.a);
+    return float4(max(finalColor, 0.0f), 1.0f);
 }

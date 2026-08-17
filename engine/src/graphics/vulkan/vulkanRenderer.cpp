@@ -19,6 +19,10 @@
 #include "graphics/vulkan/vulkanSwapchain.h"
 #include "graphics/vulkan/vulkanCommands.h"
 
+#include "graphics/vulkan/reflectionProbe.h"
+#include "graphics/vulkan/reflectionProbePushConstants.h"
+#include "graphics/vulkan/reflectionProbePrefilterPushConstants.h"
+
 #include "math/util.h"
 
 #include <algorithm>
@@ -36,27 +40,117 @@ namespace Engine::GFX
 
     void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline)
     {
-        m_pDevice    = &_rDevice;
+        m_pDevice = &_rDevice;
         m_pSwapchain = &_rSwapChain;
-        m_pCommands  = &_rCommands;
-        m_pPipeline  = &_rPipeline;
+        m_pCommands = &_rCommands;
+        m_pPipeline = &_rPipeline;
 
         m_currentFrame = 0;
-        m_hasFrameStarted = false; 
+        m_hasFrameStarted = false;
+        m_renderPassType = sRenderPassType::None;
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Frame resources
+        // -------------------------------------------------------------------------------------------------------------------------
 
         CreateFrameResources();
         CreateMaterialBuffer();
 
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Main rendering buffers
+        // -------------------------------------------------------------------------------------------------------------------------
+
         m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
         m_colorBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
-        
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Shadows
+        // -------------------------------------------------------------------------------------------------------------------------
+
         m_shadowMap.Create(*m_pDevice, 4096, 4096, 8);
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Global IBL
+        // -------------------------------------------------------------------------------------------------------------------------
+
         m_environment.Create(*m_pDevice, *m_pCommands);
         m_brdfLUT.Create(*m_pDevice, *m_pCommands);
 
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Reflection probes
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        m_reflectionProbeCount = 2;
+        m_activeReflectionProbeIndex = UINT32_MAX;
+
+        m_reflectionProbeCaptureLayouts.fill(VK_IMAGE_LAYOUT_UNDEFINED);
+        m_reflectionProbePrefilteredLayouts.fill(VK_IMAGE_LAYOUT_UNDEFINED);
+        m_reflectionProbePrefilterDescriptorSets.fill(VK_NULL_HANDLE);
+
+        m_reflectionProbes[0].position = { -8.0f, 3.0f, 0.0f };
+        m_reflectionProbes[0].boxMin = { -16.0f, -5.0f, -12.0f };
+        m_reflectionProbes[0].boxMax = { -1.0f, 12.0f,  12.0f };
+        m_reflectionProbes[0].blendDistance = 3.0f;
+
+        m_reflectionProbes[1].position = { 8.0f, 3.0f, 0.0f };
+        m_reflectionProbes[1].boxMin = { 1.0f, -5.0f, -12.0f };
+        m_reflectionProbes[1].boxMax = { 16.0f, 12.0f,  12.0f };
+        m_reflectionProbes[1].blendDistance = 3.0f;
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Create reflection probe Vulkan resources
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        uint32_t maximumReflectionProbeResolution = 1;
+
+        for (uint32_t probeIndex = 0; probeIndex < m_reflectionProbeCount; ++probeIndex)
+        {
+            sReflectionProbe& rProbe = m_reflectionProbes[probeIndex];
+
+            m_vulkanReflectionProbes[probeIndex].Create(*m_pDevice, rProbe.resolution);
+
+            m_reflectionProbeCaptureLayouts[probeIndex] = VK_IMAGE_LAYOUT_UNDEFINED;
+            m_reflectionProbePrefilteredLayouts[probeIndex] = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            maximumReflectionProbeResolution = std::max(maximumReflectionProbeResolution, rProbe.resolution);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Shared reflection probe depth buffer
+        //
+        // Probes are captured sequentially, therefore all probes can share one depth image.
+        // Use the largest configured probe resolution so probes with different resolutions are possible later.
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        m_reflectionProbeDepthImage.Create(
+            *m_pDevice,
+            maximumReflectionProbeResolution,
+            maximumReflectionProbeResolution,
+            VK_FORMAT_D32_SFLOAT,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+            VK_IMAGE_ASPECT_DEPTH_BIT,
+            VK_SAMPLE_COUNT_1_BIT
+        );
+
+        m_reflectionProbeDepthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Descriptor resources
+        //
+        // Reflection probe images must already exist before CreateDescriptorSets(), because binding 12 references their
+        // prefiltered cube image views.
+        // -------------------------------------------------------------------------------------------------------------------------
+
         CreateDescriptorPool();
         CreateImGuiDescriptorPool();
+
         CreateDescriptorSets();
+        CreateReflectionProbePrefilterDescriptorSets();
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Synchronization
+        // -------------------------------------------------------------------------------------------------------------------------
+
         CreateRenderFinishedSemaphores();
     }
 
@@ -77,6 +171,13 @@ namespace Engine::GFX
         m_shadowMap.Destroy(*m_pDevice);
         m_environment.Destroy(*m_pDevice);
         m_brdfLUT.Destroy(*m_pDevice);
+
+        m_reflectionProbeDepthImage.Destroy(*m_pDevice);
+
+        for (uint32_t probeIndex = 0; probeIndex < m_reflectionProbeCount; ++probeIndex)
+        {
+            m_vulkanReflectionProbes[probeIndex].Destroy(*m_pDevice);
+        }
 
         m_materialBuffer.Shutdown(*m_pDevice);
         m_materialStagingBuffer.Shutdown(*m_pDevice);
@@ -942,6 +1043,520 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    uint32_t cVulkanRenderer::GetReflectionProbeCount() const
+    {
+        return m_reflectionProbeCount;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::CreateReflectionProbePrefilterDescriptorSets()
+    {
+        std::array<VkDescriptorSetLayout, c_maxNumberOfReflectionProbes> layouts{};
+
+        for (uint32_t probeIndex = 0; probeIndex < c_maxNumberOfReflectionProbes; ++probeIndex)
+        {
+            layouts[probeIndex] = m_pPipeline->GetReflectionProbePrefilterDescriptorSetLayout();
+        }
+
+        VkDescriptorSetAllocateInfo allocInfo{};
+
+        allocInfo.sType                 = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool        = m_pDescriptorPool;
+        allocInfo.descriptorSetCount    = c_maxNumberOfReflectionProbes;
+        allocInfo.pSetLayouts           = layouts.data();
+
+        if (vkAllocateDescriptorSets(m_pDevice->GetDevice(), &allocInfo, m_reflectionProbePrefilterDescriptorSets.data()) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to allocate reflection probe prefilter descriptor sets!");
+        }
+
+        for (uint32_t probeIndex = 0; probeIndex < c_maxNumberOfReflectionProbes; ++probeIndex)
+        {
+            const uint32_t sourceProbeIndex = probeIndex < m_reflectionProbeCount ? probeIndex : 0;
+
+            VkDescriptorImageInfo captureImageInfo{};
+
+            captureImageInfo.sampler        = VK_NULL_HANDLE;
+            captureImageInfo.imageView      = m_vulkanReflectionProbes[sourceProbeIndex].GetCaptureImageView();
+            captureImageInfo.imageLayout    = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            VkDescriptorImageInfo captureSamplerInfo{};
+
+            captureSamplerInfo.sampler      = m_vulkanReflectionProbes[sourceProbeIndex].GetSampler();
+            captureSamplerInfo.imageView    = VK_NULL_HANDLE;
+            captureSamplerInfo.imageLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+
+            descriptorWrites[0].sType               = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[0].dstSet              = m_reflectionProbePrefilterDescriptorSets[probeIndex];
+            descriptorWrites[0].dstBinding          = 0;
+            descriptorWrites[0].descriptorType      = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            descriptorWrites[0].descriptorCount     = 1;
+            descriptorWrites[0].pImageInfo          = &captureImageInfo;
+
+            descriptorWrites[1].sType               = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[1].dstSet              = m_reflectionProbePrefilterDescriptorSets[probeIndex];
+            descriptorWrites[1].dstBinding          = 1;
+            descriptorWrites[1].descriptorType      = VK_DESCRIPTOR_TYPE_SAMPLER;
+            descriptorWrites[1].descriptorCount     = 1;
+            descriptorWrites[1].pImageInfo          = &captureSamplerInfo;
+
+            vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::GenerateReflectionProbeCaptureMipmaps()
+    {
+        const uint32_t probeIndex = m_activeReflectionProbeIndex;
+
+        if (probeIndex == UINT32_MAX)
+        {
+            throw std::runtime_error("No active reflection probe!");
+        }
+
+        cVulkanReflectionProbe& rVulkanProbe = m_vulkanReflectionProbes[probeIndex];
+
+        if (!m_hasFrameStarted)
+        {
+            throw std::runtime_error("GenerateReflectionProbeCaptureMipmaps() called outside of a frame!");
+        }
+
+        if (m_renderPassType != sRenderPassType::None)
+        {
+            throw std::runtime_error("GenerateReflectionProbeCaptureMipmaps() called while another render pass is active!");
+        }
+
+        sVulkanFrame& rFrame = m_frames[m_currentFrame];
+
+        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+        VkImage pImage = rVulkanProbe.GetCaptureImage().GetImage();
+
+        const uint32_t mipLevels = rVulkanProbe.GetMipLevels();
+
+        if (mipLevels <= 1)
+        {
+            return;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Mip 0: COLOR_ATTACHMENT -> TRANSFER_SRC
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        VkImageMemoryBarrier mip0Barrier{};
+
+        mip0Barrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        mip0Barrier.oldLayout           = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        mip0Barrier.newLayout           = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        mip0Barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        mip0Barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        mip0Barrier.image               = pImage;
+
+        mip0Barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        mip0Barrier.subresourceRange.baseMipLevel   = 0;
+        mip0Barrier.subresourceRange.levelCount     = 1;
+        mip0Barrier.subresourceRange.baseArrayLayer = 0;
+        mip0Barrier.subresourceRange.layerCount     = 6;
+
+        mip0Barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        mip0Barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+            pCommandBuffer,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &mip0Barrier
+        );
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Remaining mips: COLOR_ATTACHMENT -> TRANSFER_DST
+        //
+        // They were not rendered into, but BeginReflectionProbeRendering() put the complete image into COLOR_ATTACHMENT_OPTIMAL.
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        VkImageMemoryBarrier destinationBarrier{};
+
+        destinationBarrier.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        destinationBarrier.oldLayout            = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        destinationBarrier.newLayout            = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        destinationBarrier.srcQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
+        destinationBarrier.dstQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
+        destinationBarrier.image                = pImage;
+
+        destinationBarrier.subresourceRange.aspectMask      = VK_IMAGE_ASPECT_COLOR_BIT;
+        destinationBarrier.subresourceRange.baseMipLevel    = 1;
+        destinationBarrier.subresourceRange.levelCount      = mipLevels - 1;
+        destinationBarrier.subresourceRange.baseArrayLayer  = 0;
+        destinationBarrier.subresourceRange.layerCount      = 6;
+
+        destinationBarrier.srcAccessMask = 0;
+        destinationBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        vkCmdPipelineBarrier(
+            pCommandBuffer,
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &destinationBarrier
+        );
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Generate mip chain
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        int32_t sourceWidth  = static_cast<int32_t>(rVulkanProbe.GetResolution());
+        int32_t sourceHeight = static_cast<int32_t>(rVulkanProbe.GetResolution());
+
+        for (uint32_t mipLevel = 1; mipLevel < mipLevels; ++mipLevel)
+        {
+            const int32_t destinationWidth  = sourceWidth  > 1 ? sourceWidth  / 2 : 1;
+            const int32_t destinationHeight = sourceHeight > 1 ? sourceHeight / 2 : 1;
+
+            VkImageBlit blit{};
+
+            blit.srcSubresource.aspectMask      = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.srcSubresource.mipLevel        = mipLevel - 1;
+            blit.srcSubresource.baseArrayLayer  = 0;
+            blit.srcSubresource.layerCount      = 6;
+
+            blit.srcOffsets[0] = { 0, 0, 0 };
+            blit.srcOffsets[1] = { sourceWidth, sourceHeight, 1 };
+
+            blit.dstSubresource.aspectMask      = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.dstSubresource.mipLevel        = mipLevel;
+            blit.dstSubresource.baseArrayLayer  = 0;
+            blit.dstSubresource.layerCount      = 6;
+
+            blit.dstOffsets[0] = { 0, 0, 0 };
+            blit.dstOffsets[1] = { destinationWidth, destinationHeight, 1 };
+
+            vkCmdBlitImage(
+                pCommandBuffer,
+                pImage,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                pImage,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &blit,
+                VK_FILTER_LINEAR
+            );
+
+            // ---------------------------------------------------------------------------------------------------------------------
+            // Newly generated mip becomes source for the next level
+            // ---------------------------------------------------------------------------------------------------------------------
+
+            VkImageMemoryBarrier mipBarrier{};
+
+            mipBarrier.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            mipBarrier.oldLayout            = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            mipBarrier.newLayout            = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            mipBarrier.srcQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
+            mipBarrier.dstQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
+            mipBarrier.image                = pImage;
+
+            mipBarrier.subresourceRange.aspectMask      = VK_IMAGE_ASPECT_COLOR_BIT;
+            mipBarrier.subresourceRange.baseMipLevel    = mipLevel;
+            mipBarrier.subresourceRange.levelCount      = 1;
+            mipBarrier.subresourceRange.baseArrayLayer  = 0;
+            mipBarrier.subresourceRange.layerCount      = 6;
+
+            mipBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            mipBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+            vkCmdPipelineBarrier(
+                pCommandBuffer,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                0,
+                0,
+                nullptr,
+                0,
+                nullptr,
+                1,
+                &mipBarrier
+            );
+
+            sourceWidth  = destinationWidth;
+            sourceHeight = destinationHeight;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Complete mip chain -> SHADER_READ_ONLY
+        //
+        // At this point every mip is TRANSFER_SRC_OPTIMAL.
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        VkImageMemoryBarrier shaderReadBarrier{};
+
+        shaderReadBarrier.sType                 = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        shaderReadBarrier.oldLayout             = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        shaderReadBarrier.newLayout             = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        shaderReadBarrier.srcQueueFamilyIndex   = VK_QUEUE_FAMILY_IGNORED;
+        shaderReadBarrier.dstQueueFamilyIndex   = VK_QUEUE_FAMILY_IGNORED;
+        shaderReadBarrier.image                 = pImage;
+
+        shaderReadBarrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        shaderReadBarrier.subresourceRange.baseMipLevel   = 0;
+        shaderReadBarrier.subresourceRange.levelCount     = mipLevels;
+        shaderReadBarrier.subresourceRange.baseArrayLayer = 0;
+        shaderReadBarrier.subresourceRange.layerCount     = 6;
+
+        shaderReadBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        shaderReadBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+            pCommandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &shaderReadBarrier
+        );
+
+        m_reflectionProbeCaptureLayouts[probeIndex] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::PrefilterReflectionProbe(uint32_t _probeIndex)
+    {
+        if (_probeIndex >= m_reflectionProbeCount)
+        {
+            throw std::runtime_error("Invalid reflection probe index!");
+        }
+
+        cVulkanReflectionProbe& rVulkanProbe = m_vulkanReflectionProbes[_probeIndex];
+
+        if (!m_hasFrameStarted)
+        {
+            throw std::runtime_error("PrefilterReflectionProbe() called outside of a frame!");
+        }
+
+        if (m_renderPassType != sRenderPassType::None)
+        {
+            throw std::runtime_error("PrefilterReflectionProbe() called while another render pass is active!");
+        }
+
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+
+        const uint32_t mipLevels = rVulkanProbe.GetMipLevels();
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Transition complete prefiltered cubemap -> COLOR_ATTACHMENT_OPTIMAL
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        VkImageMemoryBarrier beginBarrier{};
+
+        beginBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        beginBarrier.oldLayout           = m_reflectionProbePrefilteredLayouts[_probeIndex];
+        beginBarrier.newLayout           = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        beginBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        beginBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        beginBarrier.image               = rVulkanProbe.GetPrefilteredImage().GetImage();
+
+        beginBarrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        beginBarrier.subresourceRange.baseMipLevel   = 0;
+        beginBarrier.subresourceRange.levelCount     = mipLevels;
+        beginBarrier.subresourceRange.baseArrayLayer = 0;
+        beginBarrier.subresourceRange.layerCount     = 6;
+
+        VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+        if (m_reflectionProbePrefilteredLayouts[_probeIndex] == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            beginBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        }
+        else
+        {
+            beginBarrier.srcAccessMask = 0;
+        }
+
+        beginBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+        vkCmdPipelineBarrier(
+            pCommandBuffer,
+            sourceStage,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &beginBarrier
+        );
+
+        m_reflectionProbePrefilteredLayouts[_probeIndex] = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Pipeline + descriptor
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        vkCmdBindPipeline(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetReflectionProbePrefilterPipeline());
+
+        vkCmdBindDescriptorSets(
+            pCommandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_pPipeline->GetReflectionProbePrefilterPipelineLayout(),
+            0,
+            1,
+            &m_reflectionProbePrefilterDescriptorSets[_probeIndex],
+            0,
+            nullptr
+        );
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Render every mip and every cubemap face
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        for (uint32_t mipLevel = 0; mipLevel < mipLevels; ++mipLevel)
+        {
+            const uint32_t mipResolution = rVulkanProbe.GetMipResolution(mipLevel);
+
+            const float roughness = mipLevels > 1 ? static_cast<float>(mipLevel) / static_cast<float>(mipLevels - 1) : 0.0f;
+
+            for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
+            {
+                VkRenderingAttachmentInfo colorAttachment{};
+
+                colorAttachment.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+                colorAttachment.imageView   = rVulkanProbe.GetPrefilteredFaceMipImageView(faceIndex, mipLevel);
+                colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
+
+                VkRenderingInfo renderingInfo{};
+
+                renderingInfo.sType                 = VK_STRUCTURE_TYPE_RENDERING_INFO;
+                renderingInfo.renderArea.offset     = { 0, 0 };
+                renderingInfo.renderArea.extent     = { mipResolution, mipResolution };
+                renderingInfo.layerCount            = 1;
+                renderingInfo.colorAttachmentCount  = 1;
+                renderingInfo.pColorAttachments     = &colorAttachment;
+                renderingInfo.pDepthAttachment      = nullptr;
+                renderingInfo.pStencilAttachment    = nullptr;
+
+                vkCmdBeginRendering(pCommandBuffer, &renderingInfo);
+
+                // -----------------------------------------------------------------------------------------------------------------
+                // Viewport
+                // -----------------------------------------------------------------------------------------------------------------
+
+                VkViewport viewport{};
+
+                viewport.x        = 0.0f;
+                viewport.y        = 0.0f;
+                viewport.width    = static_cast<float>(mipResolution);
+                viewport.height   = static_cast<float>(mipResolution);
+                viewport.minDepth = 0.0f;
+                viewport.maxDepth = 1.0f;
+
+                vkCmdSetViewport(pCommandBuffer, 0, 1, &viewport);
+
+                // -----------------------------------------------------------------------------------------------------------------
+                // Scissor
+                // -----------------------------------------------------------------------------------------------------------------
+
+                VkRect2D scissor{};
+
+                scissor.offset = { 0, 0 };
+                scissor.extent = { mipResolution, mipResolution };
+
+                vkCmdSetScissor(pCommandBuffer, 0, 1, &scissor);
+
+                // -----------------------------------------------------------------------------------------------------------------
+                // Push constants
+                // -----------------------------------------------------------------------------------------------------------------
+
+                sReflectionProbePrefilterPushConstants pushConstants{};
+
+                pushConstants.faceIndex         = faceIndex;
+                pushConstants.roughness         = roughness;
+                pushConstants.sampleCount       = 64;
+                pushConstants.captureResolution = static_cast<float>(rVulkanProbe.GetResolution());
+
+                vkCmdPushConstants(
+                    pCommandBuffer,
+                    m_pPipeline->GetReflectionProbePrefilterPipelineLayout(),
+                    VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0,
+                    sizeof(sReflectionProbePrefilterPushConstants),
+                    &pushConstants
+                );
+
+                // -----------------------------------------------------------------------------------------------------------------
+                // Fullscreen triangle
+                // -----------------------------------------------------------------------------------------------------------------
+
+                vkCmdDraw(pCommandBuffer, 3, 1, 0, 0);
+
+                vkCmdEndRendering(pCommandBuffer);
+            }
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // COLOR_ATTACHMENT -> SHADER_READ_ONLY
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        VkImageMemoryBarrier endBarrier{};
+
+        endBarrier.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        endBarrier.oldLayout            = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        endBarrier.newLayout            = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        endBarrier.srcQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
+        endBarrier.dstQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
+        endBarrier.image                = rVulkanProbe.GetPrefilteredImage().GetImage();
+
+        endBarrier.subresourceRange.aspectMask      = VK_IMAGE_ASPECT_COLOR_BIT;
+        endBarrier.subresourceRange.baseMipLevel    = 0;
+        endBarrier.subresourceRange.levelCount      = mipLevels;
+        endBarrier.subresourceRange.baseArrayLayer  = 0;
+        endBarrier.subresourceRange.layerCount      = 6;
+
+        endBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        endBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+            pCommandBuffer,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &endBarrier
+        );
+
+        m_reflectionProbePrefilteredLayouts[_probeIndex] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        m_reflectionProbes[_probeIndex].dirty = false;
+        m_activeReflectionProbeIndex = UINT32_MAX;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cVulkanRenderer::BeginDraw()
     {
         sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
@@ -1043,6 +1658,273 @@ namespace Engine::GFX
         );
 
         vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(), 0, 1, &rFrame.frameDescriptorSet, 0, nullptr);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool cVulkanRenderer::NeedsReflectionProbeUpdate(uint32_t _probeIndex) const
+    {
+        if (_probeIndex >= m_reflectionProbeCount)
+        {
+            return false;
+        }
+
+        return m_reflectionProbes[_probeIndex].dirty;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::BeginReflectionProbeRendering(uint32_t _probeIndex)
+    {
+        if (_probeIndex >= m_reflectionProbeCount)
+        {
+            throw std::runtime_error("Invalid reflection probe index!");
+        }
+
+        if (!m_hasFrameStarted)
+        {
+            throw std::runtime_error("BeginReflectionProbeRendering() called outside of a frame!");
+        }
+
+        if (m_renderPassType != sRenderPassType::None)
+        {
+            throw std::runtime_error("BeginReflectionProbeRendering() called while another render pass is active!");
+        }
+
+        m_activeReflectionProbeIndex = _probeIndex;
+
+        cVulkanReflectionProbe& rVulkanProbe = m_vulkanReflectionProbes[_probeIndex];
+
+        sVulkanFrame& rFrame = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+
+        VkImageMemoryBarrier colorBarrier{};
+
+        colorBarrier.sType                  = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        colorBarrier.oldLayout              = m_reflectionProbeCaptureLayouts[_probeIndex];
+        colorBarrier.newLayout              = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorBarrier.srcQueueFamilyIndex    = VK_QUEUE_FAMILY_IGNORED;
+        colorBarrier.dstQueueFamilyIndex    = VK_QUEUE_FAMILY_IGNORED;
+        colorBarrier.image                  = rVulkanProbe.GetCaptureImage().GetImage();
+
+        colorBarrier.subresourceRange.aspectMask        = VK_IMAGE_ASPECT_COLOR_BIT;
+        colorBarrier.subresourceRange.baseMipLevel      = 0;
+        colorBarrier.subresourceRange.levelCount        = rVulkanProbe.GetMipLevels();
+        colorBarrier.subresourceRange.baseArrayLayer    = 0;
+        colorBarrier.subresourceRange.layerCount        = 6;
+
+        VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+        if (m_reflectionProbeCaptureLayouts[_probeIndex] == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            colorBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        }
+        else
+        {
+            colorBarrier.srcAccessMask = 0;
+        }
+
+        colorBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+        vkCmdPipelineBarrier(pCommandBuffer, sourceStage, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &colorBarrier);
+
+        m_reflectionProbeCaptureLayouts[_probeIndex] = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        if (m_reflectionProbeDepthLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+        {
+            m_reflectionProbeDepthImage.TransitionLayout(*m_pDevice, pCommandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+            m_reflectionProbeDepthLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::BeginReflectionProbeDraw(uint32_t _faceIndex)
+    {
+        if (m_activeReflectionProbeIndex == UINT32_MAX)
+        {
+            throw std::runtime_error("BeginReflectionProbeDraw() called without active reflection probe!");
+        }
+
+        const uint32_t probeIndex = m_activeReflectionProbeIndex;
+
+        const sReflectionProbe& rProbe = m_reflectionProbes[probeIndex];
+        cVulkanReflectionProbe& rVulkanProbe = m_vulkanReflectionProbes[probeIndex];
+
+        if (_faceIndex >= 6)
+        {
+            throw std::runtime_error("Invalid reflection probe face index!");
+        }
+
+        if (m_renderPassType != sRenderPassType::None)
+        {
+            throw std::runtime_error("BeginReflectionProbeDraw() called while another render pass is active!");
+        }
+
+        sVulkanFrame& rFrame = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+
+        m_renderPassType = sRenderPassType::ReflectionProbe;
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Attachments
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        VkClearValue clearColor{};
+
+        clearColor.color.float32[0] = 0.0f;
+        clearColor.color.float32[1] = 0.0f;
+        clearColor.color.float32[2] = 0.0f;
+        clearColor.color.float32[3] = 1.0f;
+
+        VkRenderingAttachmentInfo colorAttachment{};
+
+        colorAttachment.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        colorAttachment.imageView   = rVulkanProbe.GetCaptureFaceImageView(_faceIndex);
+        colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.clearValue  = clearColor;
+
+        VkRenderingAttachmentInfo depthAttachment{};
+
+        depthAttachment.sType                   = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        depthAttachment.imageView               = m_reflectionProbeDepthImage.GetImageView();
+        depthAttachment.imageLayout             = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depthAttachment.loadOp                  = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depthAttachment.storeOp                 = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depthAttachment.clearValue.depthStencil = { 1.0f, 0 };
+
+        VkExtent2D extent =
+        {
+            rVulkanProbe.GetResolution(),
+            rVulkanProbe.GetResolution()
+        };
+
+        VkRenderingInfo renderingInfo{};
+
+        renderingInfo.sType                 = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        renderingInfo.renderArea.offset     = { 0, 0 };
+        renderingInfo.renderArea.extent     = extent;
+        renderingInfo.layerCount            = 1;
+        renderingInfo.colorAttachmentCount  = 1;
+        renderingInfo.pColorAttachments     = &colorAttachment;
+        renderingInfo.pDepthAttachment      = &depthAttachment;
+        renderingInfo.pStencilAttachment    = nullptr;
+
+        vkCmdBeginRendering(pCommandBuffer, &renderingInfo);
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Viewport / Scissor
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        VkViewport viewport{};
+
+        viewport.x          = 0.0f;
+        viewport.y          = 0.0f;
+        viewport.width      = static_cast<float>(extent.width);
+        viewport.height     = static_cast<float>(extent.height);
+        viewport.minDepth   = 0.0f;
+        viewport.maxDepth   = 1.0f;
+
+        vkCmdSetViewport(pCommandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+
+        scissor.offset = { 0, 0 };
+        scissor.extent = extent;
+
+        vkCmdSetScissor(pCommandBuffer, 0, 1, &scissor);
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Pipeline / Descriptors
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        vkCmdBindPipeline(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetReflectionProbePipeline());
+
+        vkCmdBindDescriptorSets(pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetReflectionProbePipelineLayout(), 0, 1, &rFrame.frameDescriptorSet, 0, nullptr);
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Probe camera
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        constexpr float c_pi = 3.14159265358979323846f;
+
+        const Math::cVec3f directions[6] =
+        {
+            {  1.f,  0.f,  0.f },
+            { -1.f,  0.f,  0.f },
+            {  0.f,  1.f,  0.f },
+            {  0.f, -1.f,  0.f },
+            {  0.f,  0.f,  1.f },
+            {  0.f,  0.f, -1.f }
+        };
+
+        const Math::cVec3f upVectors[6] =
+        {
+            { 0.f, -1.f,  0.f },
+            { 0.f, -1.f,  0.f },
+            { 0.f,  0.f,  1.f },
+            { 0.f,  0.f, -1.f },
+            { 0.f, -1.f,  0.f },
+            { 0.f, -1.f,  0.f }
+        };
+
+        const float nearPlane = 0.05f;
+        const float farPlane = std::max(rProbe.radius, nearPlane + 0.01f);
+
+        const Math::cMatrix4x4f projection = Math::cMatrix4x4f::perspectiveRH(c_pi * 0.5f, 1.0f, nearPlane, farPlane);
+
+        const Math::cVec3f target = rProbe.position + directions[_faceIndex];
+
+        const Math::cMatrix4x4f view = Math::cMatrix4x4f::lookAtRH(rProbe.position, target, upVectors[_faceIndex]);
+
+        sReflectionProbePushConstants pushConstants{};
+
+        pushConstants.viewProjection = view * projection;
+
+        pushConstants.cameraPosition[0] = rProbe.position.x();
+        pushConstants.cameraPosition[1] = rProbe.position.y();
+        pushConstants.cameraPosition[2] = rProbe.position.z();
+        pushConstants.cameraPosition[3] = 1.0f;
+
+        vkCmdPushConstants(pCommandBuffer, m_pPipeline->GetReflectionProbePipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(sReflectionProbePushConstants), &pushConstants);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::EndReflectionProbeDraw()
+    {
+        if (m_renderPassType != sRenderPassType::ReflectionProbe)
+        {
+            throw std::runtime_error("EndReflectionProbeDraw() called without an active reflection probe draw!");
+        }
+
+        sVulkanFrame& rFrame = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+
+        vkCmdEndRendering(pCommandBuffer);
+
+        m_renderPassType = sRenderPassType::None;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::EndReflectionProbeRendering()
+    {
+        if (m_activeReflectionProbeIndex == UINT32_MAX)
+        {
+            throw std::runtime_error("EndReflectionProbeRendering() called without active reflection probe!");
+        }
+
+        if (m_renderPassType != sRenderPassType::None)
+        {
+            throw std::runtime_error("EndReflectionProbeRendering() called while a reflection probe face is still active!");
+        }
+
+        GenerateReflectionProbeCaptureMipmaps();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -1199,20 +2081,20 @@ namespace Engine::GFX
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         poolSizes[1].descriptorCount = c_maxNumberOfFrames * 4;
 
-        // shadow image + environment image + BRDF LUT + irradiance image
+        // shadow image + environment image + BRDF LUT + irradiance image + reflection 
         poolSizes[2].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        poolSizes[2].descriptorCount = c_maxNumberOfFrames * 4;
+        poolSizes[2].descriptorCount = c_maxNumberOfFrames * (4 + c_maxNumberOfReflectionProbes) + c_maxNumberOfReflectionProbes;
 
         // shadow sampler + environment sampler + BRDF sampler
         poolSizes[3].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-        poolSizes[3].descriptorCount = c_maxNumberOfFrames * 3;
+        poolSizes[3].descriptorCount = c_maxNumberOfFrames * 3 + c_maxNumberOfReflectionProbes;
 
         VkDescriptorPoolCreateInfo poolInfo{};
 
         poolInfo.sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
         poolInfo.pPoolSizes     = poolSizes.data();
-        poolInfo.maxSets        = c_maxNumberOfFrames;
+        poolInfo.maxSets        = c_maxNumberOfFrames + c_maxNumberOfReflectionProbes;
 
         if (vkCreateDescriptorPool(m_pDevice->GetDevice(), &poolInfo, nullptr, &m_pDescriptorPool) != VK_SUCCESS)
         {
@@ -1357,7 +2239,18 @@ namespace Engine::GFX
             irradianceImageInfo.imageView   = m_environment.GetIrradianceImageView();
             irradianceImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-            std::array<VkWriteDescriptorSet, 12> descriptorWrites{};
+            std::array<VkDescriptorImageInfo, c_maxNumberOfReflectionProbes> reflectionProbeImageInfos{};
+
+            for (uint32_t probeIndex = 0; probeIndex < c_maxNumberOfReflectionProbes; ++probeIndex)
+            {
+                uint32_t sourceProbeIndex = probeIndex < m_reflectionProbeCount ? probeIndex : 0;
+
+                reflectionProbeImageInfos[probeIndex].sampler = VK_NULL_HANDLE;
+                reflectionProbeImageInfos[probeIndex].imageView = m_vulkanReflectionProbes[sourceProbeIndex].GetPrefilteredImageView();
+                reflectionProbeImageInfos[probeIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+
+            std::array<VkWriteDescriptorSet, 13> descriptorWrites{};
 
             descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet          = m_frames[index].frameDescriptorSet;
@@ -1454,6 +2347,14 @@ namespace Engine::GFX
             descriptorWrites[11].descriptorCount    = 1;
             descriptorWrites[11].pImageInfo         = &irradianceImageInfo;
 
+            descriptorWrites[12].sType              = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[12].dstSet             = m_frames[index].frameDescriptorSet;
+            descriptorWrites[12].dstBinding         = 12;
+            descriptorWrites[12].dstArrayElement    = 0;
+            descriptorWrites[12].descriptorType     = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            descriptorWrites[12].descriptorCount    = c_maxNumberOfReflectionProbes;
+            descriptorWrites[12].pImageInfo         = reflectionProbeImageInfos.data();
+
             vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
 
@@ -1499,6 +2400,31 @@ namespace Engine::GFX
 
         frameData.lightCount    = static_cast<uint32_t>(LightManager::GetLights().size());
         frameData.materialCount = static_cast<uint32_t>(MaterialManager::GetMaterials().size());
+
+        frameData.reflectionProbeCount = m_reflectionProbeCount;
+
+        for (uint32_t probeIndex = 0; probeIndex < m_reflectionProbeCount; ++probeIndex)
+        {
+            const sReflectionProbe& rProbe = m_reflectionProbes[probeIndex];
+            const cVulkanReflectionProbe& rVulkanProbe = m_vulkanReflectionProbes[probeIndex];
+
+            sReflectionProbeGPU& rProbeGPU = frameData.reflectionProbes[probeIndex];
+
+            rProbeGPU.positionMaxMip[0] = rProbe.position.x();
+            rProbeGPU.positionMaxMip[1] = rProbe.position.y();
+            rProbeGPU.positionMaxMip[2] = rProbe.position.z();
+            rProbeGPU.positionMaxMip[3] = static_cast<float>(rVulkanProbe.GetMipLevels() - 1);
+
+            rProbeGPU.boxMinBlendDistance[0] = rProbe.boxMin.x();
+            rProbeGPU.boxMinBlendDistance[1] = rProbe.boxMin.y();
+            rProbeGPU.boxMinBlendDistance[2] = rProbe.boxMin.z();
+            rProbeGPU.boxMinBlendDistance[3] = rProbe.blendDistance;
+
+            rProbeGPU.boxMax[0] = rProbe.boxMax.x();
+            rProbeGPU.boxMax[1] = rProbe.boxMax.y();
+            rProbeGPU.boxMax[2] = rProbe.boxMax.z();
+            rProbeGPU.boxMax[3] = 0.0f;
+        }
 
         _rFrame.frameUniformedBuffer.Write(&frameData, sizeof(sFrameUniformData), 0);
     }

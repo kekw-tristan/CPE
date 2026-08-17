@@ -9,10 +9,14 @@
 #include "graphics/vulkan/vulkanFrame.h"
 #include "graphics/vulkan/vulkanDepthBuffer.h"
 #include "graphics/vulkan/vulkanBRDFLUT.h"
+#include "graphics/vulkan/reflectionProbe.h"
+#include "graphics/vulkan/vulkanReflectionProbe.h"
+
 
 #include <vulkan/vulkan.h>
 
 #include <array>
+#include <cstdint>
 #include <vector>
 
 namespace Engine::GFX
@@ -33,6 +37,7 @@ namespace Engine::GFX
         {
             None,
             Shadow,
+            ReflectionProbe,
             Main
         };
     };
@@ -69,6 +74,15 @@ namespace Engine::GFX
 
         public:
 
+            bool NeedsReflectionProbeUpdate(uint32_t _probeIndex) const;
+
+            void BeginReflectionProbeRendering(uint32_t _probeIndex);
+            void BeginReflectionProbeDraw(uint32_t _faceIndex);
+            void EndReflectionProbeDraw();
+            void EndReflectionProbeRendering();
+
+        public:
+
             VkDescriptorPool GetImguiDescriptorPool();
 
         public:
@@ -102,6 +116,14 @@ namespace Engine::GFX
             void BeginShadowDraw(uint32_t _shadowIndex, uint32_t _matrixIndex);
             void DrawShadowMeshInstances(cVulkanMesh* _pMesh, uint32_t _instanceCount, uint32_t _firstInstance);
             void EndShadowDraw();
+
+            void PrefilterReflectionProbe(uint32_t _probeIndex);
+            uint32_t GetReflectionProbeCount() const;
+
+        private:
+
+            void CreateReflectionProbePrefilterDescriptorSets();
+            void GenerateReflectionProbeCaptureMipmaps();
 
         private:
 
@@ -140,5 +162,24 @@ namespace Engine::GFX
 
             cVulkanEnvironment m_environment;
             cVulkanBRDFLUT m_brdfLUT;
+
+        private:
+
+            std::array<sReflectionProbe, c_maxNumberOfReflectionProbes> m_reflectionProbes;
+            std::array<cVulkanReflectionProbe, c_maxNumberOfReflectionProbes> m_vulkanReflectionProbes;
+
+            cVulkanImage m_reflectionProbeDepthImage;
+
+            std::array<VkImageLayout, c_maxNumberOfReflectionProbes> m_reflectionProbeCaptureLayouts;
+            std::array<VkImageLayout, c_maxNumberOfReflectionProbes> m_reflectionProbePrefilteredLayouts;
+
+            VkImageLayout m_reflectionProbeDepthLayout          = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            std::array<VkDescriptorSet, c_maxNumberOfReflectionProbes> m_reflectionProbePrefilterDescriptorSets;
+
+            uint32_t m_reflectionProbeCount = 0;
+            uint32_t m_activeReflectionProbeIndex = UINT32_MAX;
+
+            bool m_reflectionProbeDirty = true;
     };
 }  

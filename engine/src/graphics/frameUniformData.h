@@ -1,5 +1,10 @@
 #pragma once 
 
+#include "graphics/vulkan/reflectionProbe.h"
+#include "graphics/gfxConfig.h"
+
+
+
 struct sFrameUniformData 
 {
     float viewMatrix[16];
@@ -14,6 +19,8 @@ struct sFrameUniformData
 
     uint32_t lightCount;
     uint32_t materialCount;
-    uint32_t padding0;
+    uint32_t reflectionProbeCount;
     uint32_t padding1;
+
+    Engine::GFX::sReflectionProbeGPU reflectionProbes[Engine::GFX::c_maxNumberOfReflectionProbes];
 };
