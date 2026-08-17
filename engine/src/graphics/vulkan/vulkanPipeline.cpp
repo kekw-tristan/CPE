@@ -384,7 +384,7 @@ namespace Engine::GFX
         vertShaderStageInfo.pName   = "VSMain";
 
         auto bindingDescription     = sVulkanVertex::GetBindingDescription();
-        auto attributeDescriptions  = sVulkanVertex::GetAttributeDescriptions();
+        auto attributeDescriptions  = sVulkanVertex::GetShadowAttributeDescription();
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 

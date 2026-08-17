@@ -1,0 +1,31 @@
+{
+    "models":
+    [
+        {
+            "id": "playerModel",
+            "file": "../models/player.json"
+        },
+        {
+            "id": "worldModel",
+            "file": "../models/model.json"
+        }
+    ],
+
+    "instances":
+    [
+        {
+            "name": "player",
+            "model": "playerModel",
+            "position": [0.0, 0.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0]
+        },
+        {
+            "name": "testModel",
+            "model": "worldModel",
+            "position": [5.0, 0.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0]
+        }
+    ]
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/shapeModel/shapePartDesc.h"
+#include "graphics/bounds.h"
 
 #include <string>
 #include <vector>
@@ -11,5 +12,7 @@ namespace Engine::GFX
     {
         std::string pDebugName; 
         std::vector<sShapePartDesc> shapes;
+
+        sBounds bounds;
     };
 }

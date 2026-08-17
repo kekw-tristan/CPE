@@ -1,8 +1,11 @@
 #include "game.h"
 
+#include "graphics/scene/sceneLoader.h"
+
 #include "graphics/shapeModel/shapeModelDesc.h"
 #include "graphics/shapeModel/shapeModelManager.h"
 #include "graphics/shapeModel/shapeModelLoader.h"
+#include "graphics/shapeModel/shapeMeshLibrary.h"
 
 #include "graphics/material/material.h"
 #include "graphics/material/materialManager.h"
@@ -27,7 +30,9 @@ cGame::cGame(Engine::sAppConfig& _rAppConfig)
     , m_pool()
     , m_instances()
     , m_meshInstances()
-    , m_playerShapeInstance()
+    , m_scene()
+    , m_playerShapeInstanceHandle()
+    , m_modelShapeInstanceHandle()
 {
 }
 
@@ -37,67 +42,35 @@ void cGame::OnInit()
 {
     using namespace Engine::GFX;
 
-    sShapeModelDesc shapeModelDesc;
     std::string errorMessage;
 
-    if (!ShapeModelLoader::LoadFromFile("./assets/models/model.json", shapeModelDesc, errorMessage))
+    if (!SceneLoader::LoadFromFile("./assets/scenes/scene.json", m_scene, errorMessage))
     {
-        std::cerr << "Failed to load model: " << errorMessage << '\n';
+        std::cerr << "Failed to load scene: " << errorMessage << '\n';
         return;
     }
 
-    ShapeModelHandle playerHandle = ShapeModelManager::CreateShapeModel(shapeModelDesc);
+    m_playerShapeInstanceHandle = m_scene.FindShapeInstanceHandle("player");
+    m_modelShapeInstanceHandle  = m_scene.FindShapeInstanceHandle("testModel");
 
-    sShapeInstance playerInstance =
+    if (m_playerShapeInstanceHandle == c_invalidSceneShapeInstanceHandle)
     {
-        .modelHandle = playerHandle,
-        .transform =
-        {
-            .position   = { 0.0f, 0.0f, 0.0f },
-            .scale      = { 1.0f, 1.0f, 1.0f },
-            .rotation   = { 0.0f, 0.0f, 0.0f }
-        }
-    };
+        std::cerr << "Scene does not contain a player instance.\n";
+        return;
+    }
 
-    sPlaneDesc planeDesc;
-    planeDesc.width = 1.0f;
-    planeDesc.depth = 1.0f;
+    if (m_modelShapeInstanceHandle == c_invalidSceneShapeInstanceHandle)
+    {
+        std::cerr << "Scene does not contain a testModel instance.\n";
+        return;
+    }
 
-    sCubeDesc cubeDesc;
-    cubeDesc.width  = 1.0f;
-    cubeDesc.height = 1.0f;
-    cubeDesc.depth  = 1.0f;
-
-
-    sPyramidDesc pyramidDesc;
-    pyramidDesc.width   = 1.0f;
-    pyramidDesc.height  = 1.0f;
-    pyramidDesc.depth   = 1.0f;
-
-
-    sSphereDesc sphereDesc;
-    sphereDesc.radius   = 0.5f;
-    sphereDesc.segments = 32;
-    sphereDesc.rings    = 16;
-
-
-    sCylinderDesc cylinderDesc;
-    cylinderDesc.radius     = 0.5f;
-    cylinderDesc.height     = 1.0f;
-    cylinderDesc.segments   = 32;
-
-
-    sConeDesc coneDesc;
-    coneDesc.radius     = 0.5f;
-    coneDesc.height     = 1.0f;
-    coneDesc.segments   = 32;
-
-    sMeshData planeData     = cMeshGenerator::CreatePlane(planeDesc);
-    sMeshData cubeData      = cMeshGenerator::CreateCube(cubeDesc);
-    sMeshData pyramidData   = cMeshGenerator::CreatePyramid(pyramidDesc);
-    sMeshData sphereData    = cMeshGenerator::CreateSphere(sphereDesc);
-    sMeshData cylinderData  = cMeshGenerator::CreateCylinder(cylinderDesc);
-    sMeshData coneData      = cMeshGenerator::CreateCone(coneDesc);
+    sMeshData& planeData    = ShapeMeshLibrary::GetMeshData(sMeshTypes::Plane);
+    sMeshData& cubeData     = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cube);
+    sMeshData& pyramidData  = ShapeMeshLibrary::GetMeshData(sMeshTypes::Pyramid);
+    sMeshData& sphereData   = ShapeMeshLibrary::GetMeshData(sMeshTypes::Sphere);
+    sMeshData& cylinderData = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cylinder);
+    sMeshData& coneData     = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cone);
 
     m_planeMesh     = CreateMesh(planeData);
     m_cubeMesh      = CreateMesh(cubeData);
@@ -113,28 +86,20 @@ void cGame::OnInit()
     SubmitMesh(m_cylinderMesh);
     SubmitMesh(m_coneMesh);
 
-    m_playerShapeInstance = playerInstance;
+    GetModelEitorWindow().SetModelChangedCallback([this](const sShapeModelDesc& _rModel) { QueueEditedModel(_rModel); });
 
-    GetModelEitorWindow().SetModelChangedCallback([this](const Engine::GFX::sShapeModelDesc& _rModel) { QueueEditedModel(_rModel); });
-
-    BuildRenderInstances(m_playerShapeInstance);
+    BuildSceneRenderInstances();
     RebuildInstanceList();
 
-    // light
+    sLight directionalLight0{};
 
-   
-    // main directional light
+    directionalLight0.type        = sLightType::Directional;
+    directionalLight0.color       = { 1.0f, 0.85f, 0.7f };
+    directionalLight0.intensity   = 2.5f;
+    directionalLight0.direction   = { -0.5f, -0.5f, -0.3f };
+    directionalLight0.castsShadow = true;
 
-    Engine::GFX::sLight directionalLight0{};
-    
-    directionalLight0.type          = Engine::GFX::sLightType::Directional;
-    directionalLight0.color         = { 1.0f, 0.85f, 0.7f };
-    directionalLight0.intensity     = 2.5f;
-    directionalLight0.direction     = { -0.5f, -1.0f, -0.3f };
-    directionalLight0.castsShadow   = true;
-    
     LightManager::CreateLight(directionalLight0);
-    
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -435,11 +400,12 @@ void cGame::ApplyEditedModel(const Engine::GFX::sShapeModelDesc& _rModel)
 {
     using namespace Engine::GFX;
 
-    sShapeModelDesc& rRuntimeModel = ShapeModelManager::GetShapeModel(m_playerShapeInstance.modelHandle);
-    rRuntimeModel = _rModel;
+    const sShapeInstance& playerShapeInstance = m_scene.GetShapeInstance(m_playerShapeInstanceHandle);
+
+    ShapeModelManager::UpdateShapeModel(playerShapeInstance.modelHandle, _rModel);
 
     ClearRenderInstances();
-    BuildRenderInstances(m_playerShapeInstance);
+    BuildSceneRenderInstances();
     RebuildInstanceList();
 }
 
@@ -454,6 +420,14 @@ void cGame::ClearRenderInstances()
 
     m_instances.clear();
     m_meshInstances.clear();
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::BuildSceneRenderInstances()
+{
+    for (const Engine::GFX::sShapeInstance& shapeInstance : m_scene.GetShapeInstances())
+        BuildRenderInstances(shapeInstance);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -494,7 +468,7 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance)
     using namespace Engine::GFX;
     using namespace Engine::Math;
 
-    sShapeModelDesc& model = ShapeModelManager::GetShapeModel(_rShapeInstance.modelHandle);
+    const sShapeModelDesc& model = ShapeModelManager::GetShapeModel(_rShapeInstance.modelHandle);
 
     cMatrix4x4f instanceMatrix = CreateTransformMatrix(_rShapeInstance.transform);
 
@@ -505,7 +479,7 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance)
         Math::cMatrix4x4f partMatrix = CreateTransformMatrix(part.transform); 
 
 
-        pInstance->worldMatrix = instanceMatrix * partMatrix;
+        pInstance->worldMatrix = partMatrix * instanceMatrix;
 
         pInstance->color =
         {

@@ -5,6 +5,8 @@
 #include "graphics/camera.h"
 #include "graphics/instanceData.h"
 
+#include "graphics/scene/scene.h"
+
 #include "graphics/shapeModel/meshGenerator.h"
 #include "graphics/shapeModel/shapeInstance.h"
 #include "graphics/shapeModel/meshType.h"
@@ -60,6 +62,7 @@ class cGame : public cApplication
 
     private:
 
+        void BuildSceneRenderInstances();
         Engine::GFX::MeshHandle GetMesh(Engine::GFX::sMeshTypes::Enum _type);
         void BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance);
         Math::cMatrix4x4f CreateTransformMatrix(const GFX::sTransform& _rTransform);
@@ -84,9 +87,11 @@ class cGame : public cApplication
     
         std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData*>> m_meshInstances;
 
-        GFX::sShapeInstance m_playerShapeInstance;
-
         GFX::sShapeModelDesc m_pendingEditedModel;
         bool m_hasPendingModelUpdate = false;
     
+        GFX::SceneShapeInstanceHandle m_playerShapeInstanceHandle;
+        GFX::SceneShapeInstanceHandle m_modelShapeInstanceHandle;
+
+        GFX::cScene m_scene;
 };

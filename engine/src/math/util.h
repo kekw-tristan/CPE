@@ -120,7 +120,7 @@ namespace Engine::Math
         center += lightRight * (snappedX - centerX);
         center += lightUp    * (snappedY - centerY);
 
-        const float depthPadding  = 10.f;
+        const float depthPadding  = 100.f;
         const float lightDistance = radius + depthPadding;
 
         const Math::cVec3f lightPosition  = center - _lightDirection * lightDistance;

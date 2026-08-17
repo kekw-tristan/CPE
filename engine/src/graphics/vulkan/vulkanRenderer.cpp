@@ -656,7 +656,7 @@ namespace Engine::GFX
                     const float outerAngle = std::acos(outerCone);
                     const float fieldOfView = outerAngle * 2.f;
 
-                    const float nearPlane = 0.1f;
+                    const float nearPlane = 0.001f;
                     const float farPlane = std::max(rLight.radius, nearPlane + 0.01f);
 
                     const Math::cMatrix4x4f lightView = Math::cMatrix4x4f::lookAtRH(rLight.position, lightTarget, up);

@@ -9,7 +9,8 @@ namespace Engine::GFX
     namespace ShapeModelManager
     {
         ShapeModelHandle CreateShapeModel(const sShapeModelDesc& _rDesc); 
-        sShapeModelDesc& GetShapeModel(ShapeModelHandle _shapeModelHandle);
+        const sShapeModelDesc& GetShapeModel(ShapeModelHandle _shapeModelHandle);
+        void UpdateShapeModel(ShapeModelHandle _shapeModelHandle, const sShapeModelDesc& _rDesc);
     }
 
 }

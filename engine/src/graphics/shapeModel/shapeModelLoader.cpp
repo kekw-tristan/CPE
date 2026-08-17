@@ -11,6 +11,7 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
+#include <unordered_map>
 
 // -------------------------------------------------------------------------------------------------------------------------
 
@@ -170,7 +171,7 @@ namespace Engine::GFX
             file >> modelJson;
 
             sShapeModelDesc loadedModel;
-            loadedModel.pDebugName = "";
+            loadedModel.pDebugName = _rFilePath.stem().string();
 
             std::vector<sMaterial> loadedMaterials;
 
@@ -217,13 +218,32 @@ namespace Engine::GFX
 
                 shapePart.materialIndex = shapeJson.value("materialIndex", 0u);
 
+                if (!loadedMaterials.empty() && shapePart.materialIndex >= loadedMaterials.size())
+                {
+                    _rErrorMessage = "Invalid material index " + std::to_string(shapePart.materialIndex) + " in model: " + _rFilePath.string();
+                    return false;
+                }
+
                 loadedModel.shapes.push_back(shapePart);
             }
 
-            _rModelDesc = std::move(loadedModel);
+            // -------------------------------------------------------------------------------------------------------------------------
+            // Register materials
+            // -------------------------------------------------------------------------------------------------------------------------
 
-            if (modelJson.contains("materials"))
-                MaterialManager::GetMaterials() = std::move(loadedMaterials);
+            if (!loadedMaterials.empty())
+            {
+                std::vector<sMaterial>& materials = MaterialManager::GetMaterials();
+
+                const uint32_t materialOffset = static_cast<uint32_t>(materials.size());
+
+                for (sShapePartDesc& shapePart : loadedModel.shapes)
+                    shapePart.materialIndex += materialOffset;
+
+                materials.insert(materials.end(), loadedMaterials.begin(), loadedMaterials.end());
+            }
+
+            _rModelDesc = std::move(loadedModel);
 
             _rErrorMessage.clear();
 
@@ -252,22 +272,40 @@ namespace Engine::GFX
         {
             nlohmann::json modelJson;
 
+            const std::vector<sMaterial>& materials = MaterialManager::GetMaterials();
+
+            std::vector<uint32_t> usedMaterialIndices;
+            std::unordered_map<uint32_t, uint32_t> globalToLocalMaterialIndex;
+
+            // -------------------------------------------------------------------------------------------------------------------------
+            // Collect used materials
+            // -------------------------------------------------------------------------------------------------------------------------
+
+            for (const sShapePartDesc& shapePart : _rModelDesc.shapes)
+            {
+                if (shapePart.materialIndex >= materials.size())
+                {
+                    _rErrorMessage = "Invalid material index " + std::to_string(shapePart.materialIndex) + " while saving model: " + _rFilePath.string();
+                    return false;
+                }
+
+                if (globalToLocalMaterialIndex.find(shapePart.materialIndex) != globalToLocalMaterialIndex.end())
+                    continue;
+
+                const uint32_t localMaterialIndex = static_cast<uint32_t>(usedMaterialIndices.size());
+
+                globalToLocalMaterialIndex[shapePart.materialIndex] = localMaterialIndex;
+                usedMaterialIndices.push_back(shapePart.materialIndex);
+            }
+
             // -------------------------------------------------------------------------------------------------------------------------
             // Materials
             // -------------------------------------------------------------------------------------------------------------------------
 
             modelJson["materials"] = nlohmann::json::array();
 
-            const auto& materials = MaterialManager::GetMaterials();
-
-            std::cout << "Material count: " << materials.size() << '\n';
-
-            for (const sMaterial& material : materials)
-                modelJson["materials"].push_back(MaterialToJson(material));
-
-            std::cout << "JSON material count: " << modelJson["materials"].size() << '\n';
-            std::cout << modelJson.dump(4) << '\n';
-            std::cout << "Saving to: " << std::filesystem::absolute(_rFilePath) << '\n';
+            for (uint32_t globalMaterialIndex : usedMaterialIndices)
+                modelJson["materials"].push_back(MaterialToJson(materials[globalMaterialIndex]));
 
             // -------------------------------------------------------------------------------------------------------------------------
             // Shapes
@@ -292,7 +330,7 @@ namespace Engine::GFX
                     shapePart.color[3]
                 };
 
-                shapeJson["materialIndex"] = shapePart.materialIndex;
+                shapeJson["materialIndex"] = globalToLocalMaterialIndex.at(shapePart.materialIndex);
 
                 modelJson["shapes"].push_back(shapeJson);
             }
