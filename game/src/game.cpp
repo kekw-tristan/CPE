@@ -14,6 +14,7 @@
 #include "graphics/light/lightManager.h"
 
 #include "graphics/imgui/modelEditorWindow.h"
+#include "graphics/imgui/sceneEditorWindow.h"
 
 // -------------------------------------------------------------------------------------------------------------------------
 
@@ -42,42 +43,73 @@ void cGame::OnInit()
 {
     using namespace Engine::GFX;
 
+    const std::filesystem::path scenePath = "./assets/scenes/scene.json";
+
     std::string errorMessage;
 
-    if (!SceneLoader::LoadFromFile("./assets/scenes/scene.json", m_scene, errorMessage))
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Scene
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    if (!SceneLoader::LoadFromFile(scenePath, m_scene, errorMessage))
     {
         std::cerr << "Failed to load scene: " << errorMessage << '\n';
         return;
     }
 
+    // Scene Editor SOFORT mit der Runtime Scene verbinden
+    GetSceneEditorWindow().SetScene(&m_scene, scenePath);
+
+    // Player ist Gameplay-spezifisch und darf den Scene Editor nicht verhindern
     m_playerShapeInstanceHandle = m_scene.FindShapeInstanceHandle("player");
-    m_modelShapeInstanceHandle  = m_scene.FindShapeInstanceHandle("testModel");
 
     if (m_playerShapeInstanceHandle == c_invalidSceneShapeInstanceHandle)
-    {
-        std::cerr << "Scene does not contain a player instance.\n";
-        return;
-    }
+        std::cerr << "Warning: Scene does not contain a player instance.\n";
 
-    if (m_modelShapeInstanceHandle == c_invalidSceneShapeInstanceHandle)
-    {
-        std::cerr << "Scene does not contain a testModel instance.\n";
-        return;
-    }
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Editors
+    // -------------------------------------------------------------------------------------------------------------------------
 
-    sMeshData& planeData    = ShapeMeshLibrary::GetMeshData(sMeshTypes::Plane);
-    sMeshData& cubeData     = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cube);
-    sMeshData& pyramidData  = ShapeMeshLibrary::GetMeshData(sMeshTypes::Pyramid);
-    sMeshData& sphereData   = ShapeMeshLibrary::GetMeshData(sMeshTypes::Sphere);
+    GetSceneEditorWindow().SetSceneChangedCallback([this]()
+        {
+            m_playerShapeInstanceHandle = m_scene.FindShapeInstanceHandle("player");
+
+            ClearRenderInstances();
+            BuildSceneRenderInstances();
+            RebuildInstanceList();
+        });
+
+    GetSceneEditorWindow().SetOpenModelCallback([this](ShapeModelHandle _modelHandle, const std::filesystem::path& _rModelPath)
+        {
+            GetModelEitorWindow().OpenModel(_modelHandle, _rModelPath);
+        });
+
+    GetModelEitorWindow().SetModelChangedCallback([this](ShapeModelHandle _modelHandle, const sShapeModelDesc& _rModel)
+        {
+            ShapeModelManager::UpdateShapeModel(_modelHandle, _rModel);
+
+            ClearRenderInstances();
+            BuildSceneRenderInstances();
+            RebuildInstanceList();
+        });
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Shape meshes
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMeshData& planeData = ShapeMeshLibrary::GetMeshData(sMeshTypes::Plane);
+    sMeshData& cubeData = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cube);
+    sMeshData& pyramidData = ShapeMeshLibrary::GetMeshData(sMeshTypes::Pyramid);
+    sMeshData& sphereData = ShapeMeshLibrary::GetMeshData(sMeshTypes::Sphere);
     sMeshData& cylinderData = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cylinder);
-    sMeshData& coneData     = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cone);
+    sMeshData& coneData = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cone);
 
-    m_planeMesh     = CreateMesh(planeData);
-    m_cubeMesh      = CreateMesh(cubeData);
-    m_pyramidMesh   = CreateMesh(pyramidData);
-    m_sphereMesh    = CreateMesh(sphereData);
-    m_cylinderMesh  = CreateMesh(cylinderData);
-    m_coneMesh      = CreateMesh(coneData);
+    m_planeMesh = CreateMesh(planeData);
+    m_cubeMesh = CreateMesh(cubeData);
+    m_pyramidMesh = CreateMesh(pyramidData);
+    m_sphereMesh = CreateMesh(sphereData);
+    m_cylinderMesh = CreateMesh(cylinderData);
+    m_coneMesh = CreateMesh(coneData);
 
     SubmitMesh(m_planeMesh);
     SubmitMesh(m_cubeMesh);
@@ -86,17 +118,23 @@ void cGame::OnInit()
     SubmitMesh(m_cylinderMesh);
     SubmitMesh(m_coneMesh);
 
-    GetModelEitorWindow().SetModelChangedCallback([this](const sShapeModelDesc& _rModel) { QueueEditedModel(_rModel); });
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Build scene render data
+    // -------------------------------------------------------------------------------------------------------------------------
 
     BuildSceneRenderInstances();
     RebuildInstanceList();
 
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Main directional light
+    // -------------------------------------------------------------------------------------------------------------------------
+
     sLight directionalLight0{};
 
-    directionalLight0.type        = sLightType::Directional;
-    directionalLight0.color       = { 1.0f, 0.85f, 0.7f };
-    directionalLight0.intensity   = 2.5f;
-    directionalLight0.direction   = { -0.5f, -0.5f, -0.3f };
+    directionalLight0.type = sLightType::Directional;
+    directionalLight0.color = { 1.0f, 0.85f, 0.7f };
+    directionalLight0.intensity = 2.5f;
+    directionalLight0.direction = { -0.5f, -0.5f, -0.3f };
     directionalLight0.castsShadow = true;
 
     LightManager::CreateLight(directionalLight0);

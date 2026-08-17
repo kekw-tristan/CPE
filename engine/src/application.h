@@ -61,6 +61,7 @@ namespace Engine::GFX
     struct sMeshData;
 
     class  cModelEditorWindow;
+    class  cSceneEditorWindow;
 
     MeshHandle CreateMesh(sMeshData& _rMeshData); 
     void SubmitMesh(MeshHandle _rMeshData);
@@ -71,6 +72,7 @@ namespace Engine::GFX
     cCamera& GetCamera();
 
     cModelEditorWindow& GetModelEitorWindow();
+    cSceneEditorWindow& GetSceneEditorWindow();
 }
 
 namespace Engine::Platform

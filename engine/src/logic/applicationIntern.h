@@ -14,6 +14,7 @@
 
 #include "graphics/imgui/frameStatsWindow.h"
 #include "graphics/imgui/modelEditorWindow.h"
+#include "graphics/imgui/sceneEditorWindow.h"
 
 #include "platform/input.h"
 #include "platform/window.h"
@@ -75,6 +76,7 @@ namespace Engine::Logic
         public:
 
             GFX::cModelEditorWindow& GetModelEitorWindow();
+            GFX::cSceneEditorWindow& GetSceneEditorWindow();
             
         public:
 
@@ -106,5 +108,6 @@ namespace Engine::Logic
 
             GFX::cFrameStatsWindow  m_frameStatsWindow;
             GFX::cModelEditorWindow m_modelEditorWindow;
+            GFX::cSceneEditorWindow m_sceneEditorWindow;
     };
 }

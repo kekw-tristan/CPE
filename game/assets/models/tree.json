@@ -1,0 +1,143 @@
+{
+    "materials": [
+        {
+            "albedo": [
+                0.14215683937072754,
+                0.058535173535346985,
+                0.0
+            ],
+            "ambientStrength": 1.0099999904632568,
+            "emissiveColor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "emissiveStrength": 0.0,
+            "lightWrap": 0.6299999952316284,
+            "metallic": 0.0,
+            "roughness": 1.0,
+            "shapeContrast": 1.3799999952316284
+        },
+        {
+            "albedo": [
+                0.00677624624222517,
+                0.23039215803146362,
+                0.0
+            ],
+            "ambientStrength": 1.0,
+            "emissiveColor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "emissiveStrength": 0.0,
+            "lightWrap": 0.0,
+            "metallic": 1.0,
+            "roughness": 1.0,
+            "shapeContrast": 1.0
+        }
+    ],
+    "name": "tree",
+    "shapes": [
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "materialIndex": 0,
+            "meshType": "Cylinder",
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                2.0,
+                1.0
+            ]
+        },
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "materialIndex": 1,
+            "meshType": "Cone",
+            "position": [
+                0.0,
+                1.100000023841858,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                2.0,
+                2.0,
+                2.0
+            ]
+        },
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "materialIndex": 1,
+            "meshType": "Cone",
+            "position": [
+                0.0,
+                1.600000023841858,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                2.0,
+                2.0,
+                2.0
+            ]
+        },
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "materialIndex": 1,
+            "meshType": "Cone",
+            "position": [
+                0.0,
+                2.0999999046325684,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                2.0,
+                2.0,
+                2.0
+            ]
+        }
+    ]
+}

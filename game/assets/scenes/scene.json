@@ -8,6 +8,10 @@
         {
             "id": "worldModel",
             "file": "../models/model.json"
+        },
+	{
+            "id": "treeModel",
+            "file": "../models/tree.json"
         }
     ],
 

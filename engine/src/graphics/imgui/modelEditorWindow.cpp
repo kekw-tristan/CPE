@@ -6,6 +6,7 @@
 #include "graphics/material/materialManager.h"
 
 #include "graphics/shapeModel/shapeModelLoader.h"
+#include "graphics/shapeModel/shapeModelManager.h"
 
 #include "platform/input.h"
 
@@ -150,6 +151,40 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cModelEditorWindow::OpenModel(ShapeModelHandle _modelHandle, const std::filesystem::path& _rFilePath)
+    {
+        if (_modelHandle < 0)
+        {
+            m_errorMessage = "Invalid ShapeModelHandle.";
+            return;
+        }
+
+        m_modelHandle = _modelHandle;
+        m_model = ShapeModelManager::GetShapeModel(_modelHandle);
+        m_modelPath = _rFilePath.string();
+
+        m_errorMessage.clear();
+
+        m_modelLoaded = true;
+        m_modelChanged = false;
+        m_materialsChanged = false;
+        m_previewDirty = false;
+
+        m_selectedShapeIndex = m_model.shapes.empty() ? -1 : 0;
+        m_selectedMaterialIndex = m_model.materialIndices.empty() ? -1 : 0;
+
+        m_transformMode = eTransformMode::None;
+        m_transformAxis = eTransformAxis::None;
+        m_transformShapeIndex = -1;
+
+        m_transformMouseDeltaX = 0.0;
+        m_transformMouseDeltaY = 0.0;
+
+        m_openAddPopup = false;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cModelEditorWindow::SetModelChangedCallback(ModelChangedCallback _callback)
     {
         m_modelChangedCallback = std::move(_callback);
@@ -180,9 +215,11 @@ namespace Engine::GFX
 
         ImGui::End();
 
-        if (m_previewDirty && m_modelChangedCallback)
+        if (m_previewDirty)
         {
-            m_modelChangedCallback(m_model);
+            if (m_modelChangedCallback && m_modelHandle >= 0)
+                m_modelChangedCallback(m_modelHandle, m_model);
+
             m_previewDirty = false;
         }
     }
@@ -252,9 +289,7 @@ namespace Engine::GFX
 
     void cModelEditorWindow::DrawMaterialEditor()
     {
-        auto& materials = MaterialManager::GetMaterials();
-
-        if (materials.empty())
+        if (m_model.materialIndices.empty())
             m_selectedMaterialIndex = -1;
         else if (!HasValidMaterialSelection())
             m_selectedMaterialIndex = 0;
@@ -284,6 +319,7 @@ namespace Engine::GFX
         }
 
         m_model = std::move(loadedModel);
+        m_modelHandle = -1;
 
         m_errorMessage.clear();
 
@@ -293,7 +329,7 @@ namespace Engine::GFX
         m_previewDirty = true;
 
         m_selectedShapeIndex = m_model.shapes.empty() ? -1 : 0;
-        m_selectedMaterialIndex = MaterialManager::GetMaterials().empty() ? -1 : 0;
+        m_selectedMaterialIndex = m_model.materialIndices.empty() ? -1 : 0;
 
         m_transformMode = eTransformMode::None;
         m_transformAxis = eTransformAxis::None;
@@ -471,24 +507,40 @@ namespace Engine::GFX
         ImGui::Separator();
         ImGui::TextUnformatted("Material");
 
-        auto& materials = MaterialManager::GetMaterials();
+        const std::vector<sMaterial>& materials = MaterialManager::GetMaterials();
 
-        if (materials.empty())
+        if (m_model.materialIndices.empty())
         {
-            ImGui::TextDisabled("No materials available.");
+            ImGui::TextDisabled("No materials in this model.");
             return;
         }
 
-        if (rShape.materialIndex >= materials.size())
-            rShape.materialIndex = 0;
+        int localMaterialIndex = 0;
 
-        int materialIndex = static_cast<int>(rShape.materialIndex);
+        const auto currentMaterialIterator = std::find(m_model.materialIndices.begin(), m_model.materialIndices.end(), rShape.materialIndex);
+
+        if (currentMaterialIterator == m_model.materialIndices.end())
+        {
+            rShape.materialIndex = m_model.materialIndices.front();
+            MarkModelChanged();
+        }
+        else
+        {
+            localMaterialIndex = static_cast<int>(std::distance(m_model.materialIndices.begin(), currentMaterialIterator));
+        }
 
         std::vector<std::string> materialNames;
-        materialNames.reserve(materials.size());
+        materialNames.reserve(m_model.materialIndices.size());
 
-        for (int index = 0; index < static_cast<int>(materials.size()); ++index)
-            materialNames.push_back("Material " + std::to_string(index));
+        for (int index = 0; index < static_cast<int>(m_model.materialIndices.size()); ++index)
+        {
+            const uint32_t globalMaterialIndex = m_model.materialIndices[index];
+
+            if (globalMaterialIndex < materials.size())
+                materialNames.push_back("Material " + std::to_string(index));
+            else
+                materialNames.push_back("Material " + std::to_string(index) + " (invalid)");
+        }
 
         std::vector<const char*> materialNamePointers;
         materialNamePointers.reserve(materialNames.size());
@@ -496,9 +548,9 @@ namespace Engine::GFX
         for (const std::string& name : materialNames)
             materialNamePointers.push_back(name.c_str());
 
-        if (ImGui::Combo("Material", &materialIndex, materialNamePointers.data(), static_cast<int>(materialNamePointers.size())))
+        if (ImGui::Combo("Material", &localMaterialIndex, materialNamePointers.data(), static_cast<int>(materialNamePointers.size())))
         {
-            rShape.materialIndex = static_cast<uint32_t>(materialIndex);
+            rShape.materialIndex = m_model.materialIndices[localMaterialIndex];
             MarkModelChanged();
         }
     }
@@ -507,18 +559,24 @@ namespace Engine::GFX
 
     void cModelEditorWindow::DrawMaterialList()
     {
-        auto& materials = MaterialManager::GetMaterials();
+        const std::vector<sMaterial>& materials = MaterialManager::GetMaterials();
 
         ImGui::TextUnformatted("Materials");
         ImGui::Separator();
 
-        for (int materialIndex = 0; materialIndex < static_cast<int>(materials.size()); ++materialIndex)
+        for (int localMaterialIndex = 0; localMaterialIndex < static_cast<int>(m_model.materialIndices.size()); ++localMaterialIndex)
         {
-            char label[128];
-            std::snprintf(label, sizeof(label), "Material %i##Material%i", materialIndex, materialIndex);
+            const uint32_t globalMaterialIndex = m_model.materialIndices[localMaterialIndex];
 
-            if (ImGui::Selectable(label, materialIndex == m_selectedMaterialIndex))
-                m_selectedMaterialIndex = materialIndex;
+            char label[128];
+
+            if (globalMaterialIndex < materials.size())
+                std::snprintf(label, sizeof(label), "Material %i##Material%i", localMaterialIndex, localMaterialIndex);
+            else
+                std::snprintf(label, sizeof(label), "Material %i (invalid)##Material%i", localMaterialIndex, localMaterialIndex);
+
+            if (ImGui::Selectable(label, localMaterialIndex == m_selectedMaterialIndex))
+                m_selectedMaterialIndex = localMaterialIndex;
         }
 
         ImGui::Separator();
@@ -537,12 +595,21 @@ namespace Engine::GFX
             return;
         }
 
-        auto& materials = MaterialManager::GetMaterials();
+        std::vector<sMaterial>& materials = MaterialManager::GetMaterials();
 
-        sMaterial& rMaterial = materials[m_selectedMaterialIndex];
+        const uint32_t globalMaterialIndex = m_model.materialIndices[m_selectedMaterialIndex];
+
+        if (globalMaterialIndex >= materials.size())
+        {
+            ImGui::TextUnformatted("Selected material is invalid.");
+            return;
+        }
+
+        sMaterial& rMaterial = materials[globalMaterialIndex];
 
         ImGui::Text("Material %i", m_selectedMaterialIndex);
         ImGui::Separator();
+
 
         // -------------------------------------------------------------------------------------------------------------------------
         // Surface
@@ -617,6 +684,8 @@ namespace Engine::GFX
         shape.color[2] = 1.0f;
         shape.color[3] = 1.0f;
 
+        shape.materialIndex = EnsureDefaultMaterial();
+
         m_model.shapes.push_back(shape);
         m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
 
@@ -639,6 +708,8 @@ namespace Engine::GFX
         shape.color[1] = 1.0f;
         shape.color[2] = 1.0f;
         shape.color[3] = 1.0f;
+
+        shape.materialIndex = EnsureDefaultMaterial();
 
         m_model.shapes.push_back(shape);
         m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
@@ -663,6 +734,8 @@ namespace Engine::GFX
         shape.color[2] = 1.0f;
         shape.color[3] = 1.0f;
 
+        shape.materialIndex = EnsureDefaultMaterial();
+
         m_model.shapes.push_back(shape);
         m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
 
@@ -685,6 +758,8 @@ namespace Engine::GFX
         shape.color[1] = 1.0f;
         shape.color[2] = 1.0f;
         shape.color[3] = 1.0f;
+
+        shape.materialIndex = EnsureDefaultMaterial();
 
         m_model.shapes.push_back(shape);
         m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
@@ -709,6 +784,8 @@ namespace Engine::GFX
         shape.color[2] = 1.0f;
         shape.color[3] = 1.0f;
 
+        shape.materialIndex = EnsureDefaultMaterial();
+
         m_model.shapes.push_back(shape);
         m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
 
@@ -732,6 +809,8 @@ namespace Engine::GFX
         shape.color[2] = 1.0f;
         shape.color[3] = 1.0f;
 
+        shape.materialIndex = EnsureDefaultMaterial();
+
         m_model.shapes.push_back(shape);
         m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
 
@@ -744,7 +823,10 @@ namespace Engine::GFX
     {
         sMaterial material{};
 
-        m_selectedMaterialIndex = MaterialManager::CreateMaterial(material);
+        const uint32_t globalMaterialIndex = static_cast<uint32_t>(MaterialManager::CreateMaterial(material));
+
+        m_model.materialIndices.push_back(globalMaterialIndex);
+        m_selectedMaterialIndex = static_cast<int>(m_model.materialIndices.size()) - 1;
 
         MarkMaterialChanged();
     }
@@ -792,9 +874,13 @@ namespace Engine::GFX
 
     bool cModelEditorWindow::HasValidMaterialSelection() const
     {
-        const auto& materials = MaterialManager::GetMaterials();
+        if (m_selectedMaterialIndex < 0 || m_selectedMaterialIndex >= static_cast<int>(m_model.materialIndices.size()))
+            return false;
 
-        return m_selectedMaterialIndex >= 0 && m_selectedMaterialIndex < static_cast<int>(materials.size());
+        const std::vector<sMaterial>& materials = MaterialManager::GetMaterials();
+        const uint32_t globalMaterialIndex = m_model.materialIndices[m_selectedMaterialIndex];
+
+        return globalMaterialIndex < materials.size();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -1026,6 +1112,24 @@ namespace Engine::GFX
 
         if (m_modelLoaded)
             m_previewDirty = true;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    uint32_t cModelEditorWindow::EnsureDefaultMaterial()
+    {
+        if (!m_model.materialIndices.empty())
+            return m_model.materialIndices.front();
+
+        sMaterial material{};
+
+        const uint32_t globalMaterialIndex = static_cast<uint32_t>(MaterialManager::CreateMaterial(material));
+
+        m_model.materialIndices.push_back(globalMaterialIndex);
+        m_selectedMaterialIndex = 0;
+        m_materialsChanged = true;
+
+        return globalMaterialIndex;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

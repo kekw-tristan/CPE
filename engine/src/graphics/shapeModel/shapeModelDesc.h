@@ -13,6 +13,8 @@ namespace Engine::GFX
         std::string pDebugName; 
         std::vector<sShapePartDesc> shapes;
 
+        std::vector<uint32_t> materialIndices;
+
         sBounds bounds;
     };
 }

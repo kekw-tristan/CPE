@@ -116,6 +116,7 @@ namespace Engine::Logic
         m_frameStatsWindow.GetFrameWindowStats().deltaTime = deltaTime;
 
         m_modelEditorWindow.Update(m_input, m_camera);
+        m_sceneEditorWindow.Update(m_input, m_camera);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -252,6 +253,13 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    GFX::cSceneEditorWindow& cApplicationIntern::GetSceneEditorWindow()
+    {
+        return m_sceneEditorWindow;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     bool cApplicationIntern::IsKeydown(int _key) const
     {
         return m_input.IsKeyDown(_key);
@@ -291,6 +299,7 @@ namespace Engine::Logic
 
         GFX::ImGuiWindowManager::AddWindow(m_frameStatsWindow);
         GFX::ImGuiWindowManager::AddWindow(m_modelEditorWindow);
+        GFX::ImGuiWindowManager::AddWindow(m_sceneEditorWindow);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

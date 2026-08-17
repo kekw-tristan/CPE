@@ -171,13 +171,9 @@ namespace Engine::GFX
             file >> modelJson;
 
             sShapeModelDesc loadedModel;
-            loadedModel.pDebugName = _rFilePath.stem().string();
+            loadedModel.pDebugName = modelJson.value("name", _rFilePath.stem().string());
 
             std::vector<sMaterial> loadedMaterials;
-
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Materials
-            // -------------------------------------------------------------------------------------------------------------------------
 
             if (modelJson.contains("materials"))
             {
@@ -186,10 +182,11 @@ namespace Engine::GFX
                 for (const nlohmann::json& materialJson : materialsJson)
                     loadedMaterials.push_back(ParseMaterial(materialJson));
             }
-
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Shapes
-            // -------------------------------------------------------------------------------------------------------------------------
+            else
+            {
+                sMaterial defaultMaterial{};
+                loadedMaterials.push_back(defaultMaterial);
+            }
 
             const nlohmann::json& shapesJson = modelJson.at("shapes");
 
@@ -216,32 +213,32 @@ namespace Engine::GFX
                 shapePart.color[2] = colorJson.at(2).get<float>();
                 shapePart.color[3] = colorJson.at(3).get<float>();
 
-                shapePart.materialIndex = shapeJson.value("materialIndex", 0u);
+                const uint32_t localMaterialIndex = shapeJson.value("materialIndex", 0u);
 
-                if (!loadedMaterials.empty() && shapePart.materialIndex >= loadedMaterials.size())
+                if (localMaterialIndex >= loadedMaterials.size())
                 {
-                    _rErrorMessage = "Invalid material index " + std::to_string(shapePart.materialIndex) + " in model: " + _rFilePath.string();
+                    _rErrorMessage = "Invalid material index " + std::to_string(localMaterialIndex) + " in model: " + _rFilePath.string();
                     return false;
                 }
+
+                shapePart.materialIndex = localMaterialIndex;
 
                 loadedModel.shapes.push_back(shapePart);
             }
 
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Register materials
-            // -------------------------------------------------------------------------------------------------------------------------
+            std::vector<sMaterial>& materials = MaterialManager::GetMaterials();
 
-            if (!loadedMaterials.empty())
-            {
-                std::vector<sMaterial>& materials = MaterialManager::GetMaterials();
+            const uint32_t materialOffset = static_cast<uint32_t>(materials.size());
 
-                const uint32_t materialOffset = static_cast<uint32_t>(materials.size());
+            loadedModel.materialIndices.reserve(loadedMaterials.size());
 
-                for (sShapePartDesc& shapePart : loadedModel.shapes)
-                    shapePart.materialIndex += materialOffset;
+            for (uint32_t localMaterialIndex = 0; localMaterialIndex < static_cast<uint32_t>(loadedMaterials.size()); ++localMaterialIndex)
+                loadedModel.materialIndices.push_back(materialOffset + localMaterialIndex);
 
-                materials.insert(materials.end(), loadedMaterials.begin(), loadedMaterials.end());
-            }
+            for (sShapePartDesc& shapePart : loadedModel.shapes)
+                shapePart.materialIndex += materialOffset;
+
+            materials.insert(materials.end(), loadedMaterials.begin(), loadedMaterials.end());
 
             _rModelDesc = std::move(loadedModel);
 
@@ -272,49 +269,48 @@ namespace Engine::GFX
         {
             nlohmann::json modelJson;
 
+            if (!_rModelDesc.pDebugName.empty())
+                modelJson["name"] = _rModelDesc.pDebugName;
+
             const std::vector<sMaterial>& materials = MaterialManager::GetMaterials();
-
-            std::vector<uint32_t> usedMaterialIndices;
-            std::unordered_map<uint32_t, uint32_t> globalToLocalMaterialIndex;
-
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Collect used materials
-            // -------------------------------------------------------------------------------------------------------------------------
-
-            for (const sShapePartDesc& shapePart : _rModelDesc.shapes)
-            {
-                if (shapePart.materialIndex >= materials.size())
-                {
-                    _rErrorMessage = "Invalid material index " + std::to_string(shapePart.materialIndex) + " while saving model: " + _rFilePath.string();
-                    return false;
-                }
-
-                if (globalToLocalMaterialIndex.find(shapePart.materialIndex) != globalToLocalMaterialIndex.end())
-                    continue;
-
-                const uint32_t localMaterialIndex = static_cast<uint32_t>(usedMaterialIndices.size());
-
-                globalToLocalMaterialIndex[shapePart.materialIndex] = localMaterialIndex;
-                usedMaterialIndices.push_back(shapePart.materialIndex);
-            }
-
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Materials
-            // -------------------------------------------------------------------------------------------------------------------------
 
             modelJson["materials"] = nlohmann::json::array();
 
-            for (uint32_t globalMaterialIndex : usedMaterialIndices)
-                modelJson["materials"].push_back(MaterialToJson(materials[globalMaterialIndex]));
+            std::unordered_map<uint32_t, uint32_t> globalToLocalMaterialIndex;
+            globalToLocalMaterialIndex.reserve(_rModelDesc.materialIndices.size());
 
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Shapes
-            // -------------------------------------------------------------------------------------------------------------------------
+            for (uint32_t localMaterialIndex = 0; localMaterialIndex < static_cast<uint32_t>(_rModelDesc.materialIndices.size()); ++localMaterialIndex)
+            {
+                const uint32_t globalMaterialIndex = _rModelDesc.materialIndices[localMaterialIndex];
+
+                if (globalMaterialIndex >= materials.size())
+                {
+                    _rErrorMessage = "Invalid global material index " + std::to_string(globalMaterialIndex) + " while saving model: " + _rFilePath.string();
+                    return false;
+                }
+
+                if (globalToLocalMaterialIndex.contains(globalMaterialIndex))
+                {
+                    _rErrorMessage = "Duplicate global material index " + std::to_string(globalMaterialIndex) + " in model material list: " + _rFilePath.string();
+                    return false;
+                }
+
+                globalToLocalMaterialIndex.emplace(globalMaterialIndex, localMaterialIndex);
+                modelJson["materials"].push_back(MaterialToJson(materials[globalMaterialIndex]));
+            }
 
             modelJson["shapes"] = nlohmann::json::array();
 
             for (const sShapePartDesc& shapePart : _rModelDesc.shapes)
             {
+                const auto materialIterator = globalToLocalMaterialIndex.find(shapePart.materialIndex);
+
+                if (materialIterator == globalToLocalMaterialIndex.end())
+                {
+                    _rErrorMessage = "Shape references material index " + std::to_string(shapePart.materialIndex) + " which does not belong to model: " + _rFilePath.string();
+                    return false;
+                }
+
                 nlohmann::json shapeJson;
 
                 shapeJson["meshType"] = MeshTypeToString(shapePart.meshType);
@@ -330,9 +326,9 @@ namespace Engine::GFX
                     shapePart.color[3]
                 };
 
-                shapeJson["materialIndex"] = globalToLocalMaterialIndex.at(shapePart.materialIndex);
+                shapeJson["materialIndex"] = materialIterator->second;
 
-                modelJson["shapes"].push_back(shapeJson);
+                modelJson["shapes"].push_back(std::move(shapeJson));
             }
 
             file << modelJson.dump(4) << '\n';

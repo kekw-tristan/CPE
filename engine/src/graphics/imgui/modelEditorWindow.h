@@ -2,6 +2,7 @@
 
 #include "graphics/imgui/imguiWindow.h"
 #include "graphics/shapeModel/shapeModelDesc.h"
+#include "graphics/shapeModel/shapeModelManager.h"
 
 #include <filesystem>
 #include <functional>
@@ -20,7 +21,7 @@ namespace Engine::GFX
     {
     public:
 
-        using ModelChangedCallback = std::function<void(const sShapeModelDesc&)>;
+        using ModelChangedCallback = std::function<void(ShapeModelHandle, const sShapeModelDesc&)>;
 
         cModelEditorWindow() = default;
         ~cModelEditorWindow() = default;
@@ -30,6 +31,7 @@ namespace Engine::GFX
 
         void Update(const Platform::cInput& _rInput, const cCamera& _rCamera);
 
+        void OpenModel(ShapeModelHandle _modelHandle, const std::filesystem::path& _rFilePath);
         void SetModelChangedCallback(ModelChangedCallback _callback);
 
     protected:
@@ -91,9 +93,13 @@ namespace Engine::GFX
         void MarkModelChanged();
         void MarkMaterialChanged();
 
+        uint32_t EnsureDefaultMaterial();
+
     private:
 
         sShapeModelDesc m_model;
+
+        ShapeModelHandle m_modelHandle = -1;
 
         std::string m_modelPath = "./assets/models/model.json";
         std::string m_errorMessage;
