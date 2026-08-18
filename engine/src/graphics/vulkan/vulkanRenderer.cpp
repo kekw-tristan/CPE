@@ -80,22 +80,39 @@ namespace Engine::GFX
         // Reflection probes
         // -------------------------------------------------------------------------------------------------------------------------
 
-        m_reflectionProbeCount = 2;
-        m_activeReflectionProbeIndex = UINT32_MAX;
+        ReflectionProbeManager::Clear();
+        ReflectionProbeManager::SetCellSize(32.0f);
 
-        m_reflectionProbeCaptureLayouts.fill(VK_IMAGE_LAYOUT_UNDEFINED);
-        m_reflectionProbePrefilteredLayouts.fill(VK_IMAGE_LAYOUT_UNDEFINED);
-        m_reflectionProbePrefilterDescriptorSets.fill(VK_NULL_HANDLE);
+        sReflectionProbe probe0{};
 
-        m_reflectionProbes[0].position = { -8.0f, 3.0f, 0.0f };
-        m_reflectionProbes[0].boxMin = { -16.0f, -5.0f, -12.0f };
-        m_reflectionProbes[0].boxMax = { -1.0f, 12.0f,  12.0f };
-        m_reflectionProbes[0].blendDistance = 3.0f;
+        probe0.position         = { -6.0f, 3.0f, 0.0f };
+        probe0.boxMin           = { -14.0f, -5.0f, -12.0f };
+        probe0.boxMax           = { -2.0f, 12.0f,  12.0f };
+        probe0.radius           = 30.0f;
+        probe0.blendDistance    = 2.0f;
+        probe0.resolution       = 256;
+        probe0.dirty            = true;
 
-        m_reflectionProbes[1].position = { 8.0f, 3.0f, 0.0f };
-        m_reflectionProbes[1].boxMin = { 1.0f, -5.0f, -12.0f };
-        m_reflectionProbes[1].boxMax = { 16.0f, 12.0f,  12.0f };
-        m_reflectionProbes[1].blendDistance = 3.0f;
+        ReflectionProbeManager::AddProbe(probe0);
+
+        sReflectionProbe probe1{};
+
+        probe1.position         = { 6.0f, 3.0f, 0.0f };
+        probe1.boxMin           = { 2.0f, -5.0f, -12.0f };
+        probe1.boxMax           = { 14.0f, 12.0f, 12.0f };
+        probe1.radius           = 30.0f;
+        probe1.blendDistance    = 2.0f;
+        probe1.resolution       = 256;
+        probe1.dirty            = true;
+
+        ReflectionProbeManager::AddProbe(probe1);
+
+        m_reflectionProbeCount = ReflectionProbeManager::GetProbeCount();
+
+        if (m_reflectionProbeCount > c_maxNumberOfReflectionProbes)
+        {
+            throw std::runtime_error("Too many reflection probes for current Vulkan reflection probe implementation!");
+        }
 
         // -------------------------------------------------------------------------------------------------------------------------
         // Create reflection probe Vulkan resources
@@ -105,7 +122,7 @@ namespace Engine::GFX
 
         for (uint32_t probeIndex = 0; probeIndex < m_reflectionProbeCount; ++probeIndex)
         {
-            sReflectionProbe& rProbe = m_reflectionProbes[probeIndex];
+            const sReflectionProbe& rProbe = ReflectionProbeManager::GetProbe(probeIndex);
 
             m_vulkanReflectionProbes[probeIndex].Create(*m_pDevice, rProbe.resolution);
 
@@ -364,9 +381,9 @@ namespace Engine::GFX
             throw std::runtime_error("EndFrame() called without BeginFrame()!");
         }
 
-        VkDevice device = m_pDevice->GetDevice();
-        sVulkanFrame& rFrame = m_frames[m_currentFrame];
-        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+        VkDevice        device          = m_pDevice->GetDevice();
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
 
         GFX::ImGuiManager::EndFrame(pCommandBuffer); 
 
@@ -884,6 +901,42 @@ namespace Engine::GFX
             1, &barrier,
             0, nullptr
         );
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::UpdateReflectionProbeDescriptors(sVulkanFrame& _rFrame, const std::vector<ReflectionProbeHandle>& _rActiveProbeHandles)
+    {
+        std::array<VkDescriptorImageInfo, c_maxNumberOfReflectionProbes> reflectionProbeImageInfos{};
+
+        for (uint32_t slotIndex = 0; slotIndex < c_maxNumberOfReflectionProbes; ++slotIndex)
+        {
+            reflectionProbeImageInfos[slotIndex].sampler        = VK_NULL_HANDLE;
+            reflectionProbeImageInfos[slotIndex].imageLayout    = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            if (slotIndex < _rActiveProbeHandles.size())
+            {
+                const ReflectionProbeHandle probeHandle = _rActiveProbeHandles[slotIndex];
+
+                reflectionProbeImageInfos[slotIndex].imageView = m_vulkanReflectionProbes[probeHandle].GetPrefilteredImageView();
+            }
+            else
+            {
+                reflectionProbeImageInfos[slotIndex].imageView = m_environment.GetImageView();
+            }
+        }
+
+        VkWriteDescriptorSet descriptorWrite{};
+
+        descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet          = _rFrame.frameDescriptorSet;
+        descriptorWrite.dstBinding      = 12;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        descriptorWrite.descriptorCount = c_maxNumberOfReflectionProbes;
+        descriptorWrite.pImageInfo      = reflectionProbeImageInfos.data();
+
+        vkUpdateDescriptorSets(m_pDevice->GetDevice(), 1, &descriptorWrite, 0, nullptr);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -1551,7 +1604,7 @@ namespace Engine::GFX
 
         m_reflectionProbePrefilteredLayouts[_probeIndex] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        m_reflectionProbes[_probeIndex].dirty = false;
+        ReflectionProbeManager::SetProbeDirty(_probeIndex, false);
         m_activeReflectionProbeIndex = UINT32_MAX;
     }
 
@@ -1664,12 +1717,12 @@ namespace Engine::GFX
 
     bool cVulkanRenderer::NeedsReflectionProbeUpdate(uint32_t _probeIndex) const
     {
-        if (_probeIndex >= m_reflectionProbeCount)
+        if (_probeIndex >= ReflectionProbeManager::GetProbeCount())
         {
             return false;
         }
 
-        return m_reflectionProbes[_probeIndex].dirty;
+        return ReflectionProbeManager::GetProbe(_probeIndex).dirty;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -1750,7 +1803,7 @@ namespace Engine::GFX
 
         const uint32_t probeIndex = m_activeReflectionProbeIndex;
 
-        const sReflectionProbe& rProbe = m_reflectionProbes[probeIndex];
+        const sReflectionProbe& rProbe = ReflectionProbeManager::GetProbe(probeIndex);
         cVulkanReflectionProbe& rVulkanProbe = m_vulkanReflectionProbes[probeIndex];
 
         if (_faceIndex >= 6)
@@ -2243,11 +2296,9 @@ namespace Engine::GFX
 
             for (uint32_t probeIndex = 0; probeIndex < c_maxNumberOfReflectionProbes; ++probeIndex)
             {
-                uint32_t sourceProbeIndex = probeIndex < m_reflectionProbeCount ? probeIndex : 0;
-
-                reflectionProbeImageInfos[probeIndex].sampler = VK_NULL_HANDLE;
-                reflectionProbeImageInfos[probeIndex].imageView = m_vulkanReflectionProbes[sourceProbeIndex].GetPrefilteredImageView();
-                reflectionProbeImageInfos[probeIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                reflectionProbeImageInfos[probeIndex].sampler       = VK_NULL_HANDLE;
+                reflectionProbeImageInfos[probeIndex].imageView     = m_environment.GetImageView();
+                reflectionProbeImageInfos[probeIndex].imageLayout   = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
 
             std::array<VkWriteDescriptorSet, 13> descriptorWrites{};
@@ -2386,6 +2437,26 @@ namespace Engine::GFX
         _rCamera.GetViewProjectionMatrix(aspectRatio, frameData.viewProj);
 
         _rCamera.GetPosition(frameData.cameraPosition);
+
+        const Math::cVec3f cameraPosition =
+        {
+            frameData.cameraPosition[0],
+            frameData.cameraPosition[1],
+            frameData.cameraPosition[2]
+        };
+
+        const std::vector<ReflectionProbeHandle> activeProbeHandles = ReflectionProbeManager::FindActiveProbeIndices(cameraPosition, c_maxNumberOfReflectionProbes, 1);
+
+        std::cout << "Active probes: " << activeProbeHandles.size() << '\n';
+
+        for (ReflectionProbeHandle probeHandle : activeProbeHandles)
+        {
+            std::cout << "  Probe: " << probeHandle << '\n';
+        }
+
+        UpdateReflectionProbeDescriptors(_rFrame, activeProbeHandles);
+        frameData.reflectionProbeCount = static_cast<uint32_t>(activeProbeHandles.size());
+
         _rCamera.GetDirection(frameData.cameraDirection);
 
         frameData.viewportSize[0] = width;
@@ -2401,12 +2472,14 @@ namespace Engine::GFX
         frameData.lightCount    = static_cast<uint32_t>(LightManager::GetLights().size());
         frameData.materialCount = static_cast<uint32_t>(MaterialManager::GetMaterials().size());
 
-        frameData.reflectionProbeCount = m_reflectionProbeCount;
+        
 
         for (uint32_t probeIndex = 0; probeIndex < m_reflectionProbeCount; ++probeIndex)
         {
-            const sReflectionProbe& rProbe = m_reflectionProbes[probeIndex];
-            const cVulkanReflectionProbe& rVulkanProbe = m_vulkanReflectionProbes[probeIndex];
+            const ReflectionProbeHandle probeHandle = activeProbeHandles[probeIndex];
+
+            const sReflectionProbe&         rProbe          = ReflectionProbeManager::GetProbe(probeHandle);
+            const cVulkanReflectionProbe&   rVulkanProbe    = m_vulkanReflectionProbes[probeIndex];
 
             sReflectionProbeGPU& rProbeGPU = frameData.reflectionProbes[probeIndex];
 

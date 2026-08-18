@@ -12,6 +12,7 @@
 #include "graphics/vulkan/reflectionProbe.h"
 #include "graphics/vulkan/vulkanReflectionProbe.h"
 
+#include "graphics/reflectionProbes/reflectionProbeManager.h"
 
 #include <vulkan/vulkan.h>
 
@@ -107,6 +108,7 @@ namespace Engine::GFX
             void UpdateLightBuffer();
             void UpdateMaterialBuffer();
             void UpdateShadowBuffer(const cCamera& _rCamera);
+            void UpdateReflectionProbeDescriptors(sVulkanFrame& _rFrame, const std::vector<ReflectionProbeHandle>& _rActiveProbeHandles);
 
         public:
 
@@ -165,7 +167,6 @@ namespace Engine::GFX
 
         private:
 
-            std::array<sReflectionProbe, c_maxNumberOfReflectionProbes> m_reflectionProbes;
             std::array<cVulkanReflectionProbe, c_maxNumberOfReflectionProbes> m_vulkanReflectionProbes;
 
             cVulkanImage m_reflectionProbeDepthImage;
