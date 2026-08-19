@@ -83,53 +83,63 @@ namespace Engine::GFX
         ReflectionProbeManager::Clear();
         ReflectionProbeManager::SetCellSize(32.0f);
 
-        sReflectionProbe probe0{};
+        constexpr uint32_t probeCountX = 5;
+        constexpr uint32_t probeCountZ = 2;
 
-        probe0.position         = { -6.0f, 3.0f, 0.0f };
-        probe0.boxMin           = { -14.0f, -5.0f, -12.0f };
-        probe0.boxMax           = { -2.0f, 12.0f,  12.0f };
-        probe0.radius           = 30.0f;
-        probe0.blendDistance    = 2.0f;
-        probe0.resolution       = 256;
-        probe0.dirty            = true;
+        constexpr float spacingX = 16.0f;
+        constexpr float spacingZ = 16.0f;
 
-        ReflectionProbeManager::AddProbe(probe0);
+        constexpr float halfSizeX = 12.0f;
+        constexpr float halfSizeZ = 12.0f;
 
-        sReflectionProbe probe1{};
+        constexpr float startX = -32.0f;
+        constexpr float startZ = -8.0f;
 
-        probe1.position         = { 6.0f, 3.0f, 0.0f };
-        probe1.boxMin           = { 2.0f, -5.0f, -12.0f };
-        probe1.boxMax           = { 14.0f, 12.0f, 12.0f };
-        probe1.radius           = 30.0f;
-        probe1.blendDistance    = 2.0f;
-        probe1.resolution       = 256;
-        probe1.dirty            = true;
-
-        ReflectionProbeManager::AddProbe(probe1);
-
-        m_reflectionProbeCount = ReflectionProbeManager::GetProbeCount();
-
-        if (m_reflectionProbeCount > c_maxNumberOfReflectionProbes)
+        for (uint32_t z = 0; z < probeCountZ; ++z)
         {
-            throw std::runtime_error("Too many reflection probes for current Vulkan reflection probe implementation!");
+            for (uint32_t x = 0; x < probeCountX; ++x)
+            {
+                const float positionX = startX + static_cast<float>(x) * spacingX;
+                const float positionZ = startZ + static_cast<float>(z) * spacingZ;
+
+                sReflectionProbe probe{};
+
+                probe.position      = { positionX, 3.0f, positionZ };
+                probe.boxMin        = { positionX - halfSizeX, -5.0f, positionZ - halfSizeZ };
+                probe.boxMax        = { positionX + halfSizeX, 12.0f, positionZ + halfSizeZ };
+                probe.radius        = 30.0f;
+                probe.blendDistance = 4.0f;
+                probe.resolution    = 256;
+                probe.dirty         = true;
+
+                ReflectionProbeManager::AddProbe(probe);
+            }
         }
 
-        // -------------------------------------------------------------------------------------------------------------------------
-        // Create reflection probe Vulkan resources
-        // -------------------------------------------------------------------------------------------------------------------------
+        const uint32_t reflectionProbeCount = ReflectionProbeManager::GetProbeCount();
+
+        m_activeReflectionProbeIndex = UINT32_MAX;
+
+        m_vulkanReflectionProbes.clear();
+        m_vulkanReflectionProbes.reserve(reflectionProbeCount);
+
+        m_reflectionProbeCaptureLayouts.assign(reflectionProbeCount, VK_IMAGE_LAYOUT_UNDEFINED);
+        m_reflectionProbePrefilteredLayouts.assign(reflectionProbeCount, VK_IMAGE_LAYOUT_UNDEFINED);
+        m_reflectionProbePrefilterDescriptorSets.assign(reflectionProbeCount, VK_NULL_HANDLE);
 
         uint32_t maximumReflectionProbeResolution = 1;
 
-        for (uint32_t probeIndex = 0; probeIndex < m_reflectionProbeCount; ++probeIndex)
+        for (ReflectionProbeHandle probeHandle = 0; probeHandle < reflectionProbeCount; ++probeHandle)
         {
-            const sReflectionProbe& rProbe = ReflectionProbeManager::GetProbe(probeIndex);
+            const sReflectionProbe& rProbe = ReflectionProbeManager::GetProbe(probeHandle);
 
-            m_vulkanReflectionProbes[probeIndex].Create(*m_pDevice, rProbe.resolution);
+            std::unique_ptr<cVulkanReflectionProbe> pVulkanProbe = std::make_unique<cVulkanReflectionProbe>();
 
-            m_reflectionProbeCaptureLayouts[probeIndex] = VK_IMAGE_LAYOUT_UNDEFINED;
-            m_reflectionProbePrefilteredLayouts[probeIndex] = VK_IMAGE_LAYOUT_UNDEFINED;
+            pVulkanProbe->Create(*m_pDevice, rProbe.resolution);
 
             maximumReflectionProbeResolution = std::max(maximumReflectionProbeResolution, rProbe.resolution);
+
+            m_vulkanReflectionProbes.push_back(std::move(pVulkanProbe));
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -191,10 +201,19 @@ namespace Engine::GFX
 
         m_reflectionProbeDepthImage.Destroy(*m_pDevice);
 
-        for (uint32_t probeIndex = 0; probeIndex < m_reflectionProbeCount; ++probeIndex)
+        for (std::unique_ptr<cVulkanReflectionProbe>& pReflectionProbe : m_vulkanReflectionProbes)
         {
-            m_vulkanReflectionProbes[probeIndex].Destroy(*m_pDevice);
+            if (pReflectionProbe)
+            {
+                pReflectionProbe->Destroy(*m_pDevice);
+            }
         }
+
+        m_vulkanReflectionProbes.clear();
+
+        m_reflectionProbeCaptureLayouts.clear();
+        m_reflectionProbePrefilteredLayouts.clear();
+        m_reflectionProbePrefilterDescriptorSets.clear();
 
         m_materialBuffer.Shutdown(*m_pDevice);
         m_materialStagingBuffer.Shutdown(*m_pDevice);
@@ -907,18 +926,18 @@ namespace Engine::GFX
 
     void cVulkanRenderer::UpdateReflectionProbeDescriptors(sVulkanFrame& _rFrame, const std::vector<ReflectionProbeHandle>& _rActiveProbeHandles)
     {
-        std::array<VkDescriptorImageInfo, c_maxNumberOfReflectionProbes> reflectionProbeImageInfos{};
+        std::array<VkDescriptorImageInfo, c_maxNumberOfActiveReflectionProbes> reflectionProbeImageInfos{};
 
-        for (uint32_t slotIndex = 0; slotIndex < c_maxNumberOfReflectionProbes; ++slotIndex)
+        for (uint32_t slotIndex = 0; slotIndex < c_maxNumberOfActiveReflectionProbes; ++slotIndex)
         {
-            reflectionProbeImageInfos[slotIndex].sampler        = VK_NULL_HANDLE;
-            reflectionProbeImageInfos[slotIndex].imageLayout    = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            reflectionProbeImageInfos[slotIndex].sampler = VK_NULL_HANDLE;
+            reflectionProbeImageInfos[slotIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             if (slotIndex < _rActiveProbeHandles.size())
             {
                 const ReflectionProbeHandle probeHandle = _rActiveProbeHandles[slotIndex];
 
-                reflectionProbeImageInfos[slotIndex].imageView = m_vulkanReflectionProbes[probeHandle].GetPrefilteredImageView();
+                reflectionProbeImageInfos[slotIndex].imageView = m_vulkanReflectionProbes[probeHandle]->GetPrefilteredImageView();
             }
             else
             {
@@ -933,7 +952,7 @@ namespace Engine::GFX
         descriptorWrite.dstBinding      = 12;
         descriptorWrite.dstArrayElement = 0;
         descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        descriptorWrite.descriptorCount = c_maxNumberOfReflectionProbes;
+        descriptorWrite.descriptorCount = c_maxNumberOfActiveReflectionProbes;
         descriptorWrite.pImageInfo      = reflectionProbeImageInfos.data();
 
         vkUpdateDescriptorSets(m_pDevice->GetDevice(), 1, &descriptorWrite, 0, nullptr);
@@ -1098,63 +1117,65 @@ namespace Engine::GFX
 
     uint32_t cVulkanRenderer::GetReflectionProbeCount() const
     {
-        return m_reflectionProbeCount;
+        return ReflectionProbeManager::GetProbeCount();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
 
     void cVulkanRenderer::CreateReflectionProbePrefilterDescriptorSets()
     {
-        std::array<VkDescriptorSetLayout, c_maxNumberOfReflectionProbes> layouts{};
+        const uint32_t reflectionProbeCount = ReflectionProbeManager::GetProbeCount();
 
-        for (uint32_t probeIndex = 0; probeIndex < c_maxNumberOfReflectionProbes; ++probeIndex)
+        if (reflectionProbeCount == 0)
         {
-            layouts[probeIndex] = m_pPipeline->GetReflectionProbePrefilterDescriptorSetLayout();
+            return;
         }
+
+        m_reflectionProbePrefilterDescriptorSets.resize(reflectionProbeCount, VK_NULL_HANDLE);
+
+        std::vector<VkDescriptorSetLayout> layouts(reflectionProbeCount, m_pPipeline->GetReflectionProbePrefilterDescriptorSetLayout());
 
         VkDescriptorSetAllocateInfo allocInfo{};
 
-        allocInfo.sType                 = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool        = m_pDescriptorPool;
-        allocInfo.descriptorSetCount    = c_maxNumberOfReflectionProbes;
-        allocInfo.pSetLayouts           = layouts.data();
+        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool     = m_pDescriptorPool;
+        allocInfo.descriptorSetCount = reflectionProbeCount;
+        allocInfo.pSetLayouts        = layouts.data();
 
         if (vkAllocateDescriptorSets(m_pDevice->GetDevice(), &allocInfo, m_reflectionProbePrefilterDescriptorSets.data()) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to allocate reflection probe prefilter descriptor sets!");
         }
 
-        for (uint32_t probeIndex = 0; probeIndex < c_maxNumberOfReflectionProbes; ++probeIndex)
+        for (ReflectionProbeHandle probeHandle = 0; probeHandle < reflectionProbeCount; ++probeHandle)
         {
-            const uint32_t sourceProbeIndex = probeIndex < m_reflectionProbeCount ? probeIndex : 0;
-
             VkDescriptorImageInfo captureImageInfo{};
 
             captureImageInfo.sampler        = VK_NULL_HANDLE;
-            captureImageInfo.imageView      = m_vulkanReflectionProbes[sourceProbeIndex].GetCaptureImageView();
+            captureImageInfo.imageView      = m_vulkanReflectionProbes[probeHandle]->GetCaptureImageView();
             captureImageInfo.imageLayout    = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             VkDescriptorImageInfo captureSamplerInfo{};
 
-            captureSamplerInfo.sampler      = m_vulkanReflectionProbes[sourceProbeIndex].GetSampler();
+            captureSamplerInfo.sampler      = m_vulkanReflectionProbes[probeHandle]->GetSampler();
             captureSamplerInfo.imageView    = VK_NULL_HANDLE;
             captureSamplerInfo.imageLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
 
             std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
 
-            descriptorWrites[0].sType               = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet              = m_reflectionProbePrefilterDescriptorSets[probeIndex];
-            descriptorWrites[0].dstBinding          = 0;
-            descriptorWrites[0].descriptorType      = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            descriptorWrites[0].descriptorCount     = 1;
-            descriptorWrites[0].pImageInfo          = &captureImageInfo;
+            descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[0].dstSet          = m_reflectionProbePrefilterDescriptorSets[probeHandle];
+            descriptorWrites[0].dstBinding      = 0;
+            descriptorWrites[0].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            descriptorWrites[0].descriptorCount = 1;
+            descriptorWrites[0].pImageInfo      = &captureImageInfo;
 
-            descriptorWrites[1].sType               = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet              = m_reflectionProbePrefilterDescriptorSets[probeIndex];
-            descriptorWrites[1].dstBinding          = 1;
-            descriptorWrites[1].descriptorType      = VK_DESCRIPTOR_TYPE_SAMPLER;
-            descriptorWrites[1].descriptorCount     = 1;
-            descriptorWrites[1].pImageInfo          = &captureSamplerInfo;
+            descriptorWrites[1].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[1].dstSet          = m_reflectionProbePrefilterDescriptorSets[probeHandle];
+            descriptorWrites[1].dstBinding      = 1;
+            descriptorWrites[1].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
+            descriptorWrites[1].descriptorCount = 1;
+            descriptorWrites[1].pImageInfo      = &captureSamplerInfo;
 
             vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
@@ -1171,7 +1192,7 @@ namespace Engine::GFX
             throw std::runtime_error("No active reflection probe!");
         }
 
-        cVulkanReflectionProbe& rVulkanProbe = m_vulkanReflectionProbes[probeIndex];
+        cVulkanReflectionProbe& rVulkanProbe = *m_vulkanReflectionProbes[probeIndex];
 
         if (!m_hasFrameStarted)
         {
@@ -1391,12 +1412,12 @@ namespace Engine::GFX
 
     void cVulkanRenderer::PrefilterReflectionProbe(uint32_t _probeIndex)
     {
-        if (_probeIndex >= m_reflectionProbeCount)
+        if (_probeIndex >= ReflectionProbeManager::GetProbeCount())
         {
             throw std::runtime_error("Invalid reflection probe index!");
         }
 
-        cVulkanReflectionProbe& rVulkanProbe = m_vulkanReflectionProbes[_probeIndex];
+        cVulkanReflectionProbe& rVulkanProbe = *m_vulkanReflectionProbes[_probeIndex];
 
         if (!m_hasFrameStarted)
         {
@@ -1729,9 +1750,9 @@ namespace Engine::GFX
 
     void cVulkanRenderer::BeginReflectionProbeRendering(uint32_t _probeIndex)
     {
-        if (_probeIndex >= m_reflectionProbeCount)
+        if (_probeIndex >= ReflectionProbeManager::GetProbeCount())
         {
-            throw std::runtime_error("Invalid reflection probe index!");
+            throw std::runtime_error("Invalid reflection probe handle!");
         }
 
         if (!m_hasFrameStarted)
@@ -1746,10 +1767,10 @@ namespace Engine::GFX
 
         m_activeReflectionProbeIndex = _probeIndex;
 
-        cVulkanReflectionProbe& rVulkanProbe = m_vulkanReflectionProbes[_probeIndex];
+        cVulkanReflectionProbe& rVulkanProbe = *m_vulkanReflectionProbes[_probeIndex];
 
-        sVulkanFrame& rFrame = m_frames[m_currentFrame];
-        VkCommandBuffer pCommandBuffer = rFrame.pCommandBuffer;
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
 
         VkImageMemoryBarrier colorBarrier{};
 
@@ -1787,7 +1808,6 @@ namespace Engine::GFX
         if (m_reflectionProbeDepthLayout == VK_IMAGE_LAYOUT_UNDEFINED)
         {
             m_reflectionProbeDepthImage.TransitionLayout(*m_pDevice, pCommandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT);
-
             m_reflectionProbeDepthLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         }
     }
@@ -1804,7 +1824,7 @@ namespace Engine::GFX
         const uint32_t probeIndex = m_activeReflectionProbeIndex;
 
         const sReflectionProbe& rProbe = ReflectionProbeManager::GetProbe(probeIndex);
-        cVulkanReflectionProbe& rVulkanProbe = m_vulkanReflectionProbes[probeIndex];
+        cVulkanReflectionProbe& rVulkanProbe = *m_vulkanReflectionProbes[probeIndex];
 
         if (_faceIndex >= 6)
         {
@@ -2123,31 +2143,28 @@ namespace Engine::GFX
 
     void cVulkanRenderer::CreateDescriptorPool()
     {
+        const uint32_t reflectionProbeCount = ReflectionProbeManager::GetProbeCount();
 
         std::array<VkDescriptorPoolSize, 4> poolSizes{};
 
-        // frame uniform buffer
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = c_maxNumberOfFrames;
 
-        // instance, light, material, shadow storage buffer 
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         poolSizes[1].descriptorCount = c_maxNumberOfFrames * 4;
 
-        // shadow image + environment image + BRDF LUT + irradiance image + reflection 
         poolSizes[2].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        poolSizes[2].descriptorCount = c_maxNumberOfFrames * (4 + c_maxNumberOfReflectionProbes) + c_maxNumberOfReflectionProbes;
+        poolSizes[2].descriptorCount = c_maxNumberOfFrames * (4 + c_maxNumberOfActiveReflectionProbes) + reflectionProbeCount;
 
-        // shadow sampler + environment sampler + BRDF sampler
         poolSizes[3].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-        poolSizes[3].descriptorCount = c_maxNumberOfFrames * 3 + c_maxNumberOfReflectionProbes;
+        poolSizes[3].descriptorCount = c_maxNumberOfFrames * 3 + reflectionProbeCount;
 
         VkDescriptorPoolCreateInfo poolInfo{};
 
         poolInfo.sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+        poolInfo.poolSizeCount  = static_cast<uint32_t>(poolSizes.size());
         poolInfo.pPoolSizes     = poolSizes.data();
-        poolInfo.maxSets        = c_maxNumberOfFrames + c_maxNumberOfReflectionProbes;
+        poolInfo.maxSets        = c_maxNumberOfFrames + reflectionProbeCount;
 
         if (vkCreateDescriptorPool(m_pDevice->GetDevice(), &poolInfo, nullptr, &m_pDescriptorPool) != VK_SUCCESS)
         {
@@ -2292,13 +2309,13 @@ namespace Engine::GFX
             irradianceImageInfo.imageView   = m_environment.GetIrradianceImageView();
             irradianceImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-            std::array<VkDescriptorImageInfo, c_maxNumberOfReflectionProbes> reflectionProbeImageInfos{};
+            std::array<VkDescriptorImageInfo, c_maxNumberOfActiveReflectionProbes> reflectionProbeImageInfos{};
 
-            for (uint32_t probeIndex = 0; probeIndex < c_maxNumberOfReflectionProbes; ++probeIndex)
+            for (uint32_t probeIndex = 0; probeIndex < c_maxNumberOfActiveReflectionProbes; ++probeIndex)
             {
-                reflectionProbeImageInfos[probeIndex].sampler       = VK_NULL_HANDLE;
-                reflectionProbeImageInfos[probeIndex].imageView     = m_environment.GetImageView();
-                reflectionProbeImageInfos[probeIndex].imageLayout   = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                reflectionProbeImageInfos[probeIndex].sampler     = VK_NULL_HANDLE;
+                reflectionProbeImageInfos[probeIndex].imageView   = m_environment.GetImageView();
+                reflectionProbeImageInfos[probeIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
 
             std::array<VkWriteDescriptorSet, 13> descriptorWrites{};
@@ -2403,7 +2420,7 @@ namespace Engine::GFX
             descriptorWrites[12].dstBinding         = 12;
             descriptorWrites[12].dstArrayElement    = 0;
             descriptorWrites[12].descriptorType     = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            descriptorWrites[12].descriptorCount    = c_maxNumberOfReflectionProbes;
+            descriptorWrites[12].descriptorCount    = c_maxNumberOfActiveReflectionProbes;
             descriptorWrites[12].pImageInfo         = reflectionProbeImageInfos.data();
 
             vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
@@ -2445,18 +2462,6 @@ namespace Engine::GFX
             frameData.cameraPosition[2]
         };
 
-        const std::vector<ReflectionProbeHandle> activeProbeHandles = ReflectionProbeManager::FindActiveProbeIndices(cameraPosition, c_maxNumberOfReflectionProbes, 1);
-
-        std::cout << "Active probes: " << activeProbeHandles.size() << '\n';
-
-        for (ReflectionProbeHandle probeHandle : activeProbeHandles)
-        {
-            std::cout << "  Probe: " << probeHandle << '\n';
-        }
-
-        UpdateReflectionProbeDescriptors(_rFrame, activeProbeHandles);
-        frameData.reflectionProbeCount = static_cast<uint32_t>(activeProbeHandles.size());
-
         _rCamera.GetDirection(frameData.cameraDirection);
 
         frameData.viewportSize[0] = width;
@@ -2472,16 +2477,18 @@ namespace Engine::GFX
         frameData.lightCount    = static_cast<uint32_t>(LightManager::GetLights().size());
         frameData.materialCount = static_cast<uint32_t>(MaterialManager::GetMaterials().size());
 
-        
+        const std::vector<ReflectionProbeHandle> activeProbeHandles = ReflectionProbeManager::FindActiveProbeIndices(cameraPosition, c_maxNumberOfActiveReflectionProbes, 1);
+        UpdateReflectionProbeDescriptors(_rFrame, activeProbeHandles);
+        frameData.reflectionProbeCount = static_cast<uint32_t>(activeProbeHandles.size());
 
-        for (uint32_t probeIndex = 0; probeIndex < m_reflectionProbeCount; ++probeIndex)
+        for (uint32_t slotIndex = 0; slotIndex < frameData.reflectionProbeCount; ++slotIndex)
         {
-            const ReflectionProbeHandle probeHandle = activeProbeHandles[probeIndex];
+            const ReflectionProbeHandle probeHandle = activeProbeHandles[slotIndex];
 
-            const sReflectionProbe&         rProbe          = ReflectionProbeManager::GetProbe(probeHandle);
-            const cVulkanReflectionProbe&   rVulkanProbe    = m_vulkanReflectionProbes[probeIndex];
+            const sReflectionProbe&       rProbe        = ReflectionProbeManager::GetProbe(probeHandle);
+            const cVulkanReflectionProbe& rVulkanProbe  = *m_vulkanReflectionProbes[probeHandle];
 
-            sReflectionProbeGPU& rProbeGPU = frameData.reflectionProbes[probeIndex];
+            sReflectionProbeGPU& rProbeGPU = frameData.reflectionProbes[slotIndex];
 
             rProbeGPU.positionMaxMip[0] = rProbe.position.x();
             rProbeGPU.positionMaxMip[1] = rProbe.position.y();
@@ -2496,7 +2503,7 @@ namespace Engine::GFX
             rProbeGPU.boxMax[0] = rProbe.boxMax.x();
             rProbeGPU.boxMax[1] = rProbe.boxMax.y();
             rProbeGPU.boxMax[2] = rProbe.boxMax.z();
-            rProbeGPU.boxMax[3] = 0.0f;
+            rProbeGPU.boxMax[3] = static_cast<float>(rProbe.projectionType);
         }
 
         _rFrame.frameUniformedBuffer.Write(&frameData, sizeof(sFrameUniformData), 0);

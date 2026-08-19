@@ -19,6 +19,7 @@
 #include <array>
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 namespace Engine::GFX
 {
@@ -167,19 +168,20 @@ namespace Engine::GFX
 
         private:
 
-            std::array<cVulkanReflectionProbe, c_maxNumberOfReflectionProbes> m_vulkanReflectionProbes;
 
             cVulkanImage m_reflectionProbeDepthImage;
 
-            std::array<VkImageLayout, c_maxNumberOfReflectionProbes> m_reflectionProbeCaptureLayouts;
-            std::array<VkImageLayout, c_maxNumberOfReflectionProbes> m_reflectionProbePrefilteredLayouts;
-
             VkImageLayout m_reflectionProbeDepthLayout          = VK_IMAGE_LAYOUT_UNDEFINED;
-
-            std::array<VkDescriptorSet, c_maxNumberOfReflectionProbes> m_reflectionProbePrefilterDescriptorSets;
 
             uint32_t m_reflectionProbeCount = 0;
             uint32_t m_activeReflectionProbeIndex = UINT32_MAX;
+
+            std::vector<std::unique_ptr<cVulkanReflectionProbe>> m_vulkanReflectionProbes;
+
+            std::vector<VkImageLayout> m_reflectionProbeCaptureLayouts;
+            std::vector<VkImageLayout> m_reflectionProbePrefilteredLayouts;
+
+            std::vector<VkDescriptorSet> m_reflectionProbePrefilterDescriptorSets;
 
             bool m_reflectionProbeDirty = true;
     };

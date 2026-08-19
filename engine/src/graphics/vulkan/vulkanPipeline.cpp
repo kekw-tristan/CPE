@@ -465,7 +465,7 @@ namespace Engine::GFX
         // Binding 12 - Reflection Probe Map
         bindings[12].binding            = 12;
         bindings[12].descriptorType     = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        bindings[12].descriptorCount    = c_maxNumberOfReflectionProbes;
+        bindings[12].descriptorCount    = c_maxNumberOfActiveReflectionProbes;
         bindings[12].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
         bindings[12].pImmutableSamplers = nullptr;
 

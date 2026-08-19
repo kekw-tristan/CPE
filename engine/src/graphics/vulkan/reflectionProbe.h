@@ -9,17 +9,32 @@
 namespace Engine::GFX
 {
 
+    struct sReflectionProbeProjectionType
+    {
+        enum Enum
+        {
+            Infinite,
+            Box,
+
+            NumberOfElements,
+            Undefined = -1
+        };
+    };
+
+
     struct sReflectionProbe
     {
-        Math::cVec3f position = { 0.f, 3.f, 0.f };
+        Math::cVec3f position;
 
-        Math::cVec3f boxMin = { -20.f, 0.f, -20.f };
-        Math::cVec3f boxMax = { 20.f, 10.f, 20.f };
+        Math::cVec3f boxMin;
+        Math::cVec3f boxMax;
 
-        float radius = 30.f;
-        float blendDistance = 3.f;
+        float radius = 30.0f;
+        float blendDistance = 2.0f;
 
         uint32_t resolution = 256;
+
+        sReflectionProbeProjectionType::Enum projectionType = sReflectionProbeProjectionType::Infinite;
 
         bool dirty = true;
     };

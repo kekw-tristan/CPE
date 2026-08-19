@@ -607,10 +607,20 @@ float3 EvaluateSpotLight(
 // Ambient / global IBL
 // -----------------------------------------------------------------------------------------------------------------------------
 
-float3 EvaluateAmbient(float3 normal, float3 viewDirection, float3 albedo, float roughness, float metallic, float ambientStrength)
+float3 EvaluateAmbient(
+    float3 normal,
+    float3 viewDirection,
+    float3 albedo,
+    float roughness,
+    float metallic,
+    float ambientStrength)
 {
     roughness = clamp(roughness, 0.045f, 1.0f);
     metallic = saturate(metallic);
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Fresnel / material
+    // -------------------------------------------------------------------------------------------------------------------------
 
     float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metallic);
 
@@ -621,21 +631,53 @@ float3 EvaluateAmbient(float3 normal, float3 viewDirection, float3 albedo, float
     float3 kS = fresnel;
     float3 kD = (1.0f - kS) * (1.0f - metallic);
 
+    // -------------------------------------------------------------------------------------------------------------------------
     // Diffuse IBL
+    // -------------------------------------------------------------------------------------------------------------------------
+
     float3 irradiance = irradianceMap.SampleLevel(environmentSampler, normal, 0.0f).rgb;
+
     float3 diffuseAmbient = kD * albedo * irradiance;
 
+    // -------------------------------------------------------------------------------------------------------------------------
     // Specular IBL
+    //
+    // IMPORTANT:
+    // Reflection probe captures never sample other local reflection probes.
+    // This prevents recursive probe feedback.
+    // -------------------------------------------------------------------------------------------------------------------------
+
     float3 reflectionDirection = reflect(-viewDirection, normal);
 
-    const float maxMipLevel = 7.0f;
-    float mipLevel = roughness * maxMipLevel;
+    const float maxEnvironmentMip = 7.0f;
 
-    float3 prefilteredColor = environmentMap.SampleLevel(environmentSampler, reflectionDirection, mipLevel).rgb;
+    // Do not capture razor-sharp mirror reflections into another probe.
+    const float minimumCaptureRoughness = 0.20f;
 
-    float2 brdf = brdfLUT.SampleLevel(brdfSampler, float2(NdotV, roughness), 0.0f).rg;
+    float captureRoughness = max(roughness, minimumCaptureRoughness);
+    float environmentMipLevel = captureRoughness * maxEnvironmentMip;
+
+    float3 prefilteredColor = environmentMap.SampleLevel(
+        environmentSampler,
+        reflectionDirection,
+        environmentMipLevel
+    ).rgb;
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Split-sum BRDF
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    float2 brdf = brdfLUT.SampleLevel(
+        brdfSampler,
+        float2(NdotV, roughness),
+        0.0f
+    ).rg;
 
     float3 specularAmbient = prefilteredColor * (F0 * brdf.x + brdf.y);
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Final ambient
+    // -------------------------------------------------------------------------------------------------------------------------
 
     return (diffuseAmbient + specularAmbient) * ambientStrength;
 }

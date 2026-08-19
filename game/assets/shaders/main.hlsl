@@ -7,6 +7,7 @@ struct ReflectionProbeData
     float4 boxMax;
 };
 
+
 [[vk::binding(0, 0)]]
 cbuffer FrameUniformBuffer
 {
@@ -52,9 +53,9 @@ struct LightData
     float4 directionType;
     float4 colorIntensity;
     float4 spotData;
-    
+
     int shadowIndex;
-    int padding0; 
+    int padding0;
     int padding1;
     int padding2;
 };
@@ -85,10 +86,11 @@ struct MaterialData
 [[vk::binding(3, 0)]]
 StructuredBuffer<MaterialData> materials;
 
+
 struct ShadowData
 {
     row_major float4x4 viewProjection[6];
-    
+
     float4 cascadeSplits;
 
     uint lightIndex;
@@ -97,32 +99,42 @@ struct ShadowData
     uint padding;
 };
 
+
 [[vk::binding(4, 0)]]
 StructuredBuffer<ShadowData> shadows;
+
 
 [[vk::binding(5, 0)]]
 Texture2DArray<float> shadowMap;
 
+
 [[vk::binding(6, 0)]]
 SamplerState shadowSampler;
+
 
 [[vk::binding(7, 0)]]
 TextureCube<float4> environmentMap;
 
+
 [[vk::binding(8, 0)]]
 SamplerState environmentSampler;
+
 
 [[vk::binding(9, 0)]]
 Texture2D<float2> brdfLUT;
 
+
 [[vk::binding(10, 0)]]
 SamplerState brdfSampler;
+
 
 [[vk::binding(11, 0)]]
 TextureCube<float4> irradianceMap;
 
+
 [[vk::binding(12, 0)]]
 TextureCube<float4> reflectionProbeMaps[MAX_REFLECTION_PROBES];
+
 
 static const float PI = 3.14159265359f;
 
@@ -130,24 +142,30 @@ static const uint LIGHT_TYPE_DIRECTIONAL = 0;
 static const uint LIGHT_TYPE_POINT = 1;
 static const uint LIGHT_TYPE_SPOT = 2;
 
+static const uint REFLECTION_PROBE_PROJECTION_INFINITE = 0;
+static const uint REFLECTION_PROBE_PROJECTION_BOX = 1;
 
 struct VSInput
 {
     float3 position : POSITION;
-    float3 normal   : NORMAL;
+    float3 normal : NORMAL;
     float2 texCoord : TEXCOORD0;
 };
 
 
 struct VSOutput
 {
-    float4 position      : SV_Position;
-                         
-    float3 worldPosition : POSITION0;
-    float3 worldNormal   : NORMAL0;
-                         
-    float2 texCoord      : TEXCOORD0;
-    float4 color         : COLOR0;
+    float4 position : SV_Position;
+
+    float3 worldPosition    : POSITION0;
+    float3 worldNormal      : NORMAL0;
+
+    float2 texCoord : TEXCOORD0;
+    float4 color    : COLOR0;
+
+    nointerpolation uint2  reflectionProbeIndices  : TEXCOORD1;
+    nointerpolation float2 reflectionProbeWeights  : TEXCOORD2;
+    nointerpolation float  reflectionProbeCoverage : TEXCOORD3;
 
     nointerpolation int materialIndex : MATERIAL_INDEX;
 };
@@ -167,6 +185,9 @@ float3 SafeNormalize(float3 value)
     return value * rsqrt(lengthSquared);
 }
 
+
+float GetReflectionProbeWeight(float3 worldPosition, float3 probePosition, float3 boxMin, float3 boxMax, float blendDistance);
+
 // -----------------------------------------------------------------------------------------------------------------------------
 // Vertex Shader
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -179,14 +200,63 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
     float4 worldPosition = mul(float4(input.position, 1.0f), instance.worldMatrix);
 
-    output.position      = mul(viewProj, worldPosition);
+    output.position = mul(viewProj, worldPosition);
     output.worldPosition = worldPosition.xyz;
 
     float3x3 normalMatrix = (float3x3) instance.worldMatrix;
-    
-    output.worldNormal   = SafeNormalize(mul(input.normal, normalMatrix));
-    output.texCoord      = input.texCoord;
-    output.color         = instance.color;
+
+    output.worldNormal = SafeNormalize(mul(input.normal, normalMatrix));
+
+    output.texCoord = input.texCoord;
+    output.color = instance.color;
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Reflection probe selection
+    //
+    // The local origin transformed by the instance matrix is used as one stable anchor for the complete instance.
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    float3 reflectionProbeAnchor = mul(float4(0.0f, 0.0f, 0.0f, 1.0f), instance.worldMatrix).xyz;
+
+    uint bestProbeIndex0 = 0;
+    uint bestProbeIndex1 = 0;
+
+    float bestProbeWeight0 = 0.0f;
+    float bestProbeWeight1 = 0.0f;
+
+    uint activeProbeCount = min(reflectionProbeCount, MAX_REFLECTION_PROBES);
+
+    for (uint probeIndex = 0; probeIndex < activeProbeCount; ++probeIndex)
+    {
+        ReflectionProbeData probe = reflectionProbes[probeIndex];
+
+        float probeWeight = GetReflectionProbeWeight(
+            reflectionProbeAnchor,
+            probe.positionMaxMip.xyz,
+            probe.boxMinBlendDistance.xyz,
+            probe.boxMax.xyz,
+            probe.boxMinBlendDistance.w
+        );
+
+        if (probeWeight > bestProbeWeight0)
+        {
+            bestProbeWeight1 = bestProbeWeight0;
+            bestProbeIndex1 = bestProbeIndex0;
+
+            bestProbeWeight0 = probeWeight;
+            bestProbeIndex0 = probeIndex;
+        }
+        else if (probeWeight > bestProbeWeight1)
+        {
+            bestProbeWeight1 = probeWeight;
+            bestProbeIndex1 = probeIndex;
+        }
+    }
+
+    output.reflectionProbeIndices = uint2(bestProbeIndex0, bestProbeIndex1);
+    output.reflectionProbeWeights = float2(bestProbeWeight0, bestProbeWeight1);
+    output.reflectionProbeCoverage = saturate(bestProbeWeight0);
+
     output.materialIndex = instance.materialIndex;
 
     return output;
@@ -199,11 +269,11 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
 float DistributionGGX(float NdotH, float roughness)
 {
-    float alpha         = roughness * roughness;
-    float alphaSquared  = alpha     * alpha;
+    float alpha = roughness * roughness;
+    float alphaSquared = alpha * alpha;
 
-    float denominator   = NdotH * NdotH * (alphaSquared - 1.0f) + 1.0f;
-    denominator         = PI * denominator * denominator;
+    float denominator = NdotH * NdotH * (alphaSquared - 1.0f) + 1.0f;
+    denominator = PI * denominator * denominator;
 
     return alphaSquared / max(denominator, 0.000001f);
 }
@@ -224,7 +294,7 @@ float GeometrySchlickGGX(float NdotV, float roughness)
 
 float GeometrySmith(float NdotV, float NdotL, float roughness)
 {
-    float geometryView  = GeometrySchlickGGX(NdotV, roughness);
+    float geometryView = GeometrySchlickGGX(NdotV, roughness);
     float geometryLight = GeometrySchlickGGX(NdotL, roughness);
 
     return geometryView * geometryLight;
@@ -240,6 +310,7 @@ float3 FresnelSchlick(float cosTheta, float3 F0)
     return F0 + (1.0f - F0) * factor;
 }
 
+
 // -----------------------------------------------------------------------------------------------------------------------------
 
 float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
@@ -250,6 +321,7 @@ float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
 
     return F0 + (roughnessFresnel - F0) * factor;
 }
+
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Shadow
@@ -271,8 +343,8 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
         return 0.0f;
 
     float3 projectedCoords = lightSpacePosition.xyz / lightSpacePosition.w;
-    float2 shadowUV        = projectedCoords.xy * 0.5f + 0.5f;
-    float  currentDepth    = projectedCoords.z;
+    float2 shadowUV = projectedCoords.xy * 0.5f + 0.5f;
+    float currentDepth = projectedCoords.z;
 
     if (shadowUV.x < 0.0f || shadowUV.x > 1.0f || shadowUV.y < 0.0f || shadowUV.y > 1.0f)
         return 0.0f;
@@ -281,10 +353,9 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
         return 0.0f;
 
     uint layer = shadowData.firstLayer + matrixIndex;
-    
-    float closestDepth  = shadowMap.Sample(shadowSampler, float3(shadowUV, float(layer))).r;
-    float bias          = max(0.00075f * (1.0f - NdotL), 0.000075f);
-    float shadow        = 0.0f;
+
+    float bias = max(0.00075f * (1.0f - NdotL), 0.000075f);
+    float shadow = 0.0f;
 
     uint width;
     uint height;
@@ -301,6 +372,7 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
         for (int y = -1; y <= 1; ++y)
         {
             float2 sampleUV = shadowUV + float2(x, y) * texelSize;
+
             float closestDepth = shadowMap.Sample(shadowSampler, float3(sampleUV, float(layer))).r;
 
             shadow += currentDepth - bias > closestDepth ? 1.0f : 0.0f;
@@ -308,14 +380,14 @@ float CalculateShadow(float3 worldPosition, float3 normal, float3 lightDirection
     }
 
     return shadow / 9.0f;
-    
 }
+
 
 // -----------------------------------------------------------------------------------------------------------------------------
 
 uint GetPointShadowMatrixIndex(float3 worldPosition, float3 lightPosition)
 {
-    float3 direction    = worldPosition - lightPosition;
+    float3 direction = worldPosition - lightPosition;
     float3 absDirection = abs(direction);
 
     if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
@@ -330,6 +402,7 @@ uint GetPointShadowMatrixIndex(float3 worldPosition, float3 lightPosition)
 
     return direction.z >= 0.0f ? 4 : 5;
 }
+
 
 // -----------------------------------------------------------------------------------------------------------------------------
 
@@ -350,6 +423,7 @@ uint GetDirectionalCascadeIndex(float viewDepth, ShadowData shadowData)
     return shadowData.matrixCount;
 }
 
+
 // -----------------------------------------------------------------------------------------------------------------------------
 
 float GetCameraViewDepth(float3 worldPosition)
@@ -357,13 +431,14 @@ float GetCameraViewDepth(float3 worldPosition)
     return dot(worldPosition - cameraPosition.xyz, SafeNormalize(cameraDirection.xyz));
 }
 
+
 // -----------------------------------------------------------------------------------------------------------------------------
 // Shape Lighting
 // -----------------------------------------------------------------------------------------------------------------------------
 
 float EvaluateShapeDiffuse(float NdotLRaw, float lightWrap, float shapeContrast)
 {
-    lightWrap     = saturate(lightWrap);
+    lightWrap = saturate(lightWrap);
     shapeContrast = max(shapeContrast, 0.05f);
 
     float wrappedNdotL = saturate((NdotLRaw + lightWrap) / (1.0f + lightWrap));
@@ -388,9 +463,10 @@ float3 EvaluateSurfaceLight(
     float shapeContrast)
 {
     float3 viewDirection = SafeNormalize(cameraPosition.xyz - worldPosition);
-    float NdotLRaw       = dot(normal, lightDirection);
-    float NdotL          = saturate(NdotLRaw);
-    float NdotV          = saturate(dot(normal, viewDirection));
+
+    float NdotLRaw = dot(normal, lightDirection);
+    float NdotL = saturate(NdotLRaw);
+    float NdotV = saturate(dot(normal, viewDirection));
 
     float shapedNdotL = EvaluateShapeDiffuse(NdotLRaw, lightWrap, shapeContrast);
 
@@ -398,20 +474,21 @@ float3 EvaluateSurfaceLight(
         return float3(0.0f, 0.0f, 0.0f);
 
     float3 halfVector = SafeNormalize(viewDirection + lightDirection);
-    float NdotH       = saturate(dot(normal, halfVector));
-    float VdotH       = saturate(dot(viewDirection, halfVector));
+
+    float NdotH = saturate(dot(normal, halfVector));
+    float VdotH = saturate(dot(viewDirection, halfVector));
 
     roughness = clamp(roughness, 0.045f, 1.0f);
-    metallic  = saturate(metallic);
+    metallic = saturate(metallic);
 
     float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), albedo, metallic);
 
-    float distribution  = DistributionGGX(NdotH, roughness);
-    float geometry      = GeometrySmith(NdotV, NdotL, roughness);
-    float3 fresnel      = FresnelSchlick(VdotH, F0);
+    float distribution = DistributionGGX(NdotH, roughness);
+    float geometry = GeometrySmith(NdotV, NdotL, roughness);
+    float3 fresnel = FresnelSchlick(VdotH, F0);
 
-    float3 specularNumerator    = distribution * geometry * fresnel;
-    float  specularDenominator  = max(4.0f * NdotV * NdotL, 0.0001f);
+    float3 specularNumerator = distribution * geometry * fresnel;
+    float specularDenominator = max(4.0f * NdotV * NdotL, 0.0001f);
 
     float3 specular = specularNumerator / specularDenominator;
 
@@ -420,7 +497,7 @@ float3 EvaluateSurfaceLight(
 
     float3 diffuse = kD * albedo / PI;
 
-    float3 diffuseContribution  = diffuse * radiance * shapedNdotL;
+    float3 diffuseContribution = diffuse * radiance * shapedNdotL;
     float3 specularContribution = specular * radiance * NdotL;
 
     return diffuseContribution + specularContribution;
@@ -441,9 +518,9 @@ float3 EvaluateDirectionalLight(
     float lightWrap,
     float shapeContrast)
 {
-    float3 lightDirection   = SafeNormalize(-light.directionType.xyz);
-    float3 lightColor       = light.colorIntensity.rgb;
-    float  lightIntensity   = light.colorIntensity.w;
+    float3 lightDirection = SafeNormalize(-light.directionType.xyz);
+    float3 lightColor = light.colorIntensity.rgb;
+    float lightIntensity = light.colorIntensity.w;
 
     float3 radiance = lightColor * lightIntensity;
 
@@ -478,14 +555,15 @@ float3 EvaluatePointLight(
     float3 lightDirection = toLight / distanceToLight;
 
     float normalizedDistance = distanceToLight / radius;
-    float rangeAttenuation   = saturate(1.0f - normalizedDistance * normalizedDistance * normalizedDistance * normalizedDistance);
-    
+
+    float rangeAttenuation = saturate(1.0f - normalizedDistance * normalizedDistance * normalizedDistance * normalizedDistance);
     rangeAttenuation *= rangeAttenuation;
 
-    float distanceAttenuation   = 1.0f / (1.0f + distanceSquared);
-    float attenuation           = rangeAttenuation * distanceAttenuation;
+    float distanceAttenuation = 1.0f / (1.0f + distanceSquared);
 
-    float3 lightColor    = light.colorIntensity.rgb;
+    float attenuation = rangeAttenuation * distanceAttenuation;
+
+    float3 lightColor = light.colorIntensity.rgb;
     float lightIntensity = light.colorIntensity.w;
 
     float3 radiance = lightColor * lightIntensity * attenuation;
@@ -551,6 +629,8 @@ float3 EvaluateSpotLight(
 
 
 // -----------------------------------------------------------------------------------------------------------------------------
+// Reflection Probe Box Projection
+// -----------------------------------------------------------------------------------------------------------------------------
 
 float3 BoxProjectReflection(
     float3 worldPosition,
@@ -589,41 +669,60 @@ float3 BoxProjectReflection(
     return SafeNormalize(intersectionPosition - probePosition);
 }
 
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// Reflection Probe Weight
 // -----------------------------------------------------------------------------------------------------------------------------
 
-float GetReflectionProbeWeight(float3 worldPosition, float3 boxMin, float3 boxMax, float blendDistance)
+float GetReflectionProbeWeight(float3 worldPosition, float3 probePosition, float3 boxMin, float3 boxMax, float blendDistance)
 {
     bool insideBox =
         worldPosition.x >= boxMin.x && worldPosition.x <= boxMax.x &&
-        worldPosition.y >= boxMin.y && worldPosition.y <= boxMax.y &&
         worldPosition.z >= boxMin.z && worldPosition.z <= boxMax.z;
 
     if (!insideBox)
         return 0.0f;
 
-    float3 distanceToMin = worldPosition - boxMin;
-    float3 distanceToMax = boxMax - worldPosition;
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Center distance
+    //
+    // Probes close to their capture position get a higher priority than probes whose influence box only happens to overlap.
+    // -------------------------------------------------------------------------------------------------------------------------
 
-    float edgeDistance = min(
-        min(distanceToMin.x, distanceToMax.x),
-        min(
-            min(distanceToMin.y, distanceToMax.y),
-            min(distanceToMin.z, distanceToMax.z)
-        )
-    );
+    float2 halfExtent = max((boxMax.xz - boxMin.xz) * 0.5f, float2(0.0001f, 0.0001f));
+
+    float2 normalizedOffset = abs(worldPosition.xz - probePosition.xz) / halfExtent;
+
+    float normalizedDistanceSquared = dot(normalizedOffset, normalizedOffset);
+
+    float centerWeight = 1.0f / (1.0f + normalizedDistanceSquared * 4.0f);
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Influence box edge fade
+    //
+    // Center weighting alone must not be combined with a hard box cutoff, otherwise a visible seam appears at the box edge.
+    // -------------------------------------------------------------------------------------------------------------------------
 
     if (blendDistance <= 0.0001f)
-        return 1.0f;
+        return centerWeight;
 
-    return saturate(edgeDistance / blendDistance);
+    float distanceX = min(worldPosition.x - boxMin.x, boxMax.x - worldPosition.x);
+    float distanceZ = min(worldPosition.z - boxMin.z, boxMax.z - worldPosition.z);
+
+    float edgeWeightX = smoothstep(0.0f, blendDistance, distanceX);
+    float edgeWeightZ = smoothstep(0.0f, blendDistance, distanceZ);
+
+    float edgeWeight = edgeWeightX * edgeWeightZ;
+
+    return centerWeight * edgeWeight;
 }
 
-// -----------------------------------------------------------------------------------------------------------------------------
-// Ambient
-// -----------------------------------------------------------------------------------------------------------------------------
 
 float3 EvaluateAmbient(
     float3 worldPosition,
+    uint2 reflectionProbeIndices,
+    float2 reflectionProbeWeights,
+    float reflectionProbeCoverage,
     float3 normal,
     float3 viewDirection,
     float3 albedo,
@@ -661,7 +760,10 @@ float3 EvaluateAmbient(
 
     float3 reflectionDirection = reflect(-viewDirection, normal);
 
-    // Global environment is always the fallback.
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Global environment
+    // -------------------------------------------------------------------------------------------------------------------------
+
     const float maxEnvironmentMip = 7.0f;
 
     float environmentMipLevel = roughness * maxEnvironmentMip;
@@ -679,31 +781,44 @@ float3 EvaluateAmbient(
     float3 localProbeColor = float3(0.0f, 0.0f, 0.0f);
     float totalProbeWeight = 0.0f;
 
-    uint activeProbeCount = min(reflectionProbeCount, MAX_REFLECTION_PROBES);
+    // Smooth surfaces should strongly favor the dominant probe.
+    // On mirror-like surfaces the secondary probe is disabled completely to avoid parallax-correction ghosting.
 
-    for (uint probeIndex = 0; probeIndex < activeProbeCount; ++probeIndex)
+    float roughnessBlend = smoothstep(0.15f, 0.60f, roughness);
+    float probeWeightSharpness = lerp(8.0f, 1.0f, roughnessBlend);
+
+    float probeWeight0 = pow(reflectionProbeWeights.x, probeWeightSharpness);
+    float probeWeight1 = pow(reflectionProbeWeights.y, probeWeightSharpness) * roughnessBlend;
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Primary probe
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    if (probeWeight0 > 0.0001f)
     {
+        uint probeIndex = reflectionProbeIndices.x;
+
         ReflectionProbeData probe = reflectionProbes[probeIndex];
 
-        float probeWeight = GetReflectionProbeWeight(
-            worldPosition,
-            probe.boxMinBlendDistance.xyz,
-            probe.boxMax.xyz,
-            probe.boxMinBlendDistance.w
-        );
+        uint projectionType = (uint) probe.boxMax.w;
 
-        if (probeWeight <= 0.0f)
-            continue;
+        float3 correctedReflectionDirection = reflectionDirection;
 
-        float3 correctedReflectionDirection = BoxProjectReflection(
-            worldPosition,
-            reflectionDirection,
-            probe.positionMaxMip.xyz,
-            probe.boxMinBlendDistance.xyz,
-            probe.boxMax.xyz
-        );
+        if (projectionType == REFLECTION_PROBE_PROJECTION_BOX)
+        {
+            correctedReflectionDirection = BoxProjectReflection(
+                worldPosition,
+                reflectionDirection,
+                probe.positionMaxMip.xyz,
+                probe.boxMinBlendDistance.xyz,
+                probe.boxMax.xyz
+            );
+        }
 
-        float mipLevel = roughness * probe.positionMaxMip.w;
+        const float minimumProbeRoughness = 0.20f;
+
+        float probeRoughness = max(roughness, minimumProbeRoughness);
+        float mipLevel = probeRoughness * probe.positionMaxMip.w;
 
         float3 probeColor = reflectionProbeMaps[probeIndex].SampleLevel(
             environmentSampler,
@@ -711,12 +826,52 @@ float3 EvaluateAmbient(
             mipLevel
         ).rgb;
 
-        localProbeColor += probeColor * probeWeight;
-        totalProbeWeight += probeWeight;
+        localProbeColor += probeColor * probeWeight0;
+        totalProbeWeight += probeWeight0;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
-    // Blend local probes with global environment
+    // Secondary probe
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    if (probeWeight1 > 0.0001f)
+    {
+        uint probeIndex = reflectionProbeIndices.y;
+
+        ReflectionProbeData probe = reflectionProbes[probeIndex];
+        
+        uint projectionType = (uint) probe.boxMax.w;
+
+        float3 correctedReflectionDirection = reflectionDirection;
+
+        if (projectionType == REFLECTION_PROBE_PROJECTION_BOX)
+        {
+                    correctedReflectionDirection = BoxProjectReflection(
+                worldPosition,
+                reflectionDirection,
+                probe.positionMaxMip.xyz,
+                probe.boxMinBlendDistance.xyz,
+                probe.boxMax.xyz
+            );
+        }
+
+        const float minimumProbeRoughness = 0.20f;
+
+        float probeRoughness = max(roughness, minimumProbeRoughness);
+        float mipLevel = probeRoughness * probe.positionMaxMip.w;
+
+        float3 probeColor = reflectionProbeMaps[probeIndex].SampleLevel(
+            environmentSampler,
+            correctedReflectionDirection,
+            mipLevel
+        ).rgb;
+
+        localProbeColor += probeColor * probeWeight1;
+        totalProbeWeight += probeWeight1;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+    // Local / global blend
     // -------------------------------------------------------------------------------------------------------------------------
 
     float3 prefilteredColor = environmentColor;
@@ -725,42 +880,25 @@ float3 EvaluateAmbient(
     {
         localProbeColor /= totalProbeWeight;
 
-        float localCoverage = saturate(totalProbeWeight);
-
-        prefilteredColor = lerp(
-            environmentColor,
-            localProbeColor,
-            localCoverage
-        );
+        prefilteredColor = lerp(environmentColor, localProbeColor, saturate(reflectionProbeCoverage));
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
     // Split-sum BRDF
     // -------------------------------------------------------------------------------------------------------------------------
 
-    float2 brdf = brdfLUT.SampleLevel(
-        brdfSampler,
-        float2(NdotV, roughness),
-        0.0f
-    ).rg;
+    float2 brdf = brdfLUT.SampleLevel(brdfSampler, float2(NdotV, roughness), 0.0f).rg;
 
     float3 specularAmbient = prefilteredColor * (F0 * brdf.x + brdf.y);
 
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Final ambient contribution
-    // -------------------------------------------------------------------------------------------------------------------------
-
     return (diffuseAmbient + specularAmbient) * ambientStrength;
 }
-
 // -----------------------------------------------------------------------------------------------------------------------------
 
 float InterleavedGradientNoise(float2 position)
 {
     return frac(52.9829189f * frac(dot(position, float2(0.06711056f, 0.00583715f))));
 }
-
-// -----------------------------------------------------------------------------------------------------------------------------
 
 
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -827,14 +965,25 @@ float4 PSMain(VSOutput input) : SV_Target
     }
 
     // Optional: Shape-/Instance-Farbe als Material-Tint verwenden.
+
     albedo *= input.color.rgb;
 
     // -------------------------------------------------------------------------------------------------------------------------
     // Ambient
     // -------------------------------------------------------------------------------------------------------------------------
 
-    float3 finalColor = EvaluateAmbient(input.worldPosition, normal, viewDirection, albedo, roughness, metallic, ambientStrength);
-
+    float3 finalColor = EvaluateAmbient(
+        input.worldPosition,
+        input.reflectionProbeIndices,
+        input.reflectionProbeWeights,
+        input.reflectionProbeCoverage,
+        normal,
+        viewDirection,
+        albedo,
+        roughness,
+        metallic,
+        ambientStrength
+    );
     // -------------------------------------------------------------------------------------------------------------------------
     // Direct Lighting
     // -------------------------------------------------------------------------------------------------------------------------
@@ -861,9 +1010,12 @@ float4 PSMain(VSOutput input) : SV_Target
                 if (cascadeIndex < shadowData.matrixCount)
                 {
                     float3 lightDirection = SafeNormalize(-light.directionType.xyz);
+
                     float shadow = CalculateShadow(input.worldPosition, normal, lightDirection, shadowIndex, cascadeIndex);
 
-                    contribution *= 1.0f - shadow;
+                    float shadowStrength = 0.75f;
+
+                    contribution *= 1.0f - shadow * shadowStrength;
                 }
             }
 
@@ -893,6 +1045,7 @@ float4 PSMain(VSOutput input) : SV_Target
             if (light.shadowIndex >= 0)
             {
                 float3 lightDirection = SafeNormalize(light.positionRadius.xyz - input.worldPosition);
+
                 float shadow = CalculateShadow(input.worldPosition, normal, lightDirection, (uint) light.shadowIndex, 0);
 
                 contribution *= 1.0f - shadow;

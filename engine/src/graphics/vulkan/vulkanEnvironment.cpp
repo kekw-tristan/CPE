@@ -70,13 +70,13 @@ namespace Engine::GFX
 
             switch (_face)
             {
-            case 0: direction = { 1.0f, -v,    -u }; break;     // +X
-            case 1: direction = { -1.0f, -v,     u }; break;    // -X
-            case 2: direction = { u,     1.0f,  v }; break;     // +Y
-            case 3: direction = { u,    -1.0f, -v }; break;     // -Y
-            case 4: direction = { u,    -v,     1.0f }; break;  // +Z
-            case 5: direction = { -u,    -v,    -1.0f }; break; // -Z
-            default: direction = { 0.0f, 1.0f, 0.0f }; break;
+                case 0: direction = { 1.0f, -v,    -u }; break;     // +X
+                case 1: direction = { -1.0f, -v,     u }; break;    // -X
+                case 2: direction = { u,     1.0f,  v }; break;     // +Y
+                case 3: direction = { u,    -1.0f, -v }; break;     // -Y
+                case 4: direction = { u,    -v,     1.0f }; break;  // +Z
+                case 5: direction = { -u,    -v,    -1.0f }; break; // -Z
+                default: direction = { 0.0f, 1.0f, 0.0f }; break;
             }
 
             return direction.normalized();
@@ -86,19 +86,27 @@ namespace Engine::GFX
 
         Math::cVec3f EvaluateEnvironment(const Math::cVec3f& _rDirection)
         {
-            const Math::cVec3f groundColor = { 0.018f, 0.025f, 0.020f };
-            const Math::cVec3f horizonColor = { 0.65f, 0.75f, 0.95f };
-            const Math::cVec3f skyColor = { 0.06f, 0.12f, 0.28f };
+            // -------------------------------------------------------------------------------------------------------------------------
+            // Base environment
+            // -------------------------------------------------------------------------------------------------------------------------
 
-            const float hemisphere = Saturate(_rDirection.y() * 0.5f + 0.5f);
+            const Math::cVec3f groundColor = { 0.030f, 0.045f, 0.035f };
+            const Math::cVec3f horizonColor = { 0.14f, 0.18f, 0.24f };
+            const Math::cVec3f skyColor = { 0.035f, 0.075f, 0.18f };
+
+            float hemisphere = Saturate(_rDirection.y() * 0.5f + 0.5f);
+
+            // Smooth the hemisphere transition.
+            hemisphere = hemisphere * hemisphere * (3.0f - 2.0f * hemisphere);
 
             Math::cVec3f color = Math::cVec3f::lerp(groundColor, skyColor, hemisphere);
 
             // -------------------------------------------------------------------------------------------------------------------------
-            // Bright horizon
+            // Soft horizon
             // -------------------------------------------------------------------------------------------------------------------------
 
-            const float horizonFactor = std::pow(Saturate(1.0f - std::abs(_rDirection.y())), 14.0f);
+            const float horizonBase = Saturate(1.0f - std::abs(_rDirection.y()));
+            const float horizonFactor = std::pow(horizonBase, 4.0f) * 0.30f;
 
             color += horizonColor * horizonFactor;
 
@@ -107,9 +115,9 @@ namespace Engine::GFX
             // -------------------------------------------------------------------------------------------------------------------------
 
             const Math::cVec3f keyDirection = Math::cVec3f(-0.65f, 0.45f, -0.55f).normalized();
-            const Math::cVec3f keyColor = { 5.0f, 3.8f, 2.5f };
+            const Math::cVec3f keyColor = { 2.2f, 1.65f, 1.05f };
 
-            const float keyFactor = std::pow(Saturate(_rDirection.dot(keyDirection)), 48.0f);
+            const float keyFactor = std::pow(Saturate(_rDirection.dot(keyDirection)), 64.0f);
 
             color += keyColor * keyFactor;
 
@@ -118,9 +126,9 @@ namespace Engine::GFX
             // -------------------------------------------------------------------------------------------------------------------------
 
             const Math::cVec3f fillDirection = Math::cVec3f(0.70f, 0.15f, 0.45f).normalized();
-            const Math::cVec3f fillColor = { 0.35f, 0.75f, 2.2f };
+            const Math::cVec3f fillColor = { 0.18f, 0.38f, 1.0f };
 
-            const float fillFactor = std::pow(Saturate(_rDirection.dot(fillDirection)), 20.0f);
+            const float fillFactor = std::pow(Saturate(_rDirection.dot(fillDirection)), 28.0f);
 
             color += fillColor * fillFactor;
 
@@ -129,7 +137,7 @@ namespace Engine::GFX
             // -------------------------------------------------------------------------------------------------------------------------
 
             const Math::cVec3f topDirection = { 0.0f, 1.0f, 0.0f };
-            const Math::cVec3f topColor = { 1.2f, 1.35f, 1.6f };
+            const Math::cVec3f topColor = { 0.55f, 0.65f, 0.85f };
 
             const float topFactor = std::pow(Saturate(_rDirection.dot(topDirection)), 8.0f);
 
@@ -141,8 +149,8 @@ namespace Engine::GFX
 
             const float groundFactor = std::pow(Saturate(-_rDirection.y()), 2.0f);
 
-            color += Math::cVec3f(0.035f, 0.08f, 0.025f) * groundFactor;
-
+            color += Math::cVec3f(0.025f, 0.055f, 0.025f) * groundFactor;
+            return { 0.15f, 0.18f, 0.22f };
             return color;
         }
 

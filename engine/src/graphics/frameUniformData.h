@@ -22,5 +22,5 @@ struct sFrameUniformData
     uint32_t reflectionProbeCount;
     uint32_t padding1;
 
-    Engine::GFX::sReflectionProbeGPU reflectionProbes[Engine::GFX::c_maxNumberOfReflectionProbes];
+    Engine::GFX::sReflectionProbeGPU reflectionProbes[Engine::GFX::c_maxNumberOfActiveReflectionProbes];
 };

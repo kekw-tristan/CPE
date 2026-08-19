@@ -24,5 +24,5 @@ namespace Engine::GFX
 
     static constexpr uint32_t c_shadowMapResolution = 4096;
 
-    constexpr int c_maxNumberOfReflectionProbes = 8;
+    constexpr int c_maxNumberOfActiveReflectionProbes = 8;
 }
