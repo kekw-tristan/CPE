@@ -98,6 +98,10 @@ project "game"
             "vulkan",
             "glfw"
         }
+        postbuildcommands
+        {
+            'cp -r "' .. path.join(RootDir, "game", "assets") .. '" "%{cfg.targetdir}/"'
+        }
 
 
     -- ---------------------------------------------------------------------------------------------------------------------
