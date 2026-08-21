@@ -1,5 +1,8 @@
 #include "game.h"
 
+#include "graphics/light/light.h"
+#include "graphics/light/lightManager.h"
+
 #include "graphics/shapeModel/shapeModelDesc.h"
 #include "graphics/shapeModel/shapeModelManager.h"
 #include "graphics/shapeModel/shapeMeshLibrary.h"
@@ -74,25 +77,38 @@ void cGame::InitMeshes()
     using namespace Engine::GFX;
 
     sMeshData& planeData    = ShapeMeshLibrary::GetMeshData(sMeshTypes::Plane);
+    sMeshData& chunkPlane   = ShapeMeshLibrary::GetMeshData(sMeshTypes::ChunkPlane);
     sMeshData& cubeData     = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cube);
     sMeshData& pyramidData  = ShapeMeshLibrary::GetMeshData(sMeshTypes::Pyramid);
     sMeshData& sphereData   = ShapeMeshLibrary::GetMeshData(sMeshTypes::Sphere);
     sMeshData& cylinderData = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cylinder);
     sMeshData& coneData     = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cone);
 
-    m_planeMesh     = CreateMesh(planeData);
-    m_cubeMesh      = CreateMesh(cubeData);
-    m_pyramidMesh   = CreateMesh(pyramidData);
-    m_sphereMesh    = CreateMesh(sphereData);
-    m_cylinderMesh  = CreateMesh(cylinderData);
-    m_coneMesh      = CreateMesh(coneData);
+    m_planeMesh      = CreateMesh(planeData);
+    m_chunkPlaneMesh = CreateMesh(chunkPlane);
+    m_cubeMesh       = CreateMesh(cubeData);
+    m_pyramidMesh    = CreateMesh(pyramidData);
+    m_sphereMesh     = CreateMesh(sphereData);
+    m_cylinderMesh   = CreateMesh(cylinderData);
+    m_coneMesh       = CreateMesh(coneData);
 
     SubmitMesh(m_planeMesh);
+    SubmitMesh(m_chunkPlaneMesh);
     SubmitMesh(m_cubeMesh);
     SubmitMesh(m_pyramidMesh);
     SubmitMesh(m_sphereMesh);
     SubmitMesh(m_cylinderMesh);
     SubmitMesh(m_coneMesh);
+
+    sLight directionalLight0{};
+
+    directionalLight0.type          = sLightType::Directional;
+    directionalLight0.color         = { 0.8, 0.8, 0.8 };
+    directionalLight0.intensity     = 2.5f;
+    directionalLight0.direction     = { -0.5f, -0.5f, -0.3f };
+    directionalLight0.castsShadow   = true;
+
+    LightManager::CreateLight(directionalLight0);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -199,6 +215,11 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance)
 
         MeshHandle mesh = GetMesh(part.meshType);
 
+        if (part.meshType == sMeshTypes::ChunkPlane)
+        {
+            pInstance->instanceFlags |= sInstanceFlags::InstanceFlagTerrain;
+        }
+
         m_meshInstances[mesh].push_back(pInstance);
     }
 }
@@ -237,26 +258,29 @@ Engine::GFX::MeshHandle cGame::GetMesh(Engine::GFX::sMeshTypes::Enum _type)
 
     switch (_type)
     {
-    case sMeshTypes::Plane:
-        return m_planeMesh;
+        case sMeshTypes::Plane:
+            return m_planeMesh;
 
-    case sMeshTypes::Cube:
-        return m_cubeMesh;
+        case sMeshTypes::ChunkPlane:
+            return m_chunkPlaneMesh;
 
-    case sMeshTypes::Pyramid:
-        return m_pyramidMesh;
+        case sMeshTypes::Cube:
+            return m_cubeMesh;
 
-    case sMeshTypes::Sphere:
-        return m_sphereMesh;
+        case sMeshTypes::Pyramid:
+            return m_pyramidMesh;
 
-    case sMeshTypes::Cylinder:
-        return m_cylinderMesh;
+        case sMeshTypes::Sphere:
+            return m_sphereMesh;
 
-    case sMeshTypes::Cone:
-        return m_coneMesh;
+        case sMeshTypes::Cylinder:
+            return m_cylinderMesh;
 
-    default:
-        return nullptr;
+        case sMeshTypes::Cone:
+            return m_coneMesh;
+
+        default:
+            return nullptr;
     }
 }
 

@@ -25,22 +25,67 @@ namespace Engine::GFX
         sMeshData mesh{};
         mesh.pDebugName = "GeneratedPlane";
 
-        const float halfWidth = std::max(_rDesc.width, 0.0f) * 0.5f;
-        const float halfDepth = std::max(_rDesc.depth, 0.0f) * 0.5f;
+        const float width = std::max(_rDesc.width, 0.0f);
+        const float depth = std::max(_rDesc.depth, 0.0f);
 
-        mesh.vertices =
-        {
-            {.position = { -halfWidth, 0.0f, -halfDepth }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 0.0f, 0.0f } },
-            {.position = { -halfWidth, 0.0f,  halfDepth }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 0.0f, 1.0f } },
-            {.position = {  halfWidth, 0.0f,  halfDepth }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 1.0f, 1.0f } },
-            {.position = {  halfWidth, 0.0f, -halfDepth }, .normal = { 0.0f, 1.0f, 0.0f }, .uv = { 1.0f, 0.0f } }
-        };
+        const float halfWidth = width * 0.5f;
+        const float halfDepth = depth * 0.5f;
 
-        mesh.indices =
+        const uint32_t segmentsX = std::max(_rDesc.segmentsX, 1);
+        const uint32_t segmentsZ = std::max(_rDesc.segmentsZ, 1);
+
+        const uint32_t vertexCountX = segmentsX + 1;
+        const uint32_t vertexCountZ = segmentsZ + 1;
+
+        mesh.vertices.reserve(vertexCountX * vertexCountZ);
+        mesh.indices.reserve(segmentsX * segmentsZ * 6);
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Vertices
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        for (uint32_t z = 0; z < vertexCountZ; ++z)
         {
-            0, 1, 2,
-            2, 3, 0
-        };
+            const float zFactor = static_cast<float>(z) / static_cast<float>(segmentsZ);
+            const float positionZ = -halfDepth + zFactor * depth;
+
+            for (uint32_t x = 0; x < vertexCountX; ++x)
+            {
+                const float xFactor = static_cast<float>(x) / static_cast<float>(segmentsX);
+                const float positionX = -halfWidth + xFactor * width;
+
+                sVertex vertex{};
+
+                vertex.position = { positionX, 0.0f, positionZ };
+                vertex.normal = { 0.0f, 1.0f, 0.0f };
+                vertex.uv = { xFactor, zFactor };
+
+                mesh.vertices.push_back(vertex);
+            }
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Indices
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        for (uint32_t z = 0; z < segmentsZ; ++z)
+        {
+            for (uint32_t x = 0; x < segmentsX; ++x)
+            {
+                const uint32_t topLeft = z * vertexCountX + x;
+                const uint32_t bottomLeft = (z + 1) * vertexCountX + x;
+                const uint32_t bottomRight = (z + 1) * vertexCountX + x + 1;
+                const uint32_t topRight = z * vertexCountX + x + 1;
+
+                mesh.indices.push_back(topLeft);
+                mesh.indices.push_back(bottomLeft);
+                mesh.indices.push_back(bottomRight);
+
+                mesh.indices.push_back(bottomRight);
+                mesh.indices.push_back(topRight);
+                mesh.indices.push_back(topLeft);
+            }
+        }
 
         mesh.bounds = CalculateBounds(mesh.vertices);
 

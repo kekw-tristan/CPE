@@ -33,6 +33,12 @@ namespace Engine::GFX
                 return true;
             }
 
+            if (_rMeshTypeName == "ChunkPlane")
+            {
+                _rMeshType = sMeshTypes::ChunkPlane;
+                return true;
+            }
+
             if (_rMeshTypeName == "Cube")
             {
                 _rMeshType = sMeshTypes::Cube;
@@ -72,26 +78,29 @@ namespace Engine::GFX
         {
             switch (_meshType)
             {
-            case sMeshTypes::Plane:
-                return "Plane";
+                case sMeshTypes::Plane:
+                    return "Plane";
 
-            case sMeshTypes::Cube:
-                return "Cube";
+                case sMeshTypes::ChunkPlane:
+                    return "Plane";
 
-            case sMeshTypes::Pyramid:
-                return "Pyramid";
+                case sMeshTypes::Cube:
+                    return "Cube";
 
-            case sMeshTypes::Sphere:
-                return "Sphere";
+                case sMeshTypes::Pyramid:
+                    return "Pyramid";
 
-            case sMeshTypes::Cylinder:
-                return "Cylinder";
+                case sMeshTypes::Sphere:
+                    return "Sphere";
 
-            case sMeshTypes::Cone:
-                return "Cone";
+                case sMeshTypes::Cylinder:
+                    return "Cylinder";
 
-            default:
-                return "Unknown";
+                case sMeshTypes::Cone:
+                    return "Cone";
+
+                default:
+                    return "Unknown";
             }
         }
 

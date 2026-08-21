@@ -67,6 +67,7 @@ class cGame : public cApplication
     private:
     
         GFX::MeshHandle m_planeMesh;
+        GFX::MeshHandle m_chunkPlaneMesh;
         GFX::MeshHandle m_cubeMesh;
         GFX::MeshHandle m_pyramidMesh;
         GFX::MeshHandle m_sphereMesh;

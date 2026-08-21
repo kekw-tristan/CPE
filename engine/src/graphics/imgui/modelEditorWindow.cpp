@@ -44,6 +44,9 @@ namespace Engine::GFX
             case sMeshTypes::Plane:
                 return "Plane";
 
+            case sMeshTypes::ChunkPlane:
+                return "ChunkPlane";
+
             case sMeshTypes::Cube:
                 return "Cube";
 

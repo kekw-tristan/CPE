@@ -16,13 +16,13 @@ namespace Engine::GFX
 
     static constexpr float c_directionalCascadeSplits[c_directionalCascadeCount] =
     {
-        30.0f,
-        70.0f,
-        150.0f,
+        20.f,
+        50.f,
+        150.f,
         300.f
     };
 
-    static constexpr uint32_t c_shadowMapResolution = 4096;
+    static constexpr uint32_t c_shadowMapResolution = 2048;
 
     constexpr int c_maxNumberOfActiveReflectionProbes = 8;
 }

@@ -59,7 +59,7 @@ namespace World
 				void GenerateChunk(GFX::cScene& _rScene, const sChunkCoordinate& _rCoordinate);
 
 				void GenerateChunkGround(GFX::cScene& _rScene, const sChunkCoordinate& _rCoordinate);
-
+				
 				void InitModels(); 
 
 			private:
@@ -142,7 +142,7 @@ namespace World
 
 			groundInstance.transform.position	= Math::cVec3f(worldX, 0.0f, worldZ);
 			groundInstance.transform.rotation	= Math::cVec3f(0.0f, 0.0f, 0.0f);
-			groundInstance.transform.scale		= Math::cVec3f(static_cast<float>(c_chunkSize), 1.0f, static_cast<float>(c_chunkSize));
+			groundInstance.transform.scale		= Math::cVec3f(1.0f, 1.0f, 1.0f);
 
 			_rScene.AddShapeInstance(groundInstance);
 		}
@@ -158,15 +158,15 @@ namespace World
 			GFX::sShapePartDesc groundPart{};
 
 			groundPart.name = "Ground";
-			groundPart.meshType = GFX::sMeshTypes::Plane;
+			groundPart.meshType = GFX::sMeshTypes::ChunkPlane;
 
 			groundPart.transform.position	= Math::cVec3f(0.0f, 0.0f, 0.0f);
 			groundPart.transform.rotation	= Math::cVec3f(0.0f, 0.0f, 0.0f);
 			groundPart.transform.scale		= Math::cVec3f(1.0f, 1.0f, 1.0f);
 
-			groundPart.color[0] = 0.25f;
-			groundPart.color[1] = 0.55f;
-			groundPart.color[2] = 0.20f;
+			groundPart.color[0] = 0.0f;
+			groundPart.color[1] = 1.0f;
+			groundPart.color[2] = 0.0f;
 			groundPart.color[3] = 1.0f;
 
 			groundPart.materialIndex = 0;
@@ -174,7 +174,7 @@ namespace World
 			groundModel.shapes.push_back(groundPart);
 			groundModel.materialIndices.push_back(0);
 
-			groundModel.bounds = GFX::ShapeMeshLibrary::GetBounds(GFX::sMeshTypes::Plane);
+			groundModel.bounds = GFX::ShapeMeshLibrary::GetBounds(GFX::sMeshTypes::ChunkPlane);
 
 			m_groundModelHandle = GFX::ShapeModelManager::CreateShapeModel(groundModel);
 		}

@@ -7,6 +7,7 @@ namespace Engine::GFX
         enum Enum
         {
             Plane,
+            ChunkPlane,
             Cube,
             Pyramid,
             Sphere,

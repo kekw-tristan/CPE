@@ -1,4 +1,5 @@
 static const uint MAX_REFLECTION_PROBES = 8;
+static const int  INSTANCE_FLAG_TERRAIN = 1;
 
 struct ReflectionProbeData
 {
@@ -37,7 +38,7 @@ struct InstanceData
     float4 color;
 
     int materialIndex;
-    int padding1;
+    int instanceFlags; // 0 NoFlag, 1 Terrain
     int padding2;
     int padding3;
 };
@@ -192,6 +193,33 @@ float GetReflectionProbeWeight(float3 worldPosition, float3 probePosition, float
 // Vertex Shader
 // -----------------------------------------------------------------------------------------------------------------------------
 
+float GetTerrainHeight(float2 worldPosition)
+{
+    float x = worldPosition.x; 
+    float z = worldPosition.y;
+    
+    return sin(x * 0.15f) * 2.0f + cos(z * 0.12f) * 1.5f;
+}
+
+float3 GetTerrainNormal(float2 worldPosition)
+{
+    const float sampleDistance = 0.5f;
+
+    float heightLeft = GetTerrainHeight(worldPosition + float2(-sampleDistance, 0.0f));
+    float heightRight = GetTerrainHeight(worldPosition + float2(sampleDistance, 0.0f));
+
+    float heightBack = GetTerrainHeight(worldPosition + float2(0.0f, -sampleDistance));
+    float heightFront = GetTerrainHeight(worldPosition + float2(0.0f, sampleDistance));
+
+    float3 normal = float3(
+        heightLeft - heightRight,
+        2.0f * sampleDistance,
+        heightBack - heightFront
+    );
+
+    return SafeNormalize(normal);
+}
+
 VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 {
     VSOutput output;
@@ -199,13 +227,22 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
     InstanceData instance = instances[instanceID];
 
     float4 worldPosition = mul(float4(input.position, 1.0f), instance.worldMatrix);
+    
+    if ((instance.instanceFlags & INSTANCE_FLAG_TERRAIN) != 0)
+    {
+        worldPosition.y += GetTerrainHeight(worldPosition.xz);
+
+        output.worldNormal = GetTerrainNormal(worldPosition.xz);
+    }
+    else
+    {
+        float3x3 normalMatrix = (float3x3) instance.worldMatrix;
+
+        output.worldNormal = SafeNormalize(mul(input.normal, normalMatrix));
+    }
 
     output.position = mul(viewProj, worldPosition);
     output.worldPosition = worldPosition.xyz;
-
-    float3x3 normalMatrix = (float3x3) instance.worldMatrix;
-
-    output.worldNormal = SafeNormalize(mul(input.normal, normalMatrix));
 
     output.texCoord = input.texCoord;
     output.color = instance.color;
@@ -421,6 +458,24 @@ uint GetDirectionalCascadeIndex(float viewDepth, ShadowData shadowData)
         return 3;
 
     return shadowData.matrixCount;
+}
+
+// -----------------------------------------------------------------------------------------------------------------------------
+
+float GetCascadeBlendFactor(float viewDepth, uint cascadeIndex, ShadowData shadowData)
+{
+    if (cascadeIndex >= shadowData.matrixCount - 1)
+        return 0.0f;
+
+    float cascadeNear = cascadeIndex == 0 ? 0.0f : shadowData.cascadeSplits[cascadeIndex - 1];
+    float cascadeFar = shadowData.cascadeSplits[cascadeIndex];
+
+    float cascadeRange = cascadeFar - cascadeNear;
+    float blendRange = cascadeRange * 0.1f;
+
+    float blendStart = cascadeFar - blendRange;
+
+    return saturate((viewDepth - blendStart) / blendRange);
 }
 
 
@@ -1013,7 +1068,16 @@ float4 PSMain(VSOutput input) : SV_Target
 
                     float shadow = CalculateShadow(input.worldPosition, normal, lightDirection, shadowIndex, cascadeIndex);
 
-                    float shadowStrength = 0.75f;
+                    float cascadeBlend = GetCascadeBlendFactor(viewDepth, cascadeIndex, shadowData);
+
+                    if (cascadeBlend > 0.0f && cascadeIndex + 1 < shadowData.matrixCount)
+                    {
+                        float nextShadow = CalculateShadow(input.worldPosition, normal, lightDirection, shadowIndex, cascadeIndex + 1);
+
+                        shadow = lerp(shadow, nextShadow, cascadeBlend);
+                    }
+
+                    const float shadowStrength = 0.75f;
 
                     contribution *= 1.0f - shadow * shadowStrength;
                 }

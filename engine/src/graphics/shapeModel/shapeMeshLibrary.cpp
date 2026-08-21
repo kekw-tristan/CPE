@@ -23,12 +23,13 @@ namespace Engine::GFX
         {
             std::array<sMeshData, c_shapeMeshCount> meshes;
 
-            meshes[static_cast<size_t>(sMeshTypes::Plane)]    = cMeshGenerator::CreatePlane(sPlaneDesc{});
-            meshes[static_cast<size_t>(sMeshTypes::Cube)]     = cMeshGenerator::CreateCube(sCubeDesc{});
-            meshes[static_cast<size_t>(sMeshTypes::Pyramid)]  = cMeshGenerator::CreatePyramid(sPyramidDesc{});
-            meshes[static_cast<size_t>(sMeshTypes::Sphere)]   = cMeshGenerator::CreateSphere(sSphereDesc{});
-            meshes[static_cast<size_t>(sMeshTypes::Cylinder)] = cMeshGenerator::CreateCylinder(sCylinderDesc{});
-            meshes[static_cast<size_t>(sMeshTypes::Cone)]     = cMeshGenerator::CreateCone(sConeDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Plane)]      = cMeshGenerator::CreatePlane(sPlaneDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::ChunkPlane)] = cMeshGenerator::CreatePlane(sPlaneDesc{32.f, 32.f, 32, 32});
+            meshes[static_cast<size_t>(sMeshTypes::Cube)]       = cMeshGenerator::CreateCube(sCubeDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Pyramid)]    = cMeshGenerator::CreatePyramid(sPyramidDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Sphere)]     = cMeshGenerator::CreateSphere(sSphereDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Cylinder)]   = cMeshGenerator::CreateCylinder(sCylinderDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Cone)]       = cMeshGenerator::CreateCone(sConeDesc{});
 
             return meshes;
         }

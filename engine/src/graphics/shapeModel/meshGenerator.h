@@ -12,6 +12,9 @@ namespace Engine::GFX
     {
         float width = 1.0f;
         float depth = 1.0f;
+
+        int segmentsX = 1; 
+        int segmentsZ = 1;
     };
 
     struct sCubeDesc
