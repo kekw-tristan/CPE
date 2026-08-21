@@ -83,38 +83,38 @@ namespace Engine::GFX
         ReflectionProbeManager::Clear();
         ReflectionProbeManager::SetCellSize(32.0f);
 
-        constexpr uint32_t probeCountX = 5;
-        constexpr uint32_t probeCountZ = 2;
-
-        constexpr float spacingX = 16.0f;
-        constexpr float spacingZ = 16.0f;
-
-        constexpr float halfSizeX = 12.0f;
-        constexpr float halfSizeZ = 12.0f;
-
-        constexpr float startX = -32.0f;
-        constexpr float startZ = -8.0f;
-
-        for (uint32_t z = 0; z < probeCountZ; ++z)
-        {
-            for (uint32_t x = 0; x < probeCountX; ++x)
-            {
-                const float positionX = startX + static_cast<float>(x) * spacingX;
-                const float positionZ = startZ + static_cast<float>(z) * spacingZ;
-
-                sReflectionProbe probe{};
-
-                probe.position      = { positionX, 3.0f, positionZ };
-                probe.boxMin        = { positionX - halfSizeX, -5.0f, positionZ - halfSizeZ };
-                probe.boxMax        = { positionX + halfSizeX, 12.0f, positionZ + halfSizeZ };
-                probe.radius        = 30.0f;
-                probe.blendDistance = 4.0f;
-                probe.resolution    = 256;
-                probe.dirty         = true;
-
-                ReflectionProbeManager::AddProbe(probe);
-            }
-        }
+        //constexpr uint32_t probeCountX = 5;
+        //constexpr uint32_t probeCountZ = 2;
+        //
+        //constexpr float spacingX = 16.0f;
+        //constexpr float spacingZ = 16.0f;
+        //
+        //constexpr float halfSizeX = 12.0f;
+        //constexpr float halfSizeZ = 12.0f;
+        //
+        //constexpr float startX = -32.0f;
+        //constexpr float startZ = -8.0f;
+        //
+        //for (uint32_t z = 0; z < probeCountZ; ++z)
+        //{
+        //    for (uint32_t x = 0; x < probeCountX; ++x)
+        //    {
+        //        const float positionX = startX + static_cast<float>(x) * spacingX;
+        //        const float positionZ = startZ + static_cast<float>(z) * spacingZ;
+        //
+        //        sReflectionProbe probe{};
+        //
+        //        probe.position      = { positionX, 3.0f, positionZ };
+        //        probe.boxMin        = { positionX - halfSizeX, -5.0f, positionZ - halfSizeZ };
+        //        probe.boxMax        = { positionX + halfSizeX, 12.0f, positionZ + halfSizeZ };
+        //        probe.radius        = 30.0f;
+        //        probe.blendDistance = 4.0f;
+        //        probe.resolution    = 256;
+        //        probe.dirty         = true;
+        //
+        //        ReflectionProbeManager::AddProbe(probe);
+        //    }
+        //}
 
         const uint32_t reflectionProbeCount = ReflectionProbeManager::GetProbeCount();
 
