@@ -4,10 +4,15 @@ A Vulkan rendering engine written in C++20.
 
 # Blog
 
+## 22.8.2026
+
+Added reflection probes, image based lighting, scene editor.
+![Reflection Probes](blogImages/reflectionProbe.png)
+
 ## 15.8.2026
 
 Added shading and shadows.
-![ImGui Windows](blogImages/shadows.png)
+![Shading and shadows](blogImages/shadows.png)
 
 ## 8.8.2026
 
