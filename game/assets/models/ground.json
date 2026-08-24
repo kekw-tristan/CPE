@@ -1,0 +1,25 @@
+{
+    "name": "Ground",
+    "materials": [
+        {
+            "albedo": [1.0, 0.8, 0.4],
+            "roughness": 0.0,
+            "metallic": 1.0,
+            "lightWrap": 0.0,
+            "shapeContrast": 1.0,
+            "ambientStrength": 1.0,
+            "emissiveColor": [0.0, 0.0, 0.0],
+            "emissiveStrength": 0.0
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "ChunkPlane",
+            "position": [0.0, 0.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0],
+            "color": [1.0, 1.0, 1.0, 1.0],
+            "materialIndex": 0
+        }
+    ]
+}

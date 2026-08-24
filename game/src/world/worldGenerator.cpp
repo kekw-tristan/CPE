@@ -4,12 +4,18 @@
 
 #include "graphics/scene/scene.h"
 
-#include "graphics/shapeModel/shapeMeshLibrary.h"
 #include "graphics/shapeModel/shapeModelDesc.h"
-#include "graphics/shapeModel/shapePartDesc.h"
+#include "graphics/shapeModel/shapeModelLoader.h"
+#include "graphics/shapeModel/shapeModelManager.h"
+#include "graphics/shapeModel/shapeMeshLibrary.h"
+
+#include "worldModels.h"
+
+#include "biome/forestGenerator.h"
 
 #include <random>
 #include <iostream>
+#include <vector>
 
 using namespace Engine;
 
@@ -35,43 +41,39 @@ namespace World
 		class cWorldGenerator
 		{
 
-			public:
+		public:
 
-				static cWorldGenerator& GetInstance();
+			static cWorldGenerator& GetInstance();
 
-			public:
+		public:
 
-				void Generate(GFX::cScene& _rScene, int _seed);
+			void Generate(GFX::cScene& _rScene, int _seed);
 
-			private:
+		private:
 
-				cWorldGenerator(); 
-			   ~cWorldGenerator();
+			cWorldGenerator();
+			~cWorldGenerator();
 
-			   cWorldGenerator(const cWorldGenerator&)				= delete; 
-			   cWorldGenerator& operator=(const cWorldGenerator&)	= delete;
+			cWorldGenerator(const cWorldGenerator&) = delete;
+			cWorldGenerator& operator=(const cWorldGenerator&) = delete;
 
-			   cWorldGenerator(const cWorldGenerator&&)				= delete;
-			   cWorldGenerator& operator=(const cWorldGenerator&&)	= delete;
+			cWorldGenerator(const cWorldGenerator&&) = delete;
+			cWorldGenerator& operator=(const cWorldGenerator&&) = delete;
 
-			private:
+		private:
 
-				void GenerateChunk(GFX::cScene& _rScene, const sChunkCoordinate& _rCoordinate);
+			void GenerateLayout();
 
-				void GenerateChunkGround(GFX::cScene& _rScene, const sChunkCoordinate& _rCoordinate);
-				
-				void InitModels(); 
+			void GenerateChunk(GFX::cScene& _rScene, const sChunk& _rChunk);
 
-			private:
+		private:
 
-				std::mt19937 m_randomGenerator;
+			std::mt19937 m_randomGenerator;
 
-			private:
-
-				GFX::ShapeModelHandle m_groundModelHandle;
+			std::vector<sChunk> m_chunks;
 
 		};
-		
+
 	}
 
 	// -------------------------------------------------------------------------------------------------------------------------
@@ -95,25 +97,19 @@ namespace World
 
 			m_randomGenerator.seed(_seed);
 
-			const int startChunkX = -(c_worldChunkCountX / 2);
-			const int startChunkZ = -(c_worldChunkCountZ / 2);
-			
-			for (int z = 0; z < c_worldChunkCountZ; ++z)
-			{
-				for (int x = 0; x < c_worldChunkCountX; ++x)
-				{
-					GenerateChunk(_rScene, { startChunkX + x, 0, startChunkZ + z});
-				}
-			}
+			GenerateLayout();
+
+			for (const sChunk& chunk : m_chunks)
+				GenerateChunk(_rScene, chunk);
 		}
 
 		// -------------------------------------------------------------------------------------------------------------------------
 
 		cWorldGenerator::cWorldGenerator()
 			: m_randomGenerator()
-			, m_groundModelHandle(-1)
 		{
-			InitModels();
+			if (!WorldModels::Load("./assets/models"))
+				std::cerr << "One or more world models could not be loaded.\n";
 		}
 
 		// -------------------------------------------------------------------------------------------------------------------------
@@ -124,74 +120,74 @@ namespace World
 
 		// -------------------------------------------------------------------------------------------------------------------------
 
-		void cWorldGenerator::GenerateChunk(GFX::cScene& _rScene, const sChunkCoordinate& _rCoordinate)
+		void cWorldGenerator::GenerateLayout()
 		{
-			GenerateChunkGround(_rScene, _rCoordinate);
+			m_chunks.clear();
+
+			const int startChunkX = -(c_worldChunkCountX / 2);
+			const int startChunkZ = -(c_worldChunkCountZ / 2);
+
+			m_chunks.reserve(c_worldChunkCountX * c_worldChunkCountZ);
+
+			for (int z = 0; z < c_worldChunkCountZ; ++z)
+			{
+				for (int x = 0; x < c_worldChunkCountX; ++x)
+				{
+					sChunk chunk{};
+
+					chunk.coordinate = { startChunkX + x, 0, startChunkZ + z };
+					chunk.biome = sBiomeType::Forest;
+					chunk.height = 0.0f;
+					chunk.biomeBlend = 0.0f;
+
+					m_chunks.push_back(chunk);
+				}
+			}
 		}
 
 		// -------------------------------------------------------------------------------------------------------------------------
 
-		void cWorldGenerator::GenerateChunkGround(GFX::cScene& _rScene, const sChunkCoordinate& _rCoordinate)
+		void cWorldGenerator::GenerateChunk(GFX::cScene& _rScene, const sChunk& _rChunk)
 		{
-			const float worldX = static_cast<float>(_rCoordinate.x * c_chunkSize);
-			const float worldZ = static_cast<float>(_rCoordinate.z * c_chunkSize);
 
-			GFX::sShapeInstance groundInstance{};
+			switch (_rChunk.biome)
+			{
+				case sBiomeType::Forest:
+					ForestGenerator::GenerateChunk(_rScene, _rChunk, m_randomGenerator);
+					break;
 
-			groundInstance.modelHandle = m_groundModelHandle;
+				case sBiomeType::Swamp:
+					break;
 
-			groundInstance.transform.position	= Math::cVec3f(worldX, 0.0f, worldZ);
-			groundInstance.transform.rotation	= Math::cVec3f(0.0f, 0.0f, 0.0f);
-			groundInstance.transform.scale		= Math::cVec3f(1.0f, 1.0f, 1.0f);
+				case sBiomeType::Ice:
+					break;
 
-			_rScene.AddShapeInstance(groundInstance);
+				case sBiomeType::Lava:
+					break;
+			}
 		}
 
 		// -------------------------------------------------------------------------------------------------------------------------
 
-		void cWorldGenerator::InitModels()
-		{
-			GFX::sShapeModelDesc groundModel{};
-
-			groundModel.pDebugName = "Generated Ground";
-
-			GFX::sShapePartDesc groundPart{};
-
-			groundPart.name = "Ground";
-			groundPart.meshType = GFX::sMeshTypes::ChunkPlane;
-
-			groundPart.transform.position	= Math::cVec3f(0.0f, 0.0f, 0.0f);
-			groundPart.transform.rotation	= Math::cVec3f(0.0f, 0.0f, 0.0f);
-			groundPart.transform.scale		= Math::cVec3f(1.0f, 1.0f, 1.0f);
-
-			groundPart.color[0] = 0.0f;
-			groundPart.color[1] = 1.0f;
-			groundPart.color[2] = 0.0f;
-			groundPart.color[3] = 1.0f;
-
-			groundPart.materialIndex = 0;
-
-			groundModel.shapes.push_back(groundPart);
-			groundModel.materialIndices.push_back(0);
-
-			groundModel.bounds = GFX::ShapeMeshLibrary::GetBounds(GFX::sMeshTypes::ChunkPlane);
-
-			m_groundModelHandle = GFX::ShapeModelManager::CreateShapeModel(groundModel);
-		}
 	}
 
 	// -------------------------------------------------------------------------------------------------------------------------
 
 	namespace WorldGenerator
 	{
+
+		// -------------------------------------------------------------------------------------------------------------------------
+
 		void Generate(Engine::GFX::cScene& _rScene, int _seed)
 		{
 			cWorldGenerator::GetInstance().Generate(_rScene, _seed);
 		}
+
+		// -------------------------------------------------------------------------------------------------------------------------
+
 	}
 
 	// -------------------------------------------------------------------------------------------------------------------------
-
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
