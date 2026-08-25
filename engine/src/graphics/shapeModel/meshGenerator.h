@@ -35,8 +35,8 @@ namespace Engine::GFX
     {
         float radius = 0.5f;
 
-        int segments = 256;
-        int rings = 128;
+        int segments = 32;
+        int rings = 16;
     };
 
     struct sCylinderDesc

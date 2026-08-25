@@ -12,14 +12,13 @@ namespace Engine::GFX
 
     static constexpr uint32_t c_maxShadowLayers = 16;
 
-    static constexpr uint32_t c_directionalCascadeCount = 4;
+    static constexpr uint32_t c_directionalCascadeCount = 3;
 
     static constexpr float c_directionalCascadeSplits[c_directionalCascadeCount] =
     {
-        20.f,
-        50.f,
+        25.f,
+        70.f,
         150.f,
-        300.f
     };
 
     static constexpr uint32_t c_shadowMapResolution = 2048;

@@ -101,13 +101,13 @@ void cGame::InitMeshes()
     SubmitMesh(m_coneMesh);
 
     sLight directionalLight0{};
-
+    
     directionalLight0.type          = sLightType::Directional;
     directionalLight0.color         = { 0.8f, 0.8f, 0.8f };
     directionalLight0.intensity     = 2.5f;
     directionalLight0.direction     = { -0.5f, -0.5f, -0.3f };
     directionalLight0.castsShadow   = true;
-
+    
     LightManager::CreateLight(directionalLight0);
 }
 
@@ -291,9 +291,8 @@ Math::cMatrix4x4f cGame::CreateTransformMatrix(const GFX::sTransform& _rTransfor
     using namespace Engine::Math;
 
     cMatrix4x4f translation = cMatrix4x4f::translation(_rTransform.position);
-    cMatrix4x4f scale = cMatrix4x4f::scale(_rTransform.scale);
-
-    cMatrix4x4f rotation = cMatrix4x4f::rotationX(_rTransform.rotation.x()) * cMatrix4x4f::rotationY(_rTransform.rotation.y()) * cMatrix4x4f::rotationZ(_rTransform.rotation.z());
+    cMatrix4x4f scale       = cMatrix4x4f::scale(_rTransform.scale);
+    cMatrix4x4f rotation    = cMatrix4x4f::rotationX(_rTransform.rotation.x()) * cMatrix4x4f::rotationY(_rTransform.rotation.y()) * cMatrix4x4f::rotationZ(_rTransform.rotation.z());
 
     return scale * rotation * translation;
 }

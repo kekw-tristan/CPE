@@ -72,6 +72,8 @@ namespace World
 
 			std::vector<sChunk> m_chunks;
 
+			sWorldLayout m_layout;
+
 		};
 
 	}
@@ -129,6 +131,15 @@ namespace World
 
 			m_chunks.reserve(c_worldChunkCountX * c_worldChunkCountZ);
 
+			m_layout.mainPath =
+			{
+				{ Math::cVec3f(-100.0f, 0.0f, -80.0f) },
+				{ Math::cVec3f(-60.0f, 0.0f, -40.0f) },
+				{ Math::cVec3f(-20.0f, 0.0f, -10.0f) },
+				{ Math::cVec3f(20.0f, 0.0f,  30.0f) },
+				{ Math::cVec3f(70.0f, 0.0f,  50.0f) }
+			};
+
 			for (int z = 0; z < c_worldChunkCountZ; ++z)
 			{
 				for (int x = 0; x < c_worldChunkCountX; ++x)
@@ -153,7 +164,7 @@ namespace World
 			switch (_rChunk.biome)
 			{
 				case sBiomeType::Forest:
-					ForestGenerator::GenerateChunk(_rScene, _rChunk, m_randomGenerator);
+					ForestGenerator::GenerateChunk(_rScene, _rChunk, m_randomGenerator, m_layout);
 					break;
 
 				case sBiomeType::Swamp:

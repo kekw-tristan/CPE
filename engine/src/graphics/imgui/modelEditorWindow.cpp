@@ -399,6 +399,9 @@ namespace Engine::GFX
             if (ImGui::MenuItem("Plane"))
                 AddPlane();
 
+            if (ImGui::MenuItem("PlaneChunk"))
+                AddPlane();
+
             if (ImGui::MenuItem("Cube"))
                 AddCube();
 
@@ -486,7 +489,7 @@ namespace Engine::GFX
 
         if (ImGui::CollapsingHeader("Appearance", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            const char* meshTypeNames[] = { "Plane", "Cube", "Pyramid", "Sphere", "Cylinder", "Cone" };
+            const char* meshTypeNames[] = { "Plane", "PlaneChunk" ,"Cube", "Pyramid", "Sphere", "Cylinder", "Cone"};
 
             int selectedMeshType = static_cast<int>(rShape.meshType);
 

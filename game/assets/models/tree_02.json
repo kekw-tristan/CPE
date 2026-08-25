@@ -1,0 +1,93 @@
+{
+    "materials": [
+        {
+            "albedo": [
+                0.05882352590560913,
+                0.027905931696295738,
+                0.0031718574464321136
+            ],
+            "ambientStrength": 1.0099999904632568,
+            "emissiveColor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "emissiveStrength": 0.0,
+            "lightWrap": 0.6299999952316284,
+            "metallic": 0.0,
+            "roughness": 1.0,
+            "shapeContrast": 1.3799999952316284
+        },
+        {
+            "albedo": [
+                0.007843137718737125,
+                0.25882354378700256,
+                0.0
+            ],
+            "ambientStrength": 1.2799999713897705,
+            "emissiveColor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "emissiveStrength": 0.0,
+            "lightWrap": 0.25,
+            "metallic": 0.0,
+            "roughness": 0.6800000071525574,
+            "shapeContrast": 1.75
+        }
+    ],
+    "name": "tree",
+    "shapes": [
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "materialIndex": 0,
+            "meshType": "Cylinder",
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                2.0,
+                1.0
+            ]
+        },
+        {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "materialIndex": 1,
+            "meshType": "Sphere",
+            "position": [
+                0.0,
+                2.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                3.0,
+                3.0,
+                3.0
+            ]
+        }
+    ]
+}
