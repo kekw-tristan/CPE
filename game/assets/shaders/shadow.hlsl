@@ -40,10 +40,11 @@ ConstantBuffer<ShadowPushConstants> pushConstants;
 
 float GetTerrainHeight(float2 worldPosition)
 {
-    float x = worldPosition.x;
-    float z = worldPosition.y;
-
-    return sin(x * 0.15f) * 2.0f + cos(z * 0.12f) * 1.5f;
+    //float x = worldPosition.x;
+    //float z = worldPosition.y;
+    //
+    //return sin(x * 0.15f) * 2.0f + cos(z * 0.12f) * 1.5f;
+    return 0;
 }
 
 float4 VSMain(float3 position : POSITION, uint instanceID : SV_InstanceID) : SV_Position

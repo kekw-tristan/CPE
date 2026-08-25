@@ -195,10 +195,12 @@ float GetReflectionProbeWeight(float3 worldPosition, float3 probePosition, float
 
 float GetTerrainHeight(float2 worldPosition)
 {
-    float x = worldPosition.x; 
-    float z = worldPosition.y;
+    //float x = worldPosition.x; 
+    //float z = worldPosition.y;
+    //
+    //return sin(x * 0.15f) * 2.0f + cos(z * 0.12f) * 1.5f;
     
-    return sin(x * 0.15f) * 2.0f + cos(z * 0.12f) * 1.5f;
+    return 0.f;
 }
 
 float3 GetTerrainNormal(float2 worldPosition)
