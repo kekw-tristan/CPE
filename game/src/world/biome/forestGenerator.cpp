@@ -19,7 +19,7 @@ namespace World
 
     namespace
     {
-        
+
         // -------------------------------------------------------------------------------------------------------------------------
 
         void GenerateGround(GFX::cScene& _rScene, const sChunk& _rChunk)
@@ -34,7 +34,7 @@ namespace World
 
             groundInstance.transform.position = Math::cVec3f(worldX, worldY, worldZ);
             groundInstance.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
-            groundInstance.transform.scale    = Math::cVec3f(1.0f, 1.0f, 1.0f);
+            groundInstance.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
 
             _rScene.AddShapeInstance(groundInstance);
         }
@@ -106,30 +106,38 @@ namespace World
 
         void GenerateTrees(GFX::cScene& _rScene, const sChunk& _rChunk, std::mt19937& _rRandomGenerator, const sWorldLayout& _rWorldLayout)
         {
-            constexpr uint32_t c_minTreeCount         = 20;
-            constexpr uint32_t c_maxTreeCount         = 40;
-            constexpr uint32_t c_maxPlacementAttempts = 500;
+            constexpr uint32_t c_minTreeCount           = 20;
+            constexpr uint32_t c_maxTreeCount           = 40;
+            constexpr uint32_t c_minStoneCount          = 3;
+            constexpr uint32_t c_maxStoneCount          = 8;
+            constexpr uint32_t c_maxPlacementAttempts   = 500;
 
             constexpr float c_treeBorder        = 0.5f;
             constexpr float c_treeMinDistance   = 2.5f;
+            constexpr float c_stoneMinDistance  = 1.5f;
             constexpr float c_pathClearance     = 4.0f;
-            constexpr float c_minScale          = 0.85f;
-            constexpr float c_maxScale          = 1.15f;
+            constexpr float c_minTreeScale      = 0.85f;
+            constexpr float c_maxTreeScale      = 1.15f;
+            constexpr float c_minStoneScale     = 0.7f;
+            constexpr float c_maxStoneScale     = 1.3f;
             constexpr float c_twoPi             = 6.28318530718f;
 
             const float worldX = static_cast<float>(_rChunk.coordinate.x * c_chunkSize);
-            const float worldY = _rChunk.height + 1.0f;
+            const float worldY = _rChunk.height;
             const float worldZ = static_cast<float>(_rChunk.coordinate.z * c_chunkSize);
 
             const float halfChunkSize = static_cast<float>(c_chunkSize) * 0.5f;
-            const float minOffset     = -halfChunkSize + c_treeBorder;
-            const float maxOffset     = halfChunkSize - c_treeBorder;
+            const float minOffset = -halfChunkSize + c_treeBorder;
+            const float maxOffset = halfChunkSize - c_treeBorder;
 
             std::uniform_int_distribution<uint32_t> treeCountDistribution(c_minTreeCount, c_maxTreeCount);
+            std::uniform_int_distribution<uint32_t> stoneCountDistribution(c_minStoneCount, c_maxStoneCount);
             std::uniform_real_distribution<float>   positionDistribution(minOffset, maxOffset);
             std::uniform_real_distribution<float>   rotationDistribution(0.0f, c_twoPi);
-            std::uniform_real_distribution<float>   scaleDistribution(c_minScale, c_maxScale);
+            std::uniform_real_distribution<float>   treeScaleDistribution(c_minTreeScale, c_maxTreeScale);
+            std::uniform_real_distribution<float>   stoneScaleDistribution(c_minStoneScale, c_maxStoneScale);
             std::uniform_int_distribution<uint32_t> treeModelDistribution(0, 1);
+            std::uniform_int_distribution<uint32_t> stoneModelDistribution(0, 2);
 
             const uint32_t targetTreeCount = treeCountDistribution(_rRandomGenerator);
 
@@ -145,7 +153,7 @@ namespace World
                 const float treeX = worldX + positionDistribution(_rRandomGenerator);
                 const float treeZ = worldZ + positionDistribution(_rRandomGenerator);
 
-                const Math::cVec3f treePosition(treeX, worldY, treeZ);
+                const Math::cVec3f treePosition(treeX, worldY + 1.0f, treeZ);
 
                 if (DistanceToPath(treePosition, _rWorldLayout) < c_pathClearance)
                     continue;
@@ -154,11 +162,11 @@ namespace World
                     continue;
 
                 const float treeRotation = rotationDistribution(_rRandomGenerator);
-                const float treeScale    = scaleDistribution(_rRandomGenerator);
+                const float treeScale    = treeScaleDistribution(_rRandomGenerator);
 
                 GFX::sShapeInstance treeInstance{};
 
-                treeInstance.modelHandle = treeModelDistribution(_rRandomGenerator) == 0 ? WorldModels::Get("tree") : WorldModels::Get("tree_02");
+                treeInstance.modelHandle = treeModelDistribution(_rRandomGenerator) == 0 ? WorldModels::Get("tree_01") : WorldModels::Get("tree_02");
 
                 treeInstance.transform.position = treePosition;
                 treeInstance.transform.rotation = Math::cVec3f(0.0f, treeRotation, 0.0f);
@@ -167,6 +175,60 @@ namespace World
                 _rScene.AddShapeInstance(treeInstance);
 
                 treePositions.push_back(treePosition);
+            }
+
+            const uint32_t targetStoneCount = stoneCountDistribution(_rRandomGenerator);
+
+            std::vector<Math::cVec3f> stonePositions;
+            stonePositions.reserve(targetStoneCount);
+
+            attempts = 0;
+
+            while (stonePositions.size() < targetStoneCount && attempts < c_maxPlacementAttempts)
+            {
+                ++attempts;
+
+                const float stoneX = worldX + positionDistribution(_rRandomGenerator);
+                const float stoneZ = worldZ + positionDistribution(_rRandomGenerator);
+
+                const Math::cVec3f stonePosition(stoneX, worldY, stoneZ);
+
+                if (DistanceToPath(stonePosition, _rWorldLayout) < c_pathClearance)
+                    continue;
+
+                if (!IsTreePositionValid(stonePosition, treePositions, c_treeMinDistance))
+                    continue;
+
+                if (!IsTreePositionValid(stonePosition, stonePositions, c_stoneMinDistance))
+                    continue;
+
+                const float stoneRotation = rotationDistribution(_rRandomGenerator);
+                const float stoneScale = stoneScaleDistribution(_rRandomGenerator);
+
+                GFX::sShapeInstance stoneInstance{};
+
+                switch (stoneModelDistribution(_rRandomGenerator))
+                {
+                case 0:
+                    stoneInstance.modelHandle = WorldModels::Get("stone_01");
+                    break;
+
+                case 1:
+                    stoneInstance.modelHandle = WorldModels::Get("stone_02");
+                    break;
+
+                case 2:
+                    stoneInstance.modelHandle = WorldModels::Get("stone_03");
+                    break;
+                }
+
+                stoneInstance.transform.position = stonePosition;
+                stoneInstance.transform.rotation = Math::cVec3f(0.0f, stoneRotation, 0.0f);
+                stoneInstance.transform.scale = Math::cVec3f(stoneScale, stoneScale, stoneScale);
+
+                _rScene.AddShapeInstance(stoneInstance);
+
+                stonePositions.push_back(stonePosition);
             }
         }
 
