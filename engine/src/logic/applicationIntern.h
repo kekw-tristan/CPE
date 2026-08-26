@@ -83,6 +83,9 @@ namespace Engine::Logic
             uint32_t GetShadowCount() const;
             uint32_t GetShadowMatrixCount(uint32_t _shadowIndex) const;
 
+            float GetMouseDeltaX();
+            float GetMouseDeltaY();
+
         public:
 
             GFX::cModelEditorWindow& GetModelEitorWindow();

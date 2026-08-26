@@ -54,10 +54,10 @@ namespace World
 			cWorldGenerator();
 			~cWorldGenerator();
 
-			cWorldGenerator(const cWorldGenerator&) = delete;
-			cWorldGenerator& operator=(const cWorldGenerator&) = delete;
+			cWorldGenerator(const cWorldGenerator&)				= delete;
+			cWorldGenerator& operator=(const cWorldGenerator&)	= delete;
 
-			cWorldGenerator(const cWorldGenerator&&) = delete;
+			cWorldGenerator(const cWorldGenerator&&)			= delete;
 			cWorldGenerator& operator=(const cWorldGenerator&&) = delete;
 
 		private:

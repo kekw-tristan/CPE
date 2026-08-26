@@ -295,6 +295,20 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    float cApplicationIntern::GetMouseDeltaX()
+    {
+        return static_cast<float>(m_input.GetMouseDeltaX());
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    float cApplicationIntern::GetMouseDeltaY()
+    {
+        return static_cast<float>(m_input.GetMouseDeltaY());
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     GFX::cModelEditorWindow& cApplicationIntern::GetModelEitorWindow()
     {
         return m_modelEditorWindow;
