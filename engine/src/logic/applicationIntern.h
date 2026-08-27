@@ -101,6 +101,8 @@ namespace Engine::Logic
 
         private:
 
+            sAppConfig& m_appConfig;
+
             Platform::cWindow m_window;
             Platform::cInput  m_input;
 
@@ -122,5 +124,6 @@ namespace Engine::Logic
             GFX::cFrameStatsWindow  m_frameStatsWindow;
             GFX::cModelEditorWindow m_modelEditorWindow;
             GFX::cSceneEditorWindow m_sceneEditorWindow;
+
     };
 }

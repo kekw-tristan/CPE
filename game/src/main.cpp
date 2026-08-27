@@ -4,7 +4,7 @@ int main()
 {
     try
     {
-        Engine::sAppConfig config = {1280, 720, "Game"};
+        Engine::sAppConfig config = {1280, 720, "Game", false};
 
         cGame game(config);
         game.Run();

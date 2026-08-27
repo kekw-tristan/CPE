@@ -22,7 +22,8 @@ namespace Engine
     {
         int width; 
         int height; 
-        const char* _pTitle;
+        const char* pTitle;
+        bool hasEditorWindows = false;
     };
 
     class cApplication

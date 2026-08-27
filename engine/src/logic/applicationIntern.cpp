@@ -25,7 +25,8 @@ namespace Engine::Logic
     // initializes window and vulkan context
     
     cApplicationIntern::cApplicationIntern(sAppConfig& _rAppConf)
-        : m_window(1280, 720, "Vulkan Engine")
+        : m_appConfig(_rAppConf)
+        , m_window(_rAppConf.width, _rAppConf.height, _rAppConf.pTitle)
     {
         m_vulkanContext  .Init(m_window);
         m_vulkanDevice   .Init(m_vulkanContext);
@@ -35,17 +36,6 @@ namespace Engine::Logic
         m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline);
 
         InitializeImGui();
-
-        m_camera.LookAt(
-            2.0f, 1.5f, 3.0f,
-            0.0f, 0.0f, 0.0f
-        );
-
-        m_camera.SetPerspective(
-            60.0f,
-            0.1f,
-            10000.0f
-        );
 
         m_Timer.Reset();
         m_input.Init(m_window.GetWindow());
@@ -361,8 +351,13 @@ namespace Engine::Logic
         // add windows
 
         GFX::ImGuiWindowManager::AddWindow(m_frameStatsWindow);
-        GFX::ImGuiWindowManager::AddWindow(m_modelEditorWindow);
-        GFX::ImGuiWindowManager::AddWindow(m_sceneEditorWindow);
+
+        if (m_appConfig.hasEditorWindows)
+        {
+            GFX::ImGuiWindowManager::AddWindow(m_modelEditorWindow);
+            GFX::ImGuiWindowManager::AddWindow(m_sceneEditorWindow);
+        }
+        
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
