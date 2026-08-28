@@ -27,9 +27,7 @@ cGame::cGame(Engine::sAppConfig& _rAppConfig)
     , m_instances()
     , m_playerModel()
     , m_playerRenderParts()
-    , m_playerPosition()
-    , m_playerVelocity()
-    , m_isPlayerGrounded()
+    , m_playerController()
     , m_playerYaw(0.f)
     , m_cameraPitch(-20.f)
     , m_meshInstances()
@@ -59,8 +57,9 @@ void cGame::OnUpdate(float _deltaTime)
 {
     //UpdateFreeCam(_deltaTime);
 
-    UpdatePlayer(_deltaTime);
-    UpdatePlayerPhysics(_deltaTime);
+    UpdatePlayer();
+
+    m_playerController.Update(_deltaTime);
 
     UpdatePlayerRenderInstances();
     UpdateThirdPersonCamera(_deltaTime);
@@ -323,7 +322,7 @@ void cGame::ClearRenderInstances()
 
 // -------------------------------------------------------------------------------------------------------------------------
 
-void cGame::UpdatePlayer(float _deltaTime)
+void cGame::UpdatePlayer()
 {
     using namespace Engine;
     using namespace Engine::Platform;
@@ -337,6 +336,7 @@ void cGame::UpdatePlayer(float _deltaTime)
     rCamera.GetDirection(direction);
 
     Math::cVec3f forward(direction[0], 0.0f, direction[2]);
+    Math::cVec3f movement;
 
     if (!forward.isZero())
     {
@@ -344,8 +344,6 @@ void cGame::UpdatePlayer(float _deltaTime)
 
         Math::cVec3f right(-forward.z(), 0.0f, forward.x());
         right.normalize();
-
-        Math::cVec3f movement;
 
         if (IsKeyDown('W'))
             movement += forward;
@@ -358,42 +356,21 @@ void cGame::UpdatePlayer(float _deltaTime)
 
         if (IsKeyDown('D'))
             movement += right;
-
-        if (!movement.isZero())
-        {
-            movement.normalize();
-
-            m_playerPosition += movement * c_moveSpeed * _deltaTime;
-            m_playerYaw = std::atan2(movement.x(), movement.z());
-        }
     }
 
-    if (IsKeyDown(32) && m_isPlayerGrounded)
+    if (!movement.isZero())
     {
-        m_playerVelocity = Math::cVec3f(m_playerVelocity.x(), c_jumpVelocity, m_playerVelocity.z());
-        m_isPlayerGrounded = false;
+        movement.normalize();
+
+        m_playerYaw = std::atan2(movement.x(), movement.z());
     }
+
+    m_playerController.Move(movement, c_moveSpeed);
+
+    if (IsKeyDown(32))
+        m_playerController.Jump(c_jumpVelocity);
 }
 
-// -------------------------------------------------------------------------------------------------------------------------
-
-void cGame::UpdatePlayerPhysics(float _deltaTime)
-{
-    constexpr float c_gravity = -12.f;
-    constexpr float c_groundHeight = 0.0f;
-
-    m_playerVelocity += Math::cVec3f(0.0f, c_gravity * _deltaTime, 0.0f);
-
-    m_playerPosition += Math::cVec3f(0.0f, m_playerVelocity.y() * _deltaTime, 0.0f);
-
-    if (m_playerPosition.y() <= c_groundHeight)
-    {
-        m_playerPosition = Math::cVec3f(m_playerPosition.x(), c_groundHeight, m_playerPosition.z());
-        m_playerVelocity = Math::cVec3f(m_playerVelocity.x(), 0.0f, m_playerVelocity.z());
-
-        m_isPlayerGrounded = true;
-    }
-}
 // -------------------------------------------------------------------------------------------------------------------------
 
 void cGame::UpdatePlayerRenderInstances()
@@ -406,7 +383,7 @@ void cGame::UpdatePlayerRenderInstances()
 
     sTransform playerTransform{};
 
-    playerTransform.position = m_playerPosition;
+    playerTransform.position = m_playerController.GetPosition();
     playerTransform.rotation = { 0.0f, m_playerYaw, 0.0f };
     playerTransform.scale = { 1.0f, 1.0f, 1.0f };
 
@@ -451,7 +428,7 @@ void cGame::UpdateThirdPersonCamera(float _deltaTime)
     Math::cVec3f cameraDirection(direction[0], direction[1], direction[2]);
     cameraDirection.normalize();
 
-    const Math::cVec3f targetPosition = m_playerPosition + Math::cVec3f(0.0f, c_targetHeight, 0.0f);
+    const Math::cVec3f targetPosition = m_playerController.GetPosition() + Math::cVec3f(0.0f, c_targetHeight, 0.0f);
     const Math::cVec3f cameraPosition = targetPosition - cameraDirection * c_cameraDistance;
 
     rCamera.SetPosition(cameraPosition.x(), cameraPosition.y(), cameraPosition.z());

@@ -14,6 +14,8 @@
 #include "graphics/shapeModel/shapeInstance.h"
 #include "graphics/shapeModel/shapeModelDesc.h"
 
+#include "physics/characterController.h"
+
 #include <unordered_map>
 #include <vector>
 
@@ -66,8 +68,7 @@ class cGame : public cApplication
         void RebuildInstanceList();
         void ClearRenderInstances();
 
-        void UpdatePlayer(float _deltaTime);
-        void UpdatePlayerPhysics(float _deltaTime);
+        void UpdatePlayer();
         void UpdatePlayerRenderInstances();
         void UpdateThirdPersonCamera(float _deltaTime); 
     
@@ -93,10 +94,7 @@ class cGame : public cApplication
         GFX::sShapeModelDesc m_playerModel;
         std::vector<sPlayerRenderPart> m_playerRenderParts;
 
-        Math::cVec3f m_playerPosition;
-        Math::cVec3f m_playerVelocity;
-
-        bool m_isPlayerGrounded;
+        Physics::cCharacterController m_playerController;
 
         float m_playerYaw;
         float m_cameraPitch;
