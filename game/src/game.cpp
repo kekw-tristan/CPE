@@ -28,6 +28,8 @@ cGame::cGame(Engine::sAppConfig& _rAppConfig)
     , m_playerModel()
     , m_playerRenderParts()
     , m_playerPosition()
+    , m_playerVelocity()
+    , m_isPlayerGrounded()
     , m_playerYaw(0.f)
     , m_cameraPitch(-20.f)
     , m_meshInstances()
@@ -56,7 +58,10 @@ void cGame::OnInit()
 void cGame::OnUpdate(float _deltaTime)
 {
     //UpdateFreeCam(_deltaTime);
+
     UpdatePlayer(_deltaTime);
+    UpdatePlayerPhysics(_deltaTime);
+
     UpdatePlayerRenderInstances();
     UpdateThirdPersonCamera(_deltaTime);
 
@@ -289,6 +294,7 @@ void cGame::BuildPlayerRenderInstances()
         m_playerRenderParts.push_back(renderPart);
     }
 }
+
 // -------------------------------------------------------------------------------------------------------------------------
 
 void cGame::RebuildInstanceList()
@@ -323,6 +329,7 @@ void cGame::UpdatePlayer(float _deltaTime)
     using namespace Engine::Platform;
 
     constexpr float c_moveSpeed = 6.0f;
+    constexpr float c_jumpVelocity = 6.0f;
 
     GFX::cCamera& rCamera = GFX::GetCamera();
 
@@ -331,38 +338,62 @@ void cGame::UpdatePlayer(float _deltaTime)
 
     Math::cVec3f forward(direction[0], 0.0f, direction[2]);
 
-    if (forward.isZero())
-        return;
+    if (!forward.isZero())
+    {
+        forward.normalize();
 
-    forward.normalize();
+        Math::cVec3f right(-forward.z(), 0.0f, forward.x());
+        right.normalize();
 
-    Math::cVec3f right(-forward.z(), 0.0f, forward.x());
-    right.normalize();
+        Math::cVec3f movement;
 
-    Math::cVec3f movement;
+        if (IsKeyDown('W'))
+            movement += forward;
 
-    if (IsKeyDown('W'))
-        movement += forward;
+        if (IsKeyDown('S'))
+            movement -= forward;
 
-    if (IsKeyDown('S'))
-        movement -= forward;
+        if (IsKeyDown('A'))
+            movement -= right;
 
-    if (IsKeyDown('A'))
-        movement -= right;
+        if (IsKeyDown('D'))
+            movement += right;
 
-    if (IsKeyDown('D'))
-        movement += right;
+        if (!movement.isZero())
+        {
+            movement.normalize();
 
-    if (movement.isZero())
-        return;
+            m_playerPosition += movement * c_moveSpeed * _deltaTime;
+            m_playerYaw = std::atan2(movement.x(), movement.z());
+        }
+    }
 
-    movement.normalize();
-
-    m_playerPosition += movement * c_moveSpeed * _deltaTime;
-
-    m_playerYaw = std::atan2(movement.x(), movement.z());
+    if (IsKeyDown(32) && m_isPlayerGrounded)
+    {
+        m_playerVelocity = Math::cVec3f(m_playerVelocity.x(), c_jumpVelocity, m_playerVelocity.z());
+        m_isPlayerGrounded = false;
+    }
 }
 
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::UpdatePlayerPhysics(float _deltaTime)
+{
+    constexpr float c_gravity = -12.f;
+    constexpr float c_groundHeight = 0.0f;
+
+    m_playerVelocity += Math::cVec3f(0.0f, c_gravity * _deltaTime, 0.0f);
+
+    m_playerPosition += Math::cVec3f(0.0f, m_playerVelocity.y() * _deltaTime, 0.0f);
+
+    if (m_playerPosition.y() <= c_groundHeight)
+    {
+        m_playerPosition = Math::cVec3f(m_playerPosition.x(), c_groundHeight, m_playerPosition.z());
+        m_playerVelocity = Math::cVec3f(m_playerVelocity.x(), 0.0f, m_playerVelocity.z());
+
+        m_isPlayerGrounded = true;
+    }
+}
 // -------------------------------------------------------------------------------------------------------------------------
 
 void cGame::UpdatePlayerRenderInstances()

@@ -67,6 +67,7 @@ class cGame : public cApplication
         void ClearRenderInstances();
 
         void UpdatePlayer(float _deltaTime);
+        void UpdatePlayerPhysics(float _deltaTime);
         void UpdatePlayerRenderInstances();
         void UpdateThirdPersonCamera(float _deltaTime); 
     
@@ -91,7 +92,11 @@ class cGame : public cApplication
 
         GFX::sShapeModelDesc m_playerModel;
         std::vector<sPlayerRenderPart> m_playerRenderParts;
+
         Math::cVec3f m_playerPosition;
+        Math::cVec3f m_playerVelocity;
+
+        bool m_isPlayerGrounded;
 
         float m_playerYaw;
         float m_cameraPitch;
