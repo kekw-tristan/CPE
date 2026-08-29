@@ -299,6 +299,13 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cApplicationIntern::SetMouseCaptured(bool _isCaptured)
+    {
+        m_input.SetMouseCaptured(_isCaptured);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     GFX::cModelEditorWindow& cApplicationIntern::GetModelEitorWindow()
     {
         return m_modelEditorWindow;

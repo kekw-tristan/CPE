@@ -86,6 +86,8 @@ namespace Engine::Logic
             float GetMouseDeltaX();
             float GetMouseDeltaY();
 
+            void SetMouseCaptured(bool _isCaptured);
+
         public:
 
             GFX::cModelEditorWindow& GetModelEitorWindow();

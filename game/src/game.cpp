@@ -49,6 +49,8 @@ void cGame::OnInit()
         BuildPlayerRenderInstances();
 
     RebuildInstanceList();
+
+    Platform::SetMouseCaptured(true);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

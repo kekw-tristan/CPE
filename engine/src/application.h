@@ -83,4 +83,6 @@ namespace Engine::Platform
     float GetMouseDeltaX();
     float GetMouseDeltaY();
 
+    void SetMouseCaptured(bool _isCaptured);
+
 }
