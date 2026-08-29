@@ -12,6 +12,10 @@
 	{
             "id": "treeModel",
             "file": "../models/tree.json"
+        },
+	{
+            "id": "enemy",
+            "file": "../models/enemy_04.json"
         }
     ],
 

@@ -16,6 +16,8 @@
 
 #include "physics/characterController.h"
 
+#include "world/enemy/enemySpawn.h"
+
 #include <unordered_map>
 #include <vector>
 
@@ -52,15 +54,32 @@ class cGame : public cApplication
             GFX::sTransform     transform;
         };
 
+        struct sEnemyRenderPart
+        {
+            Engine::GFX::sInstanceData* pInstance = nullptr;
+            Engine::GFX::sTransform transform;
+        };
+
+        struct sEnemy
+        {
+            World::sEnemyType::Enum type;
+            Engine::Math::cVec3f position;
+            float rotation = 0.0f;
+
+            std::vector<sEnemyRenderPart> renderParts;
+        };
+
     
     private:
     
         void InitMeshes();
         bool LoadPlayerModel();
+        bool LoadEnemyModels();
+
+        void SpawnEnemies();
     
         void UpdateFreeCam(float _deltaTime);
 
-    
         void BuildSceneRenderInstances();
         void BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance);
         void BuildPlayerRenderInstances();
@@ -70,12 +89,12 @@ class cGame : public cApplication
 
         void UpdatePlayer();
         void UpdatePlayerRenderInstances();
+        void UpdateEnemyRenderInstances();
         void UpdateThirdPersonCamera(float _deltaTime); 
     
         GFX::MeshHandle GetMesh(GFX::sMeshTypes::Enum _type);
     
         Math::cMatrix4x4f CreateTransformMatrix(const GFX::sTransform& _rTransform);
-    
     
     private:
     
@@ -102,4 +121,9 @@ class cGame : public cApplication
         std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData*>> m_meshInstances;
     
         GFX::cScene m_scene;
+
+        std::vector<sEnemy> m_enemies;
+
+        Engine::GFX::sShapeModelDesc m_enemy03Model;
+        Engine::GFX::sShapeModelDesc m_enemy04Model;
 };

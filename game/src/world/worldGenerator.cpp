@@ -13,6 +13,8 @@
 
 #include "biome/forestGenerator.h"
 
+#include "enemy/enemySpawn.h"
+
 #include <random>
 #include <iostream>
 #include <vector>
@@ -48,6 +50,7 @@ namespace World
 		public:
 
 			void Generate(GFX::cScene& _rScene, int _seed);
+			const std::vector<sEnemySpawn>& GetEnemySpawns();
 
 		private:
 
@@ -74,6 +77,8 @@ namespace World
 
 			sWorldLayout m_layout;
 
+			std::vector<sEnemySpawn> m_enemySpawns;
+
 		};
 
 	}
@@ -96,6 +101,7 @@ namespace World
 		void cWorldGenerator::Generate(GFX::cScene& _rScene, int _seed)
 		{
 			_rScene.Clear();
+			m_enemySpawns.clear();
 
 			m_randomGenerator.seed(_seed);
 
@@ -103,6 +109,13 @@ namespace World
 
 			for (const sChunk& chunk : m_chunks)
 				GenerateChunk(_rScene, chunk);
+		}
+
+		// -------------------------------------------------------------------------------------------------------------------------
+
+		const std::vector<sEnemySpawn>& cWorldGenerator::GetEnemySpawns()
+		{
+			return m_enemySpawns;
 		}
 
 		// -------------------------------------------------------------------------------------------------------------------------
@@ -164,7 +177,7 @@ namespace World
 			switch (_rChunk.biome)
 			{
 				case sBiomeType::Forest:
-					ForestGenerator::GenerateChunk(_rScene, _rChunk, m_randomGenerator, m_layout);
+					ForestGenerator::GenerateChunk(_rScene, _rChunk, m_randomGenerator, m_layout, m_enemySpawns);
 					break;
 
 				case sBiomeType::Swamp:
@@ -192,6 +205,13 @@ namespace World
 		void Generate(Engine::GFX::cScene& _rScene, int _seed)
 		{
 			cWorldGenerator::GetInstance().Generate(_rScene, _seed);
+		}
+
+		// -------------------------------------------------------------------------------------------------------------------------
+
+		const std::vector<sEnemySpawn>& GetEnemySpawns()
+		{
+			return cWorldGenerator::GetInstance().GetEnemySpawns();
 		}
 
 		// -------------------------------------------------------------------------------------------------------------------------

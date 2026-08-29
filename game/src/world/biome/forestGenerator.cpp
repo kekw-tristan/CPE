@@ -4,6 +4,8 @@
 #include "../worldConfig.h"
 #include "../worldModels.h"
 
+#include "../enemy/enemySpawn.h"
+
 #include "graphics/scene/scene.h"
 
 #include <random>
@@ -234,6 +236,59 @@ namespace World
 
         // -------------------------------------------------------------------------------------------------------------------------
 
+        void GenerateEnemyPacks(const sChunk& _rChunk, std::mt19937& _rRandomGenerator, const sWorldLayout& _rWorldLayout, std::vector<sEnemySpawn>& _rEnemySpawns)
+        {
+            constexpr uint32_t c_minPackCount = 0;
+            constexpr uint32_t c_maxPackCount = 2;
+
+            constexpr uint32_t c_minEnemiesPerPack = 3;
+            constexpr uint32_t c_maxEnemiesPerPack = 6;
+
+            constexpr float c_packBorder = 5.0f;
+            constexpr float c_packRadius = 3.0f;
+            constexpr float c_pathClearance = 5.0f;
+            constexpr float c_twoPi = 6.28318530718f;
+
+            const float worldX = static_cast<float>(_rChunk.coordinate.x * c_chunkSize);
+            const float worldY = _rChunk.height;
+            const float worldZ = static_cast<float>(_rChunk.coordinate.z * c_chunkSize);
+
+            const float halfChunkSize = static_cast<float>(c_chunkSize) * 0.5f;
+
+            std::uniform_int_distribution<uint32_t> packCountDistribution(c_minPackCount, c_maxPackCount);
+            std::uniform_int_distribution<uint32_t> enemyCountDistribution(c_minEnemiesPerPack, c_maxEnemiesPerPack);
+
+            std::uniform_real_distribution<float> packPositionDistribution(-halfChunkSize + c_packBorder, halfChunkSize - c_packBorder);
+            std::uniform_real_distribution<float> packOffsetDistribution(-c_packRadius, c_packRadius);
+            std::uniform_real_distribution<float> rotationDistribution(0.0f, c_twoPi);
+            std::uniform_int_distribution<uint32_t> enemyTypeDistribution(0, 1);
+
+            const uint32_t packCount = packCountDistribution(_rRandomGenerator);
+
+            for (uint32_t packIndex = 0; packIndex < packCount; ++packIndex)
+            {
+                const Math::cVec3f packCenter(worldX + packPositionDistribution(_rRandomGenerator), worldY, worldZ + packPositionDistribution(_rRandomGenerator));
+
+                if (DistanceToPath(packCenter, _rWorldLayout) < c_pathClearance)
+                    continue;
+
+                const uint32_t enemyCount = enemyCountDistribution(_rRandomGenerator);
+
+                for (uint32_t enemyIndex = 0; enemyIndex < enemyCount; ++enemyIndex)
+                {
+                    sEnemySpawn spawn{};
+
+                    spawn.type = enemyTypeDistribution(_rRandomGenerator) == 0 ? sEnemyType::ForestCrawler : sEnemyType::ForestBrute;
+                    spawn.position = Math::cVec3f(packCenter.x() + packOffsetDistribution(_rRandomGenerator), worldY, packCenter.z() + packOffsetDistribution(_rRandomGenerator));
+                    spawn.rotation = rotationDistribution(_rRandomGenerator);
+
+                    _rEnemySpawns.push_back(spawn);
+                }
+            }
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
 
     }
 
@@ -244,10 +299,11 @@ namespace World
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void GenerateChunk(GFX::cScene& _rScene, const sChunk& _rChunk, std::mt19937& _rRandomGenerator, sWorldLayout& _rWorldLayout)
+        void GenerateChunk(GFX::cScene& _rScene, const sChunk& _rChunk, std::mt19937& _rRandomGenerator, sWorldLayout& _rWorldLayout, std::vector<sEnemySpawn>& _rEnemySpawns)
         {
             GenerateGround(_rScene, _rChunk);
             GenerateTrees(_rScene, _rChunk, _rRandomGenerator, _rWorldLayout);
+            GenerateEnemyPacks(_rChunk, _rRandomGenerator, _rWorldLayout, _rEnemySpawns);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------

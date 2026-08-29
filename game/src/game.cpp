@@ -48,6 +48,11 @@ void cGame::OnInit()
     if (LoadPlayerModel())
         BuildPlayerRenderInstances();
 
+    if (LoadEnemyModels())
+        SpawnEnemies();
+
+    UpdateEnemyRenderInstances();
+
     RebuildInstanceList();
 
     Platform::SetMouseCaptured(true);
@@ -144,6 +149,91 @@ bool cGame::LoadPlayerModel()
     }
 
     return true;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+bool cGame::LoadEnemyModels()
+{
+    std::string errorMessage;
+
+    if (!GFX::ShapeModelLoader::LoadFromFile("./assets/models/enemy_03.json", m_enemy03Model, errorMessage))
+    {
+        std::cerr << "Failed to load enemy_03: " << errorMessage << '\n';
+        return false;
+    }
+
+    if (!GFX::ShapeModelLoader::LoadFromFile("./assets/models/enemy_04.json", m_enemy04Model, errorMessage))
+    {
+        std::cerr << "Failed to load enemy_04: " << errorMessage << '\n';
+        return false;
+    }
+
+    return true;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::SpawnEnemies()
+{
+    const std::vector<World::sEnemySpawn>& spawns = World::WorldGenerator::GetEnemySpawns();
+
+    m_enemies.reserve(spawns.size());
+
+    for (const World::sEnemySpawn& spawn : spawns)
+    {
+        sEnemy enemy{};
+
+        enemy.type = spawn.type;
+        enemy.position = spawn.position;
+        enemy.rotation = spawn.rotation;
+
+        const GFX::sShapeModelDesc* pModel = nullptr;
+
+        switch (spawn.type)
+        {
+        case World::sEnemyType::ForestCrawler:
+            pModel = &m_enemy03Model;
+            break;
+
+        case World::sEnemyType::ForestBrute:
+            pModel = &m_enemy04Model;
+            break;
+        }
+
+        if (pModel == nullptr)
+            continue;
+
+        enemy.renderParts.reserve(pModel->shapes.size());
+
+        for (const GFX::sShapePartDesc& part : pModel->shapes)
+        {
+            GFX::sInstanceData* pInstance = m_pool.Create();
+
+            pInstance->color =
+            {
+                part.color[0],
+                part.color[1],
+                part.color[2],
+                part.color[3]
+            };
+
+            pInstance->materialIndex = part.materialIndex;
+
+            GFX::MeshHandle mesh = GetMesh(part.meshType);
+
+            m_meshInstances[mesh].push_back(pInstance);
+
+            sEnemyRenderPart renderPart{};
+
+            renderPart.pInstance = pInstance;
+            renderPart.transform = part.transform;
+
+            enemy.renderParts.push_back(renderPart);
+        }
+
+        m_enemies.push_back(std::move(enemy));
+    }
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -396,6 +486,32 @@ void cGame::UpdatePlayerRenderInstances()
         const cMatrix4x4f partMatrix = CreateTransformMatrix(renderPart.transform);
 
         renderPart.pInstance->worldMatrix = partMatrix * playerMatrix;
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::UpdateEnemyRenderInstances()
+{
+    using namespace Engine::GFX;
+    using namespace Engine::Math;
+
+    for (sEnemy& enemy : m_enemies)
+    {
+        sTransform enemyTransform{};
+
+        enemyTransform.position = enemy.position;
+        enemyTransform.rotation = { 0.0f, enemy.rotation, 0.0f };
+        enemyTransform.scale = { 1.0f, 1.0f, 1.0f };
+
+        const cMatrix4x4f enemyMatrix = CreateTransformMatrix(enemyTransform);
+
+        for (sEnemyRenderPart& renderPart : enemy.renderParts)
+        {
+            const cMatrix4x4f partMatrix = CreateTransformMatrix(renderPart.transform);
+
+            renderPart.pInstance->worldMatrix = partMatrix * enemyMatrix;
+        }
     }
 }
 
