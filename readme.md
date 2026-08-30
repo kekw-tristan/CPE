@@ -1,8 +1,17 @@
 # CPE
 
-A Vulkan rendering engine written in C++20.
+CPE is a custom Vulkan rendering engine written in C++20.
+
+It provides the technical foundation for a shape-based third-person action RPG and currently includes features such as instanced rendering, procedural world generation, dynamic lighting, cascaded shadow mapping, ImGui-based editor tools, and a data-driven shape model system.
+
+The project is focused on building a lightweight, extensible engine while developing a complete game on top of it.
 
 # Blog
+
+## 30.8.2026
+
+I decided to turn the engine into an actual game: a shape-based third-person ARPG. Development has now moved beyond the core engine work, starting with procedural world generation and the first foundations for gameplay.
+![Reflection Probes](blogImages/gameStart.png)
 
 ## 22.8.2026
 
