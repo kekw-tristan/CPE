@@ -16,7 +16,14 @@
 	{
             "id": "enemy",
             "file": "../models/enemy_04.json"
+        },
+	{
+            "id": "player_wizzard",
+            "file": "../models/player_wizard.json"
         }
+
+
+
     ],
 
     "instances":

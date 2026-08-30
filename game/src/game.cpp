@@ -142,7 +142,7 @@ bool cGame::LoadPlayerModel()
 {
     std::string errorMessage;
 
-    if (!GFX::ShapeModelLoader::LoadFromFile("./assets/models/player.json", m_playerModel, errorMessage))
+    if (!GFX::ShapeModelLoader::LoadFromFile("./assets/models/player_wizard.json", m_playerModel, errorMessage))
     {
         std::cerr << "Failed to load player model: " << errorMessage << "\n"; 
         return false;
