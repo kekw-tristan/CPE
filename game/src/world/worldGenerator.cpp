@@ -9,6 +9,8 @@
 #include "graphics/shapeModel/shapeModelManager.h"
 #include "graphics/shapeModel/shapeMeshLibrary.h"
 
+#include "physics/collisionWorld.h"
+
 #include "worldModels.h"
 
 #include "biome/forestGenerator.h"
@@ -102,6 +104,7 @@ namespace World
 		{
 			_rScene.Clear();
 			m_enemySpawns.clear();
+			Physics::CollisionWorld::Clear();
 
 			m_randomGenerator.seed(_seed);
 

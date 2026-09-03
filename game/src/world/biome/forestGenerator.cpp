@@ -8,6 +8,9 @@
 
 #include "graphics/scene/scene.h"
 
+#include "physics/collider.h"
+#include "physics/collisionWorld.h"
+
 #include <algorithm>
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -39,6 +42,7 @@ namespace World
             groundInstance.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
 
             _rScene.AddShapeInstance(groundInstance);
+
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -102,6 +106,18 @@ namespace World
             }
 
             return true;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        void AddAABBCollider(const Math::cVec3f& _rPosition, const Math::cVec3f& _rCenterOffset, const Math::cVec3f& _rHalfExtents, float _scale = 1.0f)
+        {
+            Physics::sAABBCollider collider{};
+
+            collider.center = _rPosition + _rCenterOffset * _scale;
+            collider.halfExtents = _rHalfExtents * _scale;
+
+            Physics::CollisionWorld::AddCollider(collider);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -177,6 +193,13 @@ namespace World
                 _rScene.AddShapeInstance(treeInstance);
 
                 treePositions.push_back(treePosition);
+
+                AddAABBCollider(
+                    treePosition,
+                    Math::cVec3f(0.0f, 1.0f, 0.0f),
+                    Math::cVec3f(0.5f, 1.5f, 0.5f),
+                    treeScale
+                );
             }
 
             const uint32_t targetStoneCount = stoneCountDistribution(_rRandomGenerator);
@@ -231,6 +254,13 @@ namespace World
                 _rScene.AddShapeInstance(stoneInstance);
 
                 stonePositions.push_back(stonePosition);
+
+                AddAABBCollider(
+                    stonePosition,
+                    Math::cVec3f(0.0f, 0.5f, 0.0f),
+                    Math::cVec3f(0.7f, 0.5f, 0.7f),
+                    stoneScale
+                );
             }
         }
 
@@ -283,6 +313,7 @@ namespace World
                     spawn.rotation = rotationDistribution(_rRandomGenerator);
 
                     _rEnemySpawns.push_back(spawn);
+
                 }
             }
         }

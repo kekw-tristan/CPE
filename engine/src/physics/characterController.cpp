@@ -1,5 +1,8 @@
 #include "physics/characterController.h"
 
+#include "physics/collider.h"
+#include "physics/collisionWorld.h"
+
 // -------------------------------------------------------------------------------------------------------------------------
 
 namespace Engine::Physics
@@ -57,10 +60,37 @@ namespace Engine::Physics
 
     void cCharacterController::Update(float _deltaTime)
     {
+        constexpr float c_colliderRadius = 0.4f;
+        constexpr float c_colliderHalfHeight = 0.8f;
+
+        // Horizontal collision
+        const float colliderOffsetY = c_colliderHalfHeight + c_colliderRadius;
+
+        Physics::sCapsuleCollider collider{};
+
+        collider.center = m_position + Math::cVec3f(0.0f, colliderOffsetY, 0.0f);
+        collider.radius = c_colliderRadius;
+        collider.halfHeight = c_colliderHalfHeight;
+
+        const Math::cVec3f horizontalMovement(
+            m_velocity.x() * _deltaTime,
+            0.0f,
+            m_velocity.z() * _deltaTime
+        );
+
+        const Math::cVec3f newColliderCenter = Physics::CollisionWorld::MoveCapsule(collider, horizontalMovement);
+
+        m_position = Math::cVec3f(
+            newColliderCenter.x(),
+            m_position.y(),
+            newColliderCenter.z()
+        );
+
+        // Gravity
         m_velocity += Math::cVec3f(0.0f, m_gravity * _deltaTime, 0.0f);
+        m_position += Math::cVec3f(0.0f, m_velocity.y() * _deltaTime, 0.0f);
 
-        m_position += m_velocity * _deltaTime;
-
+        // Ground
         const float groundHeight = GetGroundHeight();
 
         if (m_position.y() <= groundHeight)
