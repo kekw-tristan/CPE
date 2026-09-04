@@ -72,6 +72,12 @@ void cGame::OnUpdate(float _deltaTime)
     UpdatePlayerRenderInstances();
     UpdateThirdPersonCamera(_deltaTime);
 
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::OnPrepareRender()
+{
     Engine::GFX::UpdateInstanceBuffer(m_instances);
 }
 

@@ -8,6 +8,7 @@ namespace Engine::Physics
 	{
 		Math::cVec3f center; 
 		Math::cVec3f halfExtents; 
+		bool isGround = false;
 	};
 
 	struct sCapsuleCollider

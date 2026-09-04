@@ -2,13 +2,14 @@
 
 #include <assert.h>
 #include <cstdint>
+#include <cstddef>
 #include <iostream>
-#include <stdlib.h>
+#include <new>
 
 namespace Engine::Container
 {
 
-    template<int tChunkByteSize, int tChunksPerPage>
+    template<std::size_t tChunkByteSize, std::size_t tChunksPerPage, std::size_t tAlignment = alignof(std::max_align_t)>
     class cAllocator
     {
 
@@ -25,7 +26,7 @@ namespace Engine::Container
                 while(m_pFirstPage != nullptr)
                 {
                     sPage* pPage = PopPage(); 
-                    free(pPage);
+                    ::operator delete(pPage, std::align_val_t{ alignof(sPage) });
                 }
             }
 
@@ -35,13 +36,13 @@ namespace Engine::Container
             {
                 if (!HasFreeSlot())
                 {
-                    sPage* pPage = static_cast<sPage*>(malloc(sizeof(sPage)));
+                    sPage* pPage = static_cast<sPage*>(::operator new(sizeof(sPage), std::align_val_t{ alignof(sPage) }));
 
                     PushPage(pPage);
 
                     std::cout << "Pushed new Pool Page\n";
 
-                    for (int index = tChunksPerPage - 1; index >= 0; --index)
+                    for (std::size_t index = tChunksPerPage; index-- > 0;)
                     {
                         sChunk* pChunk = &pPage->chunks[index];
                         PushFreeChunk(pChunk);
@@ -60,7 +61,9 @@ namespace Engine::Container
 
         private: 
 
-            struct sChunk
+            static constexpr std::size_t c_chunkAlignment = tAlignment > alignof(void*) ? tAlignment : alignof(void*);
+
+            struct alignas(c_chunkAlignment) sChunk
             {
                 union 
                 {

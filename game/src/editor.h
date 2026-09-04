@@ -46,6 +46,7 @@ class cEditor : public cApplication
     
         void OnInit() override;
         void OnUpdate(float _deltaTime) override;
+        void OnPrepareRender() override;
         void OnDraw() override;
         void OnShutdown() override;
     

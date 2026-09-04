@@ -18,5 +18,6 @@ namespace Engine::Physics
 		void AddCollider(const sAABBCollider& _rCollider);
 		void Clear(); 
 		Math::cVec3f MoveCapsule(const sCapsuleCollider& _rCapsule, const Math::cVec3f& _rMovement);
+		bool FindGroundHeight(const Math::cVec3f& _rPosition, float _maximumHeight, float& _rGroundHeight);
 	}
 }

@@ -185,6 +185,12 @@ void cEditor::OnUpdate(float _deltaTime)
     UpdateFreeCam(_deltaTime);
 
 
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cEditor::OnPrepareRender()
+{
     Engine::GFX::UpdateInstanceBuffer(m_instances);
 }
 

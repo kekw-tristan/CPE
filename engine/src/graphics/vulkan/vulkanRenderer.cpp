@@ -492,6 +492,16 @@ namespace Engine::GFX
 
     void cVulkanRenderer::UpdateInstanceBuffer(std::vector<sInstanceData*>& _rInstances)
     {
+        if (_rInstances.size() > c_maxNumberOfInstances)
+        {
+            throw std::length_error("Instance count exceeds the configured GPU instance buffer capacity!");
+        }
+
+        if (_rInstances.empty())
+        {
+            return;
+        }
+
         sVulkanFrame& rFrame            = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
 

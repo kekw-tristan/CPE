@@ -41,10 +41,11 @@ class cGame : public cApplication
     
     protected:
     
-        void OnInit() override;
+        void OnInit()                   override;
         void OnUpdate(float _deltaTime) override;
-        void OnDraw() override;
-        void OnShutdown() override;
+        void OnPrepareRender()          override;
+        void OnDraw()                   override;
+        void OnShutdown()               override;
 
     private:
 

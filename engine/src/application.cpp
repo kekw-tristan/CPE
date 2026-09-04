@@ -27,37 +27,44 @@ namespace Engine
 
     cApplication::~cApplication()
     {
+        if (s_pApplicationIntern == m_pAppIntern.get())
+        {
+            s_pApplicationIntern = nullptr;
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
     
     void cApplication::Run()
     {
-        OnInit();
-
-        while (!m_pAppIntern->GetShouldClose())
+        try
         {
-            if (m_pAppIntern->WasResized())
+            OnInit();
+
+            while (!m_pAppIntern->GetShouldClose())
             {
-                m_pAppIntern->RecreateSwapchain();
-                continue;
-            }
+                if (m_pAppIntern->WasResized())
+                {
+                    m_pAppIntern->RecreateSwapchain();
+                    continue;
+                }
 
-            m_pAppIntern->Update();
+                m_pAppIntern->Update();
+                OnUpdate(m_pAppIntern->GetDeltaTime());
 
-            if (!m_pAppIntern->BeginFrame(m_pAppIntern->GetCamera()))
-            {
-                m_pAppIntern->RecreateSwapchain();
-                continue;
-            }
+                if (!m_pAppIntern->BeginFrame(m_pAppIntern->GetCamera()))
+                {
+                    m_pAppIntern->RecreateSwapchain();
+                    continue;
+                }
 
-            OnUpdate(m_pAppIntern->GetDeltaTime());
+                OnPrepareRender();
 
-            // ---------------------------------------------------------------------------------------------------------------------
-            // Shadows
-            // ---------------------------------------------------------------------------------------------------------------------
+                // -----------------------------------------------------------------------------------------------------------------
+                // Shadows
+                // -----------------------------------------------------------------------------------------------------------------
 
-            m_pAppIntern->BeginShadowRendering();
+                m_pAppIntern->BeginShadowRendering();
 
             for (uint32_t shadowIndex = 0; shadowIndex < m_pAppIntern->GetShadowCount(); ++shadowIndex)
             {
@@ -73,14 +80,14 @@ namespace Engine
                 }
             }
 
-            m_pAppIntern->EndShadowRendering();
+                m_pAppIntern->EndShadowRendering();
 
             // ---------------------------------------------------------------------------------------------------------------------
-            // Reflection Probe
+                // Reflection Probe
             // ---------------------------------------------------------------------------------------------------------------------
 
-            for (uint32_t probeIndex = 0; probeIndex < m_pAppIntern->GetReflectionProbeCount(); ++probeIndex)
-            {
+                for (uint32_t probeIndex = 0; probeIndex < m_pAppIntern->GetReflectionProbeCount(); ++probeIndex)
+                {
                 if (!m_pAppIntern->NeedsReflectionProbeUpdate(probeIndex))
                 {
                     continue;
@@ -100,24 +107,33 @@ namespace Engine
                 m_pAppIntern->EndReflectionProbeRendering();
 
                 m_pAppIntern->PrefilterReflectionProbe(probeIndex);
-            }
+                }
 
             // ---------------------------------------------------------------------------------------------------------------------
             // Main
             // ---------------------------------------------------------------------------------------------------------------------
 
-            m_pAppIntern->BeginDraw();
+                m_pAppIntern->BeginDraw();
 
-            OnDraw();
+                OnDraw();
 
-            GFX::ImGuiWindowManager::Draw();
+                GFX::ImGuiWindowManager::Draw();
 
-            if (!m_pAppIntern->EndFrame())
-            {
-                m_pAppIntern->RecreateSwapchain();
-                continue;
+                if (!m_pAppIntern->EndFrame())
+                {
+                    m_pAppIntern->RecreateSwapchain();
+                    continue;
+                }
             }
+
         }
+        catch (...)
+        {
+            OnShutdown();
+            throw;
+        }
+
+        OnShutdown();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

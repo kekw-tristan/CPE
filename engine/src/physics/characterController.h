@@ -30,7 +30,7 @@ namespace Engine::Physics
 
     private:
 
-        float GetGroundHeight() const;
+        bool FindGroundHeight(float _maximumHeight, float& _rGroundHeight) const;
 
 
     private:

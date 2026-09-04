@@ -140,6 +140,21 @@ namespace Engine::GFX
             throw std::runtime_error("Cannot write to unmapped Vulkan buffer!");
         }
 
+        if (_offset > m_size || _size > m_size - _offset)
+        {
+            throw std::out_of_range("Vulkan buffer write exceeds the allocated buffer size!");
+        }
+
+        if (_size == 0)
+        {
+            return;
+        }
+
+        if (_pData == nullptr)
+        {
+            throw std::invalid_argument("Cannot write null data to a Vulkan buffer!");
+        }
+
         std::memcpy(static_cast<char*>(m_pMappedData) + _offset, _pData, static_cast<size_t>(_size));
     }
 

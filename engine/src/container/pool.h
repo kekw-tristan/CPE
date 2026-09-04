@@ -28,7 +28,7 @@ namespace Engine::Container
 
         private:
 
-            using cMemoryAllocator = cAllocator<sizeof(T), tInstancesPerPage>;
+            using cMemoryAllocator = cAllocator<sizeof(T), tInstancesPerPage, alignof(T)>;
             cMemoryAllocator m_allocator;
 
     };

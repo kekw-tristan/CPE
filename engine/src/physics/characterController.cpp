@@ -24,9 +24,8 @@ namespace Engine::Physics
     {
         m_position = _rPosition;
 
-        const float groundHeight = GetGroundHeight();
-
-        m_grounded = m_position.y() <= groundHeight;
+        float groundHeight = 0.0f;
+        m_grounded = FindGroundHeight(m_position.y() + 0.5f, groundHeight) && m_position.y() <= groundHeight;
 
         if (m_grounded)
         {
@@ -86,14 +85,16 @@ namespace Engine::Physics
             newColliderCenter.z()
         );
 
-        // Gravity
+        // Gravity and ground
+        const float previousHeight = m_position.y();
         m_velocity += Math::cVec3f(0.0f, m_gravity * _deltaTime, 0.0f);
         m_position += Math::cVec3f(0.0f, m_velocity.y() * _deltaTime, 0.0f);
 
-        // Ground
-        const float groundHeight = GetGroundHeight();
+        constexpr float c_maximumStepHeight = 0.5f;
+        float groundHeight = 0.0f;
+        const bool groundFound = FindGroundHeight(previousHeight + c_maximumStepHeight, groundHeight);
 
-        if (m_position.y() <= groundHeight)
+        if (groundFound && m_position.y() <= groundHeight)
         {
             m_position = Math::cVec3f(m_position.x(), groundHeight, m_position.z());
             m_velocity = Math::cVec3f(m_velocity.x(), 0.0f, m_velocity.z());
@@ -143,9 +144,9 @@ namespace Engine::Physics
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    float cCharacterController::GetGroundHeight() const
+    bool cCharacterController::FindGroundHeight(float _maximumHeight, float& _rGroundHeight) const
     {
-        return 0.0f;
+        return Physics::CollisionWorld::FindGroundHeight(m_position, _maximumHeight, _rGroundHeight);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

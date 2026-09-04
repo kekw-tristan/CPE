@@ -37,12 +37,17 @@ namespace World
 
             groundInstance.modelHandle = WorldModels::Get("ground");
 
-            groundInstance.transform.position = Math::cVec3f(worldX, worldY, worldZ);
-            groundInstance.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
-            groundInstance.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
+            groundInstance.transform.position   = Math::cVec3f(worldX, worldY, worldZ);
+            groundInstance.transform.rotation   = Math::cVec3f(0.0f, 0.0f, 0.0f);
+            groundInstance.transform.scale      = Math::cVec3f(1.0f, 1.0f, 1.0f);
 
             _rScene.AddShapeInstance(groundInstance);
 
+            Physics::sAABBCollider groundCollider{};
+            groundCollider.center       = Math::cVec3f(worldX, worldY - 0.1f, worldZ);
+            groundCollider.halfExtents  = Math::cVec3f(static_cast<float>(c_chunkSize) * 0.5f, 0.1f, static_cast<float>(c_chunkSize) * 0.5f);
+            groundCollider.isGround     = true;
+            Physics::CollisionWorld::AddCollider(groundCollider);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
