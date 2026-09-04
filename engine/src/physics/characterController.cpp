@@ -91,8 +91,8 @@ namespace Engine::Physics
         m_position += Math::cVec3f(0.0f, m_velocity.y() * _deltaTime, 0.0f);
 
         constexpr float c_maximumStepHeight = 0.5f;
-        float groundHeight = 0.0f;
-        const bool groundFound = FindGroundHeight(previousHeight + c_maximumStepHeight, groundHeight);
+        float groundHeight                  = 0.0f;
+        const bool groundFound              = FindGroundHeight(previousHeight + c_maximumStepHeight, groundHeight);
 
         if (groundFound && m_position.y() <= groundHeight)
         {
