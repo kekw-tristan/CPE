@@ -198,6 +198,15 @@ namespace Gameplay
         _rEnemy.stateTime += _rContext.deltaTime;
         _rEnemy.attackCooldown = std::max(0.0f, _rEnemy.attackCooldown - _rContext.deltaTime);
 
+        if (_rEnemy.state == eEnemyState::AttackWindup)
+            _rEnemy.attackPoseWeight = std::clamp(_rEnemy.stateTime / _rDefinition.attackWindup, 0.0f, 1.0f);
+
+        else if (_rEnemy.state == eEnemyState::AttackRecovery)
+            _rEnemy.attackPoseWeight = 1.0f - std::clamp(_rEnemy.stateTime / _rDefinition.attackRecovery, 0.0f, 1.0f);
+
+        else
+            _rEnemy.attackPoseWeight = 0.0f;
+
         constexpr float c_idleUpdateInterval = 0.2f;
         if (_rEnemy.state == eEnemyState::Idle && _rEnemy.stateTime < c_idleUpdateInterval)
             return;
@@ -301,11 +310,13 @@ namespace Gameplay
         }
 
         sProjectileSpawnDesc projectile{};
+
         projectile.position  = _rEnemy.position + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f) + _rEnemy.attackDirection * 0.7f;
         projectile.direction = _rEnemy.attackDirection;
         projectile.speed     = 9.0f;
         projectile.damage    = _rDefinition.attackDamage;
         projectile.lifetime  = 2.5f;
+
         _rProjectileManager.SpawnCone(projectile);
     }
 

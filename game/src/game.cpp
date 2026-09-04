@@ -177,6 +177,7 @@ bool cGame::LoadPlayerModel()
         return false;
     }
 
+    LoadPoseModel("./assets/models/player_wizard_attack.json", m_playerModel, m_playerAttackModel);
     return true;
 }
 
@@ -196,6 +197,36 @@ bool cGame::LoadEnemyModels()
     {
         std::cerr << "Failed to load enemy_04: " << errorMessage << '\n';
         return false;
+    }
+
+    LoadPoseModel("./assets/models/enemy_03_attack.json", m_enemy03Model, m_enemy03AttackModel);
+    LoadPoseModel("./assets/models/enemy_04_attack.json", m_enemy04Model, m_enemy04AttackModel);
+    return true;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+bool cGame::LoadPoseModel(const char* _pFilePath, const GFX::sShapeModelDesc& _rBaseModel, GFX::sShapeModelDesc& _rPoseModel)
+{
+    std::string errorMessage;
+    if (!GFX::ShapeModelLoader::LoadFromFile(_pFilePath, _rPoseModel, errorMessage))
+        return false;
+
+    if (_rPoseModel.shapes.size() != _rBaseModel.shapes.size())
+    {
+        std::cerr << "Pose model has a different shape count: " << _pFilePath << '\n';
+        _rPoseModel = {};
+        return false;
+    }
+
+    for (size_t shapeIndex = 0; shapeIndex < _rBaseModel.shapes.size(); ++shapeIndex)
+    {
+        if (_rPoseModel.shapes[shapeIndex].meshType != _rBaseModel.shapes[shapeIndex].meshType)
+        {
+            std::cerr << "Pose model has a different mesh type at shape " << shapeIndex << ": " << _pFilePath << '\n';
+            _rPoseModel = {};
+            return false;
+        }
     }
 
     return true;
@@ -497,6 +528,7 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     constexpr int   c_leftMouseButton = 0;
 
     m_playerSpellCooldown = std::max(0.0f, m_playerSpellCooldown - _deltaTime);
+    m_playerAttackTime = std::max(0.0f, m_playerAttackTime - _deltaTime);
 
     if (!Engine::Platform::WasMouseButtonPressed(c_leftMouseButton) || m_playerSpellCooldown > 0.0f)
         return;
@@ -520,6 +552,7 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     m_projectileManager.SpawnPlayerSphere(projectile);
 
     m_playerSpellCooldown = c_spellCooldown;
+    m_playerAttackTime = 0.4f;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -540,9 +573,15 @@ void cGame::UpdatePlayerRenderInstances()
 
     const cMatrix4x4f playerMatrix = CreateTransformMatrix(playerTransform);
 
-    for (sPlayerRenderPart& renderPart : m_playerRenderParts)
+    float attackWeight = 1.0f - std::abs(m_playerAttackTime - 0.2f) / 0.2f;
+    attackWeight = std::clamp(attackWeight, 0.0f, 1.0f);
+    attackWeight = attackWeight * attackWeight * (3.0f - 2.0f * attackWeight);
+
+    for (size_t partIndex = 0; partIndex < m_playerRenderParts.size(); ++partIndex)
     {
-        const cMatrix4x4f partMatrix = CreateTransformMatrix(renderPart.transform);
+        sPlayerRenderPart& renderPart = m_playerRenderParts[partIndex];
+        const sTransform partTransform = m_playerAttackModel.shapes.empty() ? renderPart.transform : InterpolateTransform(renderPart.transform, m_playerAttackModel.shapes[partIndex].transform, attackWeight);
+        const cMatrix4x4f partMatrix = CreateTransformMatrix(partTransform);
 
         renderPart.pInstance->worldMatrix = partMatrix * playerMatrix;
     }
@@ -558,7 +597,13 @@ void cGame::UpdateEnemyRenderInstances()
     for (sEnemyVisual& visual : m_enemyVisuals)
     {
         const Gameplay::sEnemy* pEnemy = m_enemyManager.TryGetEnemy(visual.handle);
-        if (pEnemy == nullptr || visual.transformRevision == pEnemy->transformRevision)
+
+        if (pEnemy == nullptr)
+            continue;
+
+        const bool isAttacking = pEnemy->state == Gameplay::eEnemyState::AttackWindup || pEnemy->state == Gameplay::eEnemyState::AttackRecovery;
+
+        if (visual.transformRevision == pEnemy->transformRevision && !isAttacking && !visual.wasAttacking)
             continue;
 
         sTransform enemyTransform{};
@@ -571,14 +616,19 @@ void cGame::UpdateEnemyRenderInstances()
 
         const cMatrix4x4f enemyMatrix = CreateTransformMatrix(enemyTransform);
 
-        for (sEnemyRenderPart& renderPart : visual.renderParts)
+        const sShapeModelDesc& attackModel = pEnemy->type == World::sEnemyType::ForestCrawler ? m_enemy03AttackModel : m_enemy04AttackModel;
+
+        for (size_t partIndex = 0; partIndex < visual.renderParts.size(); ++partIndex)
         {
-            const cMatrix4x4f partMatrix = CreateTransformMatrix(renderPart.transform);
+            sEnemyRenderPart& renderPart    = visual.renderParts[partIndex];
+            const sTransform partTransform  = attackModel.shapes.empty() ? renderPart.transform : InterpolateTransform(renderPart.transform, attackModel.shapes[partIndex].transform, pEnemy->attackPoseWeight);
+            const cMatrix4x4f partMatrix    = CreateTransformMatrix(partTransform);
 
             renderPart.pInstance->worldMatrix = partMatrix * enemyMatrix;
         }
 
         visual.transformRevision = pEnemy->transformRevision;
+        visual.wasAttacking = isAttacking;
     }
 }
 
@@ -743,6 +793,21 @@ Math::cMatrix4x4f cGame::CreateTransformMatrix(const GFX::sTransform& _rTransfor
     cMatrix4x4f rotation    = cMatrix4x4f::rotationX(_rTransform.rotation.x()) * cMatrix4x4f::rotationY(_rTransform.rotation.y()) * cMatrix4x4f::rotationZ(_rTransform.rotation.z());
 
     return scale * rotation * translation;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+GFX::sTransform cGame::InterpolateTransform(const GFX::sTransform& _rFrom, const GFX::sTransform& _rTo, float _weight)
+{
+    const float weight = std::clamp(_weight, 0.0f, 1.0f);
+
+    GFX::sTransform result{};
+
+    result.position = _rFrom.position + (_rTo.position - _rFrom.position) * weight;
+    result.rotation = _rFrom.rotation + (_rTo.rotation - _rFrom.rotation) * weight;
+    result.scale    = _rFrom.scale    + (_rTo.scale    - _rFrom.scale)    * weight;
+
+    return result;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

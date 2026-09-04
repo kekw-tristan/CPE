@@ -62,6 +62,7 @@ namespace Gameplay
         float health               = 0.0f;
         float stateTime            = 0.0f;
         float attackCooldown       = 0.0f;
+        float attackPoseWeight     = 0.0f;
         eEnemyState state          = eEnemyState::Idle;
         uint64_t transformRevision = 1;
     };

@@ -68,6 +68,7 @@ class cGame : public cApplication
         {
             Gameplay::sEnemyHandle handle;
             uint64_t               transformRevision = 0;
+            bool                   wasAttacking       = false;
             std::vector<sEnemyRenderPart> renderParts;
         };
 
@@ -84,6 +85,7 @@ class cGame : public cApplication
         void InitMeshes();
         bool LoadPlayerModel();
         bool LoadEnemyModels();
+        bool LoadPoseModel(const char* _pFilePath, const GFX::sShapeModelDesc& _rBaseModel, GFX::sShapeModelDesc& _rPoseModel);
 
         void SpawnEnemies();
     
@@ -106,6 +108,7 @@ class cGame : public cApplication
         GFX::MeshHandle GetMesh(GFX::sMeshTypes::Enum _type);
     
         Math::cMatrix4x4f CreateTransformMatrix(const GFX::sTransform& _rTransform);
+        GFX::sTransform InterpolateTransform(const GFX::sTransform& _rFrom, const GFX::sTransform& _rTo, float _weight);
     
     private:
     
@@ -122,6 +125,7 @@ class cGame : public cApplication
         std::vector<GFX::sInstanceData*> m_instances;
 
         GFX::sShapeModelDesc m_playerModel;
+        GFX::sShapeModelDesc m_playerAttackModel;
         std::vector<sPlayerRenderPart> m_playerRenderParts;
 
         Physics::cCharacterController m_playerController;
@@ -141,7 +145,10 @@ class cGame : public cApplication
 
         float m_playerHealth        = 100.0f;
         float m_playerSpellCooldown = 0.0f;
+        float m_playerAttackTime    = 0.0f;
 
         Engine::GFX::sShapeModelDesc m_enemy03Model;
         Engine::GFX::sShapeModelDesc m_enemy04Model;
+        Engine::GFX::sShapeModelDesc m_enemy03AttackModel;
+        Engine::GFX::sShapeModelDesc m_enemy04AttackModel;
 };
