@@ -70,3 +70,6 @@ logs/
 
 *.ini
 vcpkg_installed/
+
+# Local Codex instructions
+/AGENTS.md
