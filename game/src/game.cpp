@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <unordered_set>
 
 // -------------------------------------------------------------------------------------------------------------------------
 
@@ -68,9 +69,26 @@ void cGame::OnUpdate(float _deltaTime)
     UpdatePlayer();
 
     m_playerController.Update(_deltaTime);
+    UpdateThirdPersonCamera(_deltaTime);
+    UpdatePlayerSpell(_deltaTime);
+
+    Gameplay::sEnemyUpdateContext enemyContext{};
+    enemyContext.deltaTime      = _deltaTime;
+    enemyContext.playerPosition = m_playerController.GetPosition();
+
+    m_enemyManager.Update(enemyContext, m_projectileManager);
+    m_projectileManager.Update(_deltaTime, enemyContext.playerPosition, m_enemyManager);
+
+    const float receivedDamage = m_enemyManager.ConsumePlayerDamage() + m_projectileManager.ConsumePlayerDamage();
+    if (receivedDamage > 0.0f)
+    {
+        m_playerHealth = std::max(0.0f, m_playerHealth - receivedDamage);
+        std::cout << "Player health: " << m_playerHealth << '\n';
+    }
 
     UpdatePlayerRenderInstances();
-    UpdateThirdPersonCamera(_deltaTime);
+    UpdateEnemyRenderInstances();
+    SyncProjectileRenderInstances();
 
 }
 
@@ -99,6 +117,10 @@ void cGame::OnDraw()
 
 void cGame::OnShutdown()
 {
+    m_enemyManager.Clear();
+    m_projectileManager.Clear();
+    m_enemyVisuals.clear();
+    m_projectileVisuals.clear();
     ClearRenderInstances();
 }
 
@@ -185,16 +207,10 @@ void cGame::SpawnEnemies()
 {
     const std::vector<World::sEnemySpawn>& spawns = World::WorldGenerator::GetEnemySpawns();
 
-    m_enemies.reserve(spawns.size());
+    m_enemyVisuals.reserve(spawns.size());
 
     for (const World::sEnemySpawn& spawn : spawns)
     {
-        sEnemy enemy{};
-
-        enemy.type = spawn.type;
-        enemy.position = spawn.position;
-        enemy.rotation = spawn.rotation;
-
         const GFX::sShapeModelDesc* pModel = nullptr;
 
         switch (spawn.type)
@@ -211,7 +227,9 @@ void cGame::SpawnEnemies()
         if (pModel == nullptr)
             continue;
 
-        enemy.renderParts.reserve(pModel->shapes.size());
+        sEnemyVisual visual{};
+        visual.handle = m_enemyManager.Spawn(spawn.type, spawn.position, spawn.rotation);
+        visual.renderParts.reserve(pModel->shapes.size());
 
         for (const GFX::sShapePartDesc& part : pModel->shapes)
         {
@@ -236,10 +254,10 @@ void cGame::SpawnEnemies()
             renderPart.pInstance = pInstance;
             renderPart.transform = part.transform;
 
-            enemy.renderParts.push_back(renderPart);
+            visual.renderParts.push_back(renderPart);
         }
 
-        m_enemies.push_back(std::move(enemy));
+        m_enemyVisuals.push_back(std::move(visual));
     }
 }
 
@@ -405,7 +423,6 @@ void cGame::RebuildInstanceList()
             m_instances.push_back(pInstance);
     }
 
-    std::cout << "GPU instance order rebuilt: " << m_instances.size() << '\n';
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -472,6 +489,41 @@ void cGame::UpdatePlayer()
 
 // -------------------------------------------------------------------------------------------------------------------------
 
+void cGame::UpdatePlayerSpell(float _deltaTime)
+{
+    constexpr float c_spellCooldown  = 1.0f;
+    constexpr float c_spellSpeed     = 13.0f;
+    constexpr float c_spellDamage    = 25.0f;
+    constexpr int   c_leftMouseButton = 0;
+
+    m_playerSpellCooldown = std::max(0.0f, m_playerSpellCooldown - _deltaTime);
+
+    if (!Engine::Platform::WasMouseButtonPressed(c_leftMouseButton) || m_playerSpellCooldown > 0.0f)
+        return;
+
+    float cameraDirection[4];
+    Engine::GFX::GetCamera().GetDirection(cameraDirection);
+
+    Engine::Math::cVec3f direction(cameraDirection[0], 0.0f, cameraDirection[2]);
+    direction.normalize();
+
+    if (direction.isZero())
+        return;
+
+    Gameplay::sProjectileSpawnDesc projectile{};
+    projectile.position  = m_playerController.GetPosition() + Engine::Math::cVec3f(0.0f, 1.25f, 0.0f) + direction * 0.8f;
+    projectile.direction = direction;
+    projectile.speed     = c_spellSpeed;
+    projectile.damage    = c_spellDamage;
+    projectile.lifetime  = 2.5f;
+
+    m_projectileManager.SpawnPlayerSphere(projectile);
+
+    m_playerSpellCooldown = c_spellCooldown;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
 void cGame::UpdatePlayerRenderInstances()
 {
     using namespace Engine::GFX;
@@ -503,23 +555,110 @@ void cGame::UpdateEnemyRenderInstances()
     using namespace Engine::GFX;
     using namespace Engine::Math;
 
-    for (sEnemy& enemy : m_enemies)
+    for (sEnemyVisual& visual : m_enemyVisuals)
     {
+        const Gameplay::sEnemy* pEnemy = m_enemyManager.TryGetEnemy(visual.handle);
+        if (pEnemy == nullptr || visual.transformRevision == pEnemy->transformRevision)
+            continue;
+
         sTransform enemyTransform{};
 
-        enemyTransform.position = enemy.position;
-        enemyTransform.rotation = { 0.0f, enemy.rotation, 0.0f };
-        enemyTransform.scale = { 1.0f, 1.0f, 1.0f };
+        enemyTransform.position = pEnemy->position;
+        enemyTransform.rotation = { 0.0f, pEnemy->rotation, 0.0f };
+        enemyTransform.scale = pEnemy->state == Gameplay::eEnemyState::Dead
+            ? Math::cVec3f(0.0f, 0.0f, 0.0f)
+            : Math::cVec3f(1.0f, 1.0f, 1.0f);
 
         const cMatrix4x4f enemyMatrix = CreateTransformMatrix(enemyTransform);
 
-        for (sEnemyRenderPart& renderPart : enemy.renderParts)
+        for (sEnemyRenderPart& renderPart : visual.renderParts)
         {
             const cMatrix4x4f partMatrix = CreateTransformMatrix(renderPart.transform);
 
             renderPart.pInstance->worldMatrix = partMatrix * enemyMatrix;
         }
+
+        visual.transformRevision = pEnemy->transformRevision;
     }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::SyncProjectileRenderInstances()
+{
+    using namespace Engine::GFX;
+    using namespace Engine::Math;
+
+    const std::vector<Gameplay::sProjectile>& projectiles = m_projectileManager.GetProjectiles();
+    std::unordered_set<uint64_t> activeIds;
+    activeIds.reserve(projectiles.size());
+
+    bool instanceListChanged = false;
+
+    for (const Gameplay::sProjectile& projectile : projectiles)
+    {
+        activeIds.insert(projectile.id);
+
+        auto visual = std::find_if(m_projectileVisuals.begin(), m_projectileVisuals.end(), [&projectile](const sProjectileVisual& _rVisual)
+        {
+            return _rVisual.id == projectile.id;
+        });
+
+        if (visual == m_projectileVisuals.end())
+        {
+            sInstanceData* pInstance = m_pool.Create();
+            const bool isPlayerSpell = projectile.type == Gameplay::eProjectileType::PlayerSphere;
+
+            pInstance->color = isPlayerSpell
+                ? std::array<float, 4>{ 0.5f, 0.15f, 1.0f, 1.0f }
+                : std::array<float, 4>{ 0.08f, 0.9f, 1.0f, 1.0f };
+
+            pInstance->materialIndex = m_playerModel.materialIndices.size() > 3 ? m_playerModel.materialIndices[3] : 0;
+
+            const MeshHandle mesh = isPlayerSpell ? m_sphereMesh : m_coneMesh;
+
+            m_meshInstances[mesh].push_back(pInstance);
+            m_projectileVisuals.push_back({ projectile.id, pInstance, mesh });
+
+            visual = std::prev(m_projectileVisuals.end());
+            instanceListChanged = true;
+        }
+
+        sTransform transform{};
+        transform.position = projectile.position;
+
+        if (projectile.type == Gameplay::eProjectileType::PlayerSphere)
+        {
+            transform.rotation = { 0.0f, 0.0f, 0.0f };
+            transform.scale = { 0.42f, 0.42f, 0.42f };
+        }
+        else
+        {
+            transform.rotation = { 1.5707963f, std::atan2(projectile.direction.x(), projectile.direction.z()), 0.0f };
+            transform.scale = { 0.18f, 0.42f, 0.18f };
+        }
+
+        visual->pInstance->worldMatrix = CreateTransformMatrix(transform);
+    }
+
+    auto visual = m_projectileVisuals.begin();
+    while (visual != m_projectileVisuals.end())
+    {
+        if (activeIds.contains(visual->id))
+        {
+            ++visual;
+            continue;
+        }
+
+        std::vector<sInstanceData*>& meshInstances = m_meshInstances[visual->mesh];
+        std::erase(meshInstances, visual->pInstance);
+        m_pool.Destroy(visual->pInstance);
+        visual = m_projectileVisuals.erase(visual);
+        instanceListChanged = true;
+    }
+
+    if (instanceListChanged)
+        RebuildInstanceList();
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -529,8 +668,8 @@ void cGame::UpdateThirdPersonCamera(float _deltaTime)
     using namespace Engine;
 
     constexpr float c_mouseSensitivity  = 0.12f;
-    constexpr float c_cameraDistance    = 6.0f;
-    constexpr float c_targetHeight      = 1.5f;
+    constexpr float c_cameraDistance    = 7.5f;
+    constexpr float c_targetHeight      = 1.7f;
     constexpr float c_minPitch          = -60.0f;
     constexpr float c_maxPitch          = -10.0f;
 

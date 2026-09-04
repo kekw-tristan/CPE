@@ -66,52 +66,52 @@ namespace Engine
 
                 m_pAppIntern->BeginShadowRendering();
 
-            for (uint32_t shadowIndex = 0; shadowIndex < m_pAppIntern->GetShadowCount(); ++shadowIndex)
-            {
-                const uint32_t matrixCount = m_pAppIntern->GetShadowMatrixCount(shadowIndex);
-
-                for (uint32_t matrixIndex = 0; matrixIndex < matrixCount; ++matrixIndex)
+                for (uint32_t shadowIndex = 0; shadowIndex < m_pAppIntern->GetShadowCount(); ++shadowIndex)
                 {
-                    m_pAppIntern->BeginShadowDraw(shadowIndex, matrixIndex);
+                    const uint32_t matrixCount = m_pAppIntern->GetShadowMatrixCount(shadowIndex);
 
-                    OnDraw();
+                    for (uint32_t matrixIndex = 0; matrixIndex < matrixCount; ++matrixIndex)
+                    {
+                        m_pAppIntern->BeginShadowDraw(shadowIndex, matrixIndex);
 
-                    m_pAppIntern->EndShadowDraw();
+                        OnDraw();
+
+                        m_pAppIntern->EndShadowDraw();
+                    }
                 }
-            }
 
                 m_pAppIntern->EndShadowRendering();
 
-            // ---------------------------------------------------------------------------------------------------------------------
+                // ---------------------------------------------------------------------------------------------------------------------
                 // Reflection Probe
-            // ---------------------------------------------------------------------------------------------------------------------
+                // ---------------------------------------------------------------------------------------------------------------------
 
                 for (uint32_t probeIndex = 0; probeIndex < m_pAppIntern->GetReflectionProbeCount(); ++probeIndex)
                 {
-                if (!m_pAppIntern->NeedsReflectionProbeUpdate(probeIndex))
-                {
-                    continue;
+                    if (!m_pAppIntern->NeedsReflectionProbeUpdate(probeIndex))
+                    {
+                        continue;
+                    }
+
+                    m_pAppIntern->BeginReflectionProbeRendering(probeIndex);
+
+                    for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
+                    {
+                        m_pAppIntern->BeginReflectionProbeDraw(faceIndex);
+
+                        OnDraw();
+
+                        m_pAppIntern->EndReflectionProbeDraw();
+                    }
+
+                    m_pAppIntern->EndReflectionProbeRendering();
+
+                    m_pAppIntern->PrefilterReflectionProbe(probeIndex);
                 }
 
-                m_pAppIntern->BeginReflectionProbeRendering(probeIndex);
-
-                for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
-                {
-                    m_pAppIntern->BeginReflectionProbeDraw(faceIndex);
-
-                    OnDraw();
-
-                    m_pAppIntern->EndReflectionProbeDraw();
-                }
-
-                m_pAppIntern->EndReflectionProbeRendering();
-
-                m_pAppIntern->PrefilterReflectionProbe(probeIndex);
-                }
-
-            // ---------------------------------------------------------------------------------------------------------------------
-            // Main
-            // ---------------------------------------------------------------------------------------------------------------------
+                // ---------------------------------------------------------------------------------------------------------------------
+                // Main
+                // ---------------------------------------------------------------------------------------------------------------------
 
                 m_pAppIntern->BeginDraw();
 
@@ -217,6 +217,13 @@ namespace Engine::Platform
     bool IsKeyDown(int _key)
     {
         return s_pApplicationIntern->IsKeydown(_key);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool WasMouseButtonPressed(int _button)
+    {
+        return s_pApplicationIntern->WasMouseButtonPressed(_button);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

@@ -80,6 +80,7 @@ namespace Engine::GFX
 namespace Engine::Platform
 {
     bool IsKeyDown(int _key); 
+    bool WasMouseButtonPressed(int _button);
 
     float GetMouseDeltaX();
     float GetMouseDeltaY();

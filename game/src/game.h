@@ -18,6 +18,9 @@
 
 #include "world/enemy/enemySpawn.h"
 
+#include "enemy/enemyManager.h"
+#include "enemy/projectileManager.h"
+
 #include <unordered_map>
 #include <vector>
 
@@ -58,16 +61,21 @@ class cGame : public cApplication
         struct sEnemyRenderPart
         {
             Engine::GFX::sInstanceData* pInstance = nullptr;
-            Engine::GFX::sTransform transform;
+            Engine::GFX::sTransform      transform;
         };
 
-        struct sEnemy
+        struct sEnemyVisual
         {
-            World::sEnemyType::Enum type;
-            Engine::Math::cVec3f position;
-            float rotation = 0.0f;
-
+            Gameplay::sEnemyHandle handle;
+            uint64_t               transformRevision = 0;
             std::vector<sEnemyRenderPart> renderParts;
+        };
+
+        struct sProjectileVisual
+        {
+            uint64_t            id        = 0;
+            GFX::sInstanceData* pInstance = nullptr;
+            GFX::MeshHandle     mesh      = nullptr;
         };
 
     
@@ -89,8 +97,10 @@ class cGame : public cApplication
         void ClearRenderInstances();
 
         void UpdatePlayer();
+        void UpdatePlayerSpell(float _deltaTime);
         void UpdatePlayerRenderInstances();
         void UpdateEnemyRenderInstances();
+        void SyncProjectileRenderInstances();
         void UpdateThirdPersonCamera(float _deltaTime); 
     
         GFX::MeshHandle GetMesh(GFX::sMeshTypes::Enum _type);
@@ -123,7 +133,14 @@ class cGame : public cApplication
     
         GFX::cScene m_scene;
 
-        std::vector<sEnemy> m_enemies;
+        Gameplay::cEnemyManager        m_enemyManager;
+        Gameplay::cProjectileManager   m_projectileManager;
+
+        std::vector<sEnemyVisual>      m_enemyVisuals;
+        std::vector<sProjectileVisual> m_projectileVisuals;
+
+        float m_playerHealth        = 100.0f;
+        float m_playerSpellCooldown = 0.0f;
 
         Engine::GFX::sShapeModelDesc m_enemy03Model;
         Engine::GFX::sShapeModelDesc m_enemy04Model;

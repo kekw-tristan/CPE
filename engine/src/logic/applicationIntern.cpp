@@ -327,6 +327,13 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    bool cApplicationIntern::WasMouseButtonPressed(int _button) const
+    {
+        return m_input.WasMouseButtonPressed(_button);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cApplicationIntern::InitializeImGui()
     {
         // init desc
