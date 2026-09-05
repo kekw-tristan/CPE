@@ -45,12 +45,12 @@ namespace Engine::GFX
         }
         else if (!gpuTimesAvailable)
         {
-            m_gpuAccumulatedTime = 0.0f;
-            m_shadowGpuSum = 0.0;
-            m_mainGpuSum = 0.0;
-            m_gpuSampleCount = 0;
-            m_shadowGpuAverage = -1.0;
-            m_mainGpuAverage = -1.0;
+            m_gpuAccumulatedTime    = 0.0f;
+            m_shadowGpuSum          = 0.0;
+            m_mainGpuSum            = 0.0;
+            m_gpuSampleCount        = 0;
+            m_shadowGpuAverage      = -1.0;
+            m_mainGpuAverage        = -1.0;
         }
 
         if (deltaTime > 0.0f)
@@ -101,7 +101,6 @@ namespace Engine::GFX
             }
 
             ImGui::Spacing();
-            ImGui::TextWrapped("Compare castsShadow on/off at the same camera position. Main-pass difference includes shadow sampling. Pass timings may overlap.");
         }
         else
         {

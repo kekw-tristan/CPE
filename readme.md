@@ -8,6 +8,11 @@ The project is focused on building a lightweight, extensible engine while develo
 
 # Blog
 
+## 5.9.2026
+
+The game now features a sky and fog system, enemies, bosses, a first player attack, and health tracking for both the player and enemies.
+![Reflection Probes](blogImages/spawnSky.png)
+
 ## 30.8.2026
 
 I decided to turn the engine into an actual game: a shape-based third-person ARPG. Development has now moved beyond the core engine work, starting with procedural world generation and the first foundations for gameplay.

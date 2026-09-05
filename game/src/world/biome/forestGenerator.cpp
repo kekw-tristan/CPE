@@ -8,6 +8,7 @@
 #include "../enemy/enemySpawn.h"
 
 #include "graphics/scene/scene.h"
+#include "graphics/shapeModel/shapeModelDesc.h"
 
 #include "physics/collider.h"
 
@@ -85,7 +86,10 @@ namespace World
         {
             if (_rPosition.x() * _rPosition.x() + _rPosition.z() * _rPosition.z() > (c_forestRadius - 6.0f) * (c_forestRadius - 6.0f))
                 return 0.0f;
-            if (_rPosition.x() * _rPosition.x() + _rPosition.z() * _rPosition.z() < 12.0f * 12.0f)
+            if (_rPosition.x() * _rPosition.x() + _rPosition.z() * _rPosition.z() < 16.0f * 16.0f)
+                return 0.0f;
+            // Reserve the reference temple and its front staircase.
+            if (std::abs(_rPosition.x()) < 23.0f && _rPosition.z() > -3.0f && _rPosition.z() < 57.0f)
                 return 0.0f;
             for (const auto& dungeon : _rWorldLayout.dungeons)
             {
@@ -143,6 +147,59 @@ namespace World
             collider.halfExtents = _rHalfExtents * _scale;
 
             _rColliders.push_back(collider);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        void GeneratePlayerSpawn(
+            GFX::cScene& _rScene,
+            const sChunk& _rChunk,
+            std::vector<Physics::sAABBCollider>& _rColliders
+        )
+        {
+            // The player starts at the origin, inside the cleared forest glade.
+            if (_rChunk.coordinate.x != 0 || _rChunk.coordinate.z != 0)
+                return;
+
+            const auto modelHandle = WorldModels::Get("forest_spawn");
+            if (modelHandle < 0)
+                return;
+
+            const Math::cVec3f position(0.0f, _rChunk.height + GetTerrainSurfaceHeight(0.0f, 34.0f), 34.0f);
+
+            GFX::sShapeInstance spawnInstance{};
+            spawnInstance.modelHandle        = modelHandle;
+            spawnInstance.transform.position = position;
+            spawnInstance.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
+            spawnInstance.transform.scale    = Math::cVec3f(1.0f, 1.0f, 1.0f);
+            _rScene.AddShapeInstance(spawnInstance);
+
+            // This asset uses unrotated cubes for its walls, floors and 0.25-unit stair treads.
+            // Derive collision from the loaded model so geometry and walkable openings agree.
+            const auto& model = GFX::ShapeModelManager::GetShapeModel(modelHandle);
+            for (const auto& shape : model.shapes)
+            {
+                if (shape.meshType != GFX::sMeshTypes::Cube)
+                    continue;
+
+                Physics::sAABBCollider surface{};
+                surface.center      = position + shape.transform.position;
+                surface.halfExtents = shape.transform.scale * 0.5f;
+                surface.isGround    = true;
+                _rColliders.push_back(surface);
+
+                // Horizontal capsule movement precedes ground snapping. Recess the solid top
+                // by one maximum step so the next riser does not block the player's feet.
+                constexpr float c_stepClearance = 0.5f;
+                if (shape.transform.scale.y() > c_stepClearance)
+                {
+                    Physics::sAABBCollider solid = surface;
+                    solid.center      -= Math::cVec3f(0.0f, c_stepClearance * 0.5f, 0.0f);
+                    solid.halfExtents -= Math::cVec3f(0.0f, c_stepClearance * 0.5f, 0.0f);
+                    solid.isGround     = false;
+                    _rColliders.push_back(solid);
+                }
+            }
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -484,6 +541,7 @@ namespace World
         )
         {
             GenerateGround(_rScene, _rChunk, _rColliders);
+            GeneratePlayerSpawn(_rScene, _rChunk, _rColliders);
             GenerateTrees(_rScene, _rChunk, _rRandomGenerator, _rWorldLayout, _rColliders);
             GenerateEnemyPacks(_rChunk, _rRandomGenerator, _rWorldLayout, _rEnemySpawns);
             GenerateDungeons(_rScene, _rWorldLayout, _rEnemySpawns, _rChunk, _rColliders);
