@@ -117,6 +117,8 @@ namespace Engine
 
                 OnDraw();
 
+                OnDrawUI();
+
                 GFX::ImGuiWindowManager::Draw();
 
                 if (!m_pAppIntern->EndFrame())

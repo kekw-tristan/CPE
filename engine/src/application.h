@@ -47,7 +47,8 @@ namespace Engine
             virtual void OnShutdown()               {};          
             virtual void OnUpdate(float _deltaTime) {}; 
             virtual void OnPrepareRender()          {};
-            virtual void OnDraw()                   {};            
+            virtual void OnDraw()                   {};
+            virtual void OnDrawUI()                 {};
 
         private:
 

@@ -21,6 +21,8 @@
 #include "enemy/enemyManager.h"
 #include "enemy/projectileManager.h"
 
+#include "ui/gameHud.h"
+
 #include <unordered_map>
 #include <vector>
 
@@ -49,6 +51,7 @@ class cGame : public cApplication
         void OnPrepareRender()          override;
         void OnDraw()                   override;
         void OnShutdown()               override;
+        void OnDrawUI()                 override;
 
     private:
 
@@ -145,7 +148,12 @@ class cGame : public cApplication
         std::vector<sEnemyVisual>      m_enemyVisuals;
         std::vector<sProjectileVisual> m_projectileVisuals;
 
-        float m_playerHealth        = 100.0f;
+        static constexpr float c_playerMaxHealth     = 100.0f;
+        static constexpr float c_playerSpellCooldown = 1.0f;
+
+        UI::cGameHud m_hud;
+
+        float m_playerHealth        = c_playerMaxHealth;
         float m_playerSpellCooldown = 0.0f;
         float m_playerAttackTime    = 0.0f;
 

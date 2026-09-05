@@ -117,6 +117,20 @@ void cGame::OnDraw()
 
 // -------------------------------------------------------------------------------------------------------------------------
 
+void cGame::OnDrawUI()
+{
+    UI::sHudState hudState;
+
+    hudState.health                = m_playerHealth;
+    hudState.maxHealth             = c_playerMaxHealth;
+    hudState.spellCooldown         = m_playerSpellCooldown;
+    hudState.spellCooldownDuration = c_playerSpellCooldown;
+
+    m_hud.Draw(hudState);
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
 void cGame::OnShutdown()
 {
     m_enemyManager.Clear();
@@ -529,7 +543,6 @@ void cGame::UpdatePlayer()
 
 void cGame::UpdatePlayerSpell(float _deltaTime)
 {
-    constexpr float c_spellCooldown  = 1.0f;
     constexpr float c_spellSpeed     = 13.0f;
     constexpr float c_spellDamage    = 25.0f;
     constexpr int   c_leftMouseButton = 0;
@@ -558,7 +571,7 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
 
     m_projectileManager.SpawnPlayerSphere(projectile);
 
-    m_playerSpellCooldown = c_spellCooldown;
+    m_playerSpellCooldown = c_playerSpellCooldown;
     m_playerAttackTime = 0.4f;
 }
 

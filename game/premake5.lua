@@ -35,7 +35,8 @@ project "game"
 
     includedirs
     {
-        IncludeDir["Engine"]
+        IncludeDir["Engine"],
+        path.join(RootDir, "external", "imgui-docking")
     }
 
     links
