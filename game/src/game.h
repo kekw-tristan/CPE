@@ -25,6 +25,8 @@
 
 #include <unordered_map>
 #include <vector>
+#include <map>
+#include <tuple>
 
 
 constexpr int c_instancesPerPage = 800;
@@ -70,6 +72,7 @@ class cGame : public cApplication
         struct sEnemyVisual
         {
             Gameplay::sEnemyHandle handle;
+            std::pair<int, int>    chunk;
             uint64_t               transformRevision = 0;
             bool                   wasAttacking       = false;
             Engine::Math::cVec3f    previousPosition   = { 0.0f, 0.0f, 0.0f };
@@ -93,12 +96,12 @@ class cGame : public cApplication
         bool LoadEnemyModels();
         bool LoadPoseModel(const char* _pFilePath, const GFX::sShapeModelDesc& _rBaseModel, GFX::sShapeModelDesc& _rPoseModel);
 
-        void SpawnEnemies();
+        void SpawnEnemies(const std::vector<World::sEnemySpawn>& _rSpawns, const std::pair<int, int>& _rChunk);
+        void RefreshWorldRenderInstances();
     
         void UpdateFreeCam(float _deltaTime);
 
-        void BuildSceneRenderInstances();
-        void BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance);
+        void BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, std::vector<GFX::sInstanceData*>& _rInstances);
         void BuildPlayerRenderInstances();
     
         void RebuildInstanceList();
@@ -144,18 +147,22 @@ class cGame : public cApplication
     
         std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData*>> m_meshInstances;
     
-        GFX::cScene m_scene;
+        std::map<std::pair<int, int>, std::vector<GFX::sInstanceData*>> m_worldRenderInstances;
+        std::map<std::tuple<float, float, float>, Gameplay::sEnemyHandle> m_worldEnemies;
+        std::vector<Gameplay::sEnemyHandle> m_bossHandles;
+
+        bool m_enemyModelsLoaded = false;
 
         Gameplay::cEnemyManager        m_enemyManager;
         Gameplay::cProjectileManager   m_projectileManager;
 
         std::vector<sEnemyVisual>      m_enemyVisuals;
 
-        static constexpr float c_healthBarMaxDistance = 40.0f;
-        static constexpr float c_healthBarWidth = 1.1f;
-        static constexpr float c_healthBarHeight = 0.14f;
+        static constexpr float c_healthBarMaxDistance   = 40.0f;
+        static constexpr float c_healthBarWidth         = 1.1f;
+        static constexpr float c_healthBarHeight        = 0.14f;
         static constexpr float c_crawlerHealthBarOffset = 2.8f;
-        static constexpr float c_bruteHealthBarOffset = 3.0f;
+        static constexpr float c_bruteHealthBarOffset   = 3.0f;
 
         std::vector<GFX::sHealthBarData> m_healthBars;
         std::vector<sProjectileVisual> m_projectileVisuals;

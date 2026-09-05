@@ -9,6 +9,7 @@
 #include "graphics/shapeModel/shapeMeshLibrary.h"
 
 #include "world/worldGenerator.h"
+#include "world/chunk.h"
 
 #include <algorithm>
 #include <cmath>
@@ -36,7 +37,6 @@ cGame::cGame(Engine::sAppConfig& _rAppConfig)
     , m_playerYaw(0.f)
     , m_cameraPitch(-20.f)
     , m_meshInstances()
-    , m_scene()
 {
 }
 
@@ -46,15 +46,13 @@ void cGame::OnInit()
 {
     InitMeshes();
 
-    World::WorldGenerator::Generate(m_scene, 1337);
-
-    BuildSceneRenderInstances();
+    World::WorldGenerator::Generate(1337);
 
     if (LoadPlayerModel())
         BuildPlayerRenderInstances();
 
-    if (LoadEnemyModels())
-        SpawnEnemies();
+    m_enemyModelsLoaded = LoadEnemyModels();
+    RefreshWorldRenderInstances();
 
     UpdateEnemyRenderInstances(0.0f);
 
@@ -70,6 +68,9 @@ void cGame::OnUpdate(float _deltaTime)
     //UpdateFreeCam(_deltaTime);
 
     UpdatePlayer();
+
+    if (World::WorldGenerator::Update(m_playerController.GetPosition()))
+        RefreshWorldRenderInstances();
 
     m_playerController.Update(_deltaTime);
     UpdateThirdPersonCamera(_deltaTime);
@@ -130,20 +131,29 @@ void cGame::OnDrawUI()
     hudState.spellCooldown         = m_playerSpellCooldown;
     hudState.spellCooldownDuration = c_playerSpellCooldown;
 
-    for (const auto& visual : m_enemyVisuals)
+    // Navigation uses immutable layout data even before an arena's chunk is loaded.
+    for (const auto& definition : World::WorldGenerator::GetLayout().dungeons)
     {
-        const auto* pEnemy = m_enemyManager.TryGetEnemy(visual.handle);
+        auto& dungeon = hudState.dungeons[static_cast<size_t>(definition.type)];
+        const auto offset = definition.center - m_playerController.GetPosition();
+
+        dungeon.offsetX  = offset.x();
+        dungeon.offsetZ  = offset.z();
+        dungeon.distance = std::sqrt(offset.x() * offset.x() + offset.z() * offset.z());
+        dungeon.inArena  = std::abs(offset.x()) <= 12.5f && std::abs(offset.z()) <= 12.5f;
+    }
+
+    for (const auto& handle : m_bossHandles)
+    {
+        const auto* pEnemy = m_enemyManager.TryGetEnemy(handle);
         if (pEnemy == nullptr || !pEnemy->isBoss)
             continue;
+
         auto& dungeon = hudState.dungeons[static_cast<size_t>(pEnemy->type)];
-        dungeon.defeated = pEnemy->state == Gameplay::eEnemyState::Dead;
-        const auto offset = m_playerController.GetPosition() - pEnemy->homePosition;
-        dungeon.offsetX = -offset.x();
-        dungeon.offsetZ = -offset.z();
-        dungeon.distance = std::sqrt(offset.x() * offset.x() + offset.z() * offset.z());
-        dungeon.inArena = std::abs(offset.x()) <= 12.5f && std::abs(offset.z()) <= 12.5f;
+        dungeon.defeated       = pEnemy->state == Gameplay::eEnemyState::Dead;
         dungeon.healthFraction = pEnemy->health / pEnemy->definition.maxHealth;
     }
+
     m_hud.Draw(hudState);
 }
 
@@ -151,6 +161,11 @@ void cGame::OnDrawUI()
 
 void cGame::OnShutdown()
 {
+    World::WorldGenerator::Clear();
+    m_worldEnemies.clear();
+    m_bossHandles.clear();
+    m_worldRenderInstances.clear();
+
     m_enemyManager.Clear();
     m_projectileManager.Clear();
     m_enemyVisuals.clear();
@@ -290,14 +305,9 @@ bool cGame::LoadPoseModel(const char* _pFilePath, const GFX::sShapeModelDesc& _r
 
 // -------------------------------------------------------------------------------------------------------------------------
 
-void cGame::SpawnEnemies()
+void cGame::SpawnEnemies(const std::vector<World::sEnemySpawn>& _rSpawns, const std::pair<int, int>& _rChunk)
 {
-    const std::vector<World::sEnemySpawn>& spawns = World::WorldGenerator::GetEnemySpawns();
-
-    m_enemyVisuals.reserve(spawns.size());
-    m_healthBars.reserve(spawns.size());
-
-    for (const World::sEnemySpawn& spawn : spawns)
+    for (const World::sEnemySpawn& spawn : _rSpawns)
     {
         const GFX::sShapeModelDesc* pModel = nullptr;
 
@@ -324,8 +334,23 @@ void cGame::SpawnEnemies()
             continue;
 
         sEnemyVisual visual{};
-        visual.handle = m_enemyManager.Spawn(spawn.type, spawn.position, spawn.rotation, spawn.isBoss);
-        visual.previousPosition = spawn.position;
+        visual.chunk = _rChunk;
+
+        const auto key = std::make_tuple(spawn.position.x(), spawn.position.y(), spawn.position.z());
+        auto [entry, inserted] = m_worldEnemies.try_emplace(key);
+
+        if (inserted)
+        {
+            entry->second = m_enemyManager.Spawn(spawn.type, spawn.position, spawn.rotation, spawn.isBoss);
+            if (spawn.isBoss)
+                m_bossHandles.push_back(entry->second);
+        }
+
+        visual.handle = entry->second;
+
+        m_enemyManager.SetActive(visual.handle, true);
+
+        visual.previousPosition = m_enemyManager.TryGetEnemy(visual.handle)->position;
         visual.renderParts.reserve(pModel->shapes.size());
 
         for (const GFX::sShapePartDesc& part : pModel->shapes)
@@ -425,15 +450,60 @@ void cGame::UpdateFreeCam(float _deltaTime)
 
 // -------------------------------------------------------------------------------------------------------------------------
 
-void cGame::BuildSceneRenderInstances()
+void cGame::RefreshWorldRenderInstances()
 {
-    for (const Engine::GFX::sShapeInstance& shapeInstance : m_scene.GetShapeInstances())
-        BuildRenderInstances(shapeInstance);
+    const auto& chunks = World::WorldGenerator::GetLoadedChunks();
+    std::unordered_set<GFX::sInstanceData*> removed;
+
+    std::erase_if(m_worldRenderInstances, [&](const auto& _rEntry)
+    {
+        if (chunks.contains(_rEntry.first))
+            return false;
+
+        removed.insert(_rEntry.second.begin(), _rEntry.second.end());
+        return true;
+    });
+
+    std::erase_if(m_enemyVisuals, [&](const auto& _rVisual)
+    {
+        if (chunks.contains(_rVisual.chunk))
+            return false;
+
+        m_enemyManager.SetActive(_rVisual.handle, false);
+        for (const auto& part : _rVisual.renderParts)
+            removed.insert(part.pInstance);
+
+        return true;
+    });
+
+    if (!removed.empty())
+    {
+        for (auto& [mesh, instances] : m_meshInstances)
+            std::erase_if(instances, [&](auto* _pInstance) { return removed.contains(_pInstance); });
+
+        for (auto* pInstance : removed)
+            m_pool.Destroy(pInstance);
+    }
+
+    for (const auto& [coordinate, chunk] : chunks)
+    {
+        auto [entry, inserted] = m_worldRenderInstances.try_emplace(coordinate);
+        if (!inserted)
+            continue;
+
+        for (const auto& shape : chunk.scene.GetShapeInstances())
+            BuildRenderInstances(shape, entry->second);
+
+        if (m_enemyModelsLoaded)
+            SpawnEnemies(chunk.spawns, coordinate);
+    }
+
+    RebuildInstanceList();
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
 
-void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance)
+void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, std::vector<GFX::sInstanceData*>& _rInstances)
 {
     using namespace Engine::GFX;
     using namespace Engine::Math;
@@ -468,6 +538,7 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance)
         }
 
         m_meshInstances[mesh].push_back(pInstance);
+        _rInstances.push_back(pInstance);
     }
 }
 
@@ -745,15 +816,18 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
 
         const bool isAttacking = pEnemy->state == Gameplay::eEnemyState::AttackWindup || pEnemy->state == Gameplay::eEnemyState::AttackRecovery;
 
-        const bool isThornwolf = pEnemy->type == World::sEnemyType::ForestThornwolf;
+        const bool isThornwolf      = pEnemy->type == World::sEnemyType::ForestThornwolf;
         const bool hasWalkAnimation = isThornwolf || pEnemy->type == World::sEnemyType::ForestSporecap;
-        const cVec3f displacement = pEnemy->position - visual.previousPosition;
+        const cVec3f displacement   = pEnemy->position - visual.previousPosition;
+
         visual.previousPosition = pEnemy->position;
-        const float distance = std::sqrt(displacement.x() * displacement.x() + displacement.z() * displacement.z());
-        const float previousWalkWeight = visual.walkWeight;
-        const bool isWalking = hasWalkAnimation && distance > 0.0001f && !isAttacking && pEnemy->state != Gameplay::eEnemyState::Dead;
-        const float targetWalkWeight = isWalking ? 1.0f : 0.0f;
-        const float blendStep = std::max(0.0f, _deltaTime) * 8.0f;
+
+        const float distance            = std::sqrt(displacement.x() * displacement.x() + displacement.z() * displacement.z());
+        const float previousWalkWeight  = visual.walkWeight;    
+        const bool  isWalking           = hasWalkAnimation && distance > 0.0001f && !isAttacking && pEnemy->state != Gameplay::eEnemyState::Dead;
+        const float targetWalkWeight    = isWalking ? 1.0f : 0.0f;
+        const float blendStep           = std::max(0.0f, _deltaTime) * 8.0f;
+
         visual.walkWeight += std::clamp(targetWalkWeight - visual.walkWeight, -blendStep, blendStep);
 
         // Drive the gait from distance actually travelled, including collision and retreat movement.
@@ -774,7 +848,7 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
 
         enemyTransform.position = pEnemy->position;
         enemyTransform.rotation = { 0.0f, pEnemy->rotation, 0.0f };
-        enemyTransform.scale = pEnemy->state == Gameplay::eEnemyState::Dead
+        enemyTransform.scale    = pEnemy->state == Gameplay::eEnemyState::Dead
             ? Math::cVec3f(0.0f, 0.0f, 0.0f)
             : Math::cVec3f(pEnemy->scale, pEnemy->scale, pEnemy->scale);
 
@@ -867,6 +941,7 @@ void cGame::SyncProjectileRenderInstances()
             const bool isPlayerSpell = projectile.type == Gameplay::eProjectileType::PlayerSphere;
 
             const bool isSpore = projectile.type == Gameplay::eProjectileType::EnemySpore;
+
             pInstance->color = isPlayerSpell
                 ? std::array<float, 4>{ 0.5f, 0.15f, 1.0f, 1.0f }
                 : isSpore ? std::array<float, 4>{ 0.48f, 0.16f, 0.22f, 1.0f }

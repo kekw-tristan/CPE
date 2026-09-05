@@ -1,27 +1,16 @@
 #include "worldGenerator.h"
-
 #include "chunk.h"
 #include "worldConfig.h"
-
+#include "worldModels.h"
+#include "biome/forestGenerator.h"
 #include "graphics/scene/scene.h"
-
-#include "graphics/shapeModel/shapeModelDesc.h"
-#include "graphics/shapeModel/shapeModelLoader.h"
-#include "graphics/shapeModel/shapeModelManager.h"
-#include "graphics/shapeModel/shapeMeshLibrary.h"
-
 #include "physics/collisionWorld.h"
 
-#include "worldModels.h"
-
-#include "biome/forestGenerator.h"
-
-#include "enemy/enemySpawn.h"
-
-#include <random>
+#include <algorithm>
 #include <cmath>
 #include <iostream>
-#include <vector>
+#include <map>
+#include <random>
 
 using namespace Engine;
 
@@ -29,202 +18,179 @@ using namespace Engine;
 
 namespace World
 {
+    namespace
+    {
+        class cWorldGenerator
+        {
+            public:
 
-	// -------------------------------------------------------------------------------------------------------------------------
+                int m_seed    = 0;
+                int m_centerX = 0;
+                int m_centerZ = 0;
+                bool m_hasCenter = false;
 
-	namespace
-	{
-		class cWorldGenerator
-		{
+                sWorldLayout m_layout;
+                std::map<std::pair<int, int>, sLoadedChunk> m_chunks;
 
-		public:
+                bool m_windowComplete = false;
 
-			static cWorldGenerator& GetInstance();
+                void GenerateLayout()
+                {
+                    std::mt19937 randomGenerator(m_seed);
 
-		public:
+                    m_layout.mainPath.clear();
+                    std::uniform_real_distribution<float> angleOffset(-0.16f, 0.16f);
 
-			void Generate(GFX::cScene& _rScene, int _seed);
-			const std::vector<sEnemySpawn>& GetEnemySpawns();
+                    for (size_t i = 0; i < m_layout.dungeons.size(); ++i)
+                    {
+                        const float angle   = 0.785398f + static_cast<float>(i) * 1.570796f + angleOffset(randomGenerator);
+                        auto& dungeon       = m_layout.dungeons[i];
+                        dungeon.center      = Math::cVec3f(std::cos(angle) * c_dungeonRadius, 0.0f, std::sin(angle) * c_dungeonRadius);
+                        dungeon.type        = static_cast<sEnemyType::Enum>(i);
 
-		private:
+                        m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
+                        m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - 30.0f) });
+                        m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -30.0f) });
+                        m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -14.0f) });
+                        m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -30.0f) });
+                        m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - 30.0f) });
+                        m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
+                    }
+                }
+        };
 
-			cWorldGenerator();
-			~cWorldGenerator();
+        cWorldGenerator& GetGenerator()
+        {
+            static cWorldGenerator generator;
+            return generator;
+        }
+    }
 
-			cWorldGenerator(const cWorldGenerator&)				= delete;
-			cWorldGenerator& operator=(const cWorldGenerator&)	= delete;
+    // -------------------------------------------------------------------------------------------------------------------------
 
-			cWorldGenerator(const cWorldGenerator&&)			= delete;
-			cWorldGenerator& operator=(const cWorldGenerator&&) = delete;
+    namespace WorldGenerator
+    {
+        void Generate(int _seed)
+        {
+            auto& generator = GetGenerator();
+            generator.m_seed = _seed;
+            Clear();
+            generator.m_hasCenter = false;
 
-		private:
+            if (!WorldModels::Load("./assets/models"))
+                std::cerr << "One or more world models could not be loaded.\n";
 
-			void GenerateLayout();
+            generator.GenerateLayout();
+            Update(Math::cVec3f(0.0f, 0.0f, 0.0f), (2 * c_chunkLoadRadius + 1) * (2 * c_chunkLoadRadius + 1));
+        }
 
-			void GenerateChunk(GFX::cScene& _rScene, const sChunk& _rChunk);
+        // -------------------------------------------------------------------------------------------------------------------------
 
-		private:
+        bool Update(const Math::cVec3f& _rPosition, int _chunkBudget)
+        {
+            auto& generator = GetGenerator();
 
-			std::mt19937 m_randomGenerator;
+            const int centerX = static_cast<int>(std::floor(_rPosition.x() / c_chunkSize + 0.5f));
+            const int centerZ = static_cast<int>(std::floor(_rPosition.z() / c_chunkSize + 0.5f));
 
-			std::vector<sChunk> m_chunks;
+            const bool moved = !generator.m_hasCenter || centerX != generator.m_centerX || centerZ != generator.m_centerZ;
 
-			sWorldLayout m_layout;
+            if (!moved && generator.m_windowComplete)
+                return false;
 
-			std::vector<sEnemySpawn> m_enemySpawns;
+            generator.m_hasCenter = true;
+            generator.m_centerX   = centerX;
+            generator.m_centerZ   = centerZ;
 
-		};
+            bool changed = false;
 
-	}
-
-	// -------------------------------------------------------------------------------------------------------------------------
-
-	namespace
-	{
-
-		// -------------------------------------------------------------------------------------------------------------------------
-
-		cWorldGenerator& cWorldGenerator::GetInstance()
-		{
-			static cWorldGenerator s_instance;
-			return s_instance;
-		}
-
-		// -------------------------------------------------------------------------------------------------------------------------
-
-		void cWorldGenerator::Generate(GFX::cScene& _rScene, int _seed)
-		{
-			_rScene.Clear();
-			m_enemySpawns.clear();
-			Physics::CollisionWorld::Clear();
-
-			m_randomGenerator.seed(_seed);
-
-			GenerateLayout();
-
-			for (const sChunk& chunk : m_chunks)
-				GenerateChunk(_rScene, chunk);
-
-            ForestGenerator::GenerateDungeons(_rScene, m_layout, m_enemySpawns);
-		}
-
-		// -------------------------------------------------------------------------------------------------------------------------
-
-		const std::vector<sEnemySpawn>& cWorldGenerator::GetEnemySpawns()
-		{
-			return m_enemySpawns;
-		}
-
-		// -------------------------------------------------------------------------------------------------------------------------
-
-		cWorldGenerator::cWorldGenerator()
-			: m_randomGenerator()
-		{
-			if (!WorldModels::Load("./assets/models"))
-				std::cerr << "One or more world models could not be loaded.\n";
-		}
-
-		// -------------------------------------------------------------------------------------------------------------------------
-
-		cWorldGenerator::~cWorldGenerator()
-		{
-		}
-
-		// -------------------------------------------------------------------------------------------------------------------------
-
-		void cWorldGenerator::GenerateLayout()
-		{
-			m_chunks.clear();
-
-			const int startChunkX = -(c_worldChunkCountX / 2);
-			const int startChunkZ = -(c_worldChunkCountZ / 2);
-
-			m_chunks.reserve(c_worldChunkCountX * c_worldChunkCountZ);
-
-            m_layout.mainPath.clear();
-            std::uniform_real_distribution<float> angleOffset(-0.16f, 0.16f);
-            for (size_t i = 0; i < m_layout.dungeons.size(); ++i)
+            if (moved)
             {
-                const float angle = 0.785398f + static_cast<float>(i) * 1.570796f + angleOffset(m_randomGenerator);
-                auto& dungeon = m_layout.dungeons[i];
-                dungeon.center = Math::cVec3f(std::cos(angle) * 64.0f, 0.0f, std::sin(angle) * 64.0f);
-                dungeon.type = static_cast<sEnemyType::Enum>(i);
-                m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
-                m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - 30.0f) });
-                m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -30.0f) });
-                m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -14.0f) });
-                m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -30.0f) });
-                m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - 30.0f) });
-                m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
+                std::erase_if(generator.m_chunks, [&](const auto& _rEntry)
+                {
+                    if (std::abs(_rEntry.first.first - centerX) <= c_chunkLoadRadius
+                        && std::abs(_rEntry.first.second - centerZ) <= c_chunkLoadRadius)
+                        return false;
+
+                    for (auto handle : _rEntry.second.colliders)
+                        Physics::CollisionWorld::RemoveCollider(handle);
+
+                    changed = true;
+                    return true;
+                });
             }
 
-			for (int z = 0; z < c_worldChunkCountZ; ++z)
-			{
-				for (int x = 0; x < c_worldChunkCountX; ++x)
-				{
-					sChunk chunk{};
+            generator.m_windowComplete = true;
+            int generated = 0;
 
-					chunk.coordinate = { startChunkX + x, 0, startChunkZ + z };
-					chunk.biome = sBiomeType::Forest;
-					chunk.height = 0.0f;
-					chunk.biomeBlend = 0.0f;
+            // Nearest chunks first, including the ground after a teleport.
+            for (int radius = 0; radius <= c_chunkLoadRadius; ++radius)
+            {
+                for (int z = centerZ - radius; z <= centerZ + radius; ++z)
+                {
+                    for (int x = centerX - radius; x <= centerX + radius; ++x)
+                    {
+                        if (std::max(std::abs(x - centerX), std::abs(z - centerZ)) != radius
+                            || x < -c_worldChunkCountX / 2 || x >= c_worldChunkCountX / 2
+                            || z < -c_worldChunkCountZ / 2 || z >= c_worldChunkCountZ / 2
+                            || generator.m_chunks.contains({ x, z }))
+                            continue;
 
-					m_chunks.push_back(chunk);
-				}
-			}
-		}
+                        if (generated >= std::max(1, _chunkBudget))
+                        {
+                            generator.m_windowComplete = false;
+                            continue;
+                        }
 
-		// -------------------------------------------------------------------------------------------------------------------------
+                        auto& loaded = generator.m_chunks[{ x, z }];
+                        sChunk chunk{};
+                        chunk.coordinate = { x, 0, z };
+                        chunk.biome      = sBiomeType::Forest;
 
-		void cWorldGenerator::GenerateChunk(GFX::cScene& _rScene, const sChunk& _rChunk)
-		{
+                        std::seed_seq seed{ static_cast<uint32_t>(generator.m_seed),
+                            static_cast<uint32_t>(x), static_cast<uint32_t>(z) };
+                        std::mt19937 randomGenerator(seed);
 
-			switch (_rChunk.biome)
-			{
-				case sBiomeType::Forest:
-					ForestGenerator::GenerateChunk(_rScene, _rChunk, m_randomGenerator, m_layout, m_enemySpawns);
-					break;
+                        std::vector<Physics::sAABBCollider> colliders;
+                        ForestGenerator::GenerateChunk(loaded.scene, chunk, randomGenerator,
+                            generator.m_layout, loaded.spawns, colliders);
 
-				case sBiomeType::Desert:
-					break;
+                        loaded.colliders.reserve(colliders.size());
+                        for (const auto& collider : colliders)
+                            loaded.colliders.push_back(Physics::CollisionWorld::AddCollider(collider));
 
-				case sBiomeType::Ice:
-					break;
+                        ++generated;
+                        changed = true;
+                    }
+                }
+            }
 
-				case sBiomeType::Lava:
-					break;
-			}
-		}
+            return changed;
+        }
 
-		// -------------------------------------------------------------------------------------------------------------------------
+        // -------------------------------------------------------------------------------------------------------------------------
 
-	}
+        const std::map<std::pair<int, int>, sLoadedChunk>& GetLoadedChunks()
+        {
+            return GetGenerator().m_chunks;
+        }
 
-	// -------------------------------------------------------------------------------------------------------------------------
+        // -------------------------------------------------------------------------------------------------------------------------
 
-	namespace WorldGenerator
-	{
+        const sWorldLayout& GetLayout()
+        {
+            return GetGenerator().m_layout;
+        }
 
-		// -------------------------------------------------------------------------------------------------------------------------
+        // -------------------------------------------------------------------------------------------------------------------------
 
-		void Generate(Engine::GFX::cScene& _rScene, int _seed)
-		{
-			cWorldGenerator::GetInstance().Generate(_rScene, _seed);
-		}
-
-		// -------------------------------------------------------------------------------------------------------------------------
-
-		const std::vector<sEnemySpawn>& GetEnemySpawns()
-		{
-			return cWorldGenerator::GetInstance().GetEnemySpawns();
-		}
-
-		// -------------------------------------------------------------------------------------------------------------------------
-
-	}
-
-	// -------------------------------------------------------------------------------------------------------------------------
+        void Clear()
+        {
+            auto& generator = GetGenerator();
+            generator.m_chunks.clear();
+            generator.m_windowComplete = false;
+            generator.m_hasCenter = false;
+            Physics::CollisionWorld::Clear();
+        }
+    }
 }
-
-// -------------------------------------------------------------------------------------------------------------------------
-

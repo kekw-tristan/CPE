@@ -9,7 +9,6 @@
 #include "graphics/scene/scene.h"
 
 #include "physics/collider.h"
-#include "physics/collisionWorld.h"
 
 #include <algorithm>
 #include <cmath>
@@ -29,7 +28,7 @@ namespace World
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void GenerateGround(GFX::cScene& _rScene, const sChunk& _rChunk)
+        void GenerateGround(GFX::cScene& _rScene, const sChunk& _rChunk, std::vector<Physics::sAABBCollider>& _rColliders)
         {
             const float worldX = static_cast<float>(_rChunk.coordinate.x * c_chunkSize);
             const float worldY = _rChunk.height;
@@ -49,7 +48,7 @@ namespace World
             groundCollider.center       = Math::cVec3f(worldX, worldY - 0.1f, worldZ);
             groundCollider.halfExtents  = Math::cVec3f(static_cast<float>(c_chunkSize) * 0.5f, 0.1f, static_cast<float>(c_chunkSize) * 0.5f);
             groundCollider.isGround     = true;
-            Physics::CollisionWorld::AddCollider(groundCollider);
+            _rColliders.push_back(groundCollider);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -128,19 +127,31 @@ namespace World
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void AddAABBCollider(const Math::cVec3f& _rPosition, const Math::cVec3f& _rCenterOffset, const Math::cVec3f& _rHalfExtents, float _scale = 1.0f)
+        void AddAABBCollider(
+            std::vector<Physics::sAABBCollider>& _rColliders,
+            const Math::cVec3f& _rPosition,
+            const Math::cVec3f& _rCenterOffset,
+            const Math::cVec3f& _rHalfExtents,
+            float _scale = 1.0f
+        )
         {
             Physics::sAABBCollider collider{};
 
             collider.center = _rPosition + _rCenterOffset * _scale;
             collider.halfExtents = _rHalfExtents * _scale;
 
-            Physics::CollisionWorld::AddCollider(collider);
+            _rColliders.push_back(collider);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void GenerateTrees(GFX::cScene& _rScene, const sChunk& _rChunk, std::mt19937& _rRandomGenerator, const sWorldLayout& _rWorldLayout)
+        void GenerateTrees(
+            GFX::cScene& _rScene,
+            const sChunk& _rChunk,
+            std::mt19937& _rRandomGenerator,
+            const sWorldLayout& _rWorldLayout,
+            std::vector<Physics::sAABBCollider>& _rColliders
+        )
         {
             constexpr uint32_t c_minTreeCount           = 20;
             constexpr uint32_t c_maxTreeCount           = 40;
@@ -213,6 +224,7 @@ namespace World
                 treePositions.push_back(treePosition);
 
                 AddAABBCollider(
+                    _rColliders,
                     treePosition,
                     Math::cVec3f(0.0f, 1.0f, 0.0f),
                     Math::cVec3f(0.5f, 1.5f, 0.5f),
@@ -274,6 +286,7 @@ namespace World
                 stonePositions.push_back(stonePosition);
 
                 AddAABBCollider(
+                    _rColliders,
                     stonePosition,
                     Math::cVec3f(0.0f, 0.5f, 0.0f),
                     Math::cVec3f(0.7f, 0.5f, 0.7f),
@@ -284,7 +297,12 @@ namespace World
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void GenerateEnemyPacks(const sChunk& _rChunk, std::mt19937& _rRandomGenerator, const sWorldLayout& _rWorldLayout, std::vector<sEnemySpawn>& _rEnemySpawns)
+        void GenerateEnemyPacks(
+            const sChunk& _rChunk,
+            std::mt19937& _rRandomGenerator,
+            const sWorldLayout& _rWorldLayout,
+            std::vector<sEnemySpawn>& _rEnemySpawns
+        )
         {
             constexpr uint32_t c_minPackCount = 0;
             constexpr uint32_t c_maxPackCount = 2;
@@ -356,68 +374,108 @@ namespace World
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void GenerateDungeons(GFX::cScene& _rScene, const sWorldLayout& _rLayout, std::vector<sEnemySpawn>& _rSpawns)
+        void GenerateDungeons(
+            GFX::cScene& _rScene,
+            const sWorldLayout& _rLayout,
+            std::vector<sEnemySpawn>& _rSpawns,
+            const sChunk& _rChunk,
+            std::vector<Physics::sAABBCollider>& _rColliders
+        )
         {
+            const auto belongsToChunk = [&](const Math::cVec3f& _rPosition)
+            {
+                return static_cast<int>(std::floor(_rPosition.x() / c_chunkSize + 0.5f)) == _rChunk.coordinate.x
+                    && static_cast<int>(std::floor(_rPosition.z() / c_chunkSize + 0.5f)) == _rChunk.coordinate.z;
+            };
+
+            const auto addSpawn = [&](const sEnemySpawn& _rSpawn)
+            {
+                if (belongsToChunk(_rSpawn.position))
+                    _rSpawns.push_back(_rSpawn);
+            };
+
             const auto addWall = [&](const Math::cVec3f& _rPosition, float _scale)
             {
+                if (!belongsToChunk(_rPosition))
+                    return;
+
                 GFX::sShapeInstance wall{};
-                wall.modelHandle = WorldModels::Get("stone_01");
+                wall.modelHandle        = WorldModels::Get("stone_01");
                 wall.transform.position = _rPosition;
-                wall.transform.scale = Math::cVec3f(_scale, 6.0f, _scale);
+                wall.transform.scale    = Math::cVec3f(_scale, 6.0f, _scale);
+
                 _rScene.AddShapeInstance(wall);
-                AddAABBCollider(_rPosition, Math::cVec3f(0.0f, 3.0f, 0.0f), Math::cVec3f(_scale, 3.0f, _scale));
+                AddAABBCollider(_rColliders, _rPosition, Math::cVec3f(0.0f, 3.0f, 0.0f), Math::cVec3f(_scale, 3.0f, _scale));
             };
+
             // Small, non-blocking stones make the cleared routes readable on the grass.
             for (size_t i = 0; i + 1 < _rLayout.mainPath.size(); ++i)
             {
-                const auto start = _rLayout.mainPath[i].position;
-                const auto delta = _rLayout.mainPath[i + 1].position - start;
-                const float length = std::sqrt(delta.x() * delta.x() + delta.z() * delta.z());
+                const auto start    = _rLayout.mainPath[i].position;
+                const auto delta    = _rLayout.mainPath[i + 1].position - start;
+                const float length  = std::sqrt(delta.x() * delta.x() + delta.z() * delta.z());
+
                 for (float distance = 1.0f; distance < length; distance += 3.0f)
                 {
                     GFX::sShapeInstance marker{};
-                    marker.modelHandle = WorldModels::Get("stone_02");
-                    marker.transform.position = start + delta * (distance / length);
-                    marker.transform.scale = Math::cVec3f(0.35f, 0.08f, 0.35f);
-                    _rScene.AddShapeInstance(marker);
+                    marker.modelHandle          = WorldModels::Get("stone_02");
+                    marker.transform.position   = start + delta * (distance / length);
+                    marker.transform.scale      = Math::cVec3f(0.35f, 0.08f, 0.35f);
+
+                    if (belongsToChunk(marker.transform.position))
+                        _rScene.AddShapeInstance(marker);
                 }
             }
+
             // Continuous cliff ring closes the currently playable forest section.
-            for (int i = 0; i < 160; ++i)
+            for (int i = 0; i < c_forestWallCount; ++i)
             {
-                const float angle = static_cast<float>(i) * 6.2831853f / 160.0f;
-                addWall(Math::cVec3f(std::cos(angle) * 100.0f, 0.0f, std::sin(angle) * 100.0f), 2.5f);
+                const float angle = static_cast<float>(i) * 6.2831853f / static_cast<float>(c_forestWallCount);
+                addWall(Math::cVec3f(std::cos(angle) * c_forestRadius, 0.0f, std::sin(angle) * c_forestRadius), 2.5f);
             }
+
             for (const auto& dungeon : _rLayout.dungeons)
             {
                 // Roofless ruins: boss chamber, a southern doorway and a guarded approach.
                 for (int offset = -14; offset <= 14; offset += 2)
                 {
                     const float value = static_cast<float>(offset);
+
                     addWall(dungeon.center + Math::cVec3f(-14.0f, 0.0f, value), 1.25f);
                     addWall(dungeon.center + Math::cVec3f(14.0f, 0.0f, value), 1.25f);
                     addWall(dungeon.center + Math::cVec3f(value, 0.0f, 14.0f), 1.25f);
+
                     if (std::abs(offset) >= 6)
                         addWall(dungeon.center + Math::cVec3f(value, 0.0f, -14.0f), 1.25f);
                 }
+
                 for (int offset = -26; offset < -14; offset += 2)
                 {
                     addWall(dungeon.center + Math::cVec3f(-7.0f, 0.0f, static_cast<float>(offset)), 1.25f);
                     addWall(dungeon.center + Math::cVec3f(7.0f, 0.0f, static_cast<float>(offset)), 1.25f);
                 }
-                _rSpawns.push_back({ dungeon.type, dungeon.center, 3.1415926f, true });
-                _rSpawns.push_back({ dungeon.type, dungeon.center + Math::cVec3f(-3.0f, 0.0f, -22.0f), 3.1415926f });
-                _rSpawns.push_back({ dungeon.type, dungeon.center + Math::cVec3f(3.0f, 0.0f, -22.0f), 3.1415926f });
+
+                addSpawn({ dungeon.type, dungeon.center, 3.1415926f, true });
+                addSpawn({ dungeon.type, dungeon.center + Math::cVec3f(-3.0f, 0.0f, -22.0f), 3.1415926f });
+                addSpawn({ dungeon.type, dungeon.center + Math::cVec3f(3.0f, 0.0f, -22.0f), 3.1415926f });
             }
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void GenerateChunk(GFX::cScene& _rScene, const sChunk& _rChunk, std::mt19937& _rRandomGenerator, sWorldLayout& _rWorldLayout, std::vector<sEnemySpawn>& _rEnemySpawns)
+        void GenerateChunk(
+            GFX::cScene& _rScene,
+            const sChunk& _rChunk,
+            std::mt19937& _rRandomGenerator,
+            sWorldLayout& _rWorldLayout,
+            std::vector<sEnemySpawn>& _rEnemySpawns,
+            std::vector<Physics::sAABBCollider>& _rColliders
+        )
         {
-            GenerateGround(_rScene, _rChunk);
-            GenerateTrees(_rScene, _rChunk, _rRandomGenerator, _rWorldLayout);
+            GenerateGround(_rScene, _rChunk, _rColliders);
+            GenerateTrees(_rScene, _rChunk, _rRandomGenerator, _rWorldLayout, _rColliders);
             GenerateEnemyPacks(_rChunk, _rRandomGenerator, _rWorldLayout, _rEnemySpawns);
+            GenerateDungeons(_rScene, _rWorldLayout, _rEnemySpawns, _rChunk, _rColliders);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------

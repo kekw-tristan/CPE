@@ -95,6 +95,9 @@ namespace Gameplay
 
         sEnemySlot& slot    = m_slots[slotIndex];
         slot.occupied       = true;
+        slot.active         = true;
+        m_activeSlots.push_back(slotIndex);
+
         slot.enemy          = {};
         slot.enemy.handle   = {slotIndex, slot.generation};
         slot.enemy.type     = _type;
@@ -122,9 +125,11 @@ namespace Gameplay
 
     void cEnemyManager::Update(const sEnemyUpdateContext& _rContext, cProjectileManager& _rProjectileManager)
     {
-        for (sEnemySlot& slot : m_slots)
+        for (uint32_t slotIndex : m_activeSlots)
         {
-            if (!slot.occupied || slot.enemy.state == eEnemyState::Dead)
+            sEnemySlot& slot = m_slots[slotIndex];
+
+            if (!slot.occupied || !slot.active || slot.enemy.state == eEnemyState::Dead)
                 continue;
 
             const Engine::Math::cVec3f previousPosition = slot.enemy.position;
@@ -138,10 +143,32 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cEnemyManager::SetActive(sEnemyHandle _handle, bool _active)
+    {
+        if (_handle.index < m_slots.size())
+        {
+            auto& slot = m_slots[_handle.index];
+
+            if (slot.occupied && slot.generation == _handle.generation && slot.active != _active)
+            {
+                slot.active = _active;
+
+                if (_active)
+                    m_activeSlots.push_back(_handle.index);
+                else
+                    std::erase(m_activeSlots, _handle.index);
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cEnemyManager::Clear()
     {
         m_slots.clear();
         m_freeSlots.clear();
+        m_activeSlots.clear();
+
         m_pendingPlayerDamage = 0.0f;
     }
 
@@ -171,9 +198,11 @@ namespace Gameplay
     {
 
 
-        for (sEnemySlot& slot : m_slots)
+        for (uint32_t slotIndex : m_activeSlots)
         {
-            if (!slot.occupied || slot.enemy.state == eEnemyState::Dead)
+            sEnemySlot& slot = m_slots[slotIndex];
+
+            if (!slot.occupied || !slot.active || slot.enemy.state == eEnemyState::Dead)
                 continue;
 
             const float hitRadius = _radius + (slot.enemy.scale - 1.0f) * 0.65f;

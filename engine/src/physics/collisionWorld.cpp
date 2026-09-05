@@ -55,7 +55,8 @@ namespace Engine::Physics
 
             public:
 
-                void AddCollider(const sAABBCollider& _rCollider);
+                sColliderHandle AddCollider(const sAABBCollider& _rCollider);
+                void RemoveCollider(sColliderHandle _handle);
                 void Clear();
                 Math::cVec3f MoveCapsule(const sCapsuleCollider& _rCapsule, const Math::cVec3f& _rMovement);
                 bool FindGroundHeight(const Math::cVec3f& _rPosition, float _maximumHeight, float& _rGroundHeight) const;
@@ -74,6 +75,11 @@ namespace Engine::Physics
             private:
 
                 std::vector<sAABBCollider> m_colliders;
+                std::vector<uint64_t>     m_generations;
+                std::vector<std::size_t>  m_freeSlots;
+
+                uint64_t m_nextGeneration = 1;
+
                 std::unordered_map<sCellCoordinate, std::vector<std::size_t>, sCellCoordinateHash> m_spatialGrid;
 
                 std::vector<std::size_t> FindCandidates(float _minX, float _maxX, float _minZ, float _maxZ) const;
@@ -96,10 +102,22 @@ namespace Engine::Physics
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void cCollisionWorld::AddCollider(const sAABBCollider& _rCollider)
+        sColliderHandle cCollisionWorld::AddCollider(const sAABBCollider& _rCollider)
         {
-            const std::size_t colliderIndex = m_colliders.size();
-            m_colliders.push_back(_rCollider);
+            const std::size_t colliderIndex = m_freeSlots.empty() ? m_colliders.size() : m_freeSlots.back();
+
+            if (m_freeSlots.empty())
+            {
+                m_colliders.push_back(_rCollider);
+                m_generations.push_back(0);
+            }
+            else
+            {
+                m_freeSlots.pop_back();
+                m_colliders[colliderIndex] = _rCollider;
+            }
+
+            m_generations[colliderIndex] = m_nextGeneration++;
 
             const int32_t minX = ToCell(_rCollider.center.x() - _rCollider.halfExtents.x());
             const int32_t maxX = ToCell(_rCollider.center.x() + _rCollider.halfExtents.x());
@@ -113,6 +131,41 @@ namespace Engine::Physics
                     m_spatialGrid[{ x, z }].push_back(colliderIndex);
                 }
             }
+
+            return { colliderIndex, m_generations[colliderIndex] };
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        void cCollisionWorld::RemoveCollider(sColliderHandle _handle)
+        {
+            if (_handle.index >= m_generations.size() || _handle.generation == 0
+                || m_generations[_handle.index] != _handle.generation)
+                return;
+
+            const auto& collider = m_colliders[_handle.index];
+
+            const int32_t minX = ToCell(collider.center.x() - collider.halfExtents.x());
+            const int32_t maxX = ToCell(collider.center.x() + collider.halfExtents.x());
+            const int32_t minZ = ToCell(collider.center.z() - collider.halfExtents.z());
+            const int32_t maxZ = ToCell(collider.center.z() + collider.halfExtents.z());
+
+            for (int32_t z = minZ; z <= maxZ; ++z)
+            {
+                for (int32_t x = minX; x <= maxX; ++x)
+                {
+                    auto cell = m_spatialGrid.find({ x, z });
+                    if (cell == m_spatialGrid.end())
+                        continue;
+
+                    std::erase(cell->second, _handle.index);
+                    if (cell->second.empty())
+                        m_spatialGrid.erase(cell);
+                }
+            }
+
+            m_generations[_handle.index] = 0;
+            m_freeSlots.push_back(_handle.index);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -120,6 +173,8 @@ namespace Engine::Physics
         void cCollisionWorld::Clear()
         {
             m_colliders.clear();
+            m_generations.clear();
+            m_freeSlots.clear();
             m_spatialGrid.clear();
         }
 
@@ -241,9 +296,16 @@ namespace Engine::Physics
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void AddCollider(const sAABBCollider& _rCollider)
+        sColliderHandle AddCollider(const sAABBCollider& _rCollider)
         {
-            cCollisionWorld::GetInstance().AddCollider(_rCollider);
+            return cCollisionWorld::GetInstance().AddCollider(_rCollider);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        void RemoveCollider(sColliderHandle _handle)
+        {
+            cCollisionWorld::GetInstance().RemoveCollider(_handle);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------

@@ -84,6 +84,7 @@ namespace Gameplay
             sEnemyHandle Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation, bool _isBoss = false);
             void Update(const sEnemyUpdateContext& _rContext, cProjectileManager& _rProjectileManager);
             void Clear();
+            void SetActive(sEnemyHandle _handle, bool _active);
 
             void ApplyDamage(sEnemyHandle _handle, float _damage);
             bool ApplyDamageAt(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage);
@@ -98,6 +99,7 @@ namespace Gameplay
                 sEnemy enemy;
                 uint32_t generation = 1;
                 bool occupied       = false;
+                bool active         = true;
             };
 
         private:
@@ -111,6 +113,8 @@ namespace Gameplay
 
             std::vector<sEnemySlot> m_slots;
             std::vector<uint32_t> m_freeSlots;
+            std::vector<uint32_t> m_activeSlots;
+
             float m_pendingPlayerDamage = 0.0f;
     };
 }
