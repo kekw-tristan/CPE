@@ -227,6 +227,13 @@ namespace Engine::GFX
 
         for (sVulkanFrame& rFrame : m_frames)
         {
+            if (rFrame.timestampQueryPool != VK_NULL_HANDLE)
+            {
+                vkDestroyQueryPool(device, rFrame.timestampQueryPool, nullptr);
+                rFrame.timestampQueryPool = VK_NULL_HANDLE;
+                rFrame.timestampsSubmitted = false;
+            }
+
             if (rFrame.imageAvailableSemaphore != VK_NULL_HANDLE)
             {
                 vkDestroySemaphore(device, rFrame.imageAvailableSemaphore, nullptr);
@@ -348,7 +355,34 @@ namespace Engine::GFX
         
         m_imageIndex = 0;
 
-        vkWaitForFences(device, 1, &frame.inFlightFence, VK_TRUE, UINT64_MAX); 
+        vkWaitForFences(device, 1, &frame.inFlightFence, VK_TRUE, UINT64_MAX);
+
+        if (frame.timestampQueryPool != VK_NULL_HANDLE && frame.timestampsSubmitted)
+        {
+            std::array<uint64_t, 4> timestamps{};
+            const VkResult result = vkGetQueryPoolResults(
+                device,
+                frame.timestampQueryPool,
+                0,
+                static_cast<uint32_t>(timestamps.size()),
+                sizeof(timestamps),
+                timestamps.data(),
+                sizeof(uint64_t),
+                VK_QUERY_RESULT_64_BIT);
+
+            if (result == VK_SUCCESS)
+            {
+                for (size_t pass = 0; pass < m_gpuPassMilliseconds.size(); ++pass)
+                {
+                    const uint64_t ticks = (timestamps[pass * 2 + 1] - timestamps[pass * 2]) & m_timestampMask;
+                    m_gpuPassMilliseconds[pass] = static_cast<double>(ticks) * m_timestampPeriod / 1000000.0;
+                }
+            }
+            else
+            {
+                m_gpuPassMilliseconds = { -1.0, -1.0 };
+            }
+        }
         
          
         VkResult acquireResult = vkAcquireNextImageKHR(
@@ -392,6 +426,12 @@ namespace Engine::GFX
         if (vkBeginCommandBuffer(commandBuffer, &beginInfo)!= VK_SUCCESS)
         {
             throw std::runtime_error("Failed to begin recording command buffer!");
+        }
+
+        if (frame.timestampQueryPool != VK_NULL_HANDLE)
+        {
+            vkCmdResetQueryPool(commandBuffer, frame.timestampQueryPool, 0, 4);
+            frame.timestampsSubmitted = false;
         }
 
         Engine::GFX::ImGuiManager::BeginFrame();
@@ -448,6 +488,8 @@ namespace Engine::GFX
         {
             throw std::runtime_error("Failed to submit draw command buffer!");
         }
+
+        rFrame.timestampsSubmitted = rFrame.timestampQueryPool != VK_NULL_HANDLE;
 
         VkSwapchainKHR swapchains[] = { m_pSwapchain->GetSwapchain() };
 
@@ -987,6 +1029,11 @@ namespace Engine::GFX
         sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
 
+        if (rFrame.timestampQueryPool != VK_NULL_HANDLE)
+        {
+            vkCmdWriteTimestamp(pCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, rFrame.timestampQueryPool, 0);
+        }
+
         m_shadowMap.GetImageResource().TransitionLayout(
             *m_pDevice,
             pCommandBuffer,
@@ -1014,6 +1061,11 @@ namespace Engine::GFX
         );
 
         m_shadowMapLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+        if (rFrame.timestampQueryPool != VK_NULL_HANDLE)
+        {
+            vkCmdWriteTimestamp(pCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, rFrame.timestampQueryPool, 1);
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -1709,6 +1761,11 @@ namespace Engine::GFX
         sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
 
+        if (rFrame.timestampQueryPool != VK_NULL_HANDLE)
+        {
+            vkCmdWriteTimestamp(pCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, rFrame.timestampQueryPool, 2);
+        }
+
         m_renderPassType = sRenderPassType::Main;
 
         VkImage     swapchainImage     = m_pSwapchain->GetImages()[m_imageIndex];
@@ -2101,6 +2158,12 @@ namespace Engine::GFX
         vkCmdEndRendering(_pCommandBuffer);
         m_renderPassType = sRenderPassType::None;
 
+        const sVulkanFrame& rFrame = m_frames[m_currentFrame];
+        if (rFrame.timestampQueryPool != VK_NULL_HANDLE)
+        {
+            vkCmdWriteTimestamp(_pCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, rFrame.timestampQueryPool, 3);
+        }
+
         VkImage swapchainImage = m_pSwapchain->GetImages()[_imageIndex];
 
         VkImageMemoryBarrier barrierToPresent{};
@@ -2137,6 +2200,17 @@ namespace Engine::GFX
         VkDevice device = m_pDevice->GetDevice();
 
 
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(m_pDevice->GetPhysicalDevice(), &properties);
+        m_timestampPeriod = properties.limits.timestampPeriod;
+
+        uint32_t queueCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(m_pDevice->GetPhysicalDevice(), &queueCount, nullptr);
+        std::vector<VkQueueFamilyProperties> queueProperties(queueCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(m_pDevice->GetPhysicalDevice(), &queueCount, queueProperties.data());
+        const uint32_t timestampBits = queueProperties[m_pDevice->GetQueueFamilyIndices().graphicsFamily].timestampValidBits;
+        m_timestampMask = timestampBits == 64 ? UINT64_MAX : (uint64_t{ 1 } << timestampBits) - 1;
+
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -2148,6 +2222,19 @@ namespace Engine::GFX
 
         for (sVulkanFrame& rFrame : m_frames)
         {
+            if (m_timestampMask != 0)
+            {
+                VkQueryPoolCreateInfo queryInfo{};
+                queryInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+                queryInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+                queryInfo.queryCount = 4;
+
+                if (vkCreateQueryPool(device, &queryInfo, nullptr, &rFrame.timestampQueryPool) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("Failed to create GPU timestamp query pool!");
+                }
+            }
+
             if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &rFrame.imageAvailableSemaphore) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to create image available semaphore!");

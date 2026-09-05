@@ -12,6 +12,8 @@ namespace Engine::GFX
         VkFence         inFlightFence  = VK_NULL_HANDLE;
         
         VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
+        VkQueryPool timestampQueryPool = VK_NULL_HANDLE;
+        bool timestampsSubmitted = false;
 
         cVulkanBuffer frameUniformedBuffer;
         VkDescriptorSet frameDescriptorSet = VK_NULL_HANDLE;

@@ -68,6 +68,17 @@ void cGame::OnInit()
 
 void cGame::OnUpdate(float _deltaTime)
 {
+    constexpr int c_leftAltKey = 342;
+    constexpr int c_rightAltKey = 346;
+    const bool altDown = Engine::Platform::IsKeyDown(c_leftAltKey) || Engine::Platform::IsKeyDown(c_rightAltKey);
+
+    if (altDown && !m_altWasDown)
+    {
+        m_mouseReleased = !m_mouseReleased;
+        Engine::Platform::SetMouseCaptured(!m_mouseReleased);
+    }
+    m_altWasDown = altDown;
+
     //UpdateFreeCam(_deltaTime);
 
     UpdatePlayer();
@@ -692,7 +703,7 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     m_playerSpellCooldown = std::max(0.0f, m_playerSpellCooldown - _deltaTime);
     m_playerAttackTime = std::max(0.0f, m_playerAttackTime - _deltaTime);
 
-    if (!Engine::Platform::WasMouseButtonPressed(c_leftMouseButton) || m_playerSpellCooldown > 0.0f)
+    if (m_mouseReleased || !Engine::Platform::WasMouseButtonPressed(c_leftMouseButton) || m_playerSpellCooldown > 0.0f)
         return;
 
     using Engine::Math::cVec3f;
@@ -1079,10 +1090,11 @@ void cGame::UpdateThirdPersonCamera(float _deltaTime)
 
     GFX::cCamera& rCamera = GFX::GetCamera();
 
-    const float mouseDeltaX = static_cast<float>(Platform::GetMouseDeltaX());
-    const float mouseDeltaY = static_cast<float>(Platform::GetMouseDeltaY());
+    const float mouseDeltaX = m_mouseReleased ? 0.0f : Platform::GetMouseDeltaX();
+    const float mouseDeltaY = m_mouseReleased ? 0.0f : Platform::GetMouseDeltaY();
+    const float mouseWheelDelta = m_mouseReleased ? 0.0f : Platform::GetMouseWheelDelta();
 
-    m_cameraDistance = std::clamp(m_cameraDistance - Platform::GetMouseWheelDelta() * c_zoomStep,
+    m_cameraDistance = std::clamp(m_cameraDistance - mouseWheelDelta * c_zoomStep,
                                   c_minCameraDistance,
                                   c_maxCameraDistance);
 

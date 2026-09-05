@@ -106,6 +106,9 @@ namespace Engine::Logic
         }
 
         m_frameStatsWindow.GetFrameWindowStats().deltaTime = deltaTime;
+        const auto& rGpuTimes = m_vulkanRenderer.GetGpuPassMilliseconds();
+        m_frameStatsWindow.GetFrameWindowStats().shadowGpuMilliseconds = rGpuTimes[0];
+        m_frameStatsWindow.GetFrameWindowStats().mainGpuMilliseconds = rGpuTimes[1];
 
         m_modelEditorWindow.Update(m_input, m_camera);
         m_sceneEditorWindow.Update(m_input, m_camera);

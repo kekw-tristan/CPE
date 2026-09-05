@@ -7,6 +7,8 @@ namespace Engine::GFX
     struct sFrameWindowStats
     {
         float deltaTime;
+        double shadowGpuMilliseconds = -1.0;
+        double mainGpuMilliseconds = -1.0;
 
         int drawCalls;
         int instances;
@@ -34,6 +36,13 @@ namespace Engine::GFX
         private:
 
             sFrameWindowStats m_frameStats = {};
+
+            float m_gpuAccumulatedTime = 0.0f;
+            int m_gpuSampleCount = 0;
+            double m_shadowGpuSum = 0.0;
+            double m_mainGpuSum = 0.0;
+            double m_shadowGpuAverage = -1.0;
+            double m_mainGpuAverage = -1.0;
 
     };
 }

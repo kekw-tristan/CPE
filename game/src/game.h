@@ -144,6 +144,8 @@ class cGame : public cApplication
         Physics::cCharacterController m_playerController;
 
         float m_playerYaw;
+        bool m_mouseReleased = false;
+        bool m_altWasDown = false;
         float m_cameraPitch;
         float m_cameraDistance = 6.0f;
     

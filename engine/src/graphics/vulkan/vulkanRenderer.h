@@ -96,6 +96,8 @@ namespace Engine::GFX
 
         public:
 
+            // Negative values mean no completed GPU measurement is available.
+            const std::array<double, 2>& GetGpuPassMilliseconds() const { return m_gpuPassMilliseconds; }
             uint32_t GetShadowCount() const;
             uint32_t GetShadowMatrixCount(uint32_t _shadowIndex) const;
 
@@ -168,6 +170,9 @@ namespace Engine::GFX
             std::vector<int32_t> m_lightShadowIndices; 
             sRenderPassType::Enum m_renderPassType = sRenderPassType::None;
 
+            std::array<double, 2> m_gpuPassMilliseconds = { -1.0, -1.0 };
+            double m_timestampPeriod = 0.0;
+            uint64_t m_timestampMask = 0;
             std::vector<sShadowDataGPU> m_shadowData;
             VkImageLayout m_shadowMapLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
