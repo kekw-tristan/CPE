@@ -220,6 +220,34 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    float cEnemyManager::FindAimDistance(const Engine::Math::cVec3f& _rOrigin, const Engine::Math::cVec3f& _rDirection, float _maximumDistance) const
+    {
+        float nearestDistance = _maximumDistance;
+
+        for (uint32_t slotIndex : m_activeSlots)
+        {
+            const sEnemySlot& slot = m_slots[slotIndex];
+            if (!slot.occupied || !slot.active || slot.enemy.state == eEnemyState::Dead)
+                continue;
+
+            const Engine::Math::cVec3f center = slot.enemy.position + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f);
+            const Engine::Math::cVec3f offset = center - _rOrigin;
+            const float projection = offset.dot(_rDirection);
+            const float radius = 0.8f + (slot.enemy.scale - 1.0f) * 0.65f;
+            const float perpendicularSquared = std::max(0.0f, offset.lengthSquared() - projection * projection);
+
+            if (projection <= 0.0f || perpendicularSquared > radius * radius)
+                continue;
+
+            const float distance = std::max(0.0f, projection - std::sqrt(radius * radius - perpendicularSquared));
+            nearestDistance = std::min(nearestDistance, distance);
+        }
+
+        return nearestDistance;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     const sEnemy* cEnemyManager::TryGetEnemy(sEnemyHandle _handle) const
     {
         if (_handle.index >= m_slots.size())

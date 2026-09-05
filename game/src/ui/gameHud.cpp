@@ -197,6 +197,33 @@ namespace UI
         }
 
         const float scale = std::min(pViewport->Size.x / c_referenceWidth, pViewport->Size.y / c_referenceHeight);
+        const ImVec2 center(pViewport->Pos.x + pViewport->Size.x * 0.5f, pViewport->Pos.y + pViewport->Size.y * 0.5f);
+        const ImU32 reticleColor = _rState.spellCooldown > 0.0f
+            ? IM_COL32(135, 145, 170, 230) : IM_COL32(205, 224, 255, 255);
+        const std::array<ImVec2, 4> corners = {
+            ImVec2(0.0f, -10.0f), ImVec2(10.0f, 0.0f),
+            ImVec2(0.0f, 10.0f), ImVec2(-10.0f, 0.0f)
+        };
+
+        // Broken diamond with a clear center; dark outlines remain legible against the sky.
+        for (size_t i = 0; i < corners.size(); ++i)
+        {
+            const ImVec2& corner = corners[i];
+            const ImVec2& previous = corners[(i + 3) % corners.size()];
+            const ImVec2& next = corners[(i + 1) % corners.size()];
+            const std::array<ImVec2, 3> points = {
+                ImVec2(center.x + (corner.x * 0.65f + previous.x * 0.35f) * scale,
+                       center.y + (corner.y * 0.65f + previous.y * 0.35f) * scale),
+                ImVec2(center.x + corner.x * scale, center.y + corner.y * scale),
+                ImVec2(center.x + (corner.x * 0.65f + next.x * 0.35f) * scale,
+                       center.y + (corner.y * 0.65f + next.y * 0.35f) * scale)
+            };
+
+            // Join both arms before drawing the outline so it cannot cover the bright corner.
+            pDrawList->AddPolyline(points.data(), static_cast<int>(points.size()), IM_COL32(8, 12, 22, 240), 0, 4.0f * scale);
+            pDrawList->AddPolyline(points.data(), static_cast<int>(points.size()), reticleColor, 0, 2.0f * scale);
+        }
+
         constexpr std::array<const char*, 4> c_dungeonNames = {
             "Wurzelgruft - Uralter Kriecher", "Steinheiligtum - Waldkoloss",
             "Dornenbau - Dornenalpha", "Sporenkrypta - Sporenkoenig"

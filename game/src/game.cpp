@@ -10,6 +10,7 @@
 
 #include "world/worldGenerator.h"
 #include "world/chunk.h"
+#include "world/terrainHeight.h"
 
 #include <algorithm>
 #include <cmath>
@@ -35,7 +36,7 @@ cGame::cGame(Engine::sAppConfig& _rAppConfig)
     , m_playerRenderParts()
     , m_playerController()
     , m_playerYaw(0.f)
-    , m_cameraPitch(-20.f)
+    , m_cameraPitch(-10.f)
     , m_meshInstances()
 {
 }
@@ -694,21 +695,49 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     if (!Engine::Platform::WasMouseButtonPressed(c_leftMouseButton) || m_playerSpellCooldown > 0.0f)
         return;
 
+    using Engine::Math::cVec3f;
+
     float cameraDirection[4];
+    float cameraPosition[4];
     Engine::GFX::GetCamera().GetDirection(cameraDirection);
+    Engine::GFX::GetCamera().GetPosition(cameraPosition);
 
-    Engine::Math::cVec3f direction(cameraDirection[0], 0.0f, cameraDirection[2]);
-    direction.normalize();
+    const cVec3f viewDirection = cVec3f(cameraDirection[0], cameraDirection[1], cameraDirection[2]).normalized();
+    const cVec3f viewPosition(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
+    const cVec3f castPosition = m_playerController.GetPosition() + cVec3f(0.0f, 1.25f, 0.0f);
 
-    if (direction.isZero())
+    constexpr float c_spellLifetime = 2.5f;
+
+    float aimDistance = cVec3f::distance(viewPosition, castPosition) + c_spellSpeed * c_spellLifetime;
+
+    // Converge on the nearest enemy under the reticle, compensating for the shoulder camera.
+    aimDistance = m_enemyManager.FindAimDistance(viewPosition, viewDirection, aimDistance);
+
+    // Terrain in front of that target takes precedence. This runs only when casting.
+    for (float distance = 0.25f; distance < aimDistance; distance += 0.25f)
+    {
+        const cVec3f sample = viewPosition + viewDirection * distance;
+        if (sample.y() <= World::GetTerrainSurfaceHeight(sample.x(), sample.z()))
+        {
+            aimDistance = distance;
+            break;
+        }
+    }
+
+    const cVec3f aimPosition = viewPosition + viewDirection * aimDistance;
+    const cVec3f direction = (aimPosition - castPosition).normalized();
+
+    if (direction.isZero() || direction.dot(viewDirection) <= 0.0f)
         return;
 
+    m_playerYaw = std::atan2(direction.x(), direction.z());
+
     Gameplay::sProjectileSpawnDesc projectile{};
-    projectile.position  = m_playerController.GetPosition() + Engine::Math::cVec3f(0.0f, 1.25f, 0.0f) + direction * 0.8f;
+    projectile.position  = castPosition;
     projectile.direction = direction;
     projectile.speed     = c_spellSpeed;
     projectile.damage    = c_spellDamage;
-    projectile.lifetime  = 2.5f;
+    projectile.lifetime  = c_spellLifetime;
 
     m_projectileManager.SpawnPlayerSphere(projectile);
 
@@ -1036,23 +1065,37 @@ void cGame::UpdateThirdPersonCamera(float _deltaTime)
 {
     using namespace Engine;
 
-    constexpr float c_mouseSensitivity  = 0.12f;
-    constexpr float c_cameraDistance    = 7.5f;
-    constexpr float c_targetHeight      = 1.7f;
-    constexpr float c_minPitch          = -60.0f;
-    constexpr float c_maxPitch          = -10.0f;
+    constexpr float c_mouseSensitivity  = 0.09f;
+    constexpr float c_minCameraDistance = 2.5f;
+    constexpr float c_maxCameraDistance = 10.0f;
+    constexpr float c_zoomStep          = 0.75f;
+    constexpr float c_targetHeight      = 1.8f;
+    constexpr float c_shoulderOffset    = 0.75f;
+    constexpr float c_minPitch          = -85.0f;
+    // Keep the distorted zenith outside the 60-degree vertical field of view.
+    constexpr float c_maxPitch          = 30.0f;
+    constexpr float c_groundClearance   = 0.35f;
+    constexpr int   c_cameraSteps       = 50;
 
     GFX::cCamera& rCamera = GFX::GetCamera();
 
     const float mouseDeltaX = static_cast<float>(Platform::GetMouseDeltaX());
     const float mouseDeltaY = static_cast<float>(Platform::GetMouseDeltaY());
 
+    m_cameraDistance = std::clamp(m_cameraDistance - Platform::GetMouseWheelDelta() * c_zoomStep,
+                                  c_minCameraDistance,
+                                  c_maxCameraDistance);
+
     rCamera.AddYaw(mouseDeltaX * c_mouseSensitivity);
 
     const float pitchChange = -mouseDeltaY * c_mouseSensitivity;
     const float newPitch    = std::clamp(m_cameraPitch + pitchChange, c_minPitch, c_maxPitch);
 
-    rCamera.AddPitch(newPitch - m_cameraPitch);
+    float previousDirection[4];
+    rCamera.GetDirection(previousDirection);
+
+    const float yawDegrees = std::atan2(previousDirection[2], previousDirection[0]) * 180.0f / 3.14159265358979323846f;
+    rCamera.SetRotation(yawDegrees, newPitch);
     m_cameraPitch = newPitch;
 
     float direction[4];
@@ -1061,8 +1104,26 @@ void cGame::UpdateThirdPersonCamera(float _deltaTime)
     Math::cVec3f cameraDirection(direction[0], direction[1], direction[2]);
     cameraDirection.normalize();
 
-    const Math::cVec3f targetPosition = m_playerController.GetPosition() + Math::cVec3f(0.0f, c_targetHeight, 0.0f);
-    const Math::cVec3f cameraPosition = targetPosition - cameraDirection * c_cameraDistance;
+    const Math::cVec3f cameraRight = cameraDirection.cross(Math::cVec3f(0.0f, 1.0f, 0.0f)).normalized();
+    const Math::cVec3f targetPosition = m_playerController.GetPosition() + Math::cVec3f(0.0f, c_targetHeight, 0.0f)
+        + cameraRight * c_shoulderOffset;
+    Math::cVec3f cameraPosition = targetPosition;
+
+    // Stop the camera arm before it enters the terrain, including on hills.
+    for (int step = 1; step <= c_cameraSteps; ++step)
+    {
+        const float distance = m_cameraDistance * static_cast<float>(step) / static_cast<float>(c_cameraSteps);
+        const Math::cVec3f candidatePosition = targetPosition - cameraDirection * distance;
+        const float groundHeight = World::GetTerrainSurfaceHeight(candidatePosition.x(), candidatePosition.z());
+
+        if (candidatePosition.y() < groundHeight + c_groundClearance)
+            break;
+
+        cameraPosition = candidatePosition;
+    }
+
+    const float minimumHeight = World::GetTerrainSurfaceHeight(cameraPosition.x(), cameraPosition.z()) + c_groundClearance;
+    cameraPosition = Math::cVec3f(cameraPosition.x(), std::max(cameraPosition.y(), minimumHeight), cameraPosition.z());
 
     rCamera.SetPosition(cameraPosition.x(), cameraPosition.y(), cameraPosition.z());
 }

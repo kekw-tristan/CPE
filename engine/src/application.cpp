@@ -251,6 +251,13 @@ namespace Engine::Platform
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    float GetMouseWheelDelta()
+    {
+        return s_pApplicationIntern->GetMouseWheelDelta();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     float GetMouseDeltaY()
     {
         return  s_pApplicationIntern->GetMouseDeltaY();

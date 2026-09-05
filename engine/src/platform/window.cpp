@@ -45,6 +45,7 @@ namespace Engine::Platform
         glfwSetWindowUserPointer(m_pWindow, this); 
 
         glfwSetFramebufferSizeCallback(m_pWindow, FramebufferResizeCallback);
+        glfwSetScrollCallback(m_pWindow, ScrollCallback);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -72,7 +73,26 @@ namespace Engine::Platform
 
     void cWindow::PollEvents()
     {
+        m_mouseWheelDelta = 0.0f;
         glfwPollEvents();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cWindow::ScrollCallback(GLFWwindow* _pWindow, double _offsetX, double _offsetY)
+    {
+        cWindow* pWindow = static_cast<cWindow*>(glfwGetWindowUserPointer(_pWindow));
+        if (pWindow == nullptr)
+            return;
+
+        pWindow->m_mouseWheelDelta += static_cast<float>(_offsetY);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    float cWindow::GetMouseWheelDelta() const
+    {
+        return m_mouseWheelDelta;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

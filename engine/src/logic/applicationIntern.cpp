@@ -308,6 +308,13 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    float cApplicationIntern::GetMouseWheelDelta()
+    {
+        return m_window.GetMouseWheelDelta();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     float cApplicationIntern::GetMouseDeltaY()
     {
         return static_cast<float>(m_input.GetMouseDeltaY());

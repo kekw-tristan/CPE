@@ -22,6 +22,8 @@ namespace Engine::Platform
             
             GLFWwindow* GetWindow() const;
 
+            float GetMouseWheelDelta() const;
+
             int GetWidth()  const;
             int GetHeight() const;
 
@@ -37,11 +39,14 @@ namespace Engine::Platform
         private:
 
             static void FramebufferResizeCallback(GLFWwindow* _pWindow, int _width, int _height);
+            static void ScrollCallback(GLFWwindow* _pWindow, double _offsetX, double _offsetY);
             GLFWmonitor* GetCurrentMonitor();
 
         private:
 
             GLFWwindow* m_pWindow;
+
+            float m_mouseWheelDelta = 0.0f;
 
             int m_width;
             int m_height;

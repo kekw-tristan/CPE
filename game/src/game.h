@@ -145,6 +145,7 @@ class cGame : public cApplication
 
         float m_playerYaw;
         float m_cameraPitch;
+        float m_cameraDistance = 6.0f;
     
         std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData*>> m_meshInstances;
     
