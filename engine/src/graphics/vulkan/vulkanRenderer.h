@@ -63,6 +63,7 @@ namespace Engine::GFX
             void ShutDown();  
             void RecreateDepthBuffer();
             void RecreateColorBuffer();
+            void SetBackgroundColor(const std::array<float, 4>& _rColor);
 
         public:
 
@@ -144,6 +145,7 @@ namespace Engine::GFX
         private:
 
             std::array<sVulkanFrame, c_maxNumberOfFrames> m_frames;
+            std::array<float, 4> m_backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f };
             int m_currentFrame; 
 
             VkDescriptorPool m_pDescriptorPool;

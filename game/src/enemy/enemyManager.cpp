@@ -367,6 +367,14 @@ namespace Gameplay
         const Engine::Math::cVec3f movement = movementDirection * (_rDefinition.movementSpeed * _rContext.deltaTime);
         const Engine::Math::cVec3f center   = Engine::Physics::CollisionWorld::MoveCapsule(collider, movement);
         _rEnemy.position = {center.x(), _rEnemy.position.y(), center.z()};
+
+        float groundHeight = _rEnemy.position.y();
+        if (Engine::Physics::CollisionWorld::FindGroundHeight(_rEnemy.position,
+            _rEnemy.position.y() + 1.0f, groundHeight))
+        {
+            _rEnemy.position = { center.x(), groundHeight, center.z() };
+        }
+
         if (_rEnemy.isBoss)
         {
             _rEnemy.position = {

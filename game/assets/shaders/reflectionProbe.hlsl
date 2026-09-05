@@ -1,3 +1,5 @@
+#include "../../src/world/terrainHeight.h"
+
 // -----------------------------------------------------------------------------------------------------------------------------
 // Frame data
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -52,7 +54,7 @@ struct InstanceData
     float4 color;
 
     int materialIndex;
-    int padding1;
+    int instanceFlags;
     int padding2;
     int padding3;
 };
@@ -227,12 +229,25 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
     float4 worldPosition = mul(float4(input.position, 1.0f), instance.worldMatrix);
 
+    if ((instance.instanceFlags & 1) != 0)
+        worldPosition.y += GetTerrainHeight(worldPosition.x, worldPosition.z);
+
     output.position = mul(worldPosition, probePushConstants.viewProjection);
     output.worldPosition = worldPosition.xyz;
 
     float3x3 normalMatrix = (float3x3) instance.worldMatrix;
 
     output.worldNormal = SafeNormalize(mul(input.normal, normalMatrix));
+    if ((instance.instanceFlags & 1) != 0)
+    {
+        const float x = worldPosition.x;
+        const float z = worldPosition.z;
+        output.worldNormal = SafeNormalize(float3(
+            GetTerrainHeight(x - 0.5f, z) - GetTerrainHeight(x + 0.5f, z),
+            1.0f,
+            GetTerrainHeight(x, z - 0.5f) - GetTerrainHeight(x, z + 0.5f)));
+    }
+
     output.texCoord = input.texCoord;
     output.color = instance.color;
     output.materialIndex = instance.materialIndex;

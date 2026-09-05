@@ -35,6 +35,8 @@ namespace Engine::Logic
         m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
         m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline);
 
+        m_vulkanRenderer.SetBackgroundColor(m_appConfig.backgroundColor);
+
         InitializeImGui();
 
         m_Timer.Reset();

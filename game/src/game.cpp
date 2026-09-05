@@ -212,8 +212,8 @@ void cGame::InitMeshes()
     sLight directionalLight0{};
     
     directionalLight0.type          = sLightType::Directional;
-    directionalLight0.color         = { 0.8f, 0.8f, 0.8f };
-    directionalLight0.intensity     = 2.5f;
+    directionalLight0.color         = { 0.52f, 0.64f, 0.70f };
+    directionalLight0.intensity     = 0.85f;
     directionalLight0.direction     = { -0.5f, -0.5f, -0.3f };
     directionalLight0.castsShadow   = true;
     

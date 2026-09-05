@@ -2,6 +2,7 @@
 
 #include "../chunk.h"
 #include "../worldConfig.h"
+#include "../terrainHeight.h"
 #include "../worldModels.h"
 
 #include "../enemy/enemySpawn.h"
@@ -48,6 +49,7 @@ namespace World
             groundCollider.center       = Math::cVec3f(worldX, worldY - 0.1f, worldZ);
             groundCollider.halfExtents  = Math::cVec3f(static_cast<float>(c_chunkSize) * 0.5f, 0.1f, static_cast<float>(c_chunkSize) * 0.5f);
             groundCollider.isGround     = true;
+            groundCollider.groundHeightSampler = GetTerrainSurfaceHeight;
             _rColliders.push_back(groundCollider);
         }
 
@@ -81,7 +83,7 @@ namespace World
 
         float DistanceToPath(const Math::cVec3f& _rPosition, const sWorldLayout& _rWorldLayout)
         {
-            if (_rPosition.x() * _rPosition.x() + _rPosition.z() * _rPosition.z() > 94.0f * 94.0f)
+            if (_rPosition.x() * _rPosition.x() + _rPosition.z() * _rPosition.z() > (c_forestRadius - 6.0f) * (c_forestRadius - 6.0f))
                 return 0.0f;
             if (_rPosition.x() * _rPosition.x() + _rPosition.z() * _rPosition.z() < 12.0f * 12.0f)
                 return 0.0f;
@@ -200,7 +202,7 @@ namespace World
                 const float treeX = worldX + positionDistribution(_rRandomGenerator);
                 const float treeZ = worldZ + positionDistribution(_rRandomGenerator);
 
-                const Math::cVec3f treePosition(treeX, worldY + 1.0f, treeZ);
+                const Math::cVec3f treePosition(treeX, worldY + GetTerrainSurfaceHeight(treeX, treeZ) + 1.0f, treeZ);
 
                 if (DistanceToPath(treePosition, _rWorldLayout) < c_pathClearance)
                     continue;
@@ -246,7 +248,7 @@ namespace World
                 const float stoneX = worldX + positionDistribution(_rRandomGenerator);
                 const float stoneZ = worldZ + positionDistribution(_rRandomGenerator);
 
-                const Math::cVec3f stonePosition(stoneX, worldY, stoneZ);
+                const Math::cVec3f stonePosition(stoneX, worldY + GetTerrainSurfaceHeight(stoneX, stoneZ), stoneZ);
 
                 if (DistanceToPath(stonePosition, _rWorldLayout) < c_pathClearance)
                     continue;
@@ -353,6 +355,10 @@ namespace World
 
                     spawn.type = c_forestEnemyTypes[enemyTypeDistribution(_rRandomGenerator)];
                     spawn.position = Math::cVec3f(packCenter.x() + packOffsetDistribution(_rRandomGenerator), worldY, packCenter.z() + packOffsetDistribution(_rRandomGenerator));
+                    spawn.position = Math::cVec3f(
+                        spawn.position.x(),
+                        worldY + GetTerrainSurfaceHeight(spawn.position.x(), spawn.position.z()),
+                        spawn.position.z());
                     spawn.rotation = rotationDistribution(_rRandomGenerator);
 
                     if (DistanceToPath(spawn.position, _rWorldLayout) >= c_pathClearance)
@@ -399,13 +405,18 @@ namespace World
                 if (!belongsToChunk(_rPosition))
                     return;
 
+                const Math::cVec3f wallPosition(
+                    _rPosition.x(),
+                    _rPosition.y() + GetTerrainSurfaceHeight(_rPosition.x(), _rPosition.z()),
+                    _rPosition.z());
+
                 GFX::sShapeInstance wall{};
                 wall.modelHandle        = WorldModels::Get("stone_01");
-                wall.transform.position = _rPosition;
+                wall.transform.position = wallPosition;
                 wall.transform.scale    = Math::cVec3f(_scale, 6.0f, _scale);
 
                 _rScene.AddShapeInstance(wall);
-                AddAABBCollider(_rColliders, _rPosition, Math::cVec3f(0.0f, 3.0f, 0.0f), Math::cVec3f(_scale, 3.0f, _scale));
+                AddAABBCollider(_rColliders, wallPosition, Math::cVec3f(0.0f, 3.0f, 0.0f), Math::cVec3f(_scale, 3.0f, _scale));
             };
 
             // Small, non-blocking stones make the cleared routes readable on the grass.

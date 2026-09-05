@@ -38,13 +38,11 @@ StructuredBuffer<ShadowData> shadows;
 [[vk::push_constant]]
 ConstantBuffer<ShadowPushConstants> pushConstants;
 
+#include "../../src/world/terrainHeight.h"
+
 float GetTerrainHeight(float2 worldPosition)
 {
-    //float x = worldPosition.x;
-    //float z = worldPosition.y;
-    //
-    //return sin(x * 0.15f) * 2.0f + cos(z * 0.12f) * 1.5f;
-    return 0;
+    return GetTerrainHeight(worldPosition.x, worldPosition.y);
 }
 
 float4 VSMain(float3 position : POSITION, uint instanceID : SV_InstanceID) : SV_Position

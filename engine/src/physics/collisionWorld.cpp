@@ -241,10 +241,14 @@ namespace Engine::Physics
                 const Math::cVec3f minimum = collider.center - collider.halfExtents;
                 const Math::cVec3f maximum = collider.center + collider.halfExtents;
                 if (_rPosition.x() < minimum.x() || _rPosition.x() > maximum.x() ||
-                    _rPosition.z() < minimum.z() || _rPosition.z() > maximum.z() || maximum.y() > _maximumHeight)
+                    _rPosition.z() < minimum.z() || _rPosition.z() > maximum.z())
                     continue;
 
-                bestHeight = std::max(bestHeight, maximum.y());
+                const float surfaceHeight = collider.groundHeightSampler
+                    ? collider.groundHeightSampler(_rPosition.x(), _rPosition.z()) + maximum.y()
+                    : maximum.y();
+                if (surfaceHeight <= _maximumHeight)
+                    bestHeight = std::max(bestHeight, surfaceHeight);
             }
 
             if (!std::isfinite(bestHeight))

@@ -38,6 +38,13 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cVulkanRenderer::SetBackgroundColor(const std::array<float, 4>& _rColor)
+    {
+        m_backgroundColor = _rColor;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline)
     {
         m_pDevice = &_rDevice;
@@ -1736,10 +1743,10 @@ namespace Engine::GFX
 
         VkClearValue clearValue{};
 
-        clearValue.color.float32[0] = 0.0f;
-        clearValue.color.float32[1] = 0.0f;
-        clearValue.color.float32[2] = 0.0f;
-        clearValue.color.float32[3] = 1.0f;
+        clearValue.color.float32[0] = m_backgroundColor[0];
+        clearValue.color.float32[1] = m_backgroundColor[1];
+        clearValue.color.float32[2] = m_backgroundColor[2];
+        clearValue.color.float32[3] = m_backgroundColor[3];
 
         VkRenderingAttachmentInfo colorAttachment{};
 

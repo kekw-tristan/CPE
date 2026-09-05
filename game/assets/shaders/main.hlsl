@@ -169,6 +169,7 @@ struct VSOutput
     nointerpolation float  reflectionProbeCoverage : TEXCOORD3;
 
     nointerpolation int materialIndex : MATERIAL_INDEX;
+    nointerpolation uint terrain : TEXCOORD7;
 };
 
 
@@ -193,14 +194,12 @@ float GetReflectionProbeWeight(float3 worldPosition, float3 probePosition, float
 // Vertex Shader
 // -----------------------------------------------------------------------------------------------------------------------------
 
+#include "../../src/world/terrainHeight.h"
+#include "../../src/world/forestAtmosphere.h"
+
 float GetTerrainHeight(float2 worldPosition)
 {
-    //float x = worldPosition.x; 
-    //float z = worldPosition.y;
-    //
-    //return sin(x * 0.15f) * 2.0f + cos(z * 0.12f) * 1.5f;
-    
-    return 0.f;
+    return GetTerrainHeight(worldPosition.x, worldPosition.y);
 }
 
 float3 GetTerrainNormal(float2 worldPosition)
@@ -246,6 +245,7 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
     output.position = mul(viewProj, worldPosition);
     output.worldPosition = worldPosition.xyz;
 
+    output.terrain = (instance.instanceFlags & INSTANCE_FLAG_TERRAIN) != 0 ? 1u : 0u;
     output.texCoord = input.texCoord;
     output.color = instance.color;
 
@@ -980,6 +980,14 @@ float3 ACESFilm(float3 color)
 
 float4 PSMain(VSOutput input) : SV_Target
 {
+    if (input.terrain == 0)
+    {
+        const float distanceToCamera = length(input.worldPosition - cameraPosition.xyz);
+        const float coverage = 1.0f - smoothstep(c_detailFadeStart, c_detailFadeEnd, distanceToCamera);
+        if (coverage <= 0.0f || InterleavedGradientNoise(input.position.xy) > coverage)
+            discard;
+    }
+
     float3 normal = SafeNormalize(input.worldNormal);
     float3 viewDirection = SafeNormalize(cameraPosition.xyz - input.worldPosition);
 
@@ -1039,7 +1047,7 @@ float4 PSMain(VSOutput input) : SV_Target
         albedo,
         roughness,
         metallic,
-        ambientStrength
+        ambientStrength * 0.55f
     );
     // -------------------------------------------------------------------------------------------------------------------------
     // Direct Lighting
@@ -1132,6 +1140,13 @@ float4 PSMain(VSOutput input) : SV_Target
     // -------------------------------------------------------------------------------------------------------------------------
 
     finalColor = ACESFilm(finalColor);
+
+    // The same display-linear color clears the background, hiding the outer terrain edge.
+    const float fogDistance = length(input.worldPosition - cameraPosition.xyz);
+    const float fogDepth = max(fogDistance - c_fogStart, 0.0f);
+    const float fogAmount = max(1.0f - exp(-fogDepth * c_fogDensity),
+        smoothstep(c_fogEdgeStart, c_fogEnd, fogDistance));
+    finalColor = lerp(finalColor, float3(c_fogRed, c_fogGreen, c_fogBlue), fogAmount);
 
     float dither = InterleavedGradientNoise(input.position.xy) - 0.5f;
 
