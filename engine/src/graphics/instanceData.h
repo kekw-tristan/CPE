@@ -12,6 +12,7 @@ namespace Engine::GFX
         {
             InstanceFlagNone,
             InstanceFlagTerrain,
+            InstanceFlagSky = 2,
 
             NumberOfElements,
             Undefined = -1

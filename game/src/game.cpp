@@ -46,6 +46,8 @@ void cGame::OnInit()
 {
     InitMeshes();
 
+    InitNightSky();
+
     World::WorldGenerator::Generate(1337);
 
     if (LoadPlayerModel())
@@ -218,6 +220,29 @@ void cGame::InitMeshes()
     directionalLight0.castsShadow   = true;
     
     LightManager::CreateLight(directionalLight0);
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::InitNightSky()
+{
+    using namespace Engine::GFX;
+
+    // An inward-facing cube follows the camera in the shader; the application owns its GPU mesh.
+    sMeshData skyMesh = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cube);
+    skyMesh.pDebugName = "Geometric night sky";
+    for (size_t i = 0; i < skyMesh.indices.size(); i += 3)
+        std::swap(skyMesh.indices[i + 1], skyMesh.indices[i + 2]);
+
+    MeshHandle mesh = CreateMesh(skyMesh);
+    SubmitMesh(mesh);
+
+    sInstanceData* pInstance = m_pool.Create();
+    pInstance->worldMatrix = Engine::Math::cMatrix4x4f::identity();
+    pInstance->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    pInstance->materialIndex = -1;
+    pInstance->instanceFlags = sInstanceFlags::InstanceFlagSky;
+    m_meshInstances[mesh].push_back(pInstance);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

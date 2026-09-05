@@ -92,6 +92,7 @@ class cGame : public cApplication
     private:
     
         void InitMeshes();
+        void InitNightSky();
         bool LoadPlayerModel();
         bool LoadEnemyModels();
         bool LoadPoseModel(const char* _pFilePath, const GFX::sShapeModelDesc& _rBaseModel, GFX::sShapeModelDesc& _rPoseModel);

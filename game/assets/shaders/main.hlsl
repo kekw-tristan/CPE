@@ -1,5 +1,6 @@
 static const uint MAX_REFLECTION_PROBES = 8;
 static const int  INSTANCE_FLAG_TERRAIN = 1;
+static const int  INSTANCE_FLAG_SKY = 2;
 
 struct ReflectionProbeData
 {
@@ -170,6 +171,7 @@ struct VSOutput
 
     nointerpolation int materialIndex : MATERIAL_INDEX;
     nointerpolation uint terrain : TEXCOORD7;
+    nointerpolation uint sky : TEXCOORD8;
 };
 
 
@@ -196,6 +198,7 @@ float GetReflectionProbeWeight(float3 worldPosition, float3 probePosition, float
 
 #include "../../src/world/terrainHeight.h"
 #include "../../src/world/forestAtmosphere.h"
+#include "nightSky.hlsl"
 
 float GetTerrainHeight(float2 worldPosition)
 {
@@ -223,9 +226,18 @@ float3 GetTerrainNormal(float2 worldPosition)
 
 VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 {
-    VSOutput output;
+    VSOutput output = (VSOutput)0;
 
     InstanceData instance = instances[instanceID];
+    if ((instance.instanceFlags & INSTANCE_FLAG_SKY) != 0)
+    {
+        output.sky = 1;
+        output.worldPosition = input.position;
+        output.position = mul(viewProj, float4(cameraPosition.xyz + input.position * 1000.0f, 1.0f));
+        output.position.z = output.position.w * 0.999999f;
+        return output;
+    }
+
 
     float4 worldPosition = mul(float4(input.position, 1.0f), instance.worldMatrix);
     
@@ -980,6 +992,9 @@ float3 ACESFilm(float3 color)
 
 float4 PSMain(VSOutput input) : SV_Target
 {
+    if (input.sky != 0)
+        return float4(EvaluateNightSky(input.worldPosition), 1.0f);
+
     if (input.terrain == 0)
     {
         const float distanceToCamera = length(input.worldPosition - cameraPosition.xyz);
@@ -1146,7 +1161,12 @@ float4 PSMain(VSOutput input) : SV_Target
     const float fogDepth = max(fogDistance - c_fogStart, 0.0f);
     const float fogAmount = max(1.0f - exp(-fogDepth * c_fogDensity),
         smoothstep(c_fogEdgeStart, c_fogEnd, fogDistance));
-    finalColor = lerp(finalColor, float3(c_fogRed, c_fogGreen, c_fogBlue), fogAmount);
+    float3 fogColor = float3(c_fogRed, c_fogGreen, c_fogBlue);
+    // At full extinction, match the sky on the same ray so terrain cuts remain hidden even on hills.
+    if (fogAmount > 0.95f)
+        fogColor = lerp(fogColor, EvaluateNightSky(input.worldPosition - cameraPosition.xyz),
+            smoothstep(0.95f, 1.0f, fogAmount));
+    finalColor = lerp(finalColor, fogColor, fogAmount);
 
     float dither = InterleavedGradientNoise(input.position.xy) - 0.5f;
 

@@ -1,4 +1,5 @@
 #include "../../src/world/terrainHeight.h"
+#include "nightSky.hlsl"
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Frame data
@@ -199,6 +200,7 @@ struct VSOutput
     float4 color : COLOR0;
 
     nointerpolation int materialIndex : MATERIAL_INDEX;
+    nointerpolation uint sky : TEXCOORD7;
 };
 
 
@@ -223,9 +225,19 @@ float3 SafeNormalize(float3 value)
 
 VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 {
-    VSOutput output;
+    VSOutput output = (VSOutput)0;
 
     InstanceData instance = instances[instanceID];
+    if ((instance.instanceFlags & 2) != 0)
+    {
+        output.sky = 1;
+        output.worldPosition = input.position;
+        output.position = mul(float4(probePushConstants.cameraPosition.xyz + input.position * 1000.0f, 1.0f),
+            probePushConstants.viewProjection);
+        output.position.z = output.position.w * 0.999999f;
+        return output;
+    }
+
 
     float4 worldPosition = mul(float4(input.position, 1.0f), instance.worldMatrix);
 
@@ -704,6 +716,9 @@ float3 EvaluateAmbient(
 
 float4 PSMain(VSOutput input) : SV_Target
 {
+    if (input.sky != 0)
+        return float4(EvaluateNightSky(input.worldPosition), 1.0f);
+
     float3 normal = SafeNormalize(input.worldNormal);
     float3 viewDirection = SafeNormalize(probePushConstants.cameraPosition.xyz - input.worldPosition);
 

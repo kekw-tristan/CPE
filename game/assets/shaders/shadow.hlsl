@@ -48,6 +48,8 @@ float GetTerrainHeight(float2 worldPosition)
 float4 VSMain(float3 position : POSITION, uint instanceID : SV_InstanceID) : SV_Position
 {
     InstanceData instance = instances[instanceID];
+    if ((instance.instanceFlags & 2) != 0)
+        return float4(2.0f, 2.0f, 2.0f, 1.0f);
 
     float4 worldPosition = mul(float4(position, 1.0f), instance.worldMatrix);
 
