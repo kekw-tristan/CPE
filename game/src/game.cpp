@@ -99,6 +99,9 @@ void cGame::OnUpdate(float _deltaTime)
 void cGame::OnPrepareRender()
 {
     Engine::GFX::UpdateInstanceBuffer(m_instances);
+
+    PrepareEnemyHealthBars(Engine::GFX::GetCamera());
+    Engine::GFX::UpdateHealthBars(m_healthBars);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -136,6 +139,7 @@ void cGame::OnShutdown()
     m_enemyManager.Clear();
     m_projectileManager.Clear();
     m_enemyVisuals.clear();
+    m_healthBars.clear();
     m_projectileVisuals.clear();
     ClearRenderInstances();
 }
@@ -260,6 +264,7 @@ void cGame::SpawnEnemies()
     const std::vector<World::sEnemySpawn>& spawns = World::WorldGenerator::GetEnemySpawns();
 
     m_enemyVisuals.reserve(spawns.size());
+    m_healthBars.reserve(spawns.size());
 
     for (const World::sEnemySpawn& spawn : spawns)
     {
@@ -604,6 +609,81 @@ void cGame::UpdatePlayerRenderInstances()
         const cMatrix4x4f partMatrix = CreateTransformMatrix(partTransform);
 
         renderPart.pInstance->worldMatrix = partMatrix * playerMatrix;
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::PrepareEnemyHealthBars(const GFX::cCamera& _rCamera)
+{
+    using namespace Engine::Math;
+
+    m_healthBars.clear();
+
+    float cameraPosition[4]{};
+    float cameraDirection[4]{};
+    _rCamera.GetPosition(cameraPosition);
+    _rCamera.GetDirection(cameraDirection);
+
+    const cVec3f position(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
+    const cVec3f direction(cameraDirection[0], cameraDirection[1], cameraDirection[2]);
+    const float maxDistanceSquared = c_healthBarMaxDistance * c_healthBarMaxDistance;
+
+    // Health is independent of the cached mesh transform revision.
+    for (const sEnemyVisual& visual : m_enemyVisuals)
+    {
+        const Gameplay::sEnemy* pEnemy = m_enemyManager.TryGetEnemy(visual.handle);
+
+        if (pEnemy == nullptr || pEnemy->state == Gameplay::eEnemyState::Dead || pEnemy->health <= 0.0f)
+        {
+            continue;
+        }
+
+        const float maxHealth = m_enemyManager.GetMaxHealth(pEnemy->type);
+
+        if (maxHealth <= 0.0f || pEnemy->health >= maxHealth)
+        {
+            continue;
+        }
+
+        const float heightOffset = pEnemy->type == World::sEnemyType::ForestCrawler
+            ? c_crawlerHealthBarOffset
+            : c_bruteHealthBarOffset;
+
+        const cVec3f anchor = pEnemy->position + cVec3f(0.0f, heightOffset, 0.0f);
+        const cVec3f cameraOffset = anchor - position;
+
+        if (cameraOffset.lengthSquared() > maxDistanceSquared || cameraOffset.dot(direction) <= 0.0f)
+        {
+            continue;
+        }
+
+        GFX::sHealthBarData bar{};
+        bar.positionWidth[0] = anchor.x();
+        bar.positionWidth[1] = anchor.y();
+        bar.positionWidth[2] = anchor.z();
+        bar.positionWidth[3] = c_healthBarWidth;
+        bar.heightFill[0] = c_healthBarHeight;
+        bar.heightFill[1] = std::clamp(pEnemy->health / maxHealth, 0.0f, 1.0f);
+
+        m_healthBars.push_back(bar);
+    }
+
+    // Billboards do not write depth, so closer bars must be drawn last.
+    const auto viewDepth = [&direction](const GFX::sHealthBarData& _rBar)
+    {
+        return cVec3f(_rBar.positionWidth[0], _rBar.positionWidth[1], _rBar.positionWidth[2]).dot(direction);
+    };
+
+    std::sort(m_healthBars.begin(), m_healthBars.end(), [&viewDepth](const auto& _rLeft, const auto& _rRight)
+    {
+        return viewDepth(_rLeft) > viewDepth(_rRight);
+    });
+
+    if (m_healthBars.size() > GFX::c_maxNumberOfHealthBars)
+    {
+        const auto excessCount = m_healthBars.size() - GFX::c_maxNumberOfHealthBars;
+        m_healthBars.erase(m_healthBars.begin(), m_healthBars.begin() + excessCount);
     }
 }
 

@@ -158,9 +158,39 @@ if errorlevel 1 (
 )
 
 echo.
+echo Compiling health bar vert shader...
+
+"%DXC%" ^
+    -spirv ^
+    -T vs_6_0 ^
+    -E VSMain ^
+    "%SHADER_DIR%\healthBar.hlsl" ^
+    -Fo "%OUTPUT_DIR%\healthBar.vert.spv"
+
+if errorlevel 1 (
+    echo Error: Health bar shader compilation failed.
+    exit /b 1
+)
+
+echo Compiling health bar frag shader...
+
+"%DXC%" ^
+    -spirv ^
+    -T ps_6_0 ^
+    -E PSMain ^
+    "%SHADER_DIR%\healthBar.hlsl" ^
+    -Fo "%OUTPUT_DIR%\healthBar.frag.spv"
+
+if errorlevel 1 (
+    echo Error: Health bar shader compilation failed.
+    exit /b 1
+)
+
 echo HLSL shaders compiled successfully.
 echo.
 echo Output:
+echo %OUTPUT_DIR%\healthBar.vert.spv
+echo %OUTPUT_DIR%\healthBar.frag.spv
 echo %OUTPUT_DIR%\main.vert.spv
 echo %OUTPUT_DIR%\main.frag.spv
 echo %OUTPUT_DIR%\shadow.vert.spv

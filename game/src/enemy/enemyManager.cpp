@@ -56,6 +56,13 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    float cEnemyManager::GetMaxHealth(World::sEnemyType::Enum _type) const
+    {
+        return GetDefinition(_type).maxHealth;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     sEnemyHandle cEnemyManager::Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation)
     {
         const sEnemyDefinition& definition = GetDefinition(_type);

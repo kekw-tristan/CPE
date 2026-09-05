@@ -187,6 +187,20 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cApplicationIntern::UpdateHealthBars(std::span<const GFX::sHealthBarData> _healthBars)
+    {
+        m_vulkanRenderer.UpdateHealthBars(_healthBars);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::DrawHealthBars()
+    {
+        m_vulkanRenderer.DrawHealthBars();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cApplicationIntern::BeginDraw()
     {
         m_vulkanRenderer.BeginDraw();

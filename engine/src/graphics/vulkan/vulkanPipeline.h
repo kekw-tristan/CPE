@@ -26,6 +26,8 @@ namespace Engine::GFX
 
         public:
 
+            VkPipeline              GetHealthBarPipeline() const;
+
             VkPipeline              GetPipeline(); 
             VkPipelineLayout        GetPipelineLayout();
 
@@ -51,6 +53,8 @@ namespace Engine::GFX
             void CreateReflectionProbePrefilterPipeline(cVulkanDevice& _rDevice);
 
         private:
+
+            VkPipeline m_pHealthBarPipeline = VK_NULL_HANDLE;
 
             VkPipelineLayout m_pPipelineLayout;
             VkPipeline       m_pGraphicsPipeline; 

@@ -62,6 +62,9 @@ namespace Engine::Logic
             void SubmitMesh(GFX::MeshHandle _pHandle);
             void DrawMeshIntances(GFX::MeshHandle _pHandle, uint32_t _instanceCount, uint32_t _firstInstance = 0);
             void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
+            void UpdateHealthBars(std::span<const GFX::sHealthBarData> _healthBars);
+            void DrawHealthBars();
+
             void BeginDraw(); 
 
             void BeginShadowRendering();

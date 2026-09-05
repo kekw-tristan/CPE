@@ -1,6 +1,9 @@
 #include "vulkanPipeline.h"
 
 #include "graphics/gfxConfig.h"
+#include "graphics/healthBarData.h"
+
+#include <cstddef>
 
 #include "graphics/vulkan/shadowData.h"
 #include "graphics/vulkan/vulkanDevice.h"
@@ -188,6 +191,43 @@ namespace Engine::GFX
         vkDestroyShaderModule(_rDevice.GetDevice(), fragShaderModule, nullptr);
         vkDestroyShaderModule(_rDevice.GetDevice(), vertShaderModule, nullptr);
 
+        // Reuse the main pass formats, MSAA and frame descriptors for the billboard pipeline.
+        vertShaderModule = CreateShaderModule(_rDevice, ReadFile("./assets/shaders/bin/healthBar.vert.spv"));
+        fragShaderModule = CreateShaderModule(_rDevice, ReadFile("./assets/shaders/bin/healthBar.frag.spv"));
+
+        shaderStages[0].module = vertShaderModule;
+        shaderStages[1].module = fragShaderModule;
+
+        VkVertexInputBindingDescription healthBarBinding{};
+        healthBarBinding.binding    = 0;
+        healthBarBinding.stride     = sizeof(sHealthBarData);
+        healthBarBinding.inputRate  = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+        const std::array<VkVertexInputAttributeDescription, 3> healthBarAttributes =
+        {{
+            { 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sHealthBarData, positionWidth) },
+            { 1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sHealthBarData, heightFill) },
+            { 2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sHealthBarData, color) }
+        }};
+
+        vertexInputInfo.pVertexBindingDescriptions = &healthBarBinding;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(healthBarAttributes.size());
+        vertexInputInfo.pVertexAttributeDescriptions = healthBarAttributes.data();
+
+        rasterizer.cullMode = VK_CULL_MODE_NONE;
+        depthStencil.depthWriteEnable = VK_FALSE;
+
+        const VkResult healthBarResult = vkCreateGraphicsPipelines(
+            _rDevice.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pHealthBarPipeline);
+
+        vkDestroyShaderModule(_rDevice.GetDevice(), fragShaderModule, nullptr);
+        vkDestroyShaderModule(_rDevice.GetDevice(), vertShaderModule, nullptr);
+
+        if (healthBarResult != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create health bar pipeline!");
+        }
+
         CreateShadowPipeline(_rDevice);
         CreateReflectionProbePipeline(_rDevice);
         CreateReflectionProbePrefilterPipeline(_rDevice);
@@ -198,6 +238,12 @@ namespace Engine::GFX
     void cVulkanPipeline::Shutdown(cVulkanDevice& _rDevice)
     {
         VkDevice device = _rDevice.GetDevice();
+
+        if (m_pHealthBarPipeline != VK_NULL_HANDLE)
+        {
+            vkDestroyPipeline(device, m_pHealthBarPipeline, nullptr);
+            m_pHealthBarPipeline = VK_NULL_HANDLE;
+        }
 
         if (m_pGraphicsPipeline != VK_NULL_HANDLE)
         {
@@ -258,6 +304,13 @@ namespace Engine::GFX
             vkDestroyDescriptorSetLayout(device, m_pReflectionProbePrefilterDescriptorSetLayout, nullptr);
             m_pReflectionProbePrefilterDescriptorSetLayout = VK_NULL_HANDLE;
         }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    VkPipeline cVulkanPipeline::GetHealthBarPipeline() const
+    {
+        return m_pHealthBarPipeline;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

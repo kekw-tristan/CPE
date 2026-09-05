@@ -105,6 +105,7 @@ class cGame : public cApplication
         void UpdatePlayerSpell(float _deltaTime);
         void UpdatePlayerRenderInstances();
         void UpdateEnemyRenderInstances();
+        void PrepareEnemyHealthBars(const GFX::cCamera& _rCamera);
         void SyncProjectileRenderInstances();
         void UpdateThirdPersonCamera(float _deltaTime); 
     
@@ -146,6 +147,14 @@ class cGame : public cApplication
         Gameplay::cProjectileManager   m_projectileManager;
 
         std::vector<sEnemyVisual>      m_enemyVisuals;
+
+        static constexpr float c_healthBarMaxDistance = 40.0f;
+        static constexpr float c_healthBarWidth = 1.1f;
+        static constexpr float c_healthBarHeight = 0.14f;
+        static constexpr float c_crawlerHealthBarOffset = 2.8f;
+        static constexpr float c_bruteHealthBarOffset = 3.0f;
+
+        std::vector<GFX::sHealthBarData> m_healthBars;
         std::vector<sProjectileVisual> m_projectileVisuals;
 
         static constexpr float c_playerMaxHealth     = 100.0f;

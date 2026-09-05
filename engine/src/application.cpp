@@ -117,6 +117,8 @@ namespace Engine
 
                 OnDraw();
 
+                m_pAppIntern->DrawHealthBars();
+
                 OnDrawUI();
 
                 GFX::ImGuiWindowManager::Draw();
@@ -182,6 +184,18 @@ namespace Engine::GFX
     void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances)
     {
         s_pApplicationIntern->UpdateInstanceBuffer(_rInstances);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void UpdateHealthBars(std::span<const sHealthBarData> _healthBars)
+    {
+        if (s_pApplicationIntern == nullptr)
+        {
+            throw std::runtime_error("Application does not exist yet!");
+        }
+
+        s_pApplicationIntern->UpdateHealthBars(_healthBars);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

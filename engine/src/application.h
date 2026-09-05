@@ -1,5 +1,8 @@
 #pragma once
 
+#include "graphics/healthBarData.h"
+
+#include <span>
 #include <array>
 #include <cstdint>
 #include <memory>
@@ -71,6 +74,8 @@ namespace Engine::GFX
     void DrawMeshIntances(MeshHandle _pHandle, uint32_t _instanceCount, uint32_t _firstInstances = 0);
 
     void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
+
+    void UpdateHealthBars(std::span<const sHealthBarData> _healthBars);
 
     cCamera& GetCamera();
 

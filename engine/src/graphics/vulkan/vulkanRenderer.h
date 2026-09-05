@@ -1,6 +1,9 @@
 #pragma once
 
 #include "graphics/gfxConfig.h"
+#include "graphics/healthBarData.h"
+
+#include <span>
 
 #include "graphics/vulkan/shadowData.h"
 #include "graphics/vulkan/shadowMap.h"
@@ -72,6 +75,9 @@ namespace Engine::GFX
             bool EndFrame();
             void DrawMeshIntances(cVulkanMesh* _pMesh, uint32_t _instanceCount, uint32_t _firstInstance = 0);
             void UpdateInstanceBuffer(std::vector<sInstanceData*>& _rInstances); 
+            void UpdateHealthBars(std::span<const sHealthBarData> _healthBars);
+            void DrawHealthBars();
+
             void BeginDraw(); 
 
         public:

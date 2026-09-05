@@ -243,6 +243,9 @@ namespace Engine::GFX
                 rFrame.frameUniformedBuffer.Shutdown(*m_pDevice);
             }
 
+            rFrame.healthBarBuffer.Shutdown(*m_pDevice);
+            rFrame.healthBarCount = 0;
+
             rFrame.instanceBuffer.Shutdown(*m_pDevice);
             rFrame.instanceBufferStaging.Shutdown(*m_pDevice);
 
@@ -367,6 +370,8 @@ namespace Engine::GFX
         }
 
         m_imagesInFlight[m_imageIndex] = frame.inFlightFence;
+
+        frame.healthBarCount = 0;
 
         UpdateFrameUniformBuffer(frame, _rCamera);
 
@@ -1641,6 +1646,57 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cVulkanRenderer::UpdateHealthBars(std::span<const sHealthBarData> _healthBars)
+    {
+        if (!m_hasFrameStarted || m_renderPassType != sRenderPassType::None)
+        {
+            throw std::runtime_error("Health bars must be uploaded before rendering begins!");
+        }
+
+        if (_healthBars.size() > c_maxNumberOfHealthBars)
+        {
+            throw std::length_error("Health bar count exceeds the GPU buffer capacity!");
+        }
+
+        sVulkanFrame& rFrame = m_frames[m_currentFrame];
+        rFrame.healthBarCount = static_cast<uint32_t>(_healthBars.size());
+
+        if (!_healthBars.empty())
+        {
+            rFrame.healthBarBuffer.Write(_healthBars.data(), _healthBars.size_bytes());
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::DrawHealthBars()
+    {
+        if (!m_hasFrameStarted || m_renderPassType != sRenderPassType::Main)
+        {
+            throw std::runtime_error("Health bars can only be drawn in the main pass!");
+        }
+
+        const sVulkanFrame& rFrame = m_frames[m_currentFrame];
+
+        if (rFrame.healthBarCount == 0)
+        {
+            return;
+        }
+
+        const VkCommandBuffer commandBuffer = rFrame.pCommandBuffer;
+        const VkBuffer buffer = rFrame.healthBarBuffer.GetBuffer();
+        const VkDeviceSize offset = 0;
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetHealthBarPipeline());
+        vkCmdBindDescriptorSets(
+            commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(),
+            0, 1, &rFrame.frameDescriptorSet, 0, nullptr);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &buffer, &offset);
+        vkCmdDraw(commandBuffer, 6, rFrame.healthBarCount, 0, 0);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cVulkanRenderer::BeginDraw()
     {
         sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
@@ -2036,6 +2092,7 @@ namespace Engine::GFX
     void cVulkanRenderer::EndDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex)
     {
         vkCmdEndRendering(_pCommandBuffer);
+        m_renderPassType = sRenderPassType::None;
 
         VkImage swapchainImage = m_pSwapchain->GetImages()[_imageIndex];
 
@@ -2112,6 +2169,10 @@ namespace Engine::GFX
             rFrame.frameUniformedBuffer.Map(*m_pDevice, sizeof(sFrameUniformData), 0);
 
             // instances
+            const VkDeviceSize healthBarBufferSize = sizeof(sHealthBarData) * c_maxNumberOfHealthBars;
+            rFrame.healthBarBuffer.Create(*m_pDevice, healthBarBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            rFrame.healthBarBuffer.Map(*m_pDevice);
+
             rFrame.instanceBuffer.Create(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
             rFrame.instanceBufferStaging.Create(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             rFrame.instanceBufferStaging.Map(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, 0);

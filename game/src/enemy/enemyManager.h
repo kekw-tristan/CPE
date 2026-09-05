@@ -85,6 +85,7 @@ namespace Gameplay
             bool ApplyDamageAt(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage);
             const sEnemy* TryGetEnemy(sEnemyHandle _handle) const;
             float ConsumePlayerDamage();
+            float GetMaxHealth(World::sEnemyType::Enum _type) const;
 
         private:
 

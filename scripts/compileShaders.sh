@@ -14,7 +14,7 @@ REFLECTION_PROBE_PREFILTER_SHADER_SOURCE="$SHADER_DIR/reflectionProbePrefilter.h
 
 if ! command -v dxc >/dev/null 2>&1; then
     echo "Error: dxc wurde nicht gefunden."
-    echo "Stelle sicher, dass DXC installiert und im PATH verfügbar ist."
+    echo "Stelle sicher, dass DXC installiert und im PATH verfÃƒÂ¼gbar ist."
     exit 1
 fi
 
@@ -108,9 +108,29 @@ dxc \
     -Fo "$OUTPUT_DIR/reflectionProbePrefilter.frag.spv"
 
 echo
+echo "Compiling health bar vert shader..."
+
+dxc \
+    -spirv \
+    -T vs_6_0 \
+    -E VSMain \
+    "$SHADER_DIR/healthBar.hlsl" \
+    -Fo "$OUTPUT_DIR/healthBar.vert.spv"
+
+echo "Compiling health bar frag shader..."
+
+dxc \
+    -spirv \
+    -T ps_6_0 \
+    -E PSMain \
+    "$SHADER_DIR/healthBar.hlsl" \
+    -Fo "$OUTPUT_DIR/healthBar.frag.spv"
+
 echo "HLSL shaders compiled successfully."
 echo
 echo "Output:"
+echo "$OUTPUT_DIR/healthBar.vert.spv"
+echo "$OUTPUT_DIR/healthBar.frag.spv"
 echo "$OUTPUT_DIR/main.vert.spv"
 echo "$OUTPUT_DIR/main.frag.spv"
 echo "$OUTPUT_DIR/shadow.vert.spv"
