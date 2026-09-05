@@ -119,6 +119,8 @@ class cGame : public cApplication
         GFX::MeshHandle m_sphereMesh;
         GFX::MeshHandle m_cylinderMesh;
         GFX::MeshHandle m_coneMesh;
+        GFX::MeshHandle m_torusMesh;
+        GFX::MeshHandle m_crystalMesh;
     
         Container::cPool<GFX::sInstanceData, c_instancesPerPage> m_pool;
     

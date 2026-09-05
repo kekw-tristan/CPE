@@ -62,6 +62,12 @@ namespace Engine::GFX
             case sMeshTypes::Cone:
                 return "Cone";
 
+            case sMeshTypes::Torus:
+                return "Torus";
+
+            case sMeshTypes::Crystal:
+                return "Crystal";
+
             default:
                 return "Unknown";
             }
@@ -417,6 +423,12 @@ namespace Engine::GFX
             if (ImGui::MenuItem("Cone"))
                 AddCone();
 
+            if (ImGui::MenuItem("Torus"))
+                AddTorus();
+
+            if (ImGui::MenuItem("Crystal"))
+                AddCrystal();
+
             ImGui::EndPopup();
         }
 
@@ -489,7 +501,8 @@ namespace Engine::GFX
 
         if (ImGui::CollapsingHeader("Appearance", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            const char* meshTypeNames[] = { "Plane", "PlaneChunk" ,"Cube", "Pyramid", "Sphere", "Cylinder", "Cone"};
+            const char* meshTypeNames[] = { "Plane", "PlaneChunk" ,"Cube", "Pyramid", "Sphere", "Cylinder", "Cone", "Torus", "Crystal" };
+            static_assert(sizeof(meshTypeNames) / sizeof(meshTypeNames[0]) == sMeshTypes::NumberOfElements);
 
             int selectedMeshType = static_cast<int>(rShape.meshType);
 
@@ -805,6 +818,56 @@ namespace Engine::GFX
         sShapePartDesc shape{};
 
         shape.meshType = sMeshTypes::Cone;
+
+        shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
+
+        shape.color[0] = 1.0f;
+        shape.color[1] = 1.0f;
+        shape.color[2] = 1.0f;
+        shape.color[3] = 1.0f;
+
+        shape.materialIndex = EnsureDefaultMaterial();
+
+        m_model.shapes.push_back(shape);
+        m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
+
+        MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::AddTorus()
+    {
+        sShapePartDesc shape{};
+
+        shape.meshType = sMeshTypes::Torus;
+
+        shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
+
+        shape.color[0] = 1.0f;
+        shape.color[1] = 1.0f;
+        shape.color[2] = 1.0f;
+        shape.color[3] = 1.0f;
+
+        shape.materialIndex = EnsureDefaultMaterial();
+
+        m_model.shapes.push_back(shape);
+        m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
+
+        MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::AddCrystal()
+    {
+        sShapePartDesc shape{};
+
+        shape.meshType = sMeshTypes::Crystal;
 
         shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
         shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);

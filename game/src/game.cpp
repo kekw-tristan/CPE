@@ -25,6 +25,8 @@ cGame::cGame(Engine::sAppConfig& _rAppConfig)
     , m_sphereMesh()
     , m_cylinderMesh()
     , m_coneMesh()
+    , m_torusMesh()
+    , m_crystalMesh()
     , m_pool()
     , m_instances()
     , m_playerModel()
@@ -153,6 +155,11 @@ void cGame::InitMeshes()
     SubmitMesh(m_sphereMesh);
     SubmitMesh(m_cylinderMesh);
     SubmitMesh(m_coneMesh);
+
+    m_torusMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Torus));
+    m_crystalMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Crystal));
+    SubmitMesh(m_torusMesh);
+    SubmitMesh(m_crystalMesh);
 
     sLight directionalLight0{};
     
@@ -776,6 +783,12 @@ Engine::GFX::MeshHandle cGame::GetMesh(Engine::GFX::sMeshTypes::Enum _type)
 
         case sMeshTypes::Cone:
             return m_coneMesh;
+
+        case sMeshTypes::Torus:
+            return m_torusMesh;
+
+        case sMeshTypes::Crystal:
+            return m_crystalMesh;
 
         default:
             return nullptr;

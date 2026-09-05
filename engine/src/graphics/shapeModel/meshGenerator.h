@@ -55,6 +55,21 @@ namespace Engine::GFX
         int segments = 32;
     };
 
+    struct sTorusDesc
+    {
+        float majorRadius   = 0.375f;
+        float tubeRadius    = 0.125f;
+        int   segments      = 24;
+        int   tubeSegments  = 12;
+    };
+
+    struct sCrystalDesc
+    {
+        float radius    = 0.5f;
+        float height    = 1.0f;
+        int   segments  = 6;
+    };
+
     class cMeshGenerator
     {
 
@@ -66,6 +81,8 @@ namespace Engine::GFX
             static sMeshData CreateSphere(const sSphereDesc& _rDesc);
             static sMeshData CreateCylinder(const sCylinderDesc& _rDesc);
             static sMeshData CreateCone(const sConeDesc& _rDesc);
+            static sMeshData CreateTorus(const sTorusDesc& _rDesc);
+            static sMeshData CreateCrystal(const sCrystalDesc& _rDesc);
 
         private:
 

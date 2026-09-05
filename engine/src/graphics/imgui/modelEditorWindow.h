@@ -76,6 +76,8 @@ namespace Engine::GFX
         void AddSphere();
         void AddCylinder();
         void AddCone();
+        void AddTorus();
+        void AddCrystal();
 
         void AddMaterial();
 

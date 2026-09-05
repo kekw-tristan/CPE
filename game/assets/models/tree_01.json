@@ -64,80 +64,12 @@
                 0.7
             ]
         },
-        {
-            "color": [
-                1.0,
-                1.0,
-                1.0,
-                1.0
-            ],
-            "materialIndex": 1,
-            "meshType": "Cone",
-            "position": [
-                0.0,
-                1.1,
-                0.0
-            ],
-            "rotation": [
-                0.0,
-                0.0,
-                0.0
-            ],
-            "scale": [
-                2.3,
-                1.9,
-                2.3
-            ]
-        },
-        {
-            "color": [
-                1.0,
-                1.0,
-                1.0,
-                1.0
-            ],
-            "materialIndex": 1,
-            "meshType": "Cone",
-            "position": [
-                0.0,
-                1.7,
-                0.0
-            ],
-            "rotation": [
-                0.0,
-                0.0,
-                0.0
-            ],
-            "scale": [
-                1.9,
-                1.7,
-                1.9
-            ]
-        },
-        {
-            "color": [
-                1.0,
-                1.0,
-                1.0,
-                1.0
-            ],
-            "materialIndex": 1,
-            "meshType": "Cone",
-            "position": [
-                0.0,
-                2.25,
-                0.0
-            ],
-            "rotation": [
-                0.0,
-                0.0,
-                0.0
-            ],
-            "scale": [
-                1.45,
-                1.45,
-                1.45
-            ]
-        }
-    ]
+        {"color":[0.7,0.8,0.72,1],"materialIndex":1,"meshType":"Cone","position":[-0.06,1.1,0.0],"rotation":[0.0,0.0,0.0],"scale":[2.3,1.9,2.3]},
+        {"color":[0.85,0.94,0.8,1],"materialIndex":1,"meshType":"Cone","position":[0.08,1.7,0.0],"rotation":[0.0,0.0,0.0],"scale":[1.9,1.7,1.9]},
+        {"color":[1,1,0.9,1],"materialIndex":1,"meshType":"Cone","position":[0.04,2.25,0.0],"rotation":[0.0,0.0,0.0],"scale":[1.45,1.45,1.45]},
+    {"meshType":"Cone","position":[0.29,-0.8700000000000001,0.0],"rotation":[0.0,0,-0.5],"scale":[0.34,0.68,0.34],"color":[0.85,0.8,0.72,1],"materialIndex":0},
+    {"meshType":"Cone","position":[-0.14640537033395867,-0.8700000000000001,0.2503307163281734],"rotation":[0.43160468332443686,0,0.2524230522999288],"scale":[0.34,0.68,0.34],"color":[0.85,0.8,0.72,1],"materialIndex":0},
+    {"meshType":"Cone","position":[-0.14217563818880283,-0.8700000000000001,-0.25275697399994057],"rotation":[-0.4357878862067941,0,0.2451304106703497],"scale":[0.34,0.68,0.34],"color":[0.85,0.8,0.72,1],"materialIndex":0},
+    {"meshType":"Cone","position":[0.04,2.75,0],"rotation":[0,0,0],"scale":[0.75,1,0.75],"color":[0.9,1,0.85,1],"materialIndex":1}
+  ]
 }

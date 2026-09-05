@@ -515,6 +515,101 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    sMeshData cMeshGenerator::CreateTorus(const sTorusDesc& _rDesc)
+    {
+        sMeshData mesh{};
+        mesh.pDebugName = "GeneratedTorus";
+
+        const float tubeRadius      = std::max(_rDesc.tubeRadius, 0.001f);
+        const float majorRadius     = std::max(_rDesc.majorRadius, tubeRadius + 0.001f);
+        const int   segments        = std::clamp(_rDesc.segments, 3, 256);
+        const int   tubeSegments    = std::clamp(_rDesc.tubeSegments, 3, 128);
+        const int   stride          = tubeSegments + 1;
+
+        mesh.vertices.reserve((segments + 1) * stride);
+        mesh.indices.reserve(segments * tubeSegments * 6);
+
+        // The ring lies in XZ, with its opening along Y.
+        for (int segment = 0; segment <= segments; ++segment)
+        {
+            const float u       = static_cast<float>(segment) / segments;
+            const float theta   = 2.0f * c_pi * u;
+            const cVec3f radial{ std::sin(theta), 0.0f, std::cos(theta) };
+
+            for (int tubeSegment = 0; tubeSegment <= tubeSegments; ++tubeSegment)
+            {
+                const float v       = static_cast<float>(tubeSegment) / tubeSegments;
+                const float phi     = 2.0f * c_pi * v;
+                const cVec3f normal = radial * std::cos(phi) + cVec3f{ 0.0f, std::sin(phi), 0.0f };
+
+                mesh.vertices.push_back({ .position = radial * majorRadius + normal * tubeRadius, .normal = normal, .uv = { u, v } });
+            }
+        }
+
+        for (int segment = 0; segment < segments; ++segment)
+        {
+            for (int tubeSegment = 0; tubeSegment < tubeSegments; ++tubeSegment)
+            {
+                const uint32_t a = static_cast<uint32_t>(segment * stride + tubeSegment);
+                const uint32_t b = a + static_cast<uint32_t>(stride);
+
+                mesh.indices.insert(mesh.indices.end(), { a, b, b + 1, a, b + 1, a + 1 });
+            }
+        }
+
+        mesh.bounds = CalculateBounds(mesh.vertices);
+        return mesh;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sMeshData cMeshGenerator::CreateCrystal(const sCrystalDesc& _rDesc)
+    {
+        sMeshData mesh{};
+        mesh.pDebugName = "GeneratedCrystal";
+
+        const float radius      = std::max(_rDesc.radius, 0.001f);
+        const float height      = std::max(_rDesc.height, 0.001f);
+        const int   segments    = std::clamp(_rDesc.segments, 3, 128);
+
+        mesh.vertices.reserve(segments * 12);
+        mesh.indices.reserve(segments * 12);
+
+        const auto addTriangle = [&mesh](const cVec3f& _rA, const cVec3f& _rB, const cVec3f& _rC)
+        {
+            const cVec3f normal = (_rB - _rA).cross(_rC - _rA).normalized();
+            const uint32_t first = static_cast<uint32_t>(mesh.vertices.size());
+
+            mesh.vertices.push_back({ .position = _rA, .normal = normal, .uv = { 0.0f, 0.0f } });
+            mesh.vertices.push_back({ .position = _rB, .normal = normal, .uv = { 1.0f, 0.0f } });
+            mesh.vertices.push_back({ .position = _rC, .normal = normal, .uv = { 0.5f, 1.0f } });
+
+            mesh.indices.insert(mesh.indices.end(), { first, first + 1, first + 2 });
+        };
+
+        // Separate face vertices keep the hexagonal shaft and pointed ends faceted.
+        for (int segment = 0; segment < segments; ++segment)
+        {
+            const float angle       = 2.0f * c_pi * static_cast<float>(segment)     / segments;
+            const float nextAngle   = 2.0f * c_pi * static_cast<float>(segment + 1) / segments;
+
+            const cVec3f lower{ std::sin(angle) * radius, -height * 0.25f, std::cos(angle) * radius };
+            const cVec3f nextLower{ std::sin(nextAngle) * radius, -height * 0.25f, std::cos(nextAngle) * radius };
+            const cVec3f upper{ lower.x(), height * 0.2f, lower.z() };
+            const cVec3f nextUpper{ nextLower.x(), height * 0.2f, nextLower.z() };
+
+            addTriangle(lower, nextLower, nextUpper);
+            addTriangle(lower, nextUpper, upper);
+            addTriangle(upper, nextUpper, cVec3f{ 0.0f, height * 0.5f, 0.0f });
+            addTriangle(nextLower, lower, cVec3f{ 0.0f, -height * 0.5f, 0.0f });
+        }
+
+        mesh.bounds = CalculateBounds(mesh.vertices);
+        return mesh;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     sBounds cMeshGenerator::CalculateBounds(const std::vector<sVertex>& _rVertices)
     {
         sBounds bounds{};

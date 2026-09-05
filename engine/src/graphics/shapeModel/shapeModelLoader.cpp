@@ -69,6 +69,18 @@ namespace Engine::GFX
                 return true;
             }
 
+            if (_rMeshTypeName == "Torus")
+            {
+                _rMeshType = sMeshTypes::Torus;
+                return true;
+            }
+
+            if (_rMeshTypeName == "Crystal")
+            {
+                _rMeshType = sMeshTypes::Crystal;
+                return true;
+            }
+
             return false;
         }
 
@@ -82,7 +94,7 @@ namespace Engine::GFX
                     return "Plane";
 
                 case sMeshTypes::ChunkPlane:
-                    return "Plane";
+                    return "ChunkPlane";
 
                 case sMeshTypes::Cube:
                     return "Cube";
@@ -98,6 +110,12 @@ namespace Engine::GFX
 
                 case sMeshTypes::Cone:
                     return "Cone";
+
+                case sMeshTypes::Torus:
+                    return "Torus";
+
+                case sMeshTypes::Crystal:
+                    return "Crystal";
 
                 default:
                     return "Unknown";

@@ -13,6 +13,8 @@ namespace Engine::GFX
             Sphere,
             Cylinder,
             Cone,
+            Torus,
+            Crystal,
 
             NumberOfElements,
 

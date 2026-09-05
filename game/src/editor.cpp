@@ -26,6 +26,8 @@ cEditor::cEditor(Engine::sAppConfig& _rAppConfig)
     , m_sphereMesh()
     , m_cylinderMesh()
     , m_coneMesh()
+    , m_torusMesh()
+    , m_crystalMesh()
     , m_playerInstance()
     , m_playerPosition()
     , m_pool()
@@ -117,6 +119,11 @@ void cEditor::OnInit()
     SubmitMesh(m_sphereMesh);
     SubmitMesh(m_cylinderMesh);
     SubmitMesh(m_coneMesh);
+
+    m_torusMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Torus));
+    m_crystalMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Crystal));
+    SubmitMesh(m_torusMesh);
+    SubmitMesh(m_crystalMesh);
 
     // -------------------------------------------------------------------------------------------------------------------------
     // Build scene render data
@@ -499,6 +506,12 @@ Engine::GFX::MeshHandle cEditor::GetMesh(Engine::GFX::sMeshTypes::Enum _type)
 
         case sMeshTypes::Cone:
             return m_coneMesh;
+
+        case sMeshTypes::Torus:
+            return m_torusMesh;
+
+        case sMeshTypes::Crystal:
+            return m_crystalMesh;
 
         default:
             return nullptr;

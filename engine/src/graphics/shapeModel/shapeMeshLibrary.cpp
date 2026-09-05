@@ -31,6 +31,9 @@ namespace Engine::GFX
             meshes[static_cast<size_t>(sMeshTypes::Cylinder)]   = cMeshGenerator::CreateCylinder(sCylinderDesc{});
             meshes[static_cast<size_t>(sMeshTypes::Cone)]       = cMeshGenerator::CreateCone(sConeDesc{});
 
+            meshes[static_cast<size_t>(sMeshTypes::Torus)]      = cMeshGenerator::CreateTorus(sTorusDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Crystal)]    = cMeshGenerator::CreateCrystal(sCrystalDesc{});
+
             return meshes;
         }
 
