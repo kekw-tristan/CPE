@@ -77,7 +77,7 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    sEnemyHandle cEnemyManager::Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation)
+    sEnemyHandle cEnemyManager::Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation, bool _isBoss)
     {
         const sEnemyDefinition& definition = GetDefinition(_type);
         uint32_t slotIndex;
@@ -100,7 +100,20 @@ namespace Gameplay
         slot.enemy.type     = _type;
         slot.enemy.position = _rPosition;
         slot.enemy.rotation = _rotation;
-        slot.enemy.health   = definition.maxHealth;
+        slot.enemy.isBoss = _isBoss;
+        slot.enemy.scale = _isBoss ? 2.5f : 1.0f;
+        slot.enemy.homePosition = _rPosition;
+        slot.enemy.definition = definition;
+        if (_isBoss)
+        {
+            slot.enemy.definition.maxHealth *= 6.0f;
+            slot.enemy.definition.attackDamage *= 1.5f;
+            slot.enemy.definition.aggroRange = 24.0f;
+            slot.enemy.definition.attackWindup *= 1.4f;
+            if (definition.attackType == eEnemyAttackType::Melee)
+                slot.enemy.definition.attackRange *= 2.5f;
+        }
+        slot.enemy.health = slot.enemy.definition.maxHealth;
 
         return slot.enemy.handle;
     }
@@ -116,7 +129,7 @@ namespace Gameplay
 
             const Engine::Math::cVec3f previousPosition = slot.enemy.position;
             const float previousRotation                = slot.enemy.rotation;
-            UpdateEnemy(slot.enemy, GetDefinition(slot.enemy.type), _rContext, _rProjectileManager);
+            UpdateEnemy(slot.enemy, slot.enemy.definition, _rContext, _rProjectileManager);
 
             if (slot.enemy.position != previousPosition || slot.enemy.rotation != previousRotation)
                 ++slot.enemy.transformRevision;
@@ -156,13 +169,15 @@ namespace Gameplay
 
     bool cEnemyManager::ApplyDamageAt(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage)
     {
-        const float radiusSquared = _radius * _radius;
+
 
         for (sEnemySlot& slot : m_slots)
         {
             if (!slot.occupied || slot.enemy.state == eEnemyState::Dead)
                 continue;
 
+            const float hitRadius = _radius + (slot.enemy.scale - 1.0f) * 0.65f;
+            const float radiusSquared = hitRadius * hitRadius;
             const Engine::Math::cVec3f enemyCenter = slot.enemy.position + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f);
             if (Engine::Math::cVec3f::distanceSquared(_rPosition, enemyCenter) > radiusSquared)
                 continue;
@@ -220,6 +235,17 @@ namespace Gameplay
 
     void cEnemyManager::UpdateEnemy(sEnemy& _rEnemy, const sEnemyDefinition& _rDefinition, const sEnemyUpdateContext& _rContext, cProjectileManager& _rProjectileManager)
     {
+        if (_rEnemy.isBoss && (std::abs(_rContext.playerPosition.x() - _rEnemy.homePosition.x()) > 12.5f
+            || std::abs(_rContext.playerPosition.z() - _rEnemy.homePosition.z()) > 12.5f))
+        {
+            _rEnemy.position = _rEnemy.homePosition;
+            _rEnemy.health = _rDefinition.maxHealth;
+            _rEnemy.state = eEnemyState::Idle;
+            _rEnemy.stateTime = 0.0f;
+            _rEnemy.attackPoseWeight = 0.0f;
+            _rEnemy.attackCooldown = 0.0f;
+            return;
+        }
         _rEnemy.stateTime += _rContext.deltaTime;
         _rEnemy.attackCooldown = std::max(0.0f, _rEnemy.attackCooldown - _rContext.deltaTime);
 
@@ -302,7 +328,7 @@ namespace Gameplay
         if (movementDirection.isZero())
             return;
 
-        constexpr float c_radius     = 0.45f;
+        const float c_radius = 0.45f * _rEnemy.scale;
         constexpr float c_halfHeight = 0.75f;
         Engine::Physics::sCapsuleCollider collider{};
         collider.center     = _rEnemy.position + Engine::Math::cVec3f(0.0f, c_radius + c_halfHeight, 0.0f);
@@ -311,7 +337,15 @@ namespace Gameplay
 
         const Engine::Math::cVec3f movement = movementDirection * (_rDefinition.movementSpeed * _rContext.deltaTime);
         const Engine::Math::cVec3f center   = Engine::Physics::CollisionWorld::MoveCapsule(collider, movement);
-        _rEnemy.position                    = {center.x(), _rEnemy.position.y(), center.z()};
+        _rEnemy.position = {center.x(), _rEnemy.position.y(), center.z()};
+        if (_rEnemy.isBoss)
+        {
+            _rEnemy.position = {
+                std::clamp(_rEnemy.position.x(), _rEnemy.homePosition.x() - 10.0f, _rEnemy.homePosition.x() + 10.0f),
+                _rEnemy.position.y(),
+                std::clamp(_rEnemy.position.z(), _rEnemy.homePosition.z() - 10.0f, _rEnemy.homePosition.z() + 10.0f)
+            };
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

@@ -58,6 +58,10 @@ namespace Gameplay
         World::sEnemyType::Enum type = World::sEnemyType::Undefined;
         Engine::Math::cVec3f position;
         Engine::Math::cVec3f attackDirection;
+        bool isBoss = false;
+        float scale = 1.0f;
+        Engine::Math::cVec3f homePosition;
+        sEnemyDefinition definition{};
         float rotation             = 0.0f;
         float health               = 0.0f;
         float stateTime            = 0.0f;
@@ -77,7 +81,7 @@ namespace Gameplay
     {
         public:
 
-            sEnemyHandle Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation);
+            sEnemyHandle Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation, bool _isBoss = false);
             void Update(const sEnemyUpdateContext& _rContext, cProjectileManager& _rProjectileManager);
             void Clear();
 

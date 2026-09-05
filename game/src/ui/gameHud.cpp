@@ -197,6 +197,28 @@ namespace UI
         }
 
         const float scale = std::min(pViewport->Size.x / c_referenceWidth, pViewport->Size.y / c_referenceHeight);
+        constexpr std::array<const char*, 4> c_dungeonNames = {
+            "Wurzelgruft - Uralter Kriecher", "Steinheiligtum - Waldkoloss",
+            "Dornenbau - Dornenalpha", "Sporenkrypta - Sporenkoenig"
+        };
+        const ImVec2 questOrigin(pViewport->Pos.x + 18.0f * scale, pViewport->Pos.y + 18.0f * scale);
+        pDrawList->AddRectFilled(questOrigin, ImVec2(questOrigin.x + 380.0f * scale, questOrigin.y + 156.0f * scale), IM_COL32(9, 20, 12, 215), 6.0f * scale);
+        unsigned int defeated = 0;
+        for (size_t i = 0; i < _rState.dungeons.size(); ++i)
+        {
+            const auto& dungeon = _rState.dungeons[i];
+            defeated += dungeon.defeated ? 1u : 0u;
+            char label[128];
+            std::snprintf(label, sizeof(label), "%s %s %.0fm %s%s", c_dungeonNames[i], dungeon.defeated ? "[OK]" : "", dungeon.distance, dungeon.offsetZ < 0.0f ? "S" : "N", dungeon.offsetX < 0.0f ? "W" : "O");
+            const ImVec2 row(questOrigin.x + 8.0f * scale, questOrigin.y + (32.0f + static_cast<float>(i) * 24.0f) * scale);
+            DrawText(*pDrawList, row, 13.0f * scale, label);
+            if (dungeon.inArena && !dungeon.defeated)
+                DrawBar(*pDrawList, ImVec2(row.x, row.y + 15.0f * scale), ImVec2(350.0f * scale, 5.0f * scale), dungeon.healthFraction, IM_COL32(180, 55, 40, 255), scale, "", eBarDirection::Horizontal);
+        }
+        char progress[96];
+        std::snprintf(progress, sizeof(progress), "Ring 1: Wald - Bosse %u/4%s", defeated, defeated == 4 ? " - Abgeschlossen!" : "");
+        DrawText(*pDrawList, ImVec2(questOrigin.x + 8.0f * scale, questOrigin.y + 8.0f * scale), 15.0f * scale, progress);
+        DrawText(*pDrawList, ImVec2(questOrigin.x + 8.0f * scale, questOrigin.y + 134.0f * scale), 12.0f * scale, "Eingang jeweils im Sueden (-Z). Flucht setzt Boss zurueck.");
         const float width = c_hudWidth * scale;
         const float left  = pViewport->Pos.x + (pViewport->Size.x - width) * 0.5f;
         const float top   = pViewport->Pos.y + pViewport->Size.y - (c_panelBottom + c_bottomMargin) * scale;

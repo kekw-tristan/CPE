@@ -26,6 +26,7 @@ namespace World
         sEnemyType::Enum     type     = sEnemyType::Undefined;
         Engine::Math::cVec3f position = { 0.f, 0.f, 0.f };
         float                rotation = 0.0f;
+        bool                 isBoss = false;
     };
 
 }

@@ -1,6 +1,7 @@
 #include "worldGenerator.h"
 
 #include "chunk.h"
+#include "worldConfig.h"
 
 #include "graphics/scene/scene.h"
 
@@ -18,6 +19,7 @@
 #include "enemy/enemySpawn.h"
 
 #include <random>
+#include <cmath>
 #include <iostream>
 #include <vector>
 
@@ -27,16 +29,6 @@ using namespace Engine;
 
 namespace World
 {
-
-	// -------------------------------------------------------------------------------------------------------------------------
-
-	namespace
-	{
-		constexpr int c_chunkSize = 32;
-
-		constexpr int c_worldChunkCountX = 8;
-		constexpr int c_worldChunkCountZ = 8;
-	}
 
 	// -------------------------------------------------------------------------------------------------------------------------
 
@@ -112,6 +104,8 @@ namespace World
 
 			for (const sChunk& chunk : m_chunks)
 				GenerateChunk(_rScene, chunk);
+
+            ForestGenerator::GenerateDungeons(_rScene, m_layout, m_enemySpawns);
 		}
 
 		// -------------------------------------------------------------------------------------------------------------------------
@@ -147,14 +141,22 @@ namespace World
 
 			m_chunks.reserve(c_worldChunkCountX * c_worldChunkCountZ);
 
-			m_layout.mainPath =
-			{
-				{ Math::cVec3f(-100.0f, 0.0f, -80.0f) },
-				{ Math::cVec3f(-60.0f, 0.0f, -40.0f) },
-				{ Math::cVec3f(-20.0f, 0.0f, -10.0f) },
-				{ Math::cVec3f(20.0f, 0.0f,  30.0f) },
-				{ Math::cVec3f(70.0f, 0.0f,  50.0f) }
-			};
+            m_layout.mainPath.clear();
+            std::uniform_real_distribution<float> angleOffset(-0.16f, 0.16f);
+            for (size_t i = 0; i < m_layout.dungeons.size(); ++i)
+            {
+                const float angle = 0.785398f + static_cast<float>(i) * 1.570796f + angleOffset(m_randomGenerator);
+                auto& dungeon = m_layout.dungeons[i];
+                dungeon.center = Math::cVec3f(std::cos(angle) * 64.0f, 0.0f, std::sin(angle) * 64.0f);
+                dungeon.type = static_cast<sEnemyType::Enum>(i);
+                m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
+                m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - 30.0f) });
+                m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -30.0f) });
+                m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -14.0f) });
+                m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -30.0f) });
+                m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - 30.0f) });
+                m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
+            }
 
 			for (int z = 0; z < c_worldChunkCountZ; ++z)
 			{
@@ -183,7 +185,7 @@ namespace World
 					ForestGenerator::GenerateChunk(_rScene, _rChunk, m_randomGenerator, m_layout, m_enemySpawns);
 					break;
 
-				case sBiomeType::Swamp:
+				case sBiomeType::Desert:
 					break;
 
 				case sBiomeType::Ice:

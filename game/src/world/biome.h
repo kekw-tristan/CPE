@@ -7,7 +7,7 @@ namespace World
         enum Enum
         {
             Forest, 
-            Swamp, 
+            Desert,
             Ice, 
             Lava,
 

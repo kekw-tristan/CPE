@@ -130,6 +130,20 @@ void cGame::OnDrawUI()
     hudState.spellCooldown         = m_playerSpellCooldown;
     hudState.spellCooldownDuration = c_playerSpellCooldown;
 
+    for (const auto& visual : m_enemyVisuals)
+    {
+        const auto* pEnemy = m_enemyManager.TryGetEnemy(visual.handle);
+        if (pEnemy == nullptr || !pEnemy->isBoss)
+            continue;
+        auto& dungeon = hudState.dungeons[static_cast<size_t>(pEnemy->type)];
+        dungeon.defeated = pEnemy->state == Gameplay::eEnemyState::Dead;
+        const auto offset = m_playerController.GetPosition() - pEnemy->homePosition;
+        dungeon.offsetX = -offset.x();
+        dungeon.offsetZ = -offset.z();
+        dungeon.distance = std::sqrt(offset.x() * offset.x() + offset.z() * offset.z());
+        dungeon.inArena = std::abs(offset.x()) <= 12.5f && std::abs(offset.z()) <= 12.5f;
+        dungeon.healthFraction = pEnemy->health / pEnemy->definition.maxHealth;
+    }
     m_hud.Draw(hudState);
 }
 
@@ -310,7 +324,7 @@ void cGame::SpawnEnemies()
             continue;
 
         sEnemyVisual visual{};
-        visual.handle = m_enemyManager.Spawn(spawn.type, spawn.position, spawn.rotation);
+        visual.handle = m_enemyManager.Spawn(spawn.type, spawn.position, spawn.rotation, spawn.isBoss);
         visual.previousPosition = spawn.position;
         visual.renderParts.reserve(pModel->shapes.size());
 
@@ -665,7 +679,7 @@ void cGame::PrepareEnemyHealthBars(const GFX::cCamera& _rCamera)
             continue;
         }
 
-        const float maxHealth = m_enemyManager.GetMaxHealth(pEnemy->type);
+        const float maxHealth = pEnemy->definition.maxHealth;
 
         if (maxHealth <= 0.0f || pEnemy->health >= maxHealth)
         {
@@ -678,7 +692,7 @@ void cGame::PrepareEnemyHealthBars(const GFX::cCamera& _rCamera)
             : pEnemy->type == World::sEnemyType::ForestSporecap ? 2.7f
             : c_bruteHealthBarOffset;
 
-        const cVec3f anchor = pEnemy->position + cVec3f(0.0f, heightOffset, 0.0f);
+        const cVec3f anchor = pEnemy->position + cVec3f(0.0f, heightOffset * pEnemy->scale, 0.0f);
         const cVec3f cameraOffset = anchor - position;
 
         if (cameraOffset.lengthSquared() > maxDistanceSquared || cameraOffset.dot(direction) <= 0.0f)
@@ -762,7 +776,7 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
         enemyTransform.rotation = { 0.0f, pEnemy->rotation, 0.0f };
         enemyTransform.scale = pEnemy->state == Gameplay::eEnemyState::Dead
             ? Math::cVec3f(0.0f, 0.0f, 0.0f)
-            : Math::cVec3f(1.0f, 1.0f, 1.0f);
+            : Math::cVec3f(pEnemy->scale, pEnemy->scale, pEnemy->scale);
 
         const cMatrix4x4f enemyMatrix = CreateTransformMatrix(enemyTransform);
 

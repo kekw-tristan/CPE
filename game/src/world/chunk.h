@@ -5,6 +5,8 @@
 #include "biome.h"
 
 #include <vector>
+#include <array>
+#include "enemy/enemySpawn.h"
 
 namespace World
 {
@@ -30,8 +32,15 @@ namespace World
 		Engine::Math::cVec3f position;
 	};
 
+    struct sForestDungeon
+    {
+        Engine::Math::cVec3f center;
+        sEnemyType::Enum type = sEnemyType::Undefined;
+    };
+
 	struct sWorldLayout
 	{
 		std::vector<sPathPoint> mainPath;
+        std::array<sForestDungeon, 4> dungeons;
 	};
 }

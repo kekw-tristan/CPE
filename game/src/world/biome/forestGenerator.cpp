@@ -12,6 +12,8 @@
 #include "physics/collisionWorld.h"
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 // -------------------------------------------------------------------------------------------------------------------------
 
@@ -80,6 +82,17 @@ namespace World
 
         float DistanceToPath(const Math::cVec3f& _rPosition, const sWorldLayout& _rWorldLayout)
         {
+            if (_rPosition.x() * _rPosition.x() + _rPosition.z() * _rPosition.z() > 94.0f * 94.0f)
+                return 0.0f;
+            if (_rPosition.x() * _rPosition.x() + _rPosition.z() * _rPosition.z() < 12.0f * 12.0f)
+                return 0.0f;
+            for (const auto& dungeon : _rWorldLayout.dungeons)
+            {
+                if (std::abs(_rPosition.x() - dungeon.center.x()) < 20.0f
+                    && _rPosition.z() - dungeon.center.z() > -32.0f
+                    && _rPosition.z() - dungeon.center.z() < 20.0f)
+                    return 0.0f;
+            }
             if (_rWorldLayout.mainPath.size() < 2)
                 return std::numeric_limits<float>::max();
 
@@ -324,7 +337,8 @@ namespace World
                     spawn.position = Math::cVec3f(packCenter.x() + packOffsetDistribution(_rRandomGenerator), worldY, packCenter.z() + packOffsetDistribution(_rRandomGenerator));
                     spawn.rotation = rotationDistribution(_rRandomGenerator);
 
-                    _rEnemySpawns.push_back(spawn);
+                    if (DistanceToPath(spawn.position, _rWorldLayout) >= c_pathClearance)
+                        _rEnemySpawns.push_back(spawn);
 
                 }
             }
@@ -339,6 +353,63 @@ namespace World
 
     namespace ForestGenerator
     {
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        void GenerateDungeons(GFX::cScene& _rScene, const sWorldLayout& _rLayout, std::vector<sEnemySpawn>& _rSpawns)
+        {
+            const auto addWall = [&](const Math::cVec3f& _rPosition, float _scale)
+            {
+                GFX::sShapeInstance wall{};
+                wall.modelHandle = WorldModels::Get("stone_01");
+                wall.transform.position = _rPosition;
+                wall.transform.scale = Math::cVec3f(_scale, 6.0f, _scale);
+                _rScene.AddShapeInstance(wall);
+                AddAABBCollider(_rPosition, Math::cVec3f(0.0f, 3.0f, 0.0f), Math::cVec3f(_scale, 3.0f, _scale));
+            };
+            // Small, non-blocking stones make the cleared routes readable on the grass.
+            for (size_t i = 0; i + 1 < _rLayout.mainPath.size(); ++i)
+            {
+                const auto start = _rLayout.mainPath[i].position;
+                const auto delta = _rLayout.mainPath[i + 1].position - start;
+                const float length = std::sqrt(delta.x() * delta.x() + delta.z() * delta.z());
+                for (float distance = 1.0f; distance < length; distance += 3.0f)
+                {
+                    GFX::sShapeInstance marker{};
+                    marker.modelHandle = WorldModels::Get("stone_02");
+                    marker.transform.position = start + delta * (distance / length);
+                    marker.transform.scale = Math::cVec3f(0.35f, 0.08f, 0.35f);
+                    _rScene.AddShapeInstance(marker);
+                }
+            }
+            // Continuous cliff ring closes the currently playable forest section.
+            for (int i = 0; i < 160; ++i)
+            {
+                const float angle = static_cast<float>(i) * 6.2831853f / 160.0f;
+                addWall(Math::cVec3f(std::cos(angle) * 100.0f, 0.0f, std::sin(angle) * 100.0f), 2.5f);
+            }
+            for (const auto& dungeon : _rLayout.dungeons)
+            {
+                // Roofless ruins: boss chamber, a southern doorway and a guarded approach.
+                for (int offset = -14; offset <= 14; offset += 2)
+                {
+                    const float value = static_cast<float>(offset);
+                    addWall(dungeon.center + Math::cVec3f(-14.0f, 0.0f, value), 1.25f);
+                    addWall(dungeon.center + Math::cVec3f(14.0f, 0.0f, value), 1.25f);
+                    addWall(dungeon.center + Math::cVec3f(value, 0.0f, 14.0f), 1.25f);
+                    if (std::abs(offset) >= 6)
+                        addWall(dungeon.center + Math::cVec3f(value, 0.0f, -14.0f), 1.25f);
+                }
+                for (int offset = -26; offset < -14; offset += 2)
+                {
+                    addWall(dungeon.center + Math::cVec3f(-7.0f, 0.0f, static_cast<float>(offset)), 1.25f);
+                    addWall(dungeon.center + Math::cVec3f(7.0f, 0.0f, static_cast<float>(offset)), 1.25f);
+                }
+                _rSpawns.push_back({ dungeon.type, dungeon.center, 3.1415926f, true });
+                _rSpawns.push_back({ dungeon.type, dungeon.center + Math::cVec3f(-3.0f, 0.0f, -22.0f), 3.1415926f });
+                _rSpawns.push_back({ dungeon.type, dungeon.center + Math::cVec3f(3.0f, 0.0f, -22.0f), 3.1415926f });
+            }
+        }
 
         // -------------------------------------------------------------------------------------------------------------------------
 
