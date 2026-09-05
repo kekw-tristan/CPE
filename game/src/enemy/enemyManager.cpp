@@ -28,6 +28,20 @@ namespace Gameplay
             eEnemyAttackType::ConeProjectile
         };
 
+        constexpr sEnemyDefinition c_thornwolfDefinition
+        {
+            65.0f, 4.2f, 16.0f, 1.6f, 1.2f,
+            12.0f, 0.9f, 0.25f, 0.25f,
+            eEnemyAttackType::Melee
+        };
+
+        constexpr sEnemyDefinition c_sporecapDefinition
+        {
+            80.0f, 1.5f, 15.0f, 12.0f, 9.0f,
+            16.0f, 2.4f, 0.65f, 0.5f,
+            eEnemyAttackType::ConeProjectile
+        };
+
         constexpr sEnemyDefinition c_bruteDefinition
         {
             120.0f, 2.2f, 11.0f, 1.7f, 1.4f,
@@ -193,6 +207,10 @@ namespace Gameplay
                 return c_crawlerDefinition;
             case World::sEnemyType::ForestBrute:
                 return c_bruteDefinition;
+            case World::sEnemyType::ForestThornwolf:
+                return c_thornwolfDefinition;
+            case World::sEnemyType::ForestSporecap:
+                return c_sporecapDefinition;
             default:
                 throw std::invalid_argument("No definition exists for this enemy type.");
         }
@@ -324,7 +342,10 @@ namespace Gameplay
         projectile.damage    = _rDefinition.attackDamage;
         projectile.lifetime  = 2.5f;
 
-        _rProjectileManager.SpawnCone(projectile);
+        if (_rEnemy.type == World::sEnemyType::ForestSporecap)
+            _rProjectileManager.SpawnSpore(projectile);
+        else
+            _rProjectileManager.SpawnCone(projectile);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

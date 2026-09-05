@@ -17,6 +17,13 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    uint64_t cProjectileManager::SpawnSpore(const sProjectileSpawnDesc& _rDesc)
+    {
+        return Spawn(_rDesc, eProjectileType::EnemySpore);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     uint64_t cProjectileManager::SpawnPlayerSphere(const sProjectileSpawnDesc& _rDesc)
     {
         return Spawn(_rDesc, eProjectileType::PlayerSphere);

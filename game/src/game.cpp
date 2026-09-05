@@ -11,6 +11,7 @@
 #include "world/worldGenerator.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <unordered_set>
 
@@ -55,7 +56,7 @@ void cGame::OnInit()
     if (LoadEnemyModels())
         SpawnEnemies();
 
-    UpdateEnemyRenderInstances();
+    UpdateEnemyRenderInstances(0.0f);
 
     RebuildInstanceList();
 
@@ -89,7 +90,7 @@ void cGame::OnUpdate(float _deltaTime)
     }
 
     UpdatePlayerRenderInstances();
-    UpdateEnemyRenderInstances();
+    UpdateEnemyRenderInstances(_deltaTime);
     SyncProjectileRenderInstances();
 
 }
@@ -224,6 +225,22 @@ bool cGame::LoadEnemyModels()
         return false;
     }
 
+    if (!GFX::ShapeModelLoader::LoadFromFile("./assets/models/forest_thornwolf.json", m_thornwolfModel, errorMessage))
+    {
+        std::cerr << "Failed to load forest_thornwolf: " << errorMessage << '\n';
+        return false;
+    }
+
+    LoadPoseModel("./assets/models/forest_thornwolf_attack.json", m_thornwolfModel, m_thornwolfAttackModel);
+
+    if (!GFX::ShapeModelLoader::LoadFromFile("./assets/models/forest_sporecap.json", m_sporecapModel, errorMessage))
+    {
+        std::cerr << "Failed to load forest_sporecap: " << errorMessage << '\n';
+        return false;
+    }
+
+    LoadPoseModel("./assets/models/forest_sporecap_attack.json", m_sporecapModel, m_sporecapAttackModel);
+
     LoadPoseModel("./assets/models/enemy_03_attack.json", m_enemy03Model, m_enemy03AttackModel);
     LoadPoseModel("./assets/models/enemy_04_attack.json", m_enemy04Model, m_enemy04AttackModel);
     return true;
@@ -279,6 +296,14 @@ void cGame::SpawnEnemies()
         case World::sEnemyType::ForestBrute:
             pModel = &m_enemy04Model;
             break;
+
+        case World::sEnemyType::ForestThornwolf:
+            pModel = &m_thornwolfModel;
+            break;
+
+        case World::sEnemyType::ForestSporecap:
+            pModel = &m_sporecapModel;
+            break;
         }
 
         if (pModel == nullptr)
@@ -286,6 +311,7 @@ void cGame::SpawnEnemies()
 
         sEnemyVisual visual{};
         visual.handle = m_enemyManager.Spawn(spawn.type, spawn.position, spawn.rotation);
+        visual.previousPosition = spawn.position;
         visual.renderParts.reserve(pModel->shapes.size());
 
         for (const GFX::sShapePartDesc& part : pModel->shapes)
@@ -648,6 +674,8 @@ void cGame::PrepareEnemyHealthBars(const GFX::cCamera& _rCamera)
 
         const float heightOffset = pEnemy->type == World::sEnemyType::ForestCrawler
             ? c_crawlerHealthBarOffset
+            : pEnemy->type == World::sEnemyType::ForestThornwolf ? 2.2f
+            : pEnemy->type == World::sEnemyType::ForestSporecap ? 2.7f
             : c_bruteHealthBarOffset;
 
         const cVec3f anchor = pEnemy->position + cVec3f(0.0f, heightOffset, 0.0f);
@@ -689,7 +717,7 @@ void cGame::PrepareEnemyHealthBars(const GFX::cCamera& _rCamera)
 
 // -------------------------------------------------------------------------------------------------------------------------
 
-void cGame::UpdateEnemyRenderInstances()
+void cGame::UpdateEnemyRenderInstances(float _deltaTime)
 {
     using namespace Engine::GFX;
     using namespace Engine::Math;
@@ -703,7 +731,29 @@ void cGame::UpdateEnemyRenderInstances()
 
         const bool isAttacking = pEnemy->state == Gameplay::eEnemyState::AttackWindup || pEnemy->state == Gameplay::eEnemyState::AttackRecovery;
 
-        if (visual.transformRevision == pEnemy->transformRevision && !isAttacking && !visual.wasAttacking)
+        const bool isThornwolf = pEnemy->type == World::sEnemyType::ForestThornwolf;
+        const bool hasWalkAnimation = isThornwolf || pEnemy->type == World::sEnemyType::ForestSporecap;
+        const cVec3f displacement = pEnemy->position - visual.previousPosition;
+        visual.previousPosition = pEnemy->position;
+        const float distance = std::sqrt(displacement.x() * displacement.x() + displacement.z() * displacement.z());
+        const float previousWalkWeight = visual.walkWeight;
+        const bool isWalking = hasWalkAnimation && distance > 0.0001f && !isAttacking && pEnemy->state != Gameplay::eEnemyState::Dead;
+        const float targetWalkWeight = isWalking ? 1.0f : 0.0f;
+        const float blendStep = std::max(0.0f, _deltaTime) * 8.0f;
+        visual.walkWeight += std::clamp(targetWalkWeight - visual.walkWeight, -blendStep, blendStep);
+
+        // Drive the gait from distance actually travelled, including collision and retreat movement.
+        constexpr float c_twoPi = 6.28318530718f;
+        if (isWalking)
+        {
+            const float strideLength = isThornwolf ? 1.8f : 1.1f;
+            const cVec3f forward(std::sin(pEnemy->rotation), 0.0f, std::cos(pEnemy->rotation));
+            const float travelSign = displacement.dot(forward) < 0.0f ? -1.0f : 1.0f;
+            visual.walkPhase = std::fmod(visual.walkPhase + travelSign * distance * c_twoPi / strideLength, c_twoPi);
+        }
+
+        if (visual.transformRevision == pEnemy->transformRevision && !isAttacking && !visual.wasAttacking
+            && visual.walkWeight == 0.0f && previousWalkWeight == 0.0f)
             continue;
 
         sTransform enemyTransform{};
@@ -716,12 +766,55 @@ void cGame::UpdateEnemyRenderInstances()
 
         const cMatrix4x4f enemyMatrix = CreateTransformMatrix(enemyTransform);
 
-        const sShapeModelDesc& attackModel = pEnemy->type == World::sEnemyType::ForestCrawler ? m_enemy03AttackModel : m_enemy04AttackModel;
+        const sShapeModelDesc& attackModel = pEnemy->type == World::sEnemyType::ForestCrawler ? m_enemy03AttackModel
+            : pEnemy->type == World::sEnemyType::ForestThornwolf ? m_thornwolfAttackModel
+            : pEnemy->type == World::sEnemyType::ForestSporecap ? m_sporecapAttackModel
+            : m_enemy04AttackModel;
 
         for (size_t partIndex = 0; partIndex < visual.renderParts.size(); ++partIndex)
         {
             sEnemyRenderPart& renderPart    = visual.renderParts[partIndex];
-            const sTransform partTransform  = attackModel.shapes.empty() ? renderPart.transform : InterpolateTransform(renderPart.transform, attackModel.shapes[partIndex].transform, pEnemy->attackPoseWeight);
+            sTransform partTransform = attackModel.shapes.empty() ? renderPart.transform : InterpolateTransform(renderPart.transform, attackModel.shapes[partIndex].transform, pEnemy->attackPoseWeight);
+
+            const float walkWeight = visual.walkWeight * (1.0f - pEnemy->attackPoseWeight);
+            if (hasWalkAnimation && walkWeight > 0.0f)
+            {
+                // Both forest models keep their feet below y=0.5; use the rest pose to identify legs.
+                const cVec3f& restPosition = renderPart.transform.position;
+                const bool isLeg = restPosition.y() < 0.5f;
+                const float bounce = (1.0f - std::cos(2.0f * visual.walkPhase)) * 0.025f * walkWeight;
+                if (isThornwolf)
+                    partTransform.position += cVec3f(0.0f, bounce, 0.0f);
+                if (isLeg)
+                {
+                    // The wolf trots with diagonal pairs; the mushroom alternates its two feet.
+                    const bool oppositePhase = isThornwolf
+                        ? (restPosition.x() < 0.0f) != (restPosition.z() < 0.0f)
+                        : restPosition.x() < 0.0f;
+                    const float step = std::sin(visual.walkPhase) * (oppositePhase ? -1.0f : 1.0f);
+                    if (isThornwolf)
+                    {
+                        const float angle = step * 0.55f * walkWeight;
+                        const float hipOffset = renderPart.transform.scale.y() * 0.5f;
+                        partTransform.rotation += cVec3f(angle, 0.0f, 0.0f);
+                        partTransform.position += cVec3f(0.0f, hipOffset * (1.0f - std::cos(angle)), -hipOffset * std::sin(angle));
+                    }
+                    else
+                    {
+                        partTransform.position += cVec3f(0.0f, std::max(0.0f, step) * 0.16f * walkWeight, step * 0.2f * walkWeight);
+                    }
+                }
+                else
+                {
+                    if (!isThornwolf)
+                    {
+                        partTransform.position += cVec3f(0.0f, bounce, 0.0f);
+                        const float sway = std::sin(visual.walkPhase) * 0.045f * walkWeight;
+                        partTransform.position += cVec3f(sway * restPosition.y(), 0.0f, 0.0f);
+                        partTransform.rotation += cVec3f(0.0f, 0.0f, -sway);
+                    }
+                }
+            }
             const cMatrix4x4f partMatrix    = CreateTransformMatrix(partTransform);
 
             renderPart.pInstance->worldMatrix = partMatrix * enemyMatrix;
@@ -759,13 +852,17 @@ void cGame::SyncProjectileRenderInstances()
             sInstanceData* pInstance = m_pool.Create();
             const bool isPlayerSpell = projectile.type == Gameplay::eProjectileType::PlayerSphere;
 
+            const bool isSpore = projectile.type == Gameplay::eProjectileType::EnemySpore;
             pInstance->color = isPlayerSpell
                 ? std::array<float, 4>{ 0.5f, 0.15f, 1.0f, 1.0f }
-                : std::array<float, 4>{ 0.08f, 0.9f, 1.0f, 1.0f };
+                : isSpore ? std::array<float, 4>{ 0.48f, 0.16f, 0.22f, 1.0f }
+                : std::array<float, 4>{ 0.35f, 1.0f, 0.18f, 1.0f };
 
-            pInstance->materialIndex = m_playerModel.materialIndices.size() > 3 ? m_playerModel.materialIndices[3] : 0;
+            const sShapeModelDesc& materialModel = isPlayerSpell ? m_playerModel : isSpore ? m_sporecapModel : m_enemy03Model;
+            const size_t materialSlot = isPlayerSpell ? 3 : isSpore ? 0 : 2;
+            pInstance->materialIndex = materialModel.materialIndices.size() > materialSlot ? materialModel.materialIndices[materialSlot] : 0;
 
-            const MeshHandle mesh = isPlayerSpell ? m_sphereMesh : m_coneMesh;
+            const MeshHandle mesh = isPlayerSpell || isSpore ? m_sphereMesh : m_coneMesh;
 
             m_meshInstances[mesh].push_back(pInstance);
             m_projectileVisuals.push_back({ projectile.id, pInstance, mesh });
@@ -782,10 +879,18 @@ void cGame::SyncProjectileRenderInstances()
             transform.rotation = { 0.0f, 0.0f, 0.0f };
             transform.scale = { 0.42f, 0.42f, 0.42f };
         }
+        else if (projectile.type == Gameplay::eProjectileType::EnemySpore)
+        {
+            const float pulse = std::sin(projectile.lifetime * 9.0f);
+            transform.rotation = { projectile.lifetime * 2.0f, projectile.lifetime * 1.5f, 0.0f };
+            transform.scale = { 0.48f + pulse * 0.04f, 0.42f - pulse * 0.04f, 0.48f + pulse * 0.04f };
+            const float tint = (pulse + 1.0f) * 0.5f;
+            visual->pInstance->color = { 0.48f + tint * 0.20f, 0.16f + tint * 0.35f, 0.22f - tint * 0.10f, 1.0f };
+        }
         else
         {
             transform.rotation = { 1.5707963f, std::atan2(projectile.direction.x(), projectile.direction.z()), 0.0f };
-            transform.scale = { 0.18f, 0.42f, 0.18f };
+            transform.scale = { 0.14f, 0.65f, 0.14f };
         }
 
         visual->pInstance->worldMatrix = CreateTransformMatrix(transform);

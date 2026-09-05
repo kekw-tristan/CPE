@@ -72,6 +72,9 @@ class cGame : public cApplication
             Gameplay::sEnemyHandle handle;
             uint64_t               transformRevision = 0;
             bool                   wasAttacking       = false;
+            Engine::Math::cVec3f    previousPosition   = { 0.0f, 0.0f, 0.0f };
+            float                  walkPhase          = 0.0f;
+            float                  walkWeight         = 0.0f;
             std::vector<sEnemyRenderPart> renderParts;
         };
 
@@ -104,7 +107,7 @@ class cGame : public cApplication
         void UpdatePlayer();
         void UpdatePlayerSpell(float _deltaTime);
         void UpdatePlayerRenderInstances();
-        void UpdateEnemyRenderInstances();
+        void UpdateEnemyRenderInstances(float _deltaTime);
         void PrepareEnemyHealthBars(const GFX::cCamera& _rCamera);
         void SyncProjectileRenderInstances();
         void UpdateThirdPersonCamera(float _deltaTime); 
@@ -170,4 +173,8 @@ class cGame : public cApplication
         Engine::GFX::sShapeModelDesc m_enemy04Model;
         Engine::GFX::sShapeModelDesc m_enemy03AttackModel;
         Engine::GFX::sShapeModelDesc m_enemy04AttackModel;
+        Engine::GFX::sShapeModelDesc m_thornwolfModel;
+        Engine::GFX::sShapeModelDesc m_thornwolfAttackModel;
+        Engine::GFX::sShapeModelDesc m_sporecapModel;
+        Engine::GFX::sShapeModelDesc m_sporecapAttackModel;
 };

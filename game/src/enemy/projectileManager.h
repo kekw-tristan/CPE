@@ -12,6 +12,7 @@ namespace Gameplay
     enum class eProjectileType
     {
         EnemyCone,
+        EnemySpore,
         PlayerSphere
     };
 
@@ -39,6 +40,7 @@ namespace Gameplay
     {
         public:
             uint64_t SpawnCone(const sProjectileSpawnDesc& _rDesc);
+            uint64_t SpawnSpore(const sProjectileSpawnDesc& _rDesc);
             uint64_t SpawnPlayerSphere(const sProjectileSpawnDesc& _rDesc);
 
             void Update(float _deltaTime, const Engine::Math::cVec3f& _rPlayerPosition, cEnemyManager& _rEnemyManager);

@@ -13,6 +13,8 @@ namespace World
         {
             ForestCrawler,
             ForestBrute,
+            ForestThornwolf,
+            ForestSporecap,
 
             NumberOfElements,
             Undefined = -1

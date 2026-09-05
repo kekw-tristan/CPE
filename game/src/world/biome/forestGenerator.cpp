@@ -296,7 +296,14 @@ namespace World
             std::uniform_real_distribution<float> packPositionDistribution(-halfChunkSize + c_packBorder, halfChunkSize - c_packBorder);
             std::uniform_real_distribution<float> packOffsetDistribution(-c_packRadius, c_packRadius);
             std::uniform_real_distribution<float> rotationDistribution(0.0f, c_twoPi);
-            std::uniform_int_distribution<uint32_t> enemyTypeDistribution(0, 1);
+            constexpr sEnemyType::Enum c_forestEnemyTypes[] =
+            {
+                sEnemyType::ForestCrawler,
+                sEnemyType::ForestBrute,
+                sEnemyType::ForestThornwolf,
+                sEnemyType::ForestSporecap
+            };
+            std::uniform_int_distribution<uint32_t> enemyTypeDistribution(0, 3);
 
             const uint32_t packCount = packCountDistribution(_rRandomGenerator);
 
@@ -313,7 +320,7 @@ namespace World
                 {
                     sEnemySpawn spawn{};
 
-                    spawn.type = enemyTypeDistribution(_rRandomGenerator) == 0 ? sEnemyType::ForestCrawler : sEnemyType::ForestBrute;
+                    spawn.type = c_forestEnemyTypes[enemyTypeDistribution(_rRandomGenerator)];
                     spawn.position = Math::cVec3f(packCenter.x() + packOffsetDistribution(_rRandomGenerator), worldY, packCenter.z() + packOffsetDistribution(_rRandomGenerator));
                     spawn.rotation = rotationDistribution(_rRandomGenerator);
 
