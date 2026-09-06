@@ -9,9 +9,9 @@ namespace World
 #endif
 
 // Display-linear fog color, also used as the application's background color.
-FOREST_CONSTANT c_fogRed = 0.065f;
-FOREST_CONSTANT c_fogGreen = 0.085f;
-FOREST_CONSTANT c_fogBlue = 0.083f;
+FOREST_CONSTANT c_fogRed = 0.180f;
+FOREST_CONSTANT c_fogGreen = 0.200f;
+FOREST_CONSTANT c_fogBlue = 0.220f;
 FOREST_CONSTANT c_fogStart = 18.0f;
 FOREST_CONSTANT c_fogDensity = 0.018f;
 // Fully opaque before the closest loaded edge (128 units), allowing for camera offset.

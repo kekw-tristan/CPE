@@ -227,6 +227,21 @@ void cGame::InitMeshes()
     m_cylinderMesh   = CreateMesh(cylinderData);
     m_coneMesh       = CreateMesh(coneData);
 
+    m_torusMesh             = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Torus));
+    m_crystalMesh           = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Crystal));
+    m_beveledCubeMesh       = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::BeveledCube));
+    m_frustumMesh           = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Frustum));
+    m_wedgeMesh             = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Wedge));
+    m_triangularPrismMesh   = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::TriangularPrism));
+    m_icoSphereMesh         = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::IcoSphere));
+    m_rockMesh              = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Rock));
+    m_grassBladeMesh        = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::GrassBlade));
+    m_capsuleMesh           = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Capsule));
+    m_archMesh              = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Arch));
+    m_extrudedPolygonMesh   = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::ExtrudedPolygon));
+    m_discMesh              = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Disc));
+    m_arcMesh               = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Arc));
+
     SubmitMesh(m_planeMesh);
     SubmitMesh(m_chunkPlaneMesh);
     SubmitMesh(m_cubeMesh);
@@ -234,46 +249,19 @@ void cGame::InitMeshes()
     SubmitMesh(m_sphereMesh);
     SubmitMesh(m_cylinderMesh);
     SubmitMesh(m_coneMesh);
-
-    m_torusMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Torus));
-    m_crystalMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Crystal));
     SubmitMesh(m_torusMesh);
     SubmitMesh(m_crystalMesh);
-
-    m_beveledCubeMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::BeveledCube));
     SubmitMesh(m_beveledCubeMesh);
-
-    m_frustumMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Frustum));
     SubmitMesh(m_frustumMesh);
-
-    m_wedgeMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Wedge));
     SubmitMesh(m_wedgeMesh);
-
-    m_triangularPrismMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::TriangularPrism));
     SubmitMesh(m_triangularPrismMesh);
-
-    m_icoSphereMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::IcoSphere));
     SubmitMesh(m_icoSphereMesh);
-
-    m_rockMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Rock));
     SubmitMesh(m_rockMesh);
-
-    m_grassBladeMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::GrassBlade));
     SubmitMesh(m_grassBladeMesh);
-
-    m_capsuleMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Capsule));
     SubmitMesh(m_capsuleMesh);
-
-    m_archMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Arch));
     SubmitMesh(m_archMesh);
-
-    m_extrudedPolygonMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::ExtrudedPolygon));
     SubmitMesh(m_extrudedPolygonMesh);
-
-    m_discMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Disc));
     SubmitMesh(m_discMesh);
-
-    m_arcMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Arc));
     SubmitMesh(m_arcMesh);
 
     sMaterial playerSphereMaterial{};
@@ -487,6 +475,7 @@ void cGame::SpawnEnemies(const std::vector<World::sEnemySpawn>& _rSpawns, const 
             };
 
             pInstance->materialIndex = part.materialIndex;
+            pInstance->instanceFlags |= GFX::sInstanceFlags::InstanceFlagPreserveAtDistance;
 
             GFX::MeshHandle mesh = GetMesh(part.meshType);
 
@@ -665,6 +654,7 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, sWo
         };
 
         pInstance->materialIndex = part.materialIndex;
+        pInstance->instanceFlags |= sInstanceFlags::InstanceFlagPreserveAtDistance;
 
         MeshHandle mesh = GetMesh(part.meshType);
 

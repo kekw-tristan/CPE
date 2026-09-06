@@ -13,6 +13,7 @@ namespace Engine::GFX
             InstanceFlagNone,
             InstanceFlagTerrain,
             InstanceFlagSky = 2,
+            InstanceFlagPreserveAtDistance = 4,
 
             NumberOfElements,
             Undefined = -1
