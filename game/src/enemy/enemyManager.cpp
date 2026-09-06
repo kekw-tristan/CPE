@@ -66,6 +66,106 @@ namespace Gameplay
             direction.normalize();
             return direction;
         }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        float RaySphereDistance(const Engine::Math::cVec3f& _rOrigin, const Engine::Math::cVec3f& _rDirection, const Engine::Math::cVec3f& _rCenter, float _radius, float _maximumDistance)
+        {
+            const Engine::Math::cVec3f offset = _rOrigin - _rCenter;
+            const float b = offset.dot(_rDirection);
+            const float c = offset.dot(offset) - _radius * _radius;
+            const float discriminant = b * b - c;
+        
+            if (discriminant < 0.0f)
+                return _maximumDistance;
+        
+            const float root = std::sqrt(discriminant);
+            const float nearDistance = -b - root;
+            const float farDistance = -b + root;
+        
+            if (nearDistance >= 0.0f && nearDistance < _maximumDistance)
+                return nearDistance;
+        
+            if (farDistance >= 0.0f && farDistance < _maximumDistance)
+                return farDistance;
+        
+            return _maximumDistance;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        float RayEnemyCapsuleDistance(const Engine::Math::cVec3f& _rOrigin, const Engine::Math::cVec3f& _rDirection, const sEnemy& _rEnemy, float _maximumDistance)
+        {
+            const float radius = 0.45f * _rEnemy.scale;
+            const float halfHeight = 0.75f * _rEnemy.scale;
+        
+            const Engine::Math::cVec3f center = _rEnemy.position + Engine::Math::cVec3f(0.0f, radius + halfHeight, 0.0f);
+            const float bottomY = center.y() - halfHeight;
+            const float topY = center.y() + halfHeight;
+        
+            float nearestDistance = _maximumDistance;
+        
+            const float originX = _rOrigin.x() - center.x();
+            const float originZ = _rOrigin.z() - center.z();
+            const float directionX = _rDirection.x();
+            const float directionZ = _rDirection.z();
+        
+            const float a = directionX * directionX + directionZ * directionZ;
+        
+            if (a > 0.000001f)
+            {
+                const float b = 2.0f * (originX * directionX + originZ * directionZ);
+                const float c = originX * originX + originZ * originZ - radius * radius;
+                const float discriminant = b * b - 4.0f * a * c;
+            
+                if (discriminant >= 0.0f)
+                {
+                    const float root = std::sqrt(discriminant);
+                    const float inverseDenominator = 1.0f / (2.0f * a);
+                    const float distances[2] = { (-b - root) * inverseDenominator, (-b + root) * inverseDenominator };
+                
+                    for (float distance : distances)
+                    {
+                        if (distance < 0.0f || distance >= nearestDistance)
+                            continue;
+                    
+                        const float hitY = _rOrigin.y() + _rDirection.y() * distance;
+                    
+                        if (hitY >= bottomY && hitY <= topY)
+                            nearestDistance = distance;
+                    }
+                }
+            }
+        
+            nearestDistance = RaySphereDistance(_rOrigin, _rDirection, Engine::Math::cVec3f(center.x(), bottomY, center.z()), radius, nearestDistance);
+            nearestDistance = RaySphereDistance(_rOrigin, _rDirection, Engine::Math::cVec3f(center.x(), topY, center.z()), radius, nearestDistance);
+        
+            return nearestDistance;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool SphereIntersectsEnemyCapsule(const Engine::Math::cVec3f& _rPosition, float _radius, const sEnemy& _rEnemy)
+        {
+            const float capsuleRadius = 0.45f * _rEnemy.scale;
+            const float capsuleHalfHeight = 0.75f * _rEnemy.scale;
+        
+            const Engine::Math::cVec3f capsuleCenter = _rEnemy.position + Engine::Math::cVec3f(0.0f, capsuleRadius + capsuleHalfHeight, 0.0f);
+            const Engine::Math::cVec3f capsuleBottom = capsuleCenter - Engine::Math::cVec3f(0.0f, capsuleHalfHeight, 0.0f);
+            const Engine::Math::cVec3f capsuleTop = capsuleCenter + Engine::Math::cVec3f(0.0f, capsuleHalfHeight, 0.0f);
+        
+            const Engine::Math::cVec3f capsuleSegment = capsuleTop - capsuleBottom;
+            const float segmentLengthSquared = capsuleSegment.lengthSquared();
+            const float t = segmentLengthSquared > 0.000001f ? std::clamp((_rPosition - capsuleBottom).dot(capsuleSegment) / segmentLengthSquared, 0.0f, 1.0f) : 0.0f;
+            const Engine::Math::cVec3f closestPoint = capsuleBottom + capsuleSegment * t;
+        
+            const float combinedRadius = capsuleRadius + _radius;
+        
+            return Engine::Math::cVec3f::distanceSquared(_rPosition, closestPoint) <= combinedRadius * combinedRadius;
+        }
+        
+        // -------------------------------------------------------------------------------------------------------------------------
+
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -196,25 +296,20 @@ namespace Gameplay
 
     bool cEnemyManager::ApplyDamageAt(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage)
     {
-
-
         for (uint32_t slotIndex : m_activeSlots)
         {
             sEnemySlot& slot = m_slots[slotIndex];
-
+        
             if (!slot.occupied || !slot.active || slot.enemy.state == eEnemyState::Dead)
                 continue;
-
-            const float hitRadius = _radius + (slot.enemy.scale - 1.0f) * 0.65f;
-            const float radiusSquared = hitRadius * hitRadius;
-            const Engine::Math::cVec3f enemyCenter = slot.enemy.position + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f);
-            if (Engine::Math::cVec3f::distanceSquared(_rPosition, enemyCenter) > radiusSquared)
+        
+            if (!SphereIntersectsEnemyCapsule(_rPosition, _radius, slot.enemy))
                 continue;
-
+        
             ApplyDamage(slot.enemy.handle, _damage);
             return true;
         }
-
+    
         return false;
     }
 
@@ -227,20 +322,11 @@ namespace Gameplay
         for (uint32_t slotIndex : m_activeSlots)
         {
             const sEnemySlot& slot = m_slots[slotIndex];
+
             if (!slot.occupied || !slot.active || slot.enemy.state == eEnemyState::Dead)
                 continue;
 
-            const Engine::Math::cVec3f center = slot.enemy.position + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f);
-            const Engine::Math::cVec3f offset = center - _rOrigin;
-            const float projection = offset.dot(_rDirection);
-            const float radius = 0.8f + (slot.enemy.scale - 1.0f) * 0.65f;
-            const float perpendicularSquared = std::max(0.0f, offset.lengthSquared() - projection * projection);
-
-            if (projection <= 0.0f || perpendicularSquared > radius * radius)
-                continue;
-
-            const float distance = std::max(0.0f, projection - std::sqrt(radius * radius - perpendicularSquared));
-            nearestDistance = std::min(nearestDistance, distance);
+            nearestDistance = RayEnemyCapsuleDistance(_rOrigin, _rDirection, slot.enemy, nearestDistance);
         }
 
         return nearestDistance;
@@ -385,8 +471,9 @@ namespace Gameplay
         if (movementDirection.isZero())
             return;
 
-        const float c_radius = 0.45f * _rEnemy.scale;
-        constexpr float c_halfHeight = 0.75f;
+        const float c_radius     = 0.45f * _rEnemy.scale;
+        const float c_halfHeight = 0.75f * _rEnemy.scale;
+
         Engine::Physics::sCapsuleCollider collider{};
         collider.center     = _rEnemy.position + Engine::Math::cVec3f(0.0f, c_radius + c_halfHeight, 0.0f);
         collider.radius     = c_radius;
