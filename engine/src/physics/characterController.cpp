@@ -11,7 +11,7 @@ namespace Engine::Physics
     // -------------------------------------------------------------------------------------------------------------------------
 
     cCharacterController::cCharacterController()
-        : m_position()
+        : m_position({0.f, 15.f, 0.f})
         , m_velocity()
         , m_grounded(true)
         , m_gravity(-9.81f)
@@ -61,6 +61,7 @@ namespace Engine::Physics
     {
         constexpr float c_colliderRadius = 0.4f;
         constexpr float c_colliderHalfHeight = 0.8f;
+        constexpr float c_maximumStepHeight = 0.5f;
 
         // Horizontal collision
         const float colliderOffsetY = c_colliderHalfHeight + c_colliderRadius;
@@ -77,20 +78,33 @@ namespace Engine::Physics
             m_velocity.z() * _deltaTime
         );
 
-        const Math::cVec3f newColliderCenter = Physics::CollisionWorld::MoveCapsule(collider, horizontalMovement);
+        const Math::cVec3f newColliderCenter = Physics::CollisionWorld::MoveCapsule(collider, horizontalMovement, c_maximumStepHeight);
 
         m_position = Math::cVec3f(
             newColliderCenter.x(),
-            m_position.y(),
+            newColliderCenter.y() - colliderOffsetY,
             newColliderCenter.z()
         );
 
         // Gravity and ground
         const float previousHeight = m_position.y();
         m_velocity += Math::cVec3f(0.0f, m_gravity * _deltaTime, 0.0f);
-        m_position += Math::cVec3f(0.0f, m_velocity.y() * _deltaTime, 0.0f);
+        const float verticalMovement = m_velocity.y() * _deltaTime;
+        if (verticalMovement > 0.0f)
+        {
+            collider.center = m_position + Math::cVec3f(0.0f, colliderOffsetY, 0.0f);
+            const Math::cVec3f movedCenter = Physics::CollisionWorld::MoveCapsule(collider, { 0.0f, verticalMovement, 0.0f });
+            if (movedCenter.y() < collider.center.y() + verticalMovement - 0.0001f)
+            {
+                m_velocity = Math::cVec3f(m_velocity.x(), 0.0f, m_velocity.z());
+            }
+            m_position = movedCenter - Math::cVec3f(0.0f, colliderOffsetY, 0.0f);
+        }
+        else
+        {
+            m_position += Math::cVec3f(0.0f, verticalMovement, 0.0f);
+        }
 
-        constexpr float c_maximumStepHeight = 0.5f;
         float groundHeight                  = 0.0f;
         const bool groundFound              = FindGroundHeight(previousHeight + c_maximumStepHeight, groundHeight);
 

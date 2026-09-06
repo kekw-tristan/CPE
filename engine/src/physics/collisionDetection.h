@@ -13,4 +13,6 @@ namespace Engine::Physics
     };
 
     bool IntersectCapsuleAABB(const sCapsuleCollider& _rCapsule, const sAABBCollider& _rBox, sCollisionResult& _rResult);
+    bool IntersectCapsuleTriangle(const sCapsuleCollider& _rCapsule, const sTriangleCollider& _rTriangle, sCollisionResult& _rResult);
+    bool FindTriangleGroundHeight(const Math::cVec3f& _rPosition, const sTriangleCollider& _rTriangle, float& _rHeight);
 }

@@ -4,6 +4,10 @@
 #include "worldModels.h"
 #include "biome/forestGenerator.h"
 #include "graphics/scene/scene.h"
+#include "graphics/shapeModel/shapeMeshLibrary.h"
+#include "graphics/shapeModel/shapeModelDesc.h"
+#include "graphics/shapeModel/shapeModelManager.h"
+#include "math/matrix4x4.h"
 #include "physics/collisionWorld.h"
 
 #include <algorithm>
@@ -20,6 +24,75 @@ namespace World
 {
     namespace
     {
+        Math::cMatrix4x4f CreateCollisionTransform(const GFX::sTransform& _rTransform)
+        {
+            using Math::cMatrix4x4f;
+            const cMatrix4x4f rotation = cMatrix4x4f::rotationX(_rTransform.rotation.x())
+                * cMatrix4x4f::rotationY(_rTransform.rotation.y()) * cMatrix4x4f::rotationZ(_rTransform.rotation.z());
+            return cMatrix4x4f::scale(_rTransform.scale) * rotation * cMatrix4x4f::translation(_rTransform.position);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        void AddPrimitiveColliders(sLoadedChunk& _rChunk)
+        {
+            for (const auto& instance : _rChunk.scene.GetShapeInstances())
+            {
+                const auto& model = GFX::ShapeModelManager::GetShapeModel(instance.modelHandle);
+                const Math::cMatrix4x4f instanceMatrix = CreateCollisionTransform(instance.transform);
+                for (const auto& part : model.shapes)
+                {
+                    // Existing biome collision proxies remain responsible for the original primitives.
+                    switch (part.meshType)
+                    {
+                        case GFX::sMeshTypes::BeveledCube:
+                        case GFX::sMeshTypes::Frustum:
+                        case GFX::sMeshTypes::Wedge:
+                        case GFX::sMeshTypes::TriangularPrism:
+                        case GFX::sMeshTypes::IcoSphere:
+                        case GFX::sMeshTypes::Rock:
+                        case GFX::sMeshTypes::GrassBlade:
+                        case GFX::sMeshTypes::Capsule:
+                        case GFX::sMeshTypes::Arch:
+                        case GFX::sMeshTypes::ExtrudedPolygon:
+                        case GFX::sMeshTypes::Disc:
+                        case GFX::sMeshTypes::Arc:
+                            break;
+
+                        default:
+                            continue;
+                    }
+
+                    const auto& mesh = GFX::ShapeMeshLibrary::GetMeshData(part.meshType);
+                    const Math::cMatrix4x4f matrix = CreateCollisionTransform(part.transform) * instanceMatrix;
+                    const Math::cVec3f x = matrix.transformDirection({ 1.0f, 0.0f, 0.0f });
+                    const Math::cVec3f y = matrix.transformDirection({ 0.0f, 1.0f, 0.0f });
+                    const Math::cVec3f z = matrix.transformDirection({ 0.0f, 0.0f, 1.0f });
+                    const bool mirrored = x.cross(y).dot(z) < 0.0f;
+                    for (size_t index = 0; index < mesh.indices.size(); index += 3)
+                    {
+                        Physics::sTriangleCollider triangle{
+                            matrix.transformPoint(mesh.vertices[mesh.indices[index]].position),
+                            matrix.transformPoint(mesh.vertices[mesh.indices[index + 1]].position),
+                            matrix.transformPoint(mesh.vertices[mesh.indices[index + 2]].position)
+                        };
+                        if (mirrored)
+                        {
+                            std::swap(triangle.b, triangle.c);
+                        }
+                        // A zero scale can collapse edited model parts to lines or points.
+                        if ((triangle.b - triangle.a).cross(triangle.c - triangle.a).lengthSquared() <= 0.0f)
+                        {
+                            continue;
+                        }
+                        _rChunk.colliders.push_back(Physics::CollisionWorld::AddCollider(triangle));
+                    }
+                }
+            }
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
         class cWorldGenerator
         {
             public:
@@ -158,6 +231,8 @@ namespace World
                         loaded.colliders.reserve(colliders.size());
                         for (const auto& collider : colliders)
                             loaded.colliders.push_back(Physics::CollisionWorld::AddCollider(collider));
+
+                        AddPrimitiveColliders(loaded);
 
                         ++generated;
                         changed = true;

@@ -4,6 +4,14 @@
 
 namespace Engine::Physics
 {
+    // Static world-space surface. Contact is two-sided; winding defines the walkable side.
+    struct sTriangleCollider
+    {
+        Math::cVec3f a;
+        Math::cVec3f b;
+        Math::cVec3f c;
+    };
+
     struct sAABBCollider
     {
         Math::cVec3f center;

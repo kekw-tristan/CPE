@@ -8,6 +8,8 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <optional>
+#include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -56,9 +58,10 @@ namespace Engine::Physics
             public:
 
                 sColliderHandle AddCollider(const sAABBCollider& _rCollider);
+                sColliderHandle AddCollider(const sTriangleCollider& _rCollider);
                 void RemoveCollider(sColliderHandle _handle);
                 void Clear();
-                Math::cVec3f MoveCapsule(const sCapsuleCollider& _rCapsule, const Math::cVec3f& _rMovement);
+                Math::cVec3f MoveCapsule(const sCapsuleCollider& _rCapsule, const Math::cVec3f& _rMovement, float _maximumStepHeight);
                 bool FindGroundHeight(const Math::cVec3f& _rPosition, float _maximumHeight, float& _rGroundHeight) const;
 
             private:
@@ -75,6 +78,7 @@ namespace Engine::Physics
             private:
 
                 std::vector<sAABBCollider> m_colliders;
+                std::vector<std::optional<sTriangleCollider>> m_triangles;
                 std::vector<uint64_t>     m_generations;
                 std::vector<std::size_t>  m_freeSlots;
 
@@ -109,12 +113,14 @@ namespace Engine::Physics
             if (m_freeSlots.empty())
             {
                 m_colliders.push_back(_rCollider);
+                m_triangles.emplace_back();
                 m_generations.push_back(0);
             }
             else
             {
                 m_freeSlots.pop_back();
                 m_colliders[colliderIndex] = _rCollider;
+                m_triangles[colliderIndex].reset();
             }
 
             m_generations[colliderIndex] = m_nextGeneration++;
@@ -133,6 +139,38 @@ namespace Engine::Physics
             }
 
             return { colliderIndex, m_generations[colliderIndex] };
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        sColliderHandle cCollisionWorld::AddCollider(const sTriangleCollider& _rCollider)
+        {
+            const Math::cVec3f vertices[] = { _rCollider.a, _rCollider.b, _rCollider.c };
+            for (const auto& vertex : vertices)
+            {
+                if (!std::isfinite(vertex.x()) || !std::isfinite(vertex.y()) || !std::isfinite(vertex.z()))
+                {
+                    throw std::invalid_argument("Non-finite triangle collider");
+                }
+            }
+            if ((_rCollider.b - _rCollider.a).cross(_rCollider.c - _rCollider.a).lengthSquared() <= 0.0f)
+            {
+                throw std::invalid_argument("Degenerate triangle collider");
+            }
+
+            const Math::cVec3f minimum{
+                std::min({ _rCollider.a.x(), _rCollider.b.x(), _rCollider.c.x() }),
+                std::min({ _rCollider.a.y(), _rCollider.b.y(), _rCollider.c.y() }),
+                std::min({ _rCollider.a.z(), _rCollider.b.z(), _rCollider.c.z() })
+            };
+            const Math::cVec3f maximum{
+                std::max({ _rCollider.a.x(), _rCollider.b.x(), _rCollider.c.x() }),
+                std::max({ _rCollider.a.y(), _rCollider.b.y(), _rCollider.c.y() }),
+                std::max({ _rCollider.a.z(), _rCollider.b.z(), _rCollider.c.z() })
+            };
+            const sColliderHandle handle = AddCollider(sAABBCollider{ .center = (minimum + maximum) * 0.5f, .halfExtents = (maximum - minimum) * 0.5f });
+            m_triangles[handle.index] = _rCollider;
+            return handle;
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -165,6 +203,7 @@ namespace Engine::Physics
             }
 
             m_generations[_handle.index] = 0;
+            m_triangles[_handle.index].reset();
             m_freeSlots.push_back(_handle.index);
         }
 
@@ -173,6 +212,7 @@ namespace Engine::Physics
         void cCollisionWorld::Clear()
         {
             m_colliders.clear();
+            m_triangles.clear();
             m_generations.clear();
             m_freeSlots.clear();
             m_spatialGrid.clear();
@@ -180,7 +220,7 @@ namespace Engine::Physics
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        Math::cVec3f cCollisionWorld::MoveCapsule(const sCapsuleCollider& _rCapsule, const Math::cVec3f& _rMovement)
+        Math::cVec3f cCollisionWorld::MoveCapsule(const sCapsuleCollider& _rCapsule, const Math::cVec3f& _rMovement, float _maximumStepHeight)
         {
             constexpr uint32_t c_maxIterations = 4;
             const float movementLength = _rMovement.length();
@@ -210,8 +250,39 @@ namespace Engine::Physics
                             continue;
 
                         sCollisionResult result{};
-                        if (!IntersectCapsuleAABB(movedCapsule, collider, result))
+                        if (m_triangles[colliderIndex])
+                        {
+                            const Math::cVec3f offset = movedCapsule.center - collider.center;
+                            if (std::abs(offset.x()) > collider.halfExtents.x() + movedCapsule.radius
+                                || std::abs(offset.z()) > collider.halfExtents.z() + movedCapsule.radius
+                                || std::abs(offset.y()) > collider.halfExtents.y() + movedCapsule.halfHeight + movedCapsule.radius)
+                            {
+                                continue;
+                            }
+
+                            const auto& triangle = *m_triangles[colliderIndex];
+                            const Math::cVec3f normal = (triangle.b - triangle.a).cross(triangle.c - triangle.a).normalized();
+                            // Ground snapping handles reachable slopes and low ledges during horizontal movement.
+                            if (_maximumStepHeight > 0.0f && _rMovement.y() == 0.0f && normal.y() >= 0.5f)
+                            {
+                                const float planeHeight = triangle.a.y()
+                                    - (normal.x() * (movedCapsule.center.x() - triangle.a.x())
+                                    + normal.z() * (movedCapsule.center.z() - triangle.a.z())) / normal.y();
+                                const float feet = movedCapsule.center.y() - movedCapsule.halfHeight - movedCapsule.radius;
+                                if (planeHeight <= feet + _maximumStepHeight && normal.dot(movedCapsule.center - triangle.a) > 0.0f)
+                                {
+                                    continue;
+                                }
+                            }
+                            if (!IntersectCapsuleTriangle(movedCapsule, triangle, result))
+                            {
+                                continue;
+                            }
+                        }
+                        else if (!IntersectCapsuleAABB(movedCapsule, collider, result))
+                        {
                             continue;
+                        }
 
                         movedCapsule.center += result.normal * result.penetrationDepth;
                         collisionFound = true;
@@ -235,6 +306,15 @@ namespace Engine::Physics
             for (const std::size_t colliderIndex : candidates)
             {
                 const sAABBCollider& collider = m_colliders[colliderIndex];
+                if (m_triangles[colliderIndex])
+                {
+                    float height = 0.0f;
+                    if (FindTriangleGroundHeight(_rPosition, *m_triangles[colliderIndex], height) && height <= _maximumHeight)
+                    {
+                        bestHeight = std::max(bestHeight, height);
+                    }
+                    continue;
+                }
                 if (!collider.isGround)
                     continue;
 
@@ -274,7 +354,9 @@ namespace Engine::Physics
                 }
             }
 
-            return { uniqueCandidates.begin(), uniqueCandidates.end() };
+            std::vector<std::size_t> candidates{ uniqueCandidates.begin(), uniqueCandidates.end() };
+            std::sort(candidates.begin(), candidates.end());
+            return candidates;
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -307,6 +389,13 @@ namespace Engine::Physics
 
         // -------------------------------------------------------------------------------------------------------------------------
 
+        sColliderHandle AddCollider(const sTriangleCollider& _rCollider)
+        {
+            return cCollisionWorld::GetInstance().AddCollider(_rCollider);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
         void RemoveCollider(sColliderHandle _handle)
         {
             cCollisionWorld::GetInstance().RemoveCollider(_handle);
@@ -321,9 +410,16 @@ namespace Engine::Physics
 
         // -------------------------------------------------------------------------------------------------------------------------
 
+        Math::cVec3f MoveCapsule(const sCapsuleCollider& _rCapsule, const Math::cVec3f& _rMovement, float _maximumStepHeight)
+        {
+            return cCollisionWorld::GetInstance().MoveCapsule(_rCapsule, _rMovement, _maximumStepHeight);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
         Math::cVec3f MoveCapsule(const sCapsuleCollider& _rCapsule, const Math::cVec3f& _rMovement)
         {
-            return cCollisionWorld::GetInstance().MoveCapsule(_rCapsule, _rMovement);
+            return cCollisionWorld::GetInstance().MoveCapsule(_rCapsule, _rMovement, 0.0f);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------

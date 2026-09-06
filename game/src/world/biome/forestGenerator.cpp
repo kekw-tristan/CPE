@@ -27,6 +27,29 @@ namespace World
 
     namespace
     {
+        constexpr float c_forestSpawnTreeClearMinX = -80.0f;
+        constexpr float c_forestSpawnTreeClearMaxX = 80.0f;
+
+        constexpr float c_forestSpawnTreeClearMinZ = -80.0f;
+        constexpr float c_forestSpawnTreeClearMaxZ = 100.0f;
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool IsInsideForestSpawnTreeClearance(const Math::cVec3f& _rPosition)
+        {
+            return _rPosition.x() >= c_forestSpawnTreeClearMinX
+                && _rPosition.x() <= c_forestSpawnTreeClearMaxX
+                && _rPosition.z() >= c_forestSpawnTreeClearMinZ
+                && _rPosition.z() <= c_forestSpawnTreeClearMaxZ;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    namespace
+    {
 
         // -------------------------------------------------------------------------------------------------------------------------
 
@@ -259,7 +282,16 @@ namespace World
                 const float treeX = worldX + positionDistribution(_rRandomGenerator);
                 const float treeZ = worldZ + positionDistribution(_rRandomGenerator);
 
-                const Math::cVec3f treePosition(treeX, worldY + GetTerrainSurfaceHeight(treeX, treeZ) + 1.0f, treeZ);
+                const Math::cVec3f treePosition(
+                    treeX,
+                    worldY + GetTerrainSurfaceHeight(treeX, treeZ) + 1.0f,
+                    treeZ
+                );
+
+                // The forest spawn contains its own deliberately placed trees and scenery.
+                // Do not allow procedurally generated trees to overlap or visually crowd it.
+                if (IsInsideForestSpawnTreeClearance(treePosition))
+                    continue;
 
                 if (DistanceToPath(treePosition, _rWorldLayout) < c_pathClearance)
                     continue;
@@ -268,15 +300,18 @@ namespace World
                     continue;
 
                 const float treeRotation = rotationDistribution(_rRandomGenerator);
-                const float treeScale    = treeScaleDistribution(_rRandomGenerator);
+                const float treeScale = treeScaleDistribution(_rRandomGenerator);
 
                 GFX::sShapeInstance treeInstance{};
 
-                treeInstance.modelHandle = treeModelDistribution(_rRandomGenerator) == 0 ? WorldModels::Get("tree_01") : WorldModels::Get("tree_02");
+                treeInstance.modelHandle =
+                    treeModelDistribution(_rRandomGenerator) == 0
+                    ? WorldModels::Get("tree_01")
+                    : WorldModels::Get("tree_02");
 
                 treeInstance.transform.position = treePosition;
                 treeInstance.transform.rotation = Math::cVec3f(0.0f, treeRotation, 0.0f);
-                treeInstance.transform.scale    = Math::cVec3f(treeScale, treeScale, treeScale);
+                treeInstance.transform.scale = Math::cVec3f(treeScale, treeScale, treeScale);
 
                 _rScene.AddShapeInstance(treeInstance);
 
