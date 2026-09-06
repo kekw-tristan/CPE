@@ -42,6 +42,7 @@ cGame::cGame(Engine::sAppConfig& _rAppConfig)
     , m_playerYaw(0.f)
     , m_cameraPitch(-10.f)
     , m_meshInstances()
+    , m_inventory()
 {
 }
 
@@ -66,12 +67,22 @@ void cGame::OnInit()
     RebuildInstanceList();
 
     Platform::SetMouseCaptured(true);
+
+    // inventory test
+    m_inventory.AddItem(Gameplay::sItemId::HealthPotion, 5);
+    m_inventory.AddItem(Gameplay::sItemId::ManaPotion, 3);
+
+    m_inventory.AddItem(Gameplay::sItemId::ForestHelmet);
+    m_inventory.AddItem(Gameplay::sItemId::ForestChest);
+    m_inventory.AddItem(Gameplay::sItemId::ForestRing);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
 
 void cGame::OnUpdate(float _deltaTime)
 {
+    UpdateInventoryInput();
+
     constexpr int c_leftAltKey = 342;
     constexpr int c_rightAltKey = 346;
     const bool altDown = Engine::Platform::IsKeyDown(c_leftAltKey) || Engine::Platform::IsKeyDown(c_rightAltKey);
@@ -85,14 +96,18 @@ void cGame::OnUpdate(float _deltaTime)
 
     //UpdateFreeCam(_deltaTime);
 
-    UpdatePlayer();
+    if (!m_inventoryOpen)
+    {
+        UpdatePlayer();
+
+        m_playerController.Update(_deltaTime);
+        UpdateThirdPersonCamera(_deltaTime);
+        UpdatePlayerSpell(_deltaTime);
+    }
 
     if (World::WorldGenerator::Update(m_playerController.GetPosition()))
         RefreshWorldRenderInstances();
-
-    m_playerController.Update(_deltaTime);
-    UpdateThirdPersonCamera(_deltaTime);
-    UpdatePlayerSpell(_deltaTime);
+    
 
     Gameplay::sEnemyUpdateContext enemyContext{};
     enemyContext.deltaTime      = _deltaTime;
@@ -148,6 +163,7 @@ void cGame::OnDrawUI()
     hudState.maxHealth             = c_playerMaxHealth;
     hudState.spellCooldown         = m_playerSpellCooldown;
     hudState.spellCooldownDuration = c_playerSpellCooldown;
+    hudState.inventory.visible     = m_inventoryOpen;
 
     // Navigation uses immutable layout data even before an arena's chunk is loaded.
     for (const auto& definition : World::WorldGenerator::GetLayout().dungeons)
@@ -161,6 +177,7 @@ void cGame::OnDrawUI()
         dungeon.inArena  = std::abs(offset.x()) <= 12.5f && std::abs(offset.z()) <= 12.5f;
     }
 
+    // quest
     for (const auto& handle : m_bossHandles)
     {
         const auto* pEnemy = m_enemyManager.TryGetEnemy(handle);
@@ -170,6 +187,23 @@ void cGame::OnDrawUI()
         auto& dungeon = hudState.dungeons[static_cast<size_t>(pEnemy->type)];
         dungeon.defeated       = pEnemy->state == Gameplay::eEnemyState::Dead;
         dungeon.healthFraction = pEnemy->health / pEnemy->definition.maxHealth;
+    }
+
+    const auto& inventorySlots = m_inventory.GetInventorySlots();
+
+    // inventory
+    for (size_t i = 0; i < inventorySlots.size(); ++i)
+    {
+        hudState.inventory.inventorySlots[i].item = inventorySlots[i].item;
+        hudState.inventory.inventorySlots[i].amount = inventorySlots[i].amount;
+    }
+
+    const auto& usableSlots = m_inventory.GetUsableSlots();
+
+    for (size_t i = 0; i < usableSlots.size(); ++i)
+    {
+        hudState.inventory.usableSlots[i].item = usableSlots[i].item;
+        hudState.inventory.usableSlots[i].amount = usableSlots[i].amount;
     }
 
     m_hud.Draw(hudState);
@@ -854,6 +888,22 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
 
     m_playerSpellCooldown = c_playerSpellCooldown;
     m_playerAttackTime = 0.4f;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::UpdateInventoryInput()
+{
+    const bool inventoryKeyDown = Engine::Platform::IsKeyDown('I');
+
+    if (inventoryKeyDown && !m_inventoryKeyWasDown)
+    {
+        m_inventoryOpen = !m_inventoryOpen;
+
+        Engine::Platform::SetMouseCaptured(!m_inventoryOpen);
+    }
+
+    m_inventoryKeyWasDown = inventoryKeyDown;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

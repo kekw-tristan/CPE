@@ -1,0 +1,368 @@
+#include "inventory.h"
+
+#include <algorithm>
+
+#include "itemDatabase.h"
+
+namespace Gameplay
+{
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::AddItem(sItemId::Enum _item, uint32_t _amount)
+    {
+        if (_item == sItemId::Undefined || _amount == 0)
+            return false;
+
+        const sItemDefinition& definition = GetItemDefinition(_item);
+        const uint32_t maxStack = std::max(1u, definition.maxStack);
+
+        // Fill existing stacks first.
+        for (sItemStack& slot : m_inventorySlots)
+        {
+            if (slot.item != _item || slot.amount >= maxStack)
+                continue;
+
+            const uint32_t available = maxStack - slot.amount;
+            const uint32_t amountToAdd = std::min(available, _amount);
+
+            slot.amount += amountToAdd;
+            _amount -= amountToAdd;
+
+            if (_amount == 0)
+                return true;
+        }
+
+        // Create new stacks.
+        for (sItemStack& slot : m_inventorySlots)
+        {
+            if (!slot.IsEmpty())
+                continue;
+
+            const uint32_t amountToAdd = std::min(maxStack, _amount);
+
+            slot.item = _item;
+            slot.amount = amountToAdd;
+
+            _amount -= amountToAdd;
+
+            if (_amount == 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::RemoveItem(sItemId::Enum _item, uint32_t _amount)
+    {
+        if (_item == sItemId::Undefined || _amount == 0)
+            return false;
+
+        if (!HasItem(_item, _amount))
+            return false;
+
+        for (sItemStack& slot : m_inventorySlots)
+        {
+            if (slot.item != _item)
+                continue;
+
+            const uint32_t amountToRemove = std::min(slot.amount, _amount);
+
+            slot.amount -= amountToRemove;
+            _amount -= amountToRemove;
+
+            if (slot.amount == 0)
+                slot = {};
+
+            if (_amount == 0)
+                return true;
+        }
+
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::MoveItem(size_t _sourceSlot, size_t _destinationSlot)
+    {
+        if (_sourceSlot >= m_inventorySlots.size() || _destinationSlot >= m_inventorySlots.size())
+            return false;
+
+        if (_sourceSlot == _destinationSlot)
+            return true;
+
+        sItemStack& source = m_inventorySlots[_sourceSlot];
+        sItemStack& destination = m_inventorySlots[_destinationSlot];
+
+        if (source.IsEmpty())
+            return false;
+
+        if (destination.IsEmpty())
+        {
+            destination = source;
+            source = {};
+
+            return true;
+        }
+
+        if (source.item == destination.item)
+        {
+            const sItemDefinition& definition = GetItemDefinition(source.item);
+            const uint32_t maxStack = std::max(1u, definition.maxStack);
+
+            if (destination.amount < maxStack)
+            {
+                const uint32_t available = maxStack - destination.amount;
+                const uint32_t amountToMove = std::min(source.amount, available);
+
+                destination.amount += amountToMove;
+                source.amount -= amountToMove;
+
+                if (source.amount == 0)
+                    source = {};
+
+                return true;
+            }
+        }
+
+        std::swap(source, destination);
+
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::EquipArmor(size_t _inventorySlot)
+    {
+        if (_inventorySlot >= m_inventorySlots.size())
+            return false;
+
+        sItemStack& inventorySlot = m_inventorySlots[_inventorySlot];
+
+        if (inventorySlot.IsEmpty())
+            return false;
+
+        const sItemDefinition& definition = GetItemDefinition(inventorySlot.item);
+
+        if (definition.type != sItemType::Armor || definition.armorSlot == sArmorSlot::Undefined)
+            return false;
+
+        const size_t armorSlotIndex = static_cast<size_t>(definition.armorSlot);
+
+        if (armorSlotIndex >= m_armorSlots.size())
+            return false;
+
+        sItemStack& armorSlot = m_armorSlots[armorSlotIndex];
+
+        // Nothing equipped yet.
+        if (armorSlot.IsEmpty())
+        {
+            armorSlot = inventorySlot;
+            inventorySlot = {};
+
+            return true;
+        }
+
+        // Replace currently equipped armor with the new item.
+        std::swap(armorSlot, inventorySlot);
+
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::UnequipArmor(sArmorSlot::Enum _armorSlot)
+    {
+        if (_armorSlot == sArmorSlot::Undefined)
+            return false;
+
+        const size_t armorSlotIndex = static_cast<size_t>(_armorSlot);
+
+        if (armorSlotIndex >= m_armorSlots.size())
+            return false;
+
+        sItemStack& armorSlot = m_armorSlots[armorSlotIndex];
+
+        if (armorSlot.IsEmpty())
+            return false;
+
+        for (sItemStack& inventorySlot : m_inventorySlots)
+        {
+            if (!inventorySlot.IsEmpty())
+                continue;
+
+            inventorySlot = armorSlot;
+            armorSlot = {};
+
+            return true;
+        }
+
+        return false;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::EquipUsable(size_t _inventorySlot, size_t _usableSlot)
+    {
+        if (_inventorySlot >= m_inventorySlots.size() || _usableSlot >= m_usableSlots.size())
+            return false;
+
+        sItemStack& inventorySlot = m_inventorySlots[_inventorySlot];
+
+        if (inventorySlot.IsEmpty())
+            return false;
+
+        const sItemDefinition& definition = GetItemDefinition(inventorySlot.item);
+
+        if (definition.type != sItemType::Usable)
+            return false;
+
+        sItemStack& usableSlot = m_usableSlots[_usableSlot];
+
+        if (usableSlot.IsEmpty())
+        {
+            usableSlot = inventorySlot;
+            inventorySlot = {};
+
+            return true;
+        }
+
+        if (usableSlot.item == inventorySlot.item)
+        {
+            const uint32_t maxStack = std::max(1u, definition.maxStack);
+
+            if (usableSlot.amount < maxStack)
+            {
+                const uint32_t available = maxStack - usableSlot.amount;
+                const uint32_t amountToMove = std::min(inventorySlot.amount, available);
+
+                usableSlot.amount += amountToMove;
+                inventorySlot.amount -= amountToMove;
+
+                if (inventorySlot.amount == 0)
+                    inventorySlot = {};
+
+                return true;
+            }
+        }
+
+        std::swap(usableSlot, inventorySlot);
+
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::UnequipUsable(size_t _usableSlot)
+    {
+        if (_usableSlot >= m_usableSlots.size())
+            return false;
+
+        sItemStack& usableSlot = m_usableSlots[_usableSlot];
+
+        if (usableSlot.IsEmpty())
+            return false;
+
+        const sItemDefinition& definition = GetItemDefinition(usableSlot.item);
+        const uint32_t maxStack = std::max(1u, definition.maxStack);
+
+        // First try to merge it back into an existing inventory stack.
+        for (sItemStack& inventorySlot : m_inventorySlots)
+        {
+            if (inventorySlot.item != usableSlot.item || inventorySlot.amount >= maxStack)
+                continue;
+
+            const uint32_t available = maxStack - inventorySlot.amount;
+            const uint32_t amountToMove = std::min(usableSlot.amount, available);
+
+            inventorySlot.amount += amountToMove;
+            usableSlot.amount -= amountToMove;
+
+            if (usableSlot.amount == 0)
+            {
+                usableSlot = {};
+                return true;
+            }
+        }
+
+        // Otherwise move the remaining stack into an empty slot.
+        for (sItemStack& inventorySlot : m_inventorySlots)
+        {
+            if (!inventorySlot.IsEmpty())
+                continue;
+
+            inventorySlot = usableSlot;
+            usableSlot = {};
+
+            return true;
+        }
+
+        return false;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::UseItem(size_t _usableSlot)
+    {
+        if (_usableSlot >= m_usableSlots.size())
+            return false;
+
+        sItemStack& usableSlot = m_usableSlots[_usableSlot];
+
+        if (usableSlot.IsEmpty())
+            return false;
+
+        const sItemDefinition& definition = GetItemDefinition(usableSlot.item);
+
+        if (definition.type != sItemType::Usable)
+            return false;
+
+        --usableSlot.amount;
+
+        if (usableSlot.amount == 0)
+            usableSlot = {};
+
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::HasItem(sItemId::Enum _item, uint32_t _amount) const
+    {
+        if (_item == sItemId::Undefined || _amount == 0)
+            return false;
+
+        return GetItemCount(_item) >= _amount;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    uint32_t cInventory::GetItemCount(sItemId::Enum _item) const
+    {
+        if (_item == sItemId::Undefined)
+            return 0;
+
+        uint32_t count = 0;
+
+        for (const sItemStack& slot : m_inventorySlots)
+        {
+            if (slot.item == _item)
+                count += slot.amount;
+        }
+
+        for (const sItemStack& slot : m_usableSlots)
+        {
+            if (slot.item == _item)
+                count += slot.amount;
+        }
+
+        for (const sItemStack& slot : m_armorSlots)
+        {
+            if (slot.item == _item)
+                count += slot.amount;
+        }
+
+        return count;
+    }
+}

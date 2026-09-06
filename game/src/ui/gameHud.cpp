@@ -1,17 +1,26 @@
 #include "gameHud.h"
 
+#include "../item/itemDatabase.h"
+
 #include <imgui.h>
 
 #include <algorithm>
 #include <array>
+#include <cfloat>
 #include <cstdio>
 
 // -------------------------------------------------------------------------------------------------------------------------
 
 namespace UI
 {
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
     namespace
     {
+
+        // ---------------------------------------------------------------------------------------------------------------------
+
         // Layout dimensions are expressed at the reference resolution and scaled together.
         constexpr float c_referenceWidth        = 1280.0f;
         constexpr float c_referenceHeight       = 720.0f;
@@ -177,6 +186,313 @@ namespace UI
             const float progress = GetFraction(static_cast<float>(_rState.xp), static_cast<float>(_rState.xpToNextLevel));
             DrawBar(_rDrawList, _rPosition, ImVec2(c_hudWidth * _scale, c_xpHeight * _scale), progress, IM_COL32(194, 159, 72, 255), _scale, label, eBarDirection::Horizontal);
         }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Inventory
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        ImU32 GetInventoryItemColor(Gameplay::sItemType::Enum _type)
+        {
+            switch (_type)
+            {
+                case Gameplay::sItemType::Armor:
+                    return IM_COL32(126, 166, 200, 255);
+
+                case Gameplay::sItemType::Usable:
+                    return IM_COL32(176, 92, 99, 255);
+
+                case Gameplay::sItemType::Spell:
+                    return IM_COL32(126, 102, 220, 255);
+
+                case Gameplay::sItemType::Item:
+                    return IM_COL32(108, 180, 123, 255);
+
+                default:
+                    return IM_COL32(120, 125, 138, 255);
+            }
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        void DrawCenteredInventoryText(
+            ImDrawList& _rDrawList,
+            const ImVec2& _rMin,
+            const ImVec2& _rMax,
+            float _fontSize,
+            const char* _pText,
+            ImU32 _color)
+        {
+            if (_pText == nullptr || _pText[0] == '\0')
+                return;
+
+            ImFont* pFont = ImGui::GetFont();
+
+            const ImVec2 textSize = pFont->CalcTextSizeA(
+                _fontSize,
+                FLT_MAX,
+                0.0f,
+                _pText
+            );
+
+            const ImVec2 position(
+                _rMin.x + (_rMax.x - _rMin.x - textSize.x) * 0.5f,
+                _rMin.y + (_rMax.y - _rMin.y - textSize.y) * 0.5f
+            );
+
+            _rDrawList.AddText(
+                pFont,
+                _fontSize,
+                position,
+                _color,
+                _pText
+            );
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        void DrawInventoryGlyph(
+            ImDrawList& _rDrawList,
+            const ImVec2& _rCenter,
+            float _radius,
+            Gameplay::sItemType::Enum _type,
+            ImU32 _color)
+        {
+            switch (_type)
+            {
+            case Gameplay::sItemType::Usable:
+            {
+                const float bottleWidth = _radius * 0.8f;
+                const float bottleHeight = _radius * 1.25f;
+
+                const ImVec2 min(
+                    _rCenter.x - bottleWidth * 0.5f,
+                    _rCenter.y - bottleHeight * 0.3f
+                );
+
+                const ImVec2 max(
+                    _rCenter.x + bottleWidth * 0.5f,
+                    _rCenter.y + bottleHeight * 0.55f
+                );
+
+                _rDrawList.AddRectFilled(
+                    min,
+                    max,
+                    _color,
+                    4.0f
+                );
+
+                _rDrawList.AddRectFilled(
+                    ImVec2(_rCenter.x - bottleWidth * 0.22f, min.y - _radius * 0.35f),
+                    ImVec2(_rCenter.x + bottleWidth * 0.22f, min.y + _radius * 0.05f),
+                    _color,
+                    2.0f
+                );
+
+                break;
+            }
+
+            case Gameplay::sItemType::Armor:
+            {
+                const ImVec2 points[5] =
+                {
+                    ImVec2(_rCenter.x, _rCenter.y - _radius),
+                    ImVec2(_rCenter.x + _radius * 0.8f, _rCenter.y - _radius * 0.45f),
+                    ImVec2(_rCenter.x + _radius * 0.6f, _rCenter.y + _radius * 0.55f),
+                    ImVec2(_rCenter.x, _rCenter.y + _radius),
+                    ImVec2(_rCenter.x - _radius * 0.6f, _rCenter.y + _radius * 0.55f)
+                };
+
+                _rDrawList.AddConvexPolyFilled(
+                    points,
+                    5,
+                    _color
+                );
+
+                break;
+            }
+
+            case Gameplay::sItemType::Spell:
+            {
+                _rDrawList.AddCircleFilled(
+                    _rCenter,
+                    _radius,
+                    _color,
+                    24
+                );
+
+                _rDrawList.AddCircle(
+                    _rCenter,
+                    _radius * 0.62f,
+                    IM_COL32(225, 230, 255, 220),
+                    24,
+                    2.0f
+                );
+
+                break;
+            }
+
+            default:
+            {
+                const ImVec2 points[4] =
+                {
+                    ImVec2(_rCenter.x, _rCenter.y - _radius),
+                    ImVec2(_rCenter.x + _radius * 0.75f, _rCenter.y),
+                    ImVec2(_rCenter.x, _rCenter.y + _radius),
+                    ImVec2(_rCenter.x - _radius * 0.75f, _rCenter.y)
+                };
+
+                _rDrawList.AddConvexPolyFilled(
+                    points,
+                    4,
+                    _color
+                );
+
+                break;
+            }
+            }
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool DrawInventorySlot(
+            const char* _pId,
+            const sInventorySlotHudState& _rSlot,
+            const ImVec2& _rSize,
+            float _scale,
+            const char* _pHotkey = nullptr,
+            bool _showName = true)
+        {
+            const ImVec2 slotMin = ImGui::GetCursorScreenPos();
+            const ImVec2 slotMax(slotMin.x + _rSize.x, slotMin.y + _rSize.y);
+
+            ImGui::InvisibleButton(_pId, _rSize);
+
+            const bool hovered = ImGui::IsItemHovered();
+            const bool clicked = ImGui::IsItemClicked();
+
+            ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+            pDrawList->AddRectFilled(
+                slotMin,
+                slotMax,
+                hovered
+                ? IM_COL32(38, 45, 56, 255)
+                : IM_COL32(24, 29, 37, 255),
+                5.0f * _scale
+            );
+
+            pDrawList->AddRect(
+                slotMin,
+                slotMax,
+                hovered
+                ? IM_COL32(112, 128, 154, 255)
+                : IM_COL32(66, 76, 91, 255),
+                5.0f * _scale,
+                0,
+                hovered ? 2.0f : 1.0f
+            );
+
+            if (_rSlot.item != Gameplay::sItemId::Undefined)
+            {
+                const Gameplay::sItemDefinition& definition =
+                    Gameplay::GetItemDefinition(_rSlot.item);
+
+                const ImU32 itemColor =
+                    GetInventoryItemColor(definition.type);
+
+                const ImVec2 iconCenter(
+                    slotMin.x + _rSize.x * 0.5f,
+                    slotMin.y + _rSize.y * 0.38f
+                );
+
+                DrawInventoryGlyph(
+                    *pDrawList,
+                    iconCenter,
+                    14.0f * _scale,
+                    definition.type,
+                    itemColor
+                );
+
+                if (_showName)
+                {
+                    const ImVec2 labelMin(
+                        slotMin.x + 3.0f * _scale,
+                        slotMin.y + _rSize.y - 22.0f * _scale
+                    );
+
+                    const ImVec2 labelMax(
+                        slotMax.x - 3.0f * _scale,
+                        slotMax.y - 4.0f * _scale
+                    );
+
+                    DrawCenteredInventoryText(
+                        *pDrawList,
+                        labelMin,
+                        labelMax,
+                        11.0f * _scale,
+                        definition.pName,
+                        IM_COL32(225, 228, 235, 255)
+                    );
+                }
+
+                if (_rSlot.amount > 1)
+                {
+                    char amount[16];
+
+                    std::snprintf(
+                        amount,
+                        sizeof(amount),
+                        "%u",
+                        _rSlot.amount
+                    );
+
+                    const ImVec2 textSize =
+                        ImGui::GetFont()->CalcTextSizeA(
+                            12.0f * _scale,
+                            FLT_MAX,
+                            0.0f,
+                            amount
+                        );
+
+                    pDrawList->AddText(
+                        ImGui::GetFont(),
+                        12.0f * _scale,
+                        ImVec2(
+                            slotMax.x - textSize.x - 6.0f * _scale,
+                            slotMax.y - textSize.y - 5.0f * _scale
+                        ),
+                        IM_COL32(245, 245, 245, 255),
+                        amount
+                    );
+                }
+
+                if (hovered)
+                {
+                    ImGui::BeginTooltip();
+
+                    ImGui::TextUnformatted(definition.pName);
+
+                    if (definition.maxStack > 1)
+                        ImGui::Text("Amount: %u / %u", _rSlot.amount, definition.maxStack);
+
+                    ImGui::EndTooltip();
+                }
+            }
+
+            if (_pHotkey != nullptr)
+            {
+                pDrawList->AddText(
+                    ImVec2(
+                        slotMin.x + 6.0f * _scale,
+                        slotMin.y + 5.0f * _scale
+                    ),
+                    IM_COL32(190, 195, 207, 255),
+                    _pHotkey
+                );
+            }
+
+            return clicked;
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------------
@@ -274,5 +590,349 @@ namespace UI
         }
 
         DrawExperienceBar(*pDrawList, ImVec2(left, top + c_xpOffset * scale), scale, _rState);
+        DrawInventory(_rState.inventory);
     }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    void cGameHud::DrawInventory(const sInventoryHudState& _rState) const
+    {
+        if (!_rState.visible)
+            return;
+
+        const ImGuiViewport* pViewport = ImGui::GetMainViewport();
+
+        if (pViewport == nullptr || pViewport->Size.x <= 0.0f || pViewport->Size.y <= 0.0f)
+            return;
+
+        const float scale = std::clamp(std::min(pViewport->Size.x / 1280.0f, pViewport->Size.y / 720.0f), 0.75f, 1.15f);
+
+        constexpr float c_referenceWindowWidth = 920.0f;
+        constexpr float c_referenceWindowHeight = 680.0f;
+
+        const ImVec2 windowSize(c_referenceWindowWidth * scale, c_referenceWindowHeight * scale);
+        const ImVec2 windowPosition(pViewport->Pos.x + (pViewport->Size.x - windowSize.x) * 0.5f, pViewport->Pos.y + (pViewport->Size.y - windowSize.y) * 0.5f);
+
+        ImGui::SetNextWindowPos(windowPosition, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 7.0f * scale);
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f * scale);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f * scale);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f * scale, 10.0f * scale));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f * scale, 6.0f * scale));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f * scale, 4.0f * scale));
+
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(13, 17, 23, 248));
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(18, 23, 30, 245));
+        ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(55, 66, 82, 190));
+        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(27, 33, 42, 255));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(38, 46, 58, 255));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(47, 57, 71, 255));
+        ImGui::PushStyleColor(ImGuiCol_Separator, IM_COL32(54, 65, 80, 180));
+
+        const ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoSavedSettings;
+
+        if (!ImGui::Begin("Inventory", nullptr, windowFlags))
+        {
+            ImGui::End();
+
+            ImGui::PopStyleColor(7);
+            ImGui::PopStyleVar(6);
+
+            return;
+        }
+
+        ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+        // ---------------------------------------------------------------------------------------------------------------------
+        // Header
+        // ---------------------------------------------------------------------------------------------------------------------
+
+        const ImVec2 windowMin = ImGui::GetWindowPos();
+        const ImVec2 windowMax(windowMin.x + ImGui::GetWindowWidth(), windowMin.y + ImGui::GetWindowHeight());
+
+        const float headerHeight = 48.0f * scale;
+
+        pDrawList->AddRectFilled(windowMin, ImVec2(windowMax.x, windowMin.y + headerHeight), IM_COL32(18, 23, 30, 255), 7.0f * scale, ImDrawFlags_RoundCornersTop);
+        pDrawList->AddLine(ImVec2(windowMin.x + 1.0f, windowMin.y + headerHeight), ImVec2(windowMax.x - 1.0f, windowMin.y + headerHeight), IM_COL32(58, 69, 84, 210), 1.0f);
+
+        pDrawList->AddText(ImGui::GetFont(), 22.0f * scale, ImVec2(windowMin.x + 19.0f * scale, windowMin.y + 12.0f * scale), IM_COL32(235, 238, 244, 255), "Inventory");
+
+        ImGui::SetCursorPosY(headerHeight + 11.0f * scale);
+
+        // ---------------------------------------------------------------------------------------------------------------------
+        // Upper section
+        // ---------------------------------------------------------------------------------------------------------------------
+
+        const float upperHeight = 252.0f * scale;
+        const float armorWidth = 296.0f * scale;
+
+        const ImVec2 upperAvailable = ImGui::GetContentRegionAvail();
+        const float abilitiesWidth = upperAvailable.x - armorWidth - 8.0f * scale;
+
+        // ---------------------------------------------------------------------------------------------------------------------
+        // Spells + Usables
+        // ---------------------------------------------------------------------------------------------------------------------
+
+        const ImVec2 abilitiesPanelMin = ImGui::GetCursorScreenPos();
+        const ImVec2 abilitiesPanelMax(abilitiesPanelMin.x + abilitiesWidth, abilitiesPanelMin.y + upperHeight);
+
+        pDrawList->AddRectFilled(abilitiesPanelMin, abilitiesPanelMax, IM_COL32(18, 23, 30, 235), 6.0f * scale);
+        pDrawList->AddRect(abilitiesPanelMin, abilitiesPanelMax, IM_COL32(48, 58, 72, 175), 6.0f * scale);
+
+        ImGui::BeginChild("InventoryAbilities", ImVec2(abilitiesWidth, upperHeight), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        ImGui::SetCursorPos(ImVec2(10.0f * scale, 8.0f * scale));
+        ImGui::TextUnformatted("Spells");
+
+        ImGui::SetCursorPosX(10.0f * scale);
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 10.0f * scale);
+        ImGui::Separator();
+
+        constexpr std::array<const char*, 6> c_spellKeys = { "LMB", "RMB", "Q", "E", "R", "F" };
+
+        const float spellSpacing = 7.0f * scale;
+        const float spellAreaWidth = ImGui::GetContentRegionAvail().x - 10.0f * scale;
+        const float spellSlotWidth = (spellAreaWidth - spellSpacing * static_cast<float>(c_spellKeys.size() - 1)) / static_cast<float>(c_spellKeys.size());
+
+        const ImVec2 spellSlotSize(spellSlotWidth, 75.0f * scale);
+
+        ImGui::SetCursorPosX(10.0f * scale);
+
+        for (size_t slotIndex = 0; slotIndex < _rState.spellSlots.size(); ++slotIndex)
+        {
+            ImGui::PushID(static_cast<int>(3000 + slotIndex));
+
+            DrawInventorySlot("SpellSlot", _rState.spellSlots[slotIndex], spellSlotSize, scale, c_spellKeys[slotIndex], false);
+
+            ImGui::PopID();
+
+            if (slotIndex + 1 < _rState.spellSlots.size())
+                ImGui::SameLine(0.0f, spellSpacing);
+        }
+
+        ImGui::SetCursorPosX(10.0f * scale);
+        ImGui::SetCursorPosY(126.0f * scale);
+
+        ImGui::TextUnformatted("Usables");
+
+        ImGui::SetCursorPosX(10.0f * scale);
+        ImGui::Separator();
+
+        constexpr std::array<const char*, 4> c_usableKeys = { "1", "2", "3", "4" };
+
+        const float usableSpacing = 8.0f * scale;
+        const float usableAreaWidth = ImGui::GetContentRegionAvail().x - 10.0f * scale;
+        const float usableSlotWidth = (usableAreaWidth - usableSpacing * static_cast<float>(c_usableKeys.size() - 1)) / static_cast<float>(c_usableKeys.size());
+
+        const ImVec2 usableSlotSize(usableSlotWidth, 76.0f * scale);
+
+        ImGui::SetCursorPosX(10.0f * scale);
+
+        for (size_t slotIndex = 0; slotIndex < _rState.usableSlots.size(); ++slotIndex)
+        {
+            ImGui::PushID(static_cast<int>(2000 + slotIndex));
+
+            DrawInventorySlot("UsableSlot", _rState.usableSlots[slotIndex], usableSlotSize, scale, c_usableKeys[slotIndex], false);
+
+            ImGui::PopID();
+
+            if (slotIndex + 1 < _rState.usableSlots.size())
+                ImGui::SameLine(0.0f, usableSpacing);
+        }
+
+        ImGui::EndChild();
+
+        ImGui::SameLine(0.0f, 8.0f * scale);
+
+        // ---------------------------------------------------------------------------------------------------------------------
+        // Armor
+        // ---------------------------------------------------------------------------------------------------------------------
+
+        const ImVec2 armorPanelMin = ImGui::GetCursorScreenPos();
+        const ImVec2 armorPanelMax(armorPanelMin.x + armorWidth, armorPanelMin.y + upperHeight);
+
+        pDrawList->AddRectFilled(armorPanelMin, armorPanelMax, IM_COL32(18, 23, 30, 235), 6.0f * scale);
+        pDrawList->AddRect(armorPanelMin, armorPanelMax, IM_COL32(48, 58, 72, 175), 6.0f * scale);
+
+        ImGui::BeginChild("InventoryArmor", ImVec2(armorWidth, upperHeight), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        ImGui::SetCursorPos(ImVec2(10.0f * scale, 8.0f * scale));
+
+        ImGui::TextUnformatted("Armor");
+
+        ImGui::SetCursorPosX(10.0f * scale);
+        ImGui::Separator();
+
+        constexpr std::array<const char*, Gameplay::sArmorSlot::NumberOfElements> c_armorNames = { "Head", "Chest", "Ring", "Legs", "Boots" };
+
+        const float armorRowHeight = 30.0f * scale;
+        const float armorRowSpacing = 4.0f * scale;
+        const float armorRowWidth = armorWidth - 20.0f * scale;
+
+        for (size_t slotIndex = 0; slotIndex < _rState.armorSlots.size(); ++slotIndex)
+        {
+            const sInventorySlotHudState& slot = _rState.armorSlots[slotIndex];
+
+            ImGui::PushID(static_cast<int>(1000 + slotIndex));
+
+            ImGui::SetCursorPosX(10.0f * scale);
+
+            const ImVec2 rowMin = ImGui::GetCursorScreenPos();
+            const ImVec2 rowMax(rowMin.x + armorRowWidth, rowMin.y + armorRowHeight);
+
+            // Submit the actual ImGui item first.
+            ImGui::InvisibleButton("ArmorSlot", ImVec2(armorRowWidth, armorRowHeight));
+
+            const bool hovered = ImGui::IsItemHovered();
+
+            pDrawList->AddRectFilled(rowMin, rowMax, hovered ? IM_COL32(34, 41, 52, 255) : IM_COL32(25, 31, 39, 255), 4.0f * scale);
+            pDrawList->AddRect(rowMin, rowMax, hovered ? IM_COL32(87, 101, 122, 220) : IM_COL32(50, 60, 74, 180), 4.0f * scale);
+
+            const float iconSize = 24.0f * scale;
+
+            const ImVec2 iconMin(rowMin.x + 4.0f * scale, rowMin.y + (armorRowHeight - iconSize) * 0.5f);
+            const ImVec2 iconMax(iconMin.x + iconSize, iconMin.y + iconSize);
+
+            pDrawList->AddRectFilled(iconMin, iconMax, IM_COL32(32, 39, 48, 255), 3.0f * scale);
+            pDrawList->AddRect(iconMin, iconMax, IM_COL32(62, 73, 88, 210), 3.0f * scale);
+
+            const char* pItemName = "Empty";
+
+            if (slot.item != Gameplay::sItemId::Undefined)
+            {
+                const Gameplay::sItemDefinition& definition = Gameplay::GetItemDefinition(slot.item);
+
+                pItemName = definition.pName;
+
+                DrawInventoryGlyph(
+                    *pDrawList,
+                    ImVec2(iconMin.x + iconSize * 0.5f, iconMin.y + iconSize * 0.5f),
+                    7.5f * scale,
+                    definition.type,
+                    GetInventoryItemColor(definition.type)
+                );
+            }
+
+            const float textLeft = iconMax.x + 8.0f * scale;
+
+            pDrawList->AddText(
+                ImGui::GetFont(),
+                9.5f * scale,
+                ImVec2(textLeft, rowMin.y + 2.0f * scale),
+                IM_COL32(126, 136, 152, 255),
+                c_armorNames[slotIndex]
+            );
+
+            pDrawList->AddText(
+                ImGui::GetFont(),
+                12.0f * scale,
+                ImVec2(textLeft, rowMin.y + 14.0f * scale),
+                slot.item == Gameplay::sItemId::Undefined ? IM_COL32(91, 99, 112, 255) : IM_COL32(219, 225, 234, 255),
+                pItemName
+            );
+
+            if (slot.item != Gameplay::sItemId::Undefined && hovered)
+            {
+                ImGui::BeginTooltip();
+                ImGui::TextUnformatted(Gameplay::GetItemDefinition(slot.item).pName);
+                ImGui::EndTooltip();
+            }
+
+            ImGui::PopID();
+
+            // Use a real ImGui item for spacing instead of manually extending the cursor.
+            if (slotIndex + 1 < _rState.armorSlots.size())
+                ImGui::Dummy(ImVec2(0.0f, armorRowSpacing));
+        }
+
+        ImGui::EndChild();
+
+        // ---------------------------------------------------------------------------------------------------------------------
+        // Items
+        // ---------------------------------------------------------------------------------------------------------------------
+
+        ImGui::SetCursorPosY(headerHeight + 11.0f * scale + upperHeight + 10.0f * scale);
+
+        const ImVec2 itemsPanelMin = ImGui::GetCursorScreenPos();
+        const ImVec2 remaining = ImGui::GetContentRegionAvail();
+        const ImVec2 itemsPanelMax(itemsPanelMin.x + remaining.x, itemsPanelMin.y + remaining.y);
+
+        pDrawList->AddRectFilled(itemsPanelMin, itemsPanelMax, IM_COL32(18, 23, 30, 235), 6.0f * scale);
+        pDrawList->AddRect(itemsPanelMin, itemsPanelMax, IM_COL32(48, 58, 72, 175), 6.0f * scale);
+
+        ImGui::BeginChild("InventoryItems", ImVec2(0.0f, 0.0f), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        ImGui::SetCursorPos(ImVec2(10.0f * scale, 8.0f * scale));
+
+        ImGui::TextUnformatted("Items");
+
+        size_t usedSlots = 0;
+
+        for (const sInventorySlotHudState& slot : _rState.inventorySlots)
+        {
+            if (slot.item != Gameplay::sItemId::Undefined)
+                ++usedSlots;
+        }
+
+        char capacityLabel[32];
+
+        std::snprintf(capacityLabel, sizeof(capacityLabel), "%zu / %zu", usedSlots, _rState.inventorySlots.size());
+
+        const float capacityWidth = ImGui::CalcTextSize(capacityLabel).x;
+
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - capacityWidth - 12.0f * scale);
+        ImGui::TextDisabled("%s", capacityLabel);
+
+        ImGui::SetCursorPosX(10.0f * scale);
+        ImGui::Separator();
+
+        constexpr size_t c_columns = 6;
+        constexpr size_t c_rows = 4;
+
+        const float gridSpacing = 7.0f * scale;
+        const float horizontalInset = 10.0f * scale;
+        const float gridWidth = ImGui::GetWindowWidth() - horizontalInset * 2.0f;
+        const float slotWidth = (gridWidth - gridSpacing * static_cast<float>(c_columns - 1)) / static_cast<float>(c_columns);
+
+        const float gridTop = ImGui::GetCursorPosY();
+        const float gridBottomInset = 10.0f * scale;
+        const float gridHeight = ImGui::GetWindowHeight() - gridTop - gridBottomInset;
+        const float slotHeight = (gridHeight - gridSpacing * static_cast<float>(c_rows - 1)) / static_cast<float>(c_rows);
+
+        const ImVec2 itemSlotSize(slotWidth, slotHeight);
+
+        ImGui::SetCursorPosX(horizontalInset);
+
+        for (size_t slotIndex = 0; slotIndex < _rState.inventorySlots.size(); ++slotIndex)
+        {
+            ImGui::PushID(static_cast<int>(slotIndex));
+
+            DrawInventorySlot("ItemSlot", _rState.inventorySlots[slotIndex], itemSlotSize, scale);
+
+            ImGui::PopID();
+
+            if ((slotIndex + 1) % c_columns != 0)
+            {
+                ImGui::SameLine(0.0f, gridSpacing);
+            }
+            else if (slotIndex + 1 < _rState.inventorySlots.size())
+            {
+                ImGui::SetCursorPosX(horizontalInset);
+            }
+        }
+
+        ImGui::EndChild();
+
+        ImGui::End();
+
+        ImGui::PopStyleColor(7);
+        ImGui::PopStyleVar(6);
+    }
+    // ---------------------------------------------------------------------------------------------------------------------
+
 }
+
+// ---------------------------------------------------------------------------------------------------------------------

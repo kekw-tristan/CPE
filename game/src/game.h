@@ -20,6 +20,8 @@
 
 #include "physics/characterController.h"
 
+#include "item/inventory.h"
+
 #include "world/enemy/enemySpawn.h"
 
 #include "enemy/enemyManager.h"
@@ -69,22 +71,24 @@ class cGame : public cApplication
 
         struct sEnemyRenderPart
         {
-            Engine::GFX::sInstanceData* pInstance = nullptr;
-            Engine::GFX::sTransform      transform;
+            GFX::sInstanceData* pInstance = nullptr;
+            GFX::sTransform      transform;
         };
 
         struct sEnemyVisual
         {
             Gameplay::sEnemyHandle handle;
             std::pair<int, int>    chunk;
-            const Engine::GFX::sShapeModelDesc* pModel = nullptr;
-            uint64_t               transformRevision = 0;
-            bool                   wasAttacking       = false;
-            Engine::Math::cVec3f    previousPosition   = { 0.0f, 0.0f, 0.0f };
-            float                  walkPhase          = 0.0f;
-            float                  walkWeight         = 0.0f;
+
+            const GFX::sShapeModelDesc* pModel              = nullptr;
+            uint64_t                    transformRevision   = 0;
+            bool                        wasAttacking        = false;
+            Math::cVec3f                previousPosition    = { 0.0f, 0.0f, 0.0f };
+            float                       walkPhase           = 0.0f;
+            float                       walkWeight          = 0.0f;
+
             std::vector<sEnemyRenderPart> renderParts;
-            std::vector<Engine::GFX::LightHandle> lightHandles;
+            std::vector<GFX::LightHandle> lightHandles;
         };
 
         struct sWorldRenderInstances
@@ -106,6 +110,7 @@ class cGame : public cApplication
     
         void InitMeshes();
         void InitNightSky();
+
         bool LoadPlayerModel();
         bool LoadEnemyModels();
         bool LoadPoseModel(const char* _pFilePath, const GFX::sShapeModelDesc& _rBaseModel, GFX::sShapeModelDesc& _rPoseModel);
@@ -123,8 +128,10 @@ class cGame : public cApplication
 
         void UpdatePlayer();
         void UpdatePlayerSpell(float _deltaTime);
+        void UpdateInventoryInput();
         void UpdatePlayerRenderInstances();
         void UpdateEnemyRenderInstances(float _deltaTime);
+
         void PrepareEnemyHealthBars(const GFX::cCamera& _rCamera);
         void SyncProjectileRenderInstances();
         void UpdateThirdPersonCamera(float _deltaTime); 
@@ -157,6 +164,7 @@ class cGame : public cApplication
         GFX::MeshHandle m_extrudedPolygonMesh{};
         GFX::MeshHandle m_discMesh{};
         GFX::MeshHandle m_arcMesh{};
+
         GFX::MaterialHandle m_playerSphereMaterial = -1;
     
         Container::cPool<GFX::sInstanceData, c_instancesPerPage> m_pool;
@@ -207,12 +215,17 @@ class cGame : public cApplication
         float m_playerSpellCooldown = 0.0f;
         float m_playerAttackTime    = 0.0f;
 
-        Engine::GFX::sShapeModelDesc m_enemy03Model;
-        Engine::GFX::sShapeModelDesc m_enemy04Model;
-        Engine::GFX::sShapeModelDesc m_enemy03AttackModel;
-        Engine::GFX::sShapeModelDesc m_enemy04AttackModel;
-        Engine::GFX::sShapeModelDesc m_thornwolfModel;
-        Engine::GFX::sShapeModelDesc m_thornwolfAttackModel;
-        Engine::GFX::sShapeModelDesc m_sporecapModel;
-        Engine::GFX::sShapeModelDesc m_sporecapAttackModel;
+        GFX::sShapeModelDesc m_enemy03Model;
+        GFX::sShapeModelDesc m_enemy04Model;
+        GFX::sShapeModelDesc m_enemy03AttackModel;
+        GFX::sShapeModelDesc m_enemy04AttackModel;
+        GFX::sShapeModelDesc m_thornwolfModel;
+        GFX::sShapeModelDesc m_thornwolfAttackModel;
+        GFX::sShapeModelDesc m_sporecapModel;
+        GFX::sShapeModelDesc m_sporecapAttackModel;
+
+        Gameplay::cInventory m_inventory;
+
+        bool m_inventoryOpen        = false;
+        bool m_inventoryKeyWasDown  = false;
 };
