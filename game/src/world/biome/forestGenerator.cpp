@@ -241,10 +241,10 @@ namespace World
             constexpr uint32_t c_maxStoneCount          = 8;
             constexpr uint32_t c_maxPlacementAttempts   = 500;
 
-            constexpr float c_treeScaleMultiplier  = 3.0f;
+            constexpr float c_treeScaleMultiplier   = 3.0f;
             constexpr float c_minTreeScale          = 0.85f;
             constexpr float c_maxTreeScale          = 1.15f;
-            constexpr float c_treeModelMaxRadius     = 1.5f;
+            constexpr float c_treeModelMaxRadius    = 1.5f;
             constexpr float c_treeMaxRadius         = c_treeModelMaxRadius * c_maxTreeScale * c_treeScaleMultiplier;
             constexpr float c_treeBorder            = c_treeMaxRadius;
             constexpr float c_treeMinDistance       = c_treeMaxRadius * 2.0f;
@@ -520,6 +520,7 @@ namespace World
                 AddAABBCollider(_rColliders, wallPosition, Math::cVec3f(0.0f, 3.0f, 0.0f), Math::cVec3f(_scale, 3.0f, _scale));
             };
 
+
             // Small, non-blocking stones make the cleared routes readable on the grass.
             for (size_t i = 0; i + 1 < _rLayout.mainPath.size(); ++i)
             {
@@ -553,9 +554,9 @@ namespace World
                 {
                     const float value = static_cast<float>(offset);
 
-                    addWall(dungeon.center + Math::cVec3f(-14.0f, 0.0f, value), 1.25f);
-                    addWall(dungeon.center + Math::cVec3f(14.0f, 0.0f, value), 1.25f);
-                    addWall(dungeon.center + Math::cVec3f(value, 0.0f, 14.0f), 1.25f);
+                    addWall(dungeon.center + Math::cVec3f(-14.0f, 0.f, value), 1.25f);
+                    addWall(dungeon.center + Math::cVec3f(14.0f, 0.f, value), 1.25f);
+                    addWall(dungeon.center + Math::cVec3f(value, 0.f, 14.0f), 1.25f);
 
                     if (std::abs(offset) >= 6)
                         addWall(dungeon.center + Math::cVec3f(value, 0.0f, -14.0f), 1.25f);
@@ -567,9 +568,13 @@ namespace World
                     addWall(dungeon.center + Math::cVec3f(7.0f, 0.0f, static_cast<float>(offset)), 1.25f);
                 }
 
-                addSpawn({ dungeon.type, dungeon.center, 3.1415926f, true });
-                addSpawn({ dungeon.type, dungeon.center + Math::cVec3f(-3.0f, 0.0f, -22.0f), 3.1415926f });
-                addSpawn({ dungeon.type, dungeon.center + Math::cVec3f(3.0f, 0.0f, -22.0f), 3.1415926f });
+                const Math::cVec3f bossPosition = dungeon.center;
+                const Math::cVec3f leftPosition = dungeon.center + Math::cVec3f(-3.0f, 0.0f, -22.0f);
+                const Math::cVec3f rightPosition = dungeon.center + Math::cVec3f(3.0f, 0.0f, -22.0f);
+
+                addSpawn({ dungeon.type, Math::cVec3f(bossPosition.x(), GetTerrainSurfaceHeight(bossPosition.x(), bossPosition.z()), bossPosition.z()), 3.1415926f, true });
+                addSpawn({ dungeon.type, Math::cVec3f(leftPosition.x(), GetTerrainSurfaceHeight(leftPosition.x(), leftPosition.z()), leftPosition.z()), 3.1415926f });
+                addSpawn({ dungeon.type, Math::cVec3f(rightPosition.x(), GetTerrainSurfaceHeight(rightPosition.x(), rightPosition.z()), rightPosition.z()), 3.1415926f });
             }
         }
 
