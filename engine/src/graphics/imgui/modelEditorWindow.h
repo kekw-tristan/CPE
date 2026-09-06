@@ -63,12 +63,16 @@ namespace Engine::GFX
 
         void DrawModelEditor();
         void DrawMaterialEditor();
+        void DrawLightEditor();
 
         void DrawShapeList();
         void DrawInspector();
 
         void DrawMaterialList();
         void DrawMaterialInspector();
+
+        void DrawLightList();
+        void DrawLightInspector();
 
         void AddPlane();
         void AddCube();
@@ -81,12 +85,16 @@ namespace Engine::GFX
         void AddShape(sMeshTypes::Enum _meshType);
 
         void AddMaterial();
+        void AddLight(sLightType::Enum _lightType);
 
         void DuplicateSelectedShape();
         void RemoveSelectedShape();
+        void DuplicateSelectedLight();
+        void RemoveSelectedLight();
 
         bool HasValidSelection() const;
         bool HasValidMaterialSelection() const;
+        bool HasValidLightSelection() const;
 
         void BeginTransform(eTransformMode _mode);
         void UpdateTransform(const Platform::cInput& _rInput, const cCamera& _rCamera);
@@ -111,11 +119,13 @@ namespace Engine::GFX
 
         int m_selectedShapeIndex = -1;
         int m_selectedMaterialIndex = -1;
+        int m_selectedLightIndex = -1;
 
         bool m_modelLoaded = false;
         bool m_modelChanged = false;
         bool m_materialsChanged = false;
         bool m_previewDirty = false;
+        bool m_lightTabActive = false;
 
         eTransformMode m_transformMode = eTransformMode::None;
         eTransformAxis m_transformAxis = eTransformAxis::None;

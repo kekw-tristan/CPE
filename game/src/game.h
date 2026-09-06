@@ -8,6 +8,10 @@
 #include "graphics/instanceData.h"
 #include "graphics/transform.h"
 
+#include "graphics/light/lightManager.h"
+
+#include "graphics/material/materialManager.h"
+
 #include "graphics/scene/scene.h"
 
 #include "graphics/shapeModel/meshType.h"
@@ -73,12 +77,20 @@ class cGame : public cApplication
         {
             Gameplay::sEnemyHandle handle;
             std::pair<int, int>    chunk;
+            const Engine::GFX::sShapeModelDesc* pModel = nullptr;
             uint64_t               transformRevision = 0;
             bool                   wasAttacking       = false;
             Engine::Math::cVec3f    previousPosition   = { 0.0f, 0.0f, 0.0f };
             float                  walkPhase          = 0.0f;
             float                  walkWeight         = 0.0f;
             std::vector<sEnemyRenderPart> renderParts;
+            std::vector<Engine::GFX::LightHandle> lightHandles;
+        };
+
+        struct sWorldRenderInstances
+        {
+            std::vector<GFX::sInstanceData*> renderInstances;
+            std::vector<GFX::LightHandle> lightHandles;
         };
 
         struct sProjectileVisual
@@ -86,6 +98,7 @@ class cGame : public cApplication
             uint64_t            id        = 0;
             GFX::sInstanceData* pInstance = nullptr;
             GFX::MeshHandle     mesh      = nullptr;
+            GFX::LightHandle    light     = GFX::c_invalidLightHandle;
         };
 
     
@@ -102,7 +115,7 @@ class cGame : public cApplication
     
         void UpdateFreeCam(float _deltaTime);
 
-        void BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, std::vector<GFX::sInstanceData*>& _rInstances);
+        void BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, sWorldRenderInstances& _rInstances);
         void BuildPlayerRenderInstances();
     
         void RebuildInstanceList();
@@ -144,6 +157,7 @@ class cGame : public cApplication
         GFX::MeshHandle m_extrudedPolygonMesh{};
         GFX::MeshHandle m_discMesh{};
         GFX::MeshHandle m_arcMesh{};
+        GFX::MaterialHandle m_playerSphereMaterial = -1;
     
         Container::cPool<GFX::sInstanceData, c_instancesPerPage> m_pool;
     
@@ -152,6 +166,7 @@ class cGame : public cApplication
         GFX::sShapeModelDesc m_playerModel;
         GFX::sShapeModelDesc m_playerAttackModel;
         std::vector<sPlayerRenderPart> m_playerRenderParts;
+        std::vector<GFX::LightHandle> m_playerLightHandles;
 
         Physics::cCharacterController m_playerController;
 
@@ -163,7 +178,7 @@ class cGame : public cApplication
     
         std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData*>> m_meshInstances;
     
-        std::map<std::pair<int, int>, std::vector<GFX::sInstanceData*>> m_worldRenderInstances;
+        std::map<std::pair<int, int>, sWorldRenderInstances> m_worldRenderInstances;
         std::map<std::tuple<float, float, float>, Gameplay::sEnemyHandle> m_worldEnemies;
         std::vector<Gameplay::sEnemyHandle> m_bossHandles;
 

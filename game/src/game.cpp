@@ -3,8 +3,12 @@
 #include "graphics/light/light.h"
 #include "graphics/light/lightManager.h"
 
+#include "graphics/material/material.h"
+#include "graphics/material/materialManager.h"
+
 #include "graphics/shapeModel/shapeModelDesc.h"
 #include "graphics/shapeModel/shapeModelLoader.h"
+#include "graphics/shapeModel/shapeModelLights.h"
 #include "graphics/shapeModel/shapeModelManager.h"
 #include "graphics/shapeModel/shapeMeshLibrary.h"
 
@@ -178,13 +182,26 @@ void cGame::OnShutdown()
     World::WorldGenerator::Clear();
     m_worldEnemies.clear();
     m_bossHandles.clear();
+
+    for (auto& [coordinate, instances] : m_worldRenderInstances)
+        GFX::ShapeModelLights::Destroy(instances.lightHandles);
+
     m_worldRenderInstances.clear();
 
     m_enemyManager.Clear();
     m_projectileManager.Clear();
+
+    for (sEnemyVisual& visual : m_enemyVisuals)
+        GFX::ShapeModelLights::Destroy(visual.lightHandles);
+
     m_enemyVisuals.clear();
     m_healthBars.clear();
+
+    for (const sProjectileVisual& visual : m_projectileVisuals)
+        GFX::LightManager::DestroyLight(visual.light);
+
     m_projectileVisuals.clear();
+    GFX::ShapeModelLights::Destroy(m_playerLightHandles);
     ClearRenderInstances();
 }
 
@@ -258,6 +275,16 @@ void cGame::InitMeshes()
 
     m_arcMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Arc));
     SubmitMesh(m_arcMesh);
+
+    sMaterial playerSphereMaterial{};
+
+    playerSphereMaterial.roughness        = 0.18f;
+    playerSphereMaterial.lightWrap        = 1.0f;
+    playerSphereMaterial.ambientStrength  = 0.0f;
+    playerSphereMaterial.emissiveColor    = { 0.5f, 0.15f, 1.0f };
+    playerSphereMaterial.emissiveStrength = 4.0f;
+
+    m_playerSphereMaterial = MaterialManager::CreateMaterial(playerSphereMaterial);
 
     sLight directionalLight0{};
     
@@ -373,6 +400,26 @@ bool cGame::LoadPoseModel(const char* _pFilePath, const GFX::sShapeModelDesc& _r
         }
     }
 
+    if (_rPoseModel.lights.size() != _rBaseModel.lights.size())
+    {
+        std::cerr << "Pose model has a different light count: " << _pFilePath << '\n';
+        _rPoseModel = {};
+        return false;
+    }
+
+    for (size_t lightIndex = 0; lightIndex < _rBaseModel.lights.size(); ++lightIndex)
+    {
+        const GFX::sShapeLightDesc& baseLight = _rBaseModel.lights[lightIndex];
+        const GFX::sShapeLightDesc& poseLight = _rPoseModel.lights[lightIndex];
+
+        if (poseLight.name != baseLight.name || poseLight.type != baseLight.type)
+        {
+            std::cerr << "Pose model has a different light at index " << lightIndex << ": " << _pFilePath << '\n';
+            _rPoseModel = {};
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -408,6 +455,7 @@ void cGame::SpawnEnemies(const std::vector<World::sEnemySpawn>& _rSpawns, const 
 
         sEnemyVisual visual{};
         visual.chunk = _rChunk;
+        visual.pModel = pModel;
 
         const auto key = std::make_tuple(spawn.position.x(), spawn.position.y(), spawn.position.z());
         auto [entry, inserted] = m_worldEnemies.try_emplace(key);
@@ -450,6 +498,18 @@ void cGame::SpawnEnemies(const std::vector<World::sEnemySpawn>& _rSpawns, const 
             renderPart.transform = part.transform;
 
             visual.renderParts.push_back(renderPart);
+        }
+
+        const Gameplay::sEnemy* pEnemy = m_enemyManager.TryGetEnemy(visual.handle);
+
+        if (pEnemy != nullptr)
+        {
+            GFX::sTransform enemyTransform{};
+            enemyTransform.position = pEnemy->position;
+            enemyTransform.rotation = { 0.0f, pEnemy->rotation, 0.0f };
+            enemyTransform.scale    = { pEnemy->scale, pEnemy->scale, pEnemy->scale };
+
+            GFX::ShapeModelLights::Create(*pModel, enemyTransform, visual.lightHandles);
         }
 
         m_enemyVisuals.push_back(std::move(visual));
@@ -528,16 +588,17 @@ void cGame::RefreshWorldRenderInstances()
     const auto& chunks = World::WorldGenerator::GetLoadedChunks();
     std::unordered_set<GFX::sInstanceData*> removed;
 
-    std::erase_if(m_worldRenderInstances, [&](const auto& _rEntry)
+    std::erase_if(m_worldRenderInstances, [&](auto& _rEntry)
     {
         if (chunks.contains(_rEntry.first))
             return false;
 
-        removed.insert(_rEntry.second.begin(), _rEntry.second.end());
+        removed.insert(_rEntry.second.renderInstances.begin(), _rEntry.second.renderInstances.end());
+        GFX::ShapeModelLights::Destroy(_rEntry.second.lightHandles);
         return true;
     });
 
-    std::erase_if(m_enemyVisuals, [&](const auto& _rVisual)
+    std::erase_if(m_enemyVisuals, [&](auto& _rVisual)
     {
         if (chunks.contains(_rVisual.chunk))
             return false;
@@ -545,6 +606,8 @@ void cGame::RefreshWorldRenderInstances()
         m_enemyManager.SetActive(_rVisual.handle, false);
         for (const auto& part : _rVisual.renderParts)
             removed.insert(part.pInstance);
+
+        GFX::ShapeModelLights::Destroy(_rVisual.lightHandles);
 
         return true;
     });
@@ -576,7 +639,7 @@ void cGame::RefreshWorldRenderInstances()
 
 // -------------------------------------------------------------------------------------------------------------------------
 
-void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, std::vector<GFX::sInstanceData*>& _rInstances)
+void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, sWorldRenderInstances& _rInstances)
 {
     using namespace Engine::GFX;
     using namespace Engine::Math;
@@ -611,8 +674,12 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, std
         }
 
         m_meshInstances[mesh].push_back(pInstance);
-        _rInstances.push_back(pInstance);
+        _rInstances.renderInstances.push_back(pInstance);
     }
+
+    std::vector<LightHandle> lightHandles;
+    ShapeModelLights::Create(model, _rShapeInstance.transform, lightHandles);
+    _rInstances.lightHandles.insert(_rInstances.lightHandles.end(), lightHandles.begin(), lightHandles.end());
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -650,6 +717,13 @@ void cGame::BuildPlayerRenderInstances()
 
         m_playerRenderParts.push_back(renderPart);
     }
+
+    sTransform playerTransform{};
+    playerTransform.position = m_playerController.GetPosition();
+    playerTransform.rotation = { 0.0f, m_playerYaw, 0.0f };
+    playerTransform.scale    = { 1.0f, 1.0f, 1.0f };
+
+    ShapeModelLights::Create(m_playerModel, playerTransform, m_playerLightHandles);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -799,7 +873,7 @@ void cGame::UpdatePlayerRenderInstances()
     using namespace Engine::GFX;
     using namespace Engine::Math;
 
-    if (m_playerRenderParts.empty())
+    if (m_playerRenderParts.empty() && m_playerModel.lights.empty())
         return;
 
     sTransform playerTransform{};
@@ -822,6 +896,8 @@ void cGame::UpdatePlayerRenderInstances()
 
         renderPart.pInstance->worldMatrix = partMatrix * playerMatrix;
     }
+
+    ShapeModelLights::Update(m_playerModel, m_playerAttackModel, attackWeight, playerTransform, m_playerLightHandles);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -1009,6 +1085,9 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
             renderPart.pInstance->worldMatrix = partMatrix * enemyMatrix;
         }
 
+        if (visual.pModel != nullptr)
+            ShapeModelLights::Update(*visual.pModel, attackModel, pEnemy->attackPoseWeight, enemyTransform, visual.lightHandles);
+
         visual.transformRevision = pEnemy->transformRevision;
         visual.wasAttacking = isAttacking;
     }
@@ -1048,14 +1127,39 @@ void cGame::SyncProjectileRenderInstances()
                 : isSpore ? std::array<float, 4>{ 0.48f, 0.16f, 0.22f, 1.0f }
                 : std::array<float, 4>{ 0.35f, 1.0f, 0.18f, 1.0f };
 
-            const sShapeModelDesc& materialModel = isPlayerSpell ? m_playerModel : isSpore ? m_sporecapModel : m_enemy03Model;
-            const size_t materialSlot = isPlayerSpell ? 3 : isSpore ? 0 : 2;
-            pInstance->materialIndex = materialModel.materialIndices.size() > materialSlot ? materialModel.materialIndices[materialSlot] : 0;
+            if (isPlayerSpell)
+            {
+                pInstance->materialIndex = m_playerSphereMaterial;
+            }
+            else
+            {
+                const sShapeModelDesc& materialModel = isSpore ? m_sporecapModel : m_enemy03Model;
+                const size_t materialSlot = isSpore ? 0 : 2;
+                pInstance->materialIndex = materialModel.materialIndices.size() > materialSlot ? materialModel.materialIndices[materialSlot] : 0;
+            }
 
             const MeshHandle mesh = isPlayerSpell || isSpore ? m_sphereMesh : m_coneMesh;
 
             m_meshInstances[mesh].push_back(pInstance);
-            m_projectileVisuals.push_back({ projectile.id, pInstance, mesh });
+
+            sProjectileVisual projectileVisual{};
+            projectileVisual.id        = projectile.id;
+            projectileVisual.pInstance = pInstance;
+            projectileVisual.mesh      = mesh;
+
+            if (isPlayerSpell)
+            {
+                sLight light{};
+                light.type      = sLightType::Point;
+                light.color     = { 0.5f, 0.15f, 1.0f };
+                light.intensity = 10.0f;
+                light.position  = projectile.position;
+                light.radius    = 4.0f;
+
+                projectileVisual.light = LightManager::CreateLight(light);
+            }
+
+            m_projectileVisuals.push_back(projectileVisual);
 
             visual = std::prev(m_projectileVisuals.end());
             instanceListChanged = true;
@@ -1084,6 +1188,9 @@ void cGame::SyncProjectileRenderInstances()
         }
 
         visual->pInstance->worldMatrix = CreateTransformMatrix(transform);
+
+        if (sLight* pLight = LightManager::TryGetLight(visual->light))
+            pLight->position = projectile.position;
     }
 
     auto visual = m_projectileVisuals.begin();
@@ -1097,6 +1204,7 @@ void cGame::SyncProjectileRenderInstances()
 
         std::vector<sInstanceData*>& meshInstances = m_meshInstances[visual->mesh];
         std::erase(meshInstances, visual->pInstance);
+        LightManager::DestroyLight(visual->light);
         m_pool.Destroy(visual->pInstance);
         visual = m_projectileVisuals.erase(visual);
         instanceListChanged = true;

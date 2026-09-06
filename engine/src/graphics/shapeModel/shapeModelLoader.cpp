@@ -5,6 +5,7 @@
 #include "graphics/material/material.h"
 #include "graphics/material/materialManager.h"
 
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -12,6 +13,7 @@
 
 #include <nlohmann/json.hpp>
 #include <unordered_map>
+#include <unordered_set>
 
 // -------------------------------------------------------------------------------------------------------------------------
 
@@ -246,6 +248,176 @@ namespace Engine::GFX
 
         // -------------------------------------------------------------------------------------------------------------------------
 
+        bool ParseLightType(const std::string& _rLightTypeName, sLightType::Enum& _rLightType)
+        {
+            if (_rLightTypeName == "Point")
+            {
+                _rLightType = sLightType::Point;
+                return true;
+            }
+
+            if (_rLightTypeName == "Spot")
+            {
+                _rLightType = sLightType::Spot;
+                return true;
+            }
+
+            return false;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        const char* LightTypeToString(sLightType::Enum _lightType)
+        {
+            switch (_lightType)
+            {
+                case sLightType::Point:
+                    return "Point";
+
+                case sLightType::Spot:
+                    return "Spot";
+
+                default:
+                    return "Unknown";
+            }
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool IsFinite(const Math::cVec3f& _rVector)
+        {
+            return std::isfinite(_rVector.x()) && std::isfinite(_rVector.y()) && std::isfinite(_rVector.z());
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool ValidateShapeLight(const sShapeLightDesc& _rLight, std::string& _rErrorMessage)
+        {
+            constexpr float c_halfPi = 1.57079632679f;
+
+            if (_rLight.name.empty())
+            {
+                _rErrorMessage = "Model light has an empty name.";
+                return false;
+            }
+
+            if (_rLight.type != sLightType::Point && _rLight.type != sLightType::Spot)
+            {
+                _rErrorMessage = "Unsupported model light type for light '" + _rLight.name + "'.";
+                return false;
+            }
+
+            if (!IsFinite(_rLight.position) || !IsFinite(_rLight.color)
+                || !std::isfinite(_rLight.intensity) || !std::isfinite(_rLight.radius))
+            {
+                _rErrorMessage = "Model light '" + _rLight.name + "' contains a non-finite value.";
+                return false;
+            }
+
+            if (_rLight.color.x() < 0.0f || _rLight.color.y() < 0.0f || _rLight.color.z() < 0.0f)
+            {
+                _rErrorMessage = "Model light '" + _rLight.name + "' contains a negative color component.";
+                return false;
+            }
+
+            if (_rLight.intensity < 0.0f)
+            {
+                _rErrorMessage = "Model light '" + _rLight.name + "' has a negative intensity.";
+                return false;
+            }
+
+            if (_rLight.radius <= 0.0f)
+            {
+                _rErrorMessage = "Model light '" + _rLight.name + "' must have a positive radius.";
+                return false;
+            }
+
+            if (_rLight.type == sLightType::Spot)
+            {
+                if (!IsFinite(_rLight.direction) || _rLight.direction.isZero())
+                {
+                    _rErrorMessage = "Spot light '" + _rLight.name + "' must have a non-zero direction.";
+                    return false;
+                }
+
+                if (!std::isfinite(_rLight.innerConeAngle) || !std::isfinite(_rLight.outerConeAngle)
+                    || _rLight.innerConeAngle < 0.0f || _rLight.innerConeAngle >= _rLight.outerConeAngle
+                    || _rLight.outerConeAngle >= c_halfPi)
+                {
+                    _rErrorMessage = "Spot light '" + _rLight.name + "' requires 0 <= innerConeDegrees < outerConeDegrees < 90.";
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool ParseShapeLight(const nlohmann::json& _rLightJson, sShapeLightDesc& _rLight, std::string& _rErrorMessage)
+        {
+            constexpr float c_degreesToRadians = 0.01745329252f;
+
+            _rLight.name = _rLightJson.at("name").get<std::string>();
+
+            const std::string lightTypeName = _rLightJson.at("type").get<std::string>();
+
+            if (!ParseLightType(lightTypeName, _rLight.type))
+            {
+                _rErrorMessage = "Unknown model light type: " + lightTypeName;
+                return false;
+            }
+
+            _rLight.position    = ParseVec3(_rLightJson.at("position"));
+            _rLight.color       = ParseVec3(_rLightJson.at("color"));
+            _rLight.intensity   = _rLightJson.at("intensity").get<float>();
+            _rLight.radius      = _rLightJson.at("radius").get<float>();
+            _rLight.castsShadow = _rLightJson.value("castsShadow", false);
+
+            if (_rLight.type == sLightType::Spot)
+            {
+                _rLight.direction = ParseVec3(_rLightJson.at("direction"));
+                _rLight.innerConeAngle = _rLightJson.value("innerConeDegrees", 20.0f) * c_degreesToRadians;
+                _rLight.outerConeAngle = _rLightJson.value("outerConeDegrees", 30.0f) * c_degreesToRadians;
+            }
+
+            if (!ValidateShapeLight(_rLight, _rErrorMessage))
+                return false;
+
+            if (_rLight.type == sLightType::Spot)
+                _rLight.direction.normalize();
+
+            return true;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        nlohmann::json ShapeLightToJson(const sShapeLightDesc& _rLight)
+        {
+            constexpr float c_radiansToDegrees = 57.2957795131f;
+
+            nlohmann::json lightJson;
+
+            lightJson["name"]        = _rLight.name;
+            lightJson["type"]        = LightTypeToString(_rLight.type);
+            lightJson["position"]    = Vec3ToJson(_rLight.position);
+            lightJson["color"]       = Vec3ToJson(_rLight.color);
+            lightJson["intensity"]   = _rLight.intensity;
+            lightJson["radius"]      = _rLight.radius;
+            lightJson["castsShadow"] = _rLight.castsShadow;
+
+            if (_rLight.type == sLightType::Spot)
+            {
+                lightJson["direction"]        = Vec3ToJson(_rLight.direction.normalized());
+                lightJson["innerConeDegrees"] = _rLight.innerConeAngle * c_radiansToDegrees;
+                lightJson["outerConeDegrees"] = _rLight.outerConeAngle * c_radiansToDegrees;
+            }
+
+            return lightJson;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
         sMaterial ParseMaterial(const nlohmann::json& _rMaterialJson)
         {
             sMaterial material{};
@@ -321,6 +493,27 @@ namespace Engine::GFX
             {
                 sMaterial defaultMaterial{};
                 loadedMaterials.push_back(defaultMaterial);
+            }
+
+            if (modelJson.contains("lights"))
+            {
+                std::unordered_set<std::string> lightNames;
+
+                for (const nlohmann::json& lightJson : modelJson.at("lights"))
+                {
+                    sShapeLightDesc light{};
+
+                    if (!ParseShapeLight(lightJson, light, _rErrorMessage))
+                        return false;
+
+                    if (!lightNames.emplace(light.name).second)
+                    {
+                        _rErrorMessage = "Duplicate model light name: " + light.name;
+                        return false;
+                    }
+
+                    loadedModel.lights.push_back(std::move(light));
+                }
             }
 
             const nlohmann::json& shapesJson = modelJson.at("shapes");
@@ -432,6 +625,26 @@ namespace Engine::GFX
 
                 globalToLocalMaterialIndex.emplace(globalMaterialIndex, localMaterialIndex);
                 modelJson["materials"].push_back(MaterialToJson(materials[globalMaterialIndex]));
+            }
+
+            if (!_rModelDesc.lights.empty())
+            {
+                std::unordered_set<std::string> lightNames;
+                modelJson["lights"] = nlohmann::json::array();
+
+                for (const sShapeLightDesc& light : _rModelDesc.lights)
+                {
+                    if (!ValidateShapeLight(light, _rErrorMessage))
+                        return false;
+
+                    if (!lightNames.emplace(light.name).second)
+                    {
+                        _rErrorMessage = "Duplicate model light name while saving: " + light.name;
+                        return false;
+                    }
+
+                    modelJson["lights"].push_back(ShapeLightToJson(light));
+                }
             }
 
             modelJson["shapes"] = nlohmann::json::array();

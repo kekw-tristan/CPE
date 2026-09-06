@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <vector>
 #include <memory>
+#include <utility>
 
 namespace Engine::GFX
 {
@@ -116,6 +117,8 @@ namespace Engine::GFX
 
             void UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera);
             void UpdateLightBuffer();
+            void SelectActiveLights(const cCamera& _rCamera);
+            void UpdateActiveLightIndexBuffer();
             void UpdateMaterialBuffer();
             void UpdateShadowBuffer(const cCamera& _rCamera);
             void UpdateReflectionProbeDescriptors(sVulkanFrame& _rFrame, const std::vector<ReflectionProbeHandle>& _rActiveProbeHandles);
@@ -168,6 +171,9 @@ namespace Engine::GFX
 
             cShadowMap m_shadowMap;
             std::vector<int32_t> m_lightShadowIndices; 
+            std::vector<uint32_t> m_activeLightIndices;
+            std::vector<uint32_t> m_previousActiveLightIndices;
+            std::vector<std::pair<float, uint32_t>> m_activeLightCandidates;
             sRenderPassType::Enum m_renderPassType = sRenderPassType::None;
 
             std::array<double, 2> m_gpuPassMilliseconds = { -1.0, -1.0 };
@@ -198,4 +204,4 @@ namespace Engine::GFX
 
             bool m_reflectionProbeDirty = true;
     };
-}  
+}

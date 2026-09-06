@@ -3,6 +3,7 @@
 #include "graphics/scene/sceneLoader.h"
 
 #include "graphics/shapeModel/shapeModelDesc.h"
+#include "graphics/shapeModel/shapeModelLights.h"
 #include "graphics/shapeModel/shapeModelManager.h"
 #include "graphics/shapeModel/shapeModelLoader.h"
 #include "graphics/shapeModel/shapeMeshLibrary.h"
@@ -256,10 +257,7 @@ void cEditor::OnDraw()
 
 void cEditor::OnShutdown()
 {
-    for (auto* pInstance : m_instances)
-    {
-        m_pool.Destroy(pInstance);
-    }
+    ClearRenderInstances();
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -507,6 +505,7 @@ void cEditor::ClearRenderInstances()
 
     m_instances.clear();
     m_meshInstances.clear();
+    Engine::GFX::ShapeModelLights::Destroy(m_modelLightHandles);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -624,6 +623,10 @@ void cEditor::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance)
 
         m_meshInstances[mesh].push_back(pInstance);
     }
+
+    std::vector<LightHandle> lightHandles;
+    ShapeModelLights::Create(model, _rShapeInstance.transform, lightHandles);
+    m_modelLightHandles.insert(m_modelLightHandles.end(), lightHandles.begin(), lightHandles.end());
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

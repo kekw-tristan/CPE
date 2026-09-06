@@ -26,7 +26,7 @@ cbuffer FrameUniformBuffer
     uint lightCount;
     uint materialCount;
     uint reflectionProbeCount;
-    uint padding1;
+    uint activeLightCount;
 
     ReflectionProbeData reflectionProbes[MAX_REFLECTION_PROBES];
 };
@@ -65,6 +65,9 @@ struct LightData
 
 [[vk::binding(2, 0)]]
 StructuredBuffer<LightData> lights;
+
+[[vk::binding(13, 0)]]
+StructuredBuffer<uint> activeLightIndices;
 
 
 struct MaterialData
@@ -1068,8 +1071,9 @@ float4 PSMain(VSOutput input) : SV_Target
     // Direct Lighting
     // -------------------------------------------------------------------------------------------------------------------------
 
-    for (uint index = 0; index < lightCount; ++index)
+    for (uint activeIndex = 0; activeIndex < activeLightCount; ++activeIndex)
     {
+        uint index = activeLightIndices[activeIndex];
         LightData light = lights[index];
 
         uint lightType = (uint) light.directionType.w;

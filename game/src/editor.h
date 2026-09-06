@@ -5,6 +5,8 @@
 #include "graphics/camera.h"
 #include "graphics/instanceData.h"
 
+#include "graphics/light/lightManager.h"
+
 #include "graphics/scene/scene.h"
 
 #include "graphics/shapeModel/meshGenerator.h"
@@ -101,6 +103,7 @@ class cEditor : public cApplication
         std::vector<GFX::sInstanceData*> m_instances;
     
         std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData*>> m_meshInstances;
+        std::vector<GFX::LightHandle> m_modelLightHandles;
 
         GFX::sShapeModelDesc m_pendingEditedModel;
         bool m_hasPendingModelUpdate = false;

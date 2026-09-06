@@ -160,6 +160,16 @@ namespace Engine::GFX
         if (ImGui::GetIO().WantTextInput)
             return;
 
+        if (m_lightTabActive)
+        {
+            if (ctrlDown && _rInput.WasKeyPressed(GLFW_KEY_D))
+                DuplicateSelectedLight();
+            else if (_rInput.WasKeyPressed(GLFW_KEY_DELETE))
+                RemoveSelectedLight();
+
+            return;
+        }
+
         if (ctrlDown && _rInput.WasKeyPressed(GLFW_KEY_D))
         {
             DuplicateSelectedShape();
@@ -217,6 +227,7 @@ namespace Engine::GFX
 
         m_selectedShapeIndex = m_model.shapes.empty() ? -1 : 0;
         m_selectedMaterialIndex = m_model.materialIndices.empty() ? -1 : 0;
+        m_selectedLightIndex = m_model.lights.empty() ? -1 : 0;
 
         m_transformMode = eTransformMode::None;
         m_transformAxis = eTransformAxis::None;
@@ -245,13 +256,22 @@ namespace Engine::GFX
         {
             if (ImGui::BeginTabItem("Model"))
             {
+                m_lightTabActive = false;
                 DrawModelEditor();
                 ImGui::EndTabItem();
             }
 
             if (ImGui::BeginTabItem("Materials"))
             {
+                m_lightTabActive = false;
                 DrawMaterialEditor();
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Lights"))
+            {
+                m_lightTabActive = true;
+                DrawLightEditor();
                 ImGui::EndTabItem();
             }
 
@@ -352,6 +372,26 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cModelEditorWindow::DrawLightEditor()
+    {
+        if (m_model.lights.empty())
+            m_selectedLightIndex = -1;
+        else if (!HasValidLightSelection())
+            m_selectedLightIndex = 0;
+
+        ImGui::BeginChild("LightList", ImVec2(220.0f, 0.0f), true);
+        DrawLightList();
+        ImGui::EndChild();
+
+        ImGui::SameLine();
+
+        ImGui::BeginChild("LightInspector", ImVec2(0.0f, 0.0f), true);
+        DrawLightInspector();
+        ImGui::EndChild();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cModelEditorWindow::LoadModel(const std::filesystem::path& _rFilePath)
     {
         sShapeModelDesc loadedModel;
@@ -375,6 +415,7 @@ namespace Engine::GFX
 
         m_selectedShapeIndex = m_model.shapes.empty() ? -1 : 0;
         m_selectedMaterialIndex = m_model.materialIndices.empty() ? -1 : 0;
+        m_selectedLightIndex = m_model.lights.empty() ? -1 : 0;
 
         m_transformMode = eTransformMode::None;
         m_transformAxis = eTransformAxis::None;
@@ -789,6 +830,137 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cModelEditorWindow::DrawLightList()
+    {
+        ImGui::TextUnformatted("Model Lights");
+        ImGui::Separator();
+
+        for (int lightIndex = 0; lightIndex < static_cast<int>(m_model.lights.size()); ++lightIndex)
+        {
+            const sShapeLightDesc& light = m_model.lights[lightIndex];
+            const char* pTypeName = light.type == sLightType::Spot ? "Spot" : "Point";
+
+            char label[192];
+            std::snprintf(label, sizeof(label), "%s (%s)##Light%i", light.name.c_str(), pTypeName, lightIndex);
+
+            if (ImGui::Selectable(label, lightIndex == m_selectedLightIndex))
+                m_selectedLightIndex = lightIndex;
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::Button("+ Point"))
+            AddLight(sLightType::Point);
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("+ Spot"))
+            AddLight(sLightType::Spot);
+
+        const bool hasSelection = HasValidLightSelection();
+
+        ImGui::BeginDisabled(!hasSelection);
+
+        if (ImGui::Button("Duplicate"))
+            DuplicateSelectedLight();
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Delete"))
+            RemoveSelectedLight();
+
+        ImGui::EndDisabled();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::DrawLightInspector()
+    {
+        if (!HasValidLightSelection())
+        {
+            ImGui::TextUnformatted("No model light selected.");
+            return;
+        }
+
+        constexpr float c_degreesToRadians = 0.01745329252f;
+        constexpr float c_radiansToDegrees = 57.2957795131f;
+
+        sShapeLightDesc& light = m_model.lights[m_selectedLightIndex];
+
+        char nameBuffer[128];
+        std::snprintf(nameBuffer, sizeof(nameBuffer), "%s", light.name.c_str());
+
+        if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer)))
+        {
+            light.name = nameBuffer;
+            MarkModelChanged();
+        }
+
+        const char* lightTypeNames[] = { "Point", "Spot" };
+        int selectedLightType = light.type == sLightType::Spot ? 1 : 0;
+
+        if (ImGui::Combo("Type", &selectedLightType, lightTypeNames, 2))
+        {
+            light.type = selectedLightType == 1 ? sLightType::Spot : sLightType::Point;
+            MarkModelChanged();
+        }
+
+        float position[] = { light.position.x(), light.position.y(), light.position.z() };
+
+        if (ImGui::DragFloat3("Position", position, 0.05f))
+        {
+            light.position = Math::cVec3f(position[0], position[1], position[2]);
+            MarkModelChanged();
+        }
+
+        float color[] = { light.color.x(), light.color.y(), light.color.z() };
+
+        if (ImGui::ColorEdit3("Color", color, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR))
+        {
+            light.color = Math::cVec3f(color[0], color[1], color[2]);
+            MarkModelChanged();
+        }
+
+        if (ImGui::DragFloat("Intensity", &light.intensity, 0.05f, 0.0f, 1000.0f))
+            MarkModelChanged();
+
+        if (ImGui::DragFloat("Radius", &light.radius, 0.05f, 0.01f, 1000.0f))
+            MarkModelChanged();
+
+        if (light.type == sLightType::Spot)
+        {
+            float direction[] = { light.direction.x(), light.direction.y(), light.direction.z() };
+
+            if (ImGui::DragFloat3("Direction", direction, 0.01f))
+            {
+                light.direction = Math::cVec3f(direction[0], direction[1], direction[2]);
+                MarkModelChanged();
+            }
+
+            float innerConeDegrees = light.innerConeAngle * c_radiansToDegrees;
+            float outerConeDegrees = light.outerConeAngle * c_radiansToDegrees;
+
+            if (ImGui::DragFloat("Inner Cone", &innerConeDegrees, 0.25f, 0.0f, 89.0f, "%.1f deg"))
+            {
+                innerConeDegrees = std::clamp(innerConeDegrees, 0.0f, std::max(0.0f, outerConeDegrees - 0.1f));
+                light.innerConeAngle = innerConeDegrees * c_degreesToRadians;
+                MarkModelChanged();
+            }
+
+            if (ImGui::DragFloat("Outer Cone", &outerConeDegrees, 0.25f, 0.1f, 89.0f, "%.1f deg"))
+            {
+                outerConeDegrees = std::clamp(outerConeDegrees, innerConeDegrees + 0.1f, 89.0f);
+                light.outerConeAngle = outerConeDegrees * c_degreesToRadians;
+                MarkModelChanged();
+            }
+        }
+
+        if (ImGui::Checkbox("Casts Shadow", &light.castsShadow))
+            MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cModelEditorWindow::AddPlane()
     {
         sShapePartDesc shape{};
@@ -1028,6 +1200,31 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cModelEditorWindow::AddLight(sLightType::Enum _lightType)
+    {
+        sShapeLightDesc light{};
+
+        light.type = _lightType;
+
+        int lightNumber = static_cast<int>(m_model.lights.size()) + 1;
+
+        do
+        {
+            light.name = "Light " + std::to_string(lightNumber++);
+        }
+        while (std::any_of(m_model.lights.begin(), m_model.lights.end(), [&light](const sShapeLightDesc& _rExistingLight)
+        {
+            return _rExistingLight.name == light.name;
+        }));
+
+        m_model.lights.push_back(light);
+        m_selectedLightIndex = static_cast<int>(m_model.lights.size()) - 1;
+
+        MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cModelEditorWindow::DuplicateSelectedShape()
     {
         if (!HasValidSelection())
@@ -1060,6 +1257,49 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cModelEditorWindow::DuplicateSelectedLight()
+    {
+        if (!HasValidLightSelection())
+            return;
+
+        sShapeLightDesc light = m_model.lights[m_selectedLightIndex];
+        const std::string baseName = light.name.empty() ? "Light" : light.name;
+        int copyNumber = 2;
+
+        do
+        {
+            light.name = baseName + " " + std::to_string(copyNumber++);
+        }
+        while (std::any_of(m_model.lights.begin(), m_model.lights.end(), [&light](const sShapeLightDesc& _rExistingLight)
+        {
+            return _rExistingLight.name == light.name;
+        }));
+
+        m_model.lights.push_back(light);
+        m_selectedLightIndex = static_cast<int>(m_model.lights.size()) - 1;
+
+        MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::RemoveSelectedLight()
+    {
+        if (!HasValidLightSelection())
+            return;
+
+        m_model.lights.erase(m_model.lights.begin() + m_selectedLightIndex);
+
+        if (m_model.lights.empty())
+            m_selectedLightIndex = -1;
+        else if (m_selectedLightIndex >= static_cast<int>(m_model.lights.size()))
+            m_selectedLightIndex = static_cast<int>(m_model.lights.size()) - 1;
+
+        MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     bool cModelEditorWindow::HasValidSelection() const
     {
         return m_selectedShapeIndex >= 0 && m_selectedShapeIndex < static_cast<int>(m_model.shapes.size());
@@ -1076,6 +1316,13 @@ namespace Engine::GFX
         const uint32_t globalMaterialIndex = m_model.materialIndices[m_selectedMaterialIndex];
 
         return globalMaterialIndex < materials.size();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool cModelEditorWindow::HasValidLightSelection() const
+    {
+        return m_selectedLightIndex >= 0 && m_selectedLightIndex < static_cast<int>(m_model.lights.size());
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

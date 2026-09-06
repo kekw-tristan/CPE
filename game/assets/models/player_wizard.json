@@ -1,5 +1,8 @@
 {
   "name": "player_wizard_arcane_wanderer",
+  "lights": [
+    { "name":"staff_crystal", "type":"Point", "position":[-0.7,2.88,-0.02], "color":[0.08,0.85,1.0], "intensity":7.0, "radius":3.5, "castsShadow":false }
+  ],
   "materials": [
     { "albedo": [1,1,1], "roughness": 0.78, "metallic": 0, "lightWrap": 0.18, "shapeContrast": 1.2, "ambientStrength": 0.9, "emissiveColor": [0,0,0], "emissiveStrength": 0 },
     { "albedo": [1,1,1], "roughness": 0.22, "metallic": 0.85, "lightWrap": 0.05, "shapeContrast": 1.35, "ambientStrength": 0.75, "emissiveColor": [0,0,0], "emissiveStrength": 0 },

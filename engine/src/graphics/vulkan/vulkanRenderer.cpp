@@ -29,6 +29,7 @@
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -55,6 +56,10 @@ namespace Engine::GFX
         m_currentFrame = 0;
         m_hasFrameStarted = false;
         m_renderPassType = sRenderPassType::None;
+
+        m_activeLightIndices.reserve(c_maxNumberOfActiveLights);
+        m_previousActiveLightIndices.reserve(c_maxNumberOfActiveLights);
+        m_activeLightCandidates.reserve(c_maxNumberOfLights);
 
         // -------------------------------------------------------------------------------------------------------------------------
         // Frame resources
@@ -266,6 +271,9 @@ namespace Engine::GFX
             rFrame.lightBuffer.Shutdown(*m_pDevice);
             rFrame.lightStagingBuffer.Shutdown(*m_pDevice);
 
+            rFrame.activeLightIndexBuffer.Shutdown(*m_pDevice);
+            rFrame.activeLightIndexStagingBuffer.Shutdown(*m_pDevice);
+
             rFrame.shadowBuffer.Shutdown(*m_pDevice);
             rFrame.shadowStagingBuffer.Shutdown(*m_pDevice);
         }
@@ -414,6 +422,7 @@ namespace Engine::GFX
 
         frame.healthBarCount = 0;
 
+        SelectActiveLights(_rCamera);
         UpdateFrameUniformBuffer(frame, _rCamera);
 
         VkCommandBuffer commandBuffer = frame.pCommandBuffer; 
@@ -438,6 +447,7 @@ namespace Engine::GFX
         
         UpdateShadowBuffer(_rCamera);
         UpdateLightBuffer();
+        UpdateActiveLightIndexBuffer();
         UpdateMaterialBuffer();
 
         return true;
@@ -610,16 +620,17 @@ namespace Engine::GFX
         sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
 
-        const std::vector<sLight>& rLights = LightManager::GetLights();
+        const std::vector<sLight>& rLights  = LightManager::GetLights();
+        const size_t lightCount             = std::min(rLights.size(), static_cast<size_t>(c_maxNumberOfLights));
 
-        if (rLights.empty())
+        if (lightCount == 0)
         {
             return;
         }
 
-        std::vector<sLightGPU> gpuLights(rLights.size());
+        std::vector<sLightGPU> gpuLights(lightCount);
 
-        for (size_t index = 0; index < rLights.size(); ++index)
+        for (size_t index = 0; index < lightCount; ++index)
         {
             const sLight& rLight = rLights[index];
             sLightGPU& rGPULight = gpuLights[index];
@@ -671,6 +682,259 @@ namespace Engine::GFX
         barrier.buffer              = rFrame.lightBuffer.GetBuffer();
         barrier.offset              = 0;
         barrier.size                = lightSize;
+
+        vkCmdPipelineBarrier(
+            pCommandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            1, &barrier,
+            0, nullptr
+        );
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::SelectActiveLights(const cCamera& _rCamera)
+    {
+        m_previousActiveLightIndices = m_activeLightIndices;
+        m_activeLightIndices.clear();
+        m_activeLightCandidates.clear();
+
+        const std::vector<sLight>& rLights = LightManager::GetLights();
+        const uint32_t lightCount          = static_cast<uint32_t>(std::min(rLights.size(), static_cast<size_t>(c_maxNumberOfLights)));
+
+        for (uint32_t lightIndex = 0; lightIndex < lightCount; ++lightIndex)
+        {
+            if (rLights[lightIndex].type != sLightType::Directional)
+            {
+                continue;
+            }
+
+            m_activeLightIndices.push_back(lightIndex);
+
+            if (m_activeLightIndices.size() == c_maxNumberOfActiveLights)
+            {
+                return;
+            }
+        }
+
+        const size_t directionalLightCount = m_activeLightIndices.size();
+
+        float cameraPositionData[4];
+        float cameraDirectionData[4];
+        float projectionData[16];
+
+        _rCamera.GetPosition(cameraPositionData);
+        _rCamera.GetDirection(cameraDirectionData);
+
+        const float width       = static_cast<float>(m_pSwapchain->GetExtent().width);
+        const float height      = static_cast<float>(m_pSwapchain->GetExtent().height);
+        const float aspectRatio = height > 0.0f ? width / height : 1.0f;
+
+        _rCamera.GetProjectionMatrix(aspectRatio, projectionData);
+
+        const Math::cVec3f cameraPosition =
+        {
+            cameraPositionData[0],
+            cameraPositionData[1],
+            cameraPositionData[2]
+        };
+
+        const Math::cVec3f cameraForward = Math::cVec3f(
+            cameraDirectionData[0],
+            cameraDirectionData[1],
+            cameraDirectionData[2]
+        ).normalized();
+
+        const Math::cVec3f worldUp = { 0.0f, 1.0f, 0.0f };
+        Math::cVec3f cameraRight = cameraForward.cross(worldUp).normalized();
+
+        if (cameraRight.isZero())
+        {
+            cameraRight = { 1.0f, 0.0f, 0.0f };
+        }
+
+        const Math::cVec3f cameraUp = cameraRight.cross(cameraForward).normalized();
+
+        const float xScale                  = std::abs(projectionData[0]);
+        const float yScale                  = std::abs(projectionData[5]);
+        const float tanHalfHorizontalFov     = xScale > 0.000001f ? 1.0f / xScale : 1.0f;
+        const float tanHalfVerticalFov       = yScale > 0.000001f ? 1.0f / yScale : 1.0f;
+        const float horizontalRadiusScale = std::sqrt(1.0f + tanHalfHorizontalFov * tanHalfHorizontalFov);
+        const float verticalRadiusScale   = std::sqrt(1.0f + tanHalfVerticalFov * tanHalfVerticalFov);
+
+        for (uint32_t lightIndex = 0; lightIndex < lightCount; ++lightIndex)
+        {
+            const sLight& rLight = rLights[lightIndex];
+
+            if (rLight.type == sLightType::Directional)
+            {
+                continue;
+            }
+
+            const float radius = std::max(rLight.radius, 0.0f);
+
+            if (radius <= 0.0f || rLight.intensity <= 0.0f)
+            {
+                continue;
+            }
+
+            const Math::cVec3f cameraToLight = rLight.position - cameraPosition;
+            const float viewDepth = cameraToLight.dot(cameraForward);
+
+            if (viewDepth + radius < _rCamera.GetNearPlane() || viewDepth - radius > _rCamera.GetFarPlane())
+            {
+                continue;
+            }
+
+            const float horizontalDistance = std::abs(cameraToLight.dot(cameraRight));
+            const float verticalDistance   = std::abs(cameraToLight.dot(cameraUp));
+
+            if (horizontalDistance > viewDepth * tanHalfHorizontalFov + radius * horizontalRadiusScale
+                || verticalDistance > viewDepth * tanHalfVerticalFov + radius * verticalRadiusScale)
+            {
+                continue;
+            }
+
+            const float distanceToLight     = std::sqrt(cameraToLight.lengthSquared());
+            const float distanceToInfluence = std::max(distanceToLight - radius, 1.0f);
+            const float projectedRadius     = radius / distanceToInfluence;
+            const float brightness          = std::max({ rLight.color.x(), rLight.color.y(), rLight.color.z() }) * rLight.intensity;
+            const float heightDifference    = std::abs(rLight.position.y() - cameraPosition.y());
+            const float heightReference     = std::max(radius * 0.5f, 1.0f);
+            const float normalizedHeight    = heightDifference / heightReference;
+            const float heightPreference    = 1.0f / (1.0f + normalizedHeight * normalizedHeight);
+
+            const float priority = brightness * projectedRadius * projectedRadius * heightPreference;
+
+            m_activeLightCandidates.emplace_back(priority, lightIndex);
+        }
+
+        std::sort(m_activeLightCandidates.begin(), m_activeLightCandidates.end(), [](const auto& _rLeft, const auto& _rRight)
+        {
+            if (_rLeft.first != _rRight.first)
+            {
+                return _rLeft.first > _rRight.first;
+            }
+
+            return _rLeft.second < _rRight.second;
+        });
+
+        const size_t remainingLightCount = c_maxNumberOfActiveLights - m_activeLightIndices.size();
+
+        for (uint32_t previousLightIndex : m_previousActiveLightIndices)
+        {
+            if (m_activeLightIndices.size() - directionalLightCount == remainingLightCount)
+            {
+                break;
+            }
+
+            const auto candidate = std::find_if(m_activeLightCandidates.begin(), m_activeLightCandidates.end(), [previousLightIndex](const auto& _rCandidate)
+            {
+                return _rCandidate.second == previousLightIndex;
+            });
+
+            if (candidate != m_activeLightCandidates.end())
+            {
+                m_activeLightIndices.push_back(previousLightIndex);
+            }
+        }
+
+        for (const auto& rCandidate : m_activeLightCandidates)
+        {
+            if (m_activeLightIndices.size() == c_maxNumberOfActiveLights)
+            {
+                break;
+            }
+
+            if (std::find(m_activeLightIndices.begin(), m_activeLightIndices.end(), rCandidate.second) == m_activeLightIndices.end())
+            {
+                m_activeLightIndices.push_back(rCandidate.second);
+            }
+        }
+
+        constexpr uint32_t c_maxReplacementsPerFrame = 2;
+        constexpr float c_replacementPriorityFactor  = 1.5f;
+
+        for (uint32_t replacementIndex = 0; replacementIndex < c_maxReplacementsPerFrame; ++replacementIndex)
+        {
+            const auto challenger = std::find_if(m_activeLightCandidates.begin(), m_activeLightCandidates.end(), [this](const auto& _rCandidate)
+            {
+                return std::find(m_activeLightIndices.begin(), m_activeLightIndices.end(), _rCandidate.second) == m_activeLightIndices.end();
+            });
+
+            if (challenger == m_activeLightCandidates.end())
+            {
+                break;
+            }
+
+            size_t lowestPriorityPosition = directionalLightCount;
+            float lowestPriority = std::numeric_limits<float>::max();
+
+            for (size_t activePosition = directionalLightCount; activePosition < m_activeLightIndices.size(); ++activePosition)
+            {
+                const uint32_t activeLightIndex = m_activeLightIndices[activePosition];
+                const auto activeCandidate = std::find_if(m_activeLightCandidates.begin(), m_activeLightCandidates.end(), [activeLightIndex](const auto& _rCandidate)
+                {
+                    return _rCandidate.second == activeLightIndex;
+                });
+
+                if (activeCandidate != m_activeLightCandidates.end() && activeCandidate->first < lowestPriority)
+                {
+                    lowestPriorityPosition = activePosition;
+                    lowestPriority = activeCandidate->first;
+                }
+            }
+
+            if (lowestPriorityPosition >= m_activeLightIndices.size()
+                || challenger->first <= lowestPriority * c_replacementPriorityFactor)
+            {
+                break;
+            }
+
+            m_activeLightIndices[lowestPriorityPosition] = challenger->second;
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::UpdateActiveLightIndexBuffer()
+    {
+        if (m_activeLightIndices.empty())
+        {
+            return;
+        }
+
+        sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
+        VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
+        const VkDeviceSize indexDataSize = sizeof(uint32_t) * m_activeLightIndices.size();
+
+        rFrame.activeLightIndexStagingBuffer.Write(m_activeLightIndices.data(), indexDataSize);
+
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+        copyRegion.size      = indexDataSize;
+
+        vkCmdCopyBuffer(
+            pCommandBuffer,
+            rFrame.activeLightIndexStagingBuffer.GetBuffer(),
+            rFrame.activeLightIndexBuffer.GetBuffer(),
+            1,
+            &copyRegion
+        );
+
+        VkBufferMemoryBarrier barrier{};
+        barrier.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        barrier.srcAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask       = VK_ACCESS_SHADER_READ_BIT;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.buffer              = rFrame.activeLightIndexBuffer.GetBuffer();
+        barrier.offset              = 0;
+        barrier.size                = indexDataSize;
 
         vkCmdPipelineBarrier(
             pCommandBuffer,
@@ -746,10 +1010,11 @@ namespace Engine::GFX
 
         const std::array<Math::cVec3f, 8> testCorners = Math::CalculateFrustumCorners(_rCamera, aspectRatio, 0.1f, 15.0f);
 
-        std::vector<sLight>& rLights = LightManager::GetLights();
+        const std::vector<sLight>& rLights = LightManager::GetLights();
+        const size_t lightCount            = std::min(rLights.size(), static_cast<size_t>(c_maxNumberOfLights));
 
         m_shadowData.clear();
-        m_shadowData.reserve(rLights.size());
+        m_shadowData.reserve(lightCount);
 
         Math::cVec3f shadowCenter =
         {
@@ -758,15 +1023,15 @@ namespace Engine::GFX
             cameraPosition[2]
         };
 
-        m_lightShadowIndices.assign(rLights.size(), -1);
+        m_lightShadowIndices.assign(lightCount, -1);
 
 
         uint32_t nextLayer = 0;
 
-        for (uint32_t lightIndex = 0; lightIndex < static_cast<uint32_t>(rLights.size()); ++lightIndex)
+        for (uint32_t lightIndex = 0; lightIndex < static_cast<uint32_t>(lightCount); ++lightIndex)
         {
-            sLight&  rLight          = rLights[lightIndex];
-            uint32_t requiredLayers  = 0;
+            const sLight& rLight        = rLights[lightIndex];
+            uint32_t requiredLayers     = 0;
 
             if (!rLight.castsShadow)
             {
@@ -2275,6 +2540,10 @@ namespace Engine::GFX
             rFrame.lightBuffer.Create(*m_pDevice, sizeof(sLightGPU) * c_maxNumberOfLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
             rFrame.lightStagingBuffer.Create(*m_pDevice, sizeof(sLightGPU) * c_maxNumberOfLights, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             rFrame.lightStagingBuffer.Map(*m_pDevice, sizeof(sLightGPU) * c_maxNumberOfLights, 0);
+
+            rFrame.activeLightIndexBuffer.Create(*m_pDevice, sizeof(uint32_t) * c_maxNumberOfActiveLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            rFrame.activeLightIndexStagingBuffer.Create(*m_pDevice, sizeof(uint32_t) * c_maxNumberOfActiveLights, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            rFrame.activeLightIndexStagingBuffer.Map(*m_pDevice, sizeof(uint32_t) * c_maxNumberOfActiveLights, 0);
             
             // shadows
             rFrame.shadowBuffer.Create(*m_pDevice, sizeof(sShadowDataGPU) * c_maxNumberOfLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -2316,7 +2585,7 @@ namespace Engine::GFX
         poolSizes[0].descriptorCount = c_maxNumberOfFrames;
 
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        poolSizes[1].descriptorCount = c_maxNumberOfFrames * 4;
+        poolSizes[1].descriptorCount = c_maxNumberOfFrames * 5;
 
         poolSizes[2].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         poolSizes[2].descriptorCount = c_maxNumberOfFrames * (4 + c_maxNumberOfActiveReflectionProbes) + reflectionProbeCount;
@@ -2420,6 +2689,12 @@ namespace Engine::GFX
             lightBufferInfo.offset  = 0;
             lightBufferInfo.range   = sizeof(sLightGPU) * c_maxNumberOfLights;
 
+            VkDescriptorBufferInfo activeLightIndexBufferInfo{};
+
+            activeLightIndexBufferInfo.buffer = m_frames[index].activeLightIndexBuffer.GetBuffer();
+            activeLightIndexBufferInfo.offset = 0;
+            activeLightIndexBufferInfo.range  = sizeof(uint32_t) * c_maxNumberOfActiveLights;
+
             VkDescriptorBufferInfo materialBufferInfo{};
 
             materialBufferInfo.buffer   = m_materialBuffer.GetBuffer();
@@ -2483,7 +2758,7 @@ namespace Engine::GFX
                 reflectionProbeImageInfos[probeIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
 
-            std::array<VkWriteDescriptorSet, 13> descriptorWrites{};
+            std::array<VkWriteDescriptorSet, 14> descriptorWrites{};
 
             descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet          = m_frames[index].frameDescriptorSet;
@@ -2588,6 +2863,14 @@ namespace Engine::GFX
             descriptorWrites[12].descriptorCount    = c_maxNumberOfActiveReflectionProbes;
             descriptorWrites[12].pImageInfo         = reflectionProbeImageInfos.data();
 
+            descriptorWrites[13].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[13].dstSet          = m_frames[index].frameDescriptorSet;
+            descriptorWrites[13].dstBinding      = 13;
+            descriptorWrites[13].dstArrayElement = 0;
+            descriptorWrites[13].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            descriptorWrites[13].descriptorCount = 1;
+            descriptorWrites[13].pBufferInfo     = &activeLightIndexBufferInfo;
+
             vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
 
@@ -2639,8 +2922,9 @@ namespace Engine::GFX
         frameData.clipPlanes[2] = 0.0f;
         frameData.clipPlanes[3] = 0.0f;
 
-        frameData.lightCount    = static_cast<uint32_t>(LightManager::GetLights().size());
-        frameData.materialCount = static_cast<uint32_t>(MaterialManager::GetMaterials().size());
+        frameData.lightCount       = static_cast<uint32_t>(std::min(LightManager::GetLights().size(), static_cast<size_t>(c_maxNumberOfLights)));
+        frameData.materialCount    = static_cast<uint32_t>(MaterialManager::GetMaterials().size());
+        frameData.activeLightCount = static_cast<uint32_t>(m_activeLightIndices.size());
 
         const std::vector<ReflectionProbeHandle> activeProbeHandles = ReflectionProbeManager::FindActiveProbeIndices(cameraPosition, c_maxNumberOfActiveReflectionProbes, 1);
         UpdateReflectionProbeDescriptors(_rFrame, activeProbeHandles);

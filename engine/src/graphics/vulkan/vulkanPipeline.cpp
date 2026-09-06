@@ -429,7 +429,7 @@ namespace Engine::GFX
 
     void cVulkanPipeline::CreateFrameUniformDescriptorSetLayout(cVulkanDevice& _rDevice)
     {
-        std::array<VkDescriptorSetLayoutBinding, 13> bindings{};
+        std::array<VkDescriptorSetLayoutBinding, 14> bindings{};
 
         // Binding 0 - Frame Uniform Buffer
         bindings[0].binding             = 0;
@@ -521,6 +521,13 @@ namespace Engine::GFX
         bindings[12].descriptorCount    = c_maxNumberOfActiveReflectionProbes;
         bindings[12].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
         bindings[12].pImmutableSamplers = nullptr;
+
+        // Binding 13 - Active Light Index Storage Buffer
+        bindings[13].binding             = 13;
+        bindings[13].descriptorType      = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        bindings[13].descriptorCount     = 1;
+        bindings[13].stageFlags          = VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindings[13].pImmutableSamplers  = nullptr;
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
 

@@ -20,7 +20,7 @@ struct sFrameUniformData
     uint32_t lightCount;
     uint32_t materialCount;
     uint32_t reflectionProbeCount;
-    uint32_t padding1;
+    uint32_t activeLightCount;
 
     Engine::GFX::sReflectionProbeGPU reflectionProbes[Engine::GFX::c_maxNumberOfActiveReflectionProbes];
 };
