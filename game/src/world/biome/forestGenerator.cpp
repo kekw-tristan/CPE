@@ -241,15 +241,18 @@ namespace World
             constexpr uint32_t c_maxStoneCount          = 8;
             constexpr uint32_t c_maxPlacementAttempts   = 500;
 
-            constexpr float c_treeBorder        = 0.5f;
-            constexpr float c_treeMinDistance   = 2.5f;
-            constexpr float c_stoneMinDistance  = 1.5f;
-            constexpr float c_pathClearance     = 4.0f;
-            constexpr float c_minTreeScale      = 0.85f;
-            constexpr float c_maxTreeScale      = 1.15f;
-            constexpr float c_minStoneScale     = 0.7f;
-            constexpr float c_maxStoneScale     = 1.3f;
-            constexpr float c_twoPi             = 6.28318530718f;
+            constexpr float c_treeScaleMultiplier  = 3.0f;
+            constexpr float c_minTreeScale          = 0.85f;
+            constexpr float c_maxTreeScale          = 1.15f;
+            constexpr float c_treeModelMaxRadius     = 1.5f;
+            constexpr float c_treeMaxRadius         = c_treeModelMaxRadius * c_maxTreeScale * c_treeScaleMultiplier;
+            constexpr float c_treeBorder            = c_treeMaxRadius;
+            constexpr float c_treeMinDistance       = c_treeMaxRadius * 2.0f;
+            constexpr float c_stoneMinDistance      = 1.5f;
+            constexpr float c_pathClearance         = 4.0f;
+            constexpr float c_minStoneScale         = 0.7f;
+            constexpr float c_maxStoneScale         = 1.3f;
+            constexpr float c_twoPi                 = 6.28318530718f;
 
             const float worldX = static_cast<float>(_rChunk.coordinate.x * c_chunkSize);
             const float worldY = _rChunk.height;
@@ -282,25 +285,31 @@ namespace World
                 const float treeX = worldX + positionDistribution(_rRandomGenerator);
                 const float treeZ = worldZ + positionDistribution(_rRandomGenerator);
 
-                const Math::cVec3f treePosition(
+                const Math::cVec3f treeCandidatePosition(
                     treeX,
-                    worldY + GetTerrainSurfaceHeight(treeX, treeZ) + 1.0f,
+                    worldY + GetTerrainSurfaceHeight(treeX, treeZ),
                     treeZ
                 );
 
                 // The forest spawn contains its own deliberately placed trees and scenery.
                 // Do not allow procedurally generated trees to overlap or visually crowd it.
-                if (IsInsideForestSpawnTreeClearance(treePosition))
+                if (IsInsideForestSpawnTreeClearance(treeCandidatePosition))
                     continue;
 
-                if (DistanceToPath(treePosition, _rWorldLayout) < c_pathClearance)
+                if (DistanceToPath(treeCandidatePosition, _rWorldLayout) < c_pathClearance + c_treeMaxRadius)
                     continue;
 
-                if (!IsTreePositionValid(treePosition, treePositions, c_treeMinDistance))
+                if (!IsTreePositionValid(treeCandidatePosition, treePositions, c_treeMinDistance))
                     continue;
 
                 const float treeRotation = rotationDistribution(_rRandomGenerator);
-                const float treeScale = treeScaleDistribution(_rRandomGenerator);
+                const float treeScale = treeScaleDistribution(_rRandomGenerator) * c_treeScaleMultiplier;
+
+                const Math::cVec3f treePosition(
+                    treeX,
+                    treeCandidatePosition.y() + treeScale,
+                    treeZ
+                );
 
                 GFX::sShapeInstance treeInstance{};
 

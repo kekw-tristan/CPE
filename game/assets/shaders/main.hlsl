@@ -1068,7 +1068,7 @@ float4 PSMain(VSOutput input) : SV_Target
         albedo,
         roughness,
         metallic,
-        ambientStrength * 0.55f
+        ambientStrength * c_ambientLightStrength
     );
     // -------------------------------------------------------------------------------------------------------------------------
     // Direct Lighting
