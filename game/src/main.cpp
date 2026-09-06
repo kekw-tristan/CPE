@@ -1,15 +1,15 @@
-#include "game.h"
+#include "editor.h"
 #include "world/forestAtmosphere.h"
 
 int main()
 {
     try
     {
-        Engine::sAppConfig config = {1280, 720, "Game", false};
+        Engine::sAppConfig config = {1280, 720, "Game", true};
 
         config.backgroundColor = { World::c_fogRed, World::c_fogGreen, World::c_fogBlue, 1.0f };
 
-        cGame game(config);
+        cEditor game(config);
         game.Run();
     }
     catch(const std::exception& e)

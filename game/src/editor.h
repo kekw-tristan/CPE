@@ -79,6 +79,18 @@ class cEditor : public cApplication
         GFX::MeshHandle m_coneMesh;
         GFX::MeshHandle m_torusMesh;
         GFX::MeshHandle m_crystalMesh;
+        GFX::MeshHandle m_beveledCubeMesh{};
+        GFX::MeshHandle m_frustumMesh{};
+        GFX::MeshHandle m_wedgeMesh{};
+        GFX::MeshHandle m_triangularPrismMesh{};
+        GFX::MeshHandle m_icoSphereMesh{};
+        GFX::MeshHandle m_rockMesh{};
+        GFX::MeshHandle m_grassBladeMesh{};
+        GFX::MeshHandle m_capsuleMesh{};
+        GFX::MeshHandle m_archMesh{};
+        GFX::MeshHandle m_extrudedPolygonMesh{};
+        GFX::MeshHandle m_discMesh{};
+        GFX::MeshHandle m_arcMesh{};
 
         GFX::sInstanceData* m_playerInstance;
 

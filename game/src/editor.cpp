@@ -125,6 +125,42 @@ void cEditor::OnInit()
     SubmitMesh(m_torusMesh);
     SubmitMesh(m_crystalMesh);
 
+    m_beveledCubeMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::BeveledCube));
+    SubmitMesh(m_beveledCubeMesh);
+
+    m_frustumMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Frustum));
+    SubmitMesh(m_frustumMesh);
+
+    m_wedgeMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Wedge));
+    SubmitMesh(m_wedgeMesh);
+
+    m_triangularPrismMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::TriangularPrism));
+    SubmitMesh(m_triangularPrismMesh);
+
+    m_icoSphereMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::IcoSphere));
+    SubmitMesh(m_icoSphereMesh);
+
+    m_rockMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Rock));
+    SubmitMesh(m_rockMesh);
+
+    m_grassBladeMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::GrassBlade));
+    SubmitMesh(m_grassBladeMesh);
+
+    m_capsuleMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Capsule));
+    SubmitMesh(m_capsuleMesh);
+
+    m_archMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Arch));
+    SubmitMesh(m_archMesh);
+
+    m_extrudedPolygonMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::ExtrudedPolygon));
+    SubmitMesh(m_extrudedPolygonMesh);
+
+    m_discMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Disc));
+    SubmitMesh(m_discMesh);
+
+    m_arcMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Arc));
+    SubmitMesh(m_arcMesh);
+
     // -------------------------------------------------------------------------------------------------------------------------
     // Build scene render data
     // -------------------------------------------------------------------------------------------------------------------------
@@ -512,6 +548,42 @@ Engine::GFX::MeshHandle cEditor::GetMesh(Engine::GFX::sMeshTypes::Enum _type)
 
         case sMeshTypes::Crystal:
             return m_crystalMesh;
+
+        case sMeshTypes::BeveledCube:
+            return m_beveledCubeMesh;
+
+        case sMeshTypes::Frustum:
+            return m_frustumMesh;
+
+        case sMeshTypes::Wedge:
+            return m_wedgeMesh;
+
+        case sMeshTypes::TriangularPrism:
+            return m_triangularPrismMesh;
+
+        case sMeshTypes::IcoSphere:
+            return m_icoSphereMesh;
+
+        case sMeshTypes::Rock:
+            return m_rockMesh;
+
+        case sMeshTypes::GrassBlade:
+            return m_grassBladeMesh;
+
+        case sMeshTypes::Capsule:
+            return m_capsuleMesh;
+
+        case sMeshTypes::Arch:
+            return m_archMesh;
+
+        case sMeshTypes::ExtrudedPolygon:
+            return m_extrudedPolygonMesh;
+
+        case sMeshTypes::Disc:
+            return m_discMesh;
+
+        case sMeshTypes::Arc:
+            return m_arcMesh;
 
         default:
             return nullptr;

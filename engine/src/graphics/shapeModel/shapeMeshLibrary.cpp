@@ -34,6 +34,19 @@ namespace Engine::GFX
             meshes[static_cast<size_t>(sMeshTypes::Torus)]      = cMeshGenerator::CreateTorus(sTorusDesc{});
             meshes[static_cast<size_t>(sMeshTypes::Crystal)]    = cMeshGenerator::CreateCrystal(sCrystalDesc{});
 
+            meshes[static_cast<size_t>(sMeshTypes::BeveledCube)] = cMeshGenerator::CreateBeveledCube(sBeveledCubeDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Frustum)] = cMeshGenerator::CreateFrustum(sFrustumDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Wedge)] = cMeshGenerator::CreateWedge(sWedgeDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::TriangularPrism)] = cMeshGenerator::CreateTriangularPrism(sTriangularPrismDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::IcoSphere)] = cMeshGenerator::CreateIcoSphere(sIcoSphereDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Rock)] = cMeshGenerator::CreateRock(sRockDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::GrassBlade)] = cMeshGenerator::CreateGrassBlade(sGrassBladeDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Capsule)] = cMeshGenerator::CreateCapsule(sCapsuleDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Arch)] = cMeshGenerator::CreateArch(sArchDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::ExtrudedPolygon)] = cMeshGenerator::CreateExtrudedPolygon(sExtrudedPolygonDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Disc)] = cMeshGenerator::CreateDisc(sDiscDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Arc)] = cMeshGenerator::CreateArc(sArcDesc{});
+
             return meshes;
         }
 

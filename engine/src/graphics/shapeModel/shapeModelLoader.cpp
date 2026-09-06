@@ -81,6 +81,78 @@ namespace Engine::GFX
                 return true;
             }
 
+            if (_rMeshTypeName == "BeveledCube")
+            {
+                _rMeshType = sMeshTypes::BeveledCube;
+                return true;
+            }
+
+            if (_rMeshTypeName == "Frustum")
+            {
+                _rMeshType = sMeshTypes::Frustum;
+                return true;
+            }
+
+            if (_rMeshTypeName == "Wedge")
+            {
+                _rMeshType = sMeshTypes::Wedge;
+                return true;
+            }
+
+            if (_rMeshTypeName == "TriangularPrism")
+            {
+                _rMeshType = sMeshTypes::TriangularPrism;
+                return true;
+            }
+
+            if (_rMeshTypeName == "IcoSphere")
+            {
+                _rMeshType = sMeshTypes::IcoSphere;
+                return true;
+            }
+
+            if (_rMeshTypeName == "Rock")
+            {
+                _rMeshType = sMeshTypes::Rock;
+                return true;
+            }
+
+            if (_rMeshTypeName == "GrassBlade")
+            {
+                _rMeshType = sMeshTypes::GrassBlade;
+                return true;
+            }
+
+            if (_rMeshTypeName == "Capsule")
+            {
+                _rMeshType = sMeshTypes::Capsule;
+                return true;
+            }
+
+            if (_rMeshTypeName == "Arch")
+            {
+                _rMeshType = sMeshTypes::Arch;
+                return true;
+            }
+
+            if (_rMeshTypeName == "ExtrudedPolygon")
+            {
+                _rMeshType = sMeshTypes::ExtrudedPolygon;
+                return true;
+            }
+
+            if (_rMeshTypeName == "Disc")
+            {
+                _rMeshType = sMeshTypes::Disc;
+                return true;
+            }
+
+            if (_rMeshTypeName == "Arc")
+            {
+                _rMeshType = sMeshTypes::Arc;
+                return true;
+            }
+
             return false;
         }
 
@@ -116,6 +188,42 @@ namespace Engine::GFX
 
                 case sMeshTypes::Crystal:
                     return "Crystal";
+
+                case sMeshTypes::BeveledCube:
+                    return "BeveledCube";
+
+                case sMeshTypes::Frustum:
+                    return "Frustum";
+
+                case sMeshTypes::Wedge:
+                    return "Wedge";
+
+                case sMeshTypes::TriangularPrism:
+                    return "TriangularPrism";
+
+                case sMeshTypes::IcoSphere:
+                    return "IcoSphere";
+
+                case sMeshTypes::Rock:
+                    return "Rock";
+
+                case sMeshTypes::GrassBlade:
+                    return "GrassBlade";
+
+                case sMeshTypes::Capsule:
+                    return "Capsule";
+
+                case sMeshTypes::Arch:
+                    return "Arch";
+
+                case sMeshTypes::ExtrudedPolygon:
+                    return "ExtrudedPolygon";
+
+                case sMeshTypes::Disc:
+                    return "Disc";
+
+                case sMeshTypes::Arc:
+                    return "Arc";
 
                 default:
                     return "Unknown";

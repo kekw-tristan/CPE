@@ -68,6 +68,42 @@ namespace Engine::GFX
             case sMeshTypes::Crystal:
                 return "Crystal";
 
+            case sMeshTypes::BeveledCube:
+                return "BeveledCube";
+
+            case sMeshTypes::Frustum:
+                return "Frustum";
+
+            case sMeshTypes::Wedge:
+                return "Wedge";
+
+            case sMeshTypes::TriangularPrism:
+                return "TriangularPrism";
+
+            case sMeshTypes::IcoSphere:
+                return "IcoSphere";
+
+            case sMeshTypes::Rock:
+                return "Rock";
+
+            case sMeshTypes::GrassBlade:
+                return "GrassBlade";
+
+            case sMeshTypes::Capsule:
+                return "Capsule";
+
+            case sMeshTypes::Arch:
+                return "Arch";
+
+            case sMeshTypes::ExtrudedPolygon:
+                return "ExtrudedPolygon";
+
+            case sMeshTypes::Disc:
+                return "Disc";
+
+            case sMeshTypes::Arc:
+                return "Arc";
+
             default:
                 return "Unknown";
             }
@@ -429,6 +465,66 @@ namespace Engine::GFX
             if (ImGui::MenuItem("Crystal"))
                 AddCrystal();
 
+            if (ImGui::MenuItem("BeveledCube"))
+            {
+                AddShape(sMeshTypes::BeveledCube);
+            }
+
+            if (ImGui::MenuItem("Frustum"))
+            {
+                AddShape(sMeshTypes::Frustum);
+            }
+
+            if (ImGui::MenuItem("Wedge"))
+            {
+                AddShape(sMeshTypes::Wedge);
+            }
+
+            if (ImGui::MenuItem("TriangularPrism"))
+            {
+                AddShape(sMeshTypes::TriangularPrism);
+            }
+
+            if (ImGui::MenuItem("IcoSphere"))
+            {
+                AddShape(sMeshTypes::IcoSphere);
+            }
+
+            if (ImGui::MenuItem("Rock"))
+            {
+                AddShape(sMeshTypes::Rock);
+            }
+
+            if (ImGui::MenuItem("GrassBlade"))
+            {
+                AddShape(sMeshTypes::GrassBlade);
+            }
+
+            if (ImGui::MenuItem("Capsule"))
+            {
+                AddShape(sMeshTypes::Capsule);
+            }
+
+            if (ImGui::MenuItem("Arch"))
+            {
+                AddShape(sMeshTypes::Arch);
+            }
+
+            if (ImGui::MenuItem("ExtrudedPolygon"))
+            {
+                AddShape(sMeshTypes::ExtrudedPolygon);
+            }
+
+            if (ImGui::MenuItem("Disc"))
+            {
+                AddShape(sMeshTypes::Disc);
+            }
+
+            if (ImGui::MenuItem("Arc"))
+            {
+                AddShape(sMeshTypes::Arc);
+            }
+
             ImGui::EndPopup();
         }
 
@@ -501,7 +597,12 @@ namespace Engine::GFX
 
         if (ImGui::CollapsingHeader("Appearance", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            const char* meshTypeNames[] = { "Plane", "PlaneChunk" ,"Cube", "Pyramid", "Sphere", "Cylinder", "Cone", "Torus", "Crystal" };
+            const char* meshTypeNames[] =
+            {
+                "Plane", "PlaneChunk", "Cube", "Pyramid", "Sphere", "Cylinder", "Cone", "Torus", "Crystal",
+                "BeveledCube", "Frustum", "Wedge", "TriangularPrism", "IcoSphere", "Rock",
+                "GrassBlade", "Capsule", "Arch", "ExtrudedPolygon", "Disc", "Arc"
+            };
             static_assert(sizeof(meshTypeNames) / sizeof(meshTypeNames[0]) == sMeshTypes::NumberOfElements);
 
             int selectedMeshType = static_cast<int>(rShape.meshType);
@@ -868,6 +969,31 @@ namespace Engine::GFX
         sShapePartDesc shape{};
 
         shape.meshType = sMeshTypes::Crystal;
+
+        shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
+        shape.transform.scale = Math::cVec3f(1.0f, 1.0f, 1.0f);
+
+        shape.color[0] = 1.0f;
+        shape.color[1] = 1.0f;
+        shape.color[2] = 1.0f;
+        shape.color[3] = 1.0f;
+
+        shape.materialIndex = EnsureDefaultMaterial();
+
+        m_model.shapes.push_back(shape);
+        m_selectedShapeIndex = static_cast<int>(m_model.shapes.size()) - 1;
+
+        MarkModelChanged();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cModelEditorWindow::AddShape(sMeshTypes::Enum _meshType)
+    {
+        sShapePartDesc shape{};
+
+        shape.meshType = _meshType;
 
         shape.transform.position = Math::cVec3f(0.0f, 0.0f, 0.0f);
         shape.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);

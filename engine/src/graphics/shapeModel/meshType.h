@@ -15,6 +15,18 @@ namespace Engine::GFX
             Cone,
             Torus,
             Crystal,
+            BeveledCube,
+            Frustum,
+            Wedge,
+            TriangularPrism,
+            IcoSphere,
+            Rock,
+            GrassBlade,
+            Capsule,
+            Arch,
+            ExtrudedPolygon,
+            Disc,
+            Arc,
 
             NumberOfElements,
 

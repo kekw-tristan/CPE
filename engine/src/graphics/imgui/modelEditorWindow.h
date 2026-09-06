@@ -78,6 +78,7 @@ namespace Engine::GFX
         void AddCone();
         void AddTorus();
         void AddCrystal();
+        void AddShape(sMeshTypes::Enum _meshType);
 
         void AddMaterial();
 
