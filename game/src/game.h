@@ -22,6 +22,8 @@
 
 #include "item/inventory.h"
 
+#include "spells/runState.h"
+
 #include "world/enemy/enemySpawn.h"
 
 #include "enemy/enemyManager.h"
@@ -30,6 +32,7 @@
 #include "ui/gameHud.h"
 
 #include <unordered_map>
+#include <array>
 #include <vector>
 #include <map>
 #include <tuple>
@@ -129,6 +132,8 @@ class cGame : public cApplication
         void UpdatePlayer();
         void UpdatePlayerSpell(float _deltaTime);
         void UpdateInventoryInput();
+        void BeginRun();
+        void SyncSpellLoadoutFromInventory();
         void UpdatePlayerRenderInstances();
         void UpdateEnemyRenderInstances(float _deltaTime);
 
@@ -207,13 +212,12 @@ class cGame : public cApplication
         std::vector<sProjectileVisual> m_projectileVisuals;
 
         static constexpr float c_playerMaxHealth     = 100.0f;
-        static constexpr float c_playerSpellCooldown = 1.0f;
 
         UI::cGameHud m_hud;
 
         float m_playerHealth        = c_playerMaxHealth;
-        float m_playerSpellCooldown = 0.0f;
         float m_playerAttackTime    = 0.0f;
+        std::array<bool, 4> m_spellKeysWasDown{};
 
         GFX::sShapeModelDesc m_enemy03Model;
         GFX::sShapeModelDesc m_enemy04Model;
@@ -225,6 +229,7 @@ class cGame : public cApplication
         GFX::sShapeModelDesc m_sporecapAttackModel;
 
         Gameplay::cInventory m_inventory;
+        Gameplay::cRunState m_runState;
 
         bool m_inventoryOpen        = false;
         bool m_inventoryKeyWasDown  = false;

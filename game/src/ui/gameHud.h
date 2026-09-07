@@ -13,6 +13,7 @@ namespace UI
         EquipArmor,
         EquipUsable,
         EquipSpell,
+        MoveSpell,
         UnequipArmor,
         UnequipUsable,
         UnequipSpell
@@ -55,8 +56,9 @@ namespace UI
         float health    = 100.0f;
         float maxHealth = 100.0f;
 
-        float spellCooldown         = 0.0f;
-        float spellCooldownDuration = 1.0f;
+        std::array<float, sInventoryHudState::c_numberOfSpellSlots> spellCooldowns{};
+        std::array<float, sInventoryHudState::c_numberOfSpellSlots> spellCooldownDurations{};
+        bool anySpellOnCooldown = false;
 
         float mana      = 100.0f;
         float maxMana   = 100.0f;

@@ -37,6 +37,9 @@ namespace Gameplay
 
             bool EquipSpell(size_t _inventorySlot, size_t _spellSlot);
             bool UnequipSpell(size_t _spellSlot, size_t _inventorySlot);
+            bool MoveSpell(size_t _sourceSlot, size_t _destinationSlot);
+
+            void ClearSpells();
 
             bool UseItem(size_t _usableSlot);
 

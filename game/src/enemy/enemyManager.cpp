@@ -177,7 +177,12 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    sEnemyHandle cEnemyManager::Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation, bool _isBoss)
+    sEnemyHandle cEnemyManager::Spawn(
+        World::sEnemyType::Enum _type,
+        const Engine::Math::cVec3f& _rPosition,
+        float _rotation,
+        bool _isBoss,
+        World::sBossId::Enum _bossId)
     {
         const sEnemyDefinition& definition = GetDefinition(_type);
         uint32_t slotIndex;
@@ -204,6 +209,7 @@ namespace Gameplay
         slot.enemy.position = _rPosition;
         slot.enemy.rotation = _rotation;
         slot.enemy.isBoss = _isBoss;
+        slot.enemy.bossId = _isBoss ? _bossId : World::sBossId::Undefined;
         slot.enemy.scale = _isBoss ? 2.5f : 1.0f;
         slot.enemy.homePosition = _rPosition;
         slot.enemy.definition = definition;
@@ -268,6 +274,7 @@ namespace Gameplay
         m_slots.clear();
         m_freeSlots.clear();
         m_activeSlots.clear();
+        m_deathEvents.clear();
 
         m_pendingPlayerDamage = 0.0f;
     }
@@ -289,6 +296,7 @@ namespace Gameplay
             slot.enemy.state     = eEnemyState::Dead;
             slot.enemy.stateTime = 0.0f;
             ++slot.enemy.transformRevision;
+            m_deathEvents.push_back({ slot.enemy.handle, slot.enemy.isBoss, slot.enemy.bossId });
         }
     }
 
@@ -311,6 +319,29 @@ namespace Gameplay
         }
     
         return false;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool cEnemyManager::ApplyDamageInRadius(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage)
+    {
+        bool hitEnemy = false;
+
+        for (uint32_t slotIndex : m_activeSlots)
+        {
+            sEnemySlot& slot = m_slots[slotIndex];
+
+            if (!slot.occupied || !slot.active || slot.enemy.state == eEnemyState::Dead)
+                continue;
+
+            if (!SphereIntersectsEnemyCapsule(_rPosition, _radius, slot.enemy))
+                continue;
+
+            ApplyDamage(slot.enemy.handle, _damage);
+            hitEnemy = true;
+        }
+
+        return hitEnemy;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -353,6 +384,20 @@ namespace Gameplay
         const float damage    = m_pendingPlayerDamage;
         m_pendingPlayerDamage = 0.0f;
         return damage;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    const std::vector<sEnemyDeathEvent>& cEnemyManager::GetDeathEvents() const
+    {
+        return m_deathEvents;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cEnemyManager::ClearDeathEvents()
+    {
+        m_deathEvents.clear();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

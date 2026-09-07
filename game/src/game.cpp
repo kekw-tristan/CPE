@@ -16,6 +16,8 @@
 #include "world/chunk.h"
 #include "world/terrainHeight.h"
 
+#include "spells/spellManager.h"
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -75,6 +77,8 @@ void cGame::OnInit()
     m_inventory.AddItem(Gameplay::sItemId::ForestHelmet);
     m_inventory.AddItem(Gameplay::sItemId::ForestChest);
     m_inventory.AddItem(Gameplay::sItemId::ForestRing);
+
+    BeginRun();
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -82,6 +86,7 @@ void cGame::OnInit()
 void cGame::OnUpdate(float _deltaTime)
 {
     UpdateInventoryInput();
+    m_runState.Update(_deltaTime);
 
     constexpr int c_leftAltKey = 342;
     constexpr int c_rightAltKey = 346;
@@ -115,6 +120,22 @@ void cGame::OnUpdate(float _deltaTime)
 
     m_enemyManager.Update(enemyContext, m_projectileManager);
     m_projectileManager.Update(_deltaTime, enemyContext.playerPosition, m_enemyManager);
+
+    for (const Gameplay::sEnemyDeathEvent& deathEvent : m_enemyManager.GetDeathEvents())
+    {
+        if (!deathEvent.isBoss || deathEvent.bossId == World::sBossId::Undefined)
+            continue;
+
+        const Gameplay::SpellManager::sBossDefinition& boss = Gameplay::SpellManager::GetBoss(deathEvent.bossId);
+
+        if (!m_runState.GrantSpell(boss.spellReward))
+            continue;
+
+        const Gameplay::sSpellDefinition& spell = Gameplay::SpellManager::GetSpell(boss.spellReward);
+        m_inventory.AddItem(spell.inventoryItem);
+    }
+
+    m_enemyManager.ClearDeathEvents();
 
     const float receivedDamage = m_enemyManager.ConsumePlayerDamage() + m_projectileManager.ConsumePlayerDamage();
     if (receivedDamage > 0.0f)
@@ -161,9 +182,18 @@ void cGame::OnDrawUI()
 
     hudState.health                = m_playerHealth;
     hudState.maxHealth             = c_playerMaxHealth;
-    hudState.spellCooldown         = m_playerSpellCooldown;
-    hudState.spellCooldownDuration = c_playerSpellCooldown;
     hudState.inventory.visible     = m_inventoryOpen;
+
+    for (size_t slotIndex = 0; slotIndex < hudState.spellCooldowns.size(); ++slotIndex)
+    {
+        const Gameplay::cSpellInstance* pSpell = m_runState.GetSpellInSlot(slotIndex);
+        if (pSpell == nullptr)
+            continue;
+
+        hudState.spellCooldowns[slotIndex]          = pSpell->GetCooldownRemaining();
+        hudState.spellCooldownDurations[slotIndex]  = pSpell->GetSpellStats().cooldown;
+        hudState.anySpellOnCooldown                 = hudState.anySpellOnCooldown || pSpell->IsOnCooldown();
+    }
 
     // Navigation uses immutable layout data even before an arena's chunk is loaded.
     for (const auto& definition : World::WorldGenerator::GetLayout().dungeons)
@@ -248,6 +278,10 @@ void cGame::OnDrawUI()
                 m_inventory.EquipSpell(sourceInventorySlot, destinationInventorySlot);
                 break;
 
+            case UI::eInventoryAction::MoveSpell:
+                m_inventory.MoveSpell(sourceInventorySlot, destinationInventorySlot);
+                break;
+
             case UI::eInventoryAction::UnequipArmor:
                 m_inventory.UnequipArmor(
                     static_cast<Gameplay::sArmorSlot::Enum>(sourceInventorySlot),
@@ -262,6 +296,8 @@ void cGame::OnDrawUI()
                 m_inventory.UnequipSpell(sourceInventorySlot, destinationInventorySlot);
                 break;
         }
+
+        SyncSpellLoadoutFromInventory();
     }
 }
 
@@ -540,7 +576,7 @@ void cGame::SpawnEnemies(const std::vector<World::sEnemySpawn>& _rSpawns, const 
 
         if (inserted)
         {
-            entry->second = m_enemyManager.Spawn(spawn.type, spawn.position, spawn.rotation, spawn.isBoss);
+            entry->second = m_enemyManager.Spawn(spawn.type, spawn.position, spawn.rotation, spawn.isBoss, spawn.bossId);
             if (spawn.isBoss)
                 m_bossHandles.push_back(entry->second);
         }
@@ -886,15 +922,58 @@ void cGame::UpdatePlayer()
 
 void cGame::UpdatePlayerSpell(float _deltaTime)
 {
-    constexpr float c_spellSpeed     = 13.0f;
-    constexpr float c_spellDamage    = 25.0f;
-    constexpr int   c_leftMouseButton = 0;
+    constexpr int c_leftMouseButton = 0;
+    constexpr int c_rightMouseButton = 1;
 
-    m_playerSpellCooldown = std::max(0.0f, m_playerSpellCooldown - _deltaTime);
+    const std::array<int, 4> c_spellKeys = { 'Q', 'E', 'R', 'F' };
+    std::array<bool, c_spellKeys.size()> spellKeysPressed{};
+
+    for (size_t keyIndex = 0; keyIndex < c_spellKeys.size(); ++keyIndex)
+    {
+        const bool keyDown = Engine::Platform::IsKeyDown(c_spellKeys[keyIndex]);
+        spellKeysPressed[keyIndex] = keyDown && !m_spellKeysWasDown[keyIndex];
+        m_spellKeysWasDown[keyIndex] = keyDown;
+    }
+
     m_playerAttackTime = std::max(0.0f, m_playerAttackTime - _deltaTime);
 
-    if (m_mouseReleased || !Engine::Platform::WasMouseButtonPressed(c_leftMouseButton) || m_playerSpellCooldown > 0.0f)
+    if (m_mouseReleased)
         return;
+
+    size_t spellSlot = Gameplay::cRunState::c_numberOfSpellSlots;
+
+    if (Engine::Platform::WasMouseButtonPressed(c_leftMouseButton))
+        spellSlot = 0;
+    else if (Engine::Platform::WasMouseButtonPressed(c_rightMouseButton))
+        spellSlot = 1;
+    else if (spellKeysPressed[0])
+        spellSlot = 2;
+    else if (spellKeysPressed[1])
+        spellSlot = 3;
+    else if (spellKeysPressed[2])
+        spellSlot = 4;
+    else if (spellKeysPressed[3])
+        spellSlot = 5;
+
+    if (spellSlot >= Gameplay::cRunState::c_numberOfSpellSlots)
+        return;
+
+    const Gameplay::cSpellInstance* pSpell = m_runState.GetSpellInSlot(spellSlot);
+
+    if (pSpell == nullptr)
+        return;
+
+    if (pSpell->IsOnCooldown())
+        return;
+
+    const Gameplay::sSpellDefinition& spellDefinition = Gameplay::SpellManager::GetSpell(pSpell->GetSpellId());
+
+    if (spellDefinition.castType != Gameplay::sSpellCastType::Projectile
+        && spellDefinition.castType != Gameplay::sSpellCastType::ConeProjectile
+        && spellDefinition.castType != Gameplay::sSpellCastType::SporeProjectile)
+        return;
+
+    const Gameplay::sSpellStats& spellStats = pSpell->GetSpellStats();
 
     using Engine::Math::cVec3f;
 
@@ -907,9 +986,7 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     const cVec3f viewPosition(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
     const cVec3f castPosition = m_playerController.GetPosition() + cVec3f(0.0f, 1.25f, 0.0f);
 
-    constexpr float c_spellLifetime = 2.5f;
-
-    float aimDistance = cVec3f::distance(viewPosition, castPosition) + c_spellSpeed * c_spellLifetime;
+    float aimDistance = cVec3f::distance(viewPosition, castPosition) + spellStats.projectileSpeed * spellStats.duration;
 
     // Converge on the nearest enemy under the reticle, compensating for the shoulder camera.
     aimDistance = m_enemyManager.FindAimDistance(viewPosition, viewDirection, aimDistance);
@@ -933,17 +1010,100 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
 
     m_playerYaw = std::atan2(direction.x(), direction.z());
 
-    Gameplay::sProjectileSpawnDesc projectile{};
-    projectile.position  = castPosition;
-    projectile.direction = direction;
-    projectile.speed     = c_spellSpeed;
-    projectile.damage    = c_spellDamage;
-    projectile.lifetime  = c_spellLifetime;
+    const float centerProjectile = 0.5f * static_cast<float>(spellStats.projectileCount - 1);
 
-    m_projectileManager.SpawnPlayerSphere(projectile);
+    for (int projectileIndex = 0; projectileIndex < spellStats.projectileCount; ++projectileIndex)
+    {
+        const float angle = (static_cast<float>(projectileIndex) - centerProjectile) * 0.12f;
+        const float cosine = std::cos(angle);
+        const float sine = std::sin(angle);
 
-    m_playerSpellCooldown = c_playerSpellCooldown;
+        Gameplay::sProjectileSpawnDesc projectile{};
+        projectile.position = castPosition;
+        projectile.direction = cVec3f(
+            direction.x() * cosine + direction.z() * sine,
+            direction.y(),
+            -direction.x() * sine + direction.z() * cosine).normalized();
+        projectile.speed = spellStats.projectileSpeed;
+        projectile.damage = spellStats.damage;
+        projectile.lifetime = spellStats.duration;
+        projectile.radius = spellStats.projectileRadius;
+        projectile.isAreaOfEffect = spellDefinition.castType == Gameplay::sSpellCastType::SporeProjectile;
+
+        switch (spellDefinition.castType)
+        {
+            case Gameplay::sSpellCastType::Projectile:
+                m_projectileManager.SpawnPlayerSphere(projectile);
+                break;
+
+            case Gameplay::sSpellCastType::ConeProjectile:
+                m_projectileManager.SpawnPlayerCone(projectile);
+                break;
+
+            case Gameplay::sSpellCastType::SporeProjectile:
+                m_projectileManager.SpawnPlayerSpore(projectile);
+                break;
+        }
+    }
+
+    m_runState.StartSpellCooldown(spellSlot);
     m_playerAttackTime = 0.4f;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::BeginRun()
+{
+    m_runState.Begin();
+    m_inventory.ClearSpells();
+
+    if (!m_runState.GrantSpell(Gameplay::sSpellId::Fireball))
+        return;
+
+    m_runState.SetSpellSlot(0, Gameplay::sSpellId::Fireball);
+
+    const Gameplay::sSpellDefinition& fireball = Gameplay::SpellManager::GetSpell(Gameplay::sSpellId::Fireball);
+    if (!m_inventory.AddItem(fireball.inventoryItem))
+        return;
+
+    const auto& inventorySlots = m_inventory.GetInventorySlots();
+    for (size_t inventorySlot = 0; inventorySlot < inventorySlots.size(); ++inventorySlot)
+    {
+        if (inventorySlots[inventorySlot].item != fireball.inventoryItem)
+            continue;
+
+        m_inventory.EquipSpell(inventorySlot, 0);
+        break;
+    }
+
+    constexpr std::array<Gameplay::sSpellId::Enum, 2> c_additionalStarterSpells =
+    {
+        Gameplay::sSpellId::StoneShard,
+        Gameplay::sSpellId::SporeOrb
+    };
+
+    for (Gameplay::sSpellId::Enum spellId : c_additionalStarterSpells)
+    {
+        if (!m_runState.GrantSpell(spellId))
+            continue;
+
+        m_inventory.AddItem(Gameplay::SpellManager::GetSpell(spellId).inventoryItem);
+    }
+
+    SyncSpellLoadoutFromInventory();
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::SyncSpellLoadoutFromInventory()
+{
+    const auto& spellSlots = m_inventory.GetSpellSlots();
+
+    for (size_t slotIndex = 0; slotIndex < spellSlots.size(); ++slotIndex)
+    {
+        const Gameplay::sSpellId::Enum spellId = Gameplay::SpellManager::GetSpellId(spellSlots[slotIndex].item);
+        m_runState.SetSpellSlot(slotIndex, spellId);
+    }
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -1224,14 +1384,20 @@ void cGame::SyncProjectileRenderInstances()
         if (visual == m_projectileVisuals.end())
         {
             sInstanceData* pInstance = m_pool.Create();
-            const bool isPlayerSpell = projectile.type == Gameplay::eProjectileType::PlayerSphere;
+            const bool isPlayerSpell = projectile.type == Gameplay::eProjectileType::PlayerSphere
+                || projectile.type == Gameplay::eProjectileType::PlayerCone
+                || projectile.type == Gameplay::eProjectileType::PlayerSpore;
+            const bool isPlayerSpore = projectile.type == Gameplay::eProjectileType::PlayerSpore;
+            const bool isSpore = isPlayerSpore || projectile.type == Gameplay::eProjectileType::EnemySpore;
 
-            const bool isSpore = projectile.type == Gameplay::eProjectileType::EnemySpore;
-
-            pInstance->color = isPlayerSpell
-                ? std::array<float, 4>{ 0.5f, 0.15f, 1.0f, 1.0f }
-                : isSpore ? std::array<float, 4>{ 0.48f, 0.16f, 0.22f, 1.0f }
-                : std::array<float, 4>{ 0.35f, 1.0f, 0.18f, 1.0f };
+            pInstance->color = isPlayerSpore
+                ? std::array<float, 4>{ 0.35f, 0.95f, 0.25f, 1.0f }
+                : isPlayerSpell
+                    ? projectile.type == Gameplay::eProjectileType::PlayerCone
+                        ? std::array<float, 4>{ 0.95f, 0.52f, 0.12f, 1.0f }
+                        : std::array<float, 4>{ 0.5f, 0.15f, 1.0f, 1.0f }
+                    : isSpore ? std::array<float, 4>{ 0.48f, 0.16f, 0.22f, 1.0f }
+                    : std::array<float, 4>{ 0.35f, 1.0f, 0.18f, 1.0f };
 
             if (isPlayerSpell)
             {
@@ -1244,7 +1410,10 @@ void cGame::SyncProjectileRenderInstances()
                 pInstance->materialIndex = materialModel.materialIndices.size() > materialSlot ? materialModel.materialIndices[materialSlot] : 0;
             }
 
-            const MeshHandle mesh = isPlayerSpell || isSpore ? m_sphereMesh : m_coneMesh;
+            const MeshHandle mesh = projectile.type == Gameplay::eProjectileType::PlayerCone
+                || projectile.type == Gameplay::eProjectileType::EnemyCone
+                ? m_coneMesh
+                : m_sphereMesh;
 
             m_meshInstances[mesh].push_back(pInstance);
 
@@ -1257,7 +1426,11 @@ void cGame::SyncProjectileRenderInstances()
             {
                 sLight light{};
                 light.type      = sLightType::Point;
-                light.color     = { 0.5f, 0.15f, 1.0f };
+                light.color     = isPlayerSpore
+                    ? Math::cVec3f(0.35f, 0.95f, 0.25f)
+                    : projectile.type == Gameplay::eProjectileType::PlayerCone
+                        ? Math::cVec3f(0.95f, 0.52f, 0.12f)
+                        : Math::cVec3f(0.5f, 0.15f, 1.0f);
                 light.intensity = 10.0f;
                 light.position  = projectile.position;
                 light.radius    = 4.0f;
@@ -1279,17 +1452,28 @@ void cGame::SyncProjectileRenderInstances()
             transform.rotation = { 0.0f, 0.0f, 0.0f };
             transform.scale = { 0.42f, 0.42f, 0.42f };
         }
-        else if (projectile.type == Gameplay::eProjectileType::EnemySpore)
+        else if (projectile.type == Gameplay::eProjectileType::PlayerSpore
+            || projectile.type == Gameplay::eProjectileType::EnemySpore)
         {
             const float pulse = std::sin(projectile.lifetime * 9.0f);
             transform.rotation = { projectile.lifetime * 2.0f, projectile.lifetime * 1.5f, 0.0f };
-            transform.scale = { 0.48f + pulse * 0.04f, 0.42f - pulse * 0.04f, 0.48f + pulse * 0.04f };
-            const float tint = (pulse + 1.0f) * 0.5f;
-            visual->pInstance->color = { 0.48f + tint * 0.20f, 0.16f + tint * 0.35f, 0.22f - tint * 0.10f, 1.0f };
+            const float scale = projectile.type == Gameplay::eProjectileType::PlayerSpore ? 0.18f + projectile.radius * 0.18f : 0.48f;
+            transform.scale = { scale + pulse * 0.04f, scale - pulse * 0.04f, scale + pulse * 0.04f };
+
+            if (projectile.type == Gameplay::eProjectileType::EnemySpore)
+            {
+                const float tint = (pulse + 1.0f) * 0.5f;
+                visual->pInstance->color = { 0.48f + tint * 0.20f, 0.16f + tint * 0.35f, 0.22f - tint * 0.10f, 1.0f };
+            }
         }
         else
         {
-            transform.rotation = { 1.5707963f, std::atan2(projectile.direction.x(), projectile.direction.z()), 0.0f };
+            const float horizontalLength = std::sqrt(projectile.direction.x() * projectile.direction.x()
+                + projectile.direction.z() * projectile.direction.z());
+            const float pitch = std::atan2(horizontalLength, projectile.direction.y());
+            const float yaw = std::atan2(projectile.direction.x(), projectile.direction.z());
+
+            transform.rotation = { pitch, yaw, 0.0f };
             transform.scale = { 0.14f, 0.65f, 0.14f };
         }
 

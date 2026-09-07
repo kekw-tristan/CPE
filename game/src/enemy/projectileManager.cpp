@@ -31,6 +31,20 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    uint64_t cProjectileManager::SpawnPlayerCone(const sProjectileSpawnDesc& _rDesc)
+    {
+        return Spawn(_rDesc, eProjectileType::PlayerCone);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    uint64_t cProjectileManager::SpawnPlayerSpore(const sProjectileSpawnDesc& _rDesc)
+    {
+        return Spawn(_rDesc, eProjectileType::PlayerSpore);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     uint64_t cProjectileManager::Spawn(const sProjectileSpawnDesc& _rDesc, eProjectileType _type)
     {
         sProjectile projectile{};
@@ -41,6 +55,8 @@ namespace Gameplay
         projectile.speed     = _rDesc.speed;
         projectile.damage    = _rDesc.damage;
         projectile.lifetime  = _rDesc.lifetime;
+        projectile.radius    = _rDesc.radius;
+        projectile.isAreaOfEffect = _rDesc.isAreaOfEffect;
         projectile.type      = _type;
 
         m_projectiles.push_back(projectile);
@@ -60,9 +76,17 @@ namespace Gameplay
             projectile.position += projectile.direction * (projectile.speed * _deltaTime);
             projectile.lifetime -= _deltaTime;
 
-            if (projectile.type == eProjectileType::PlayerSphere)
+            const bool isPlayerProjectile = projectile.type == eProjectileType::PlayerSphere
+                || projectile.type == eProjectileType::PlayerCone
+                || projectile.type == eProjectileType::PlayerSpore;
+
+            if (isPlayerProjectile)
             {
-                if (_rEnemyManager.ApplyDamageAt(projectile.position, 0.8f, projectile.damage))
+                const bool hitEnemy = projectile.isAreaOfEffect
+                    ? _rEnemyManager.ApplyDamageInRadius(projectile.position, projectile.radius, projectile.damage)
+                    : _rEnemyManager.ApplyDamageAt(projectile.position, projectile.radius, projectile.damage);
+
+                if (hitEnemy)
                     projectile.lifetime = 0.0f;
             }
             else

@@ -572,7 +572,7 @@ namespace World
                 const Math::cVec3f leftPosition = dungeon.center + Math::cVec3f(-3.0f, 0.0f, -22.0f);
                 const Math::cVec3f rightPosition = dungeon.center + Math::cVec3f(3.0f, 0.0f, -22.0f);
 
-                addSpawn({ dungeon.type, Math::cVec3f(bossPosition.x(), GetTerrainSurfaceHeight(bossPosition.x(), bossPosition.z()), bossPosition.z()), 3.1415926f, true });
+                addSpawn({ dungeon.type, Math::cVec3f(bossPosition.x(), GetTerrainSurfaceHeight(bossPosition.x(), bossPosition.z()), bossPosition.z()), 3.1415926f, true, dungeon.bossId });
                 addSpawn({ dungeon.type, Math::cVec3f(leftPosition.x(), GetTerrainSurfaceHeight(leftPosition.x(), leftPosition.z()), leftPosition.z()), 3.1415926f });
                 addSpawn({ dungeon.type, Math::cVec3f(rightPosition.x(), GetTerrainSurfaceHeight(rightPosition.x(), rightPosition.z()), rightPosition.z()), 3.1415926f });
             }

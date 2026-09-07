@@ -6,7 +6,7 @@ namespace Gameplay
 {
     struct sItemType
     {
-        enum Enum : uint32_t
+        enum Enum
         {
             Item,
             Armor,
@@ -20,7 +20,7 @@ namespace Gameplay
 
     struct sArmorSlot
     {
-        enum Enum : uint32_t
+        enum Enum 
         {
             Head,
             Chest,
@@ -35,7 +35,7 @@ namespace Gameplay
 
     struct sItemId
     {
-        enum Enum : uint32_t
+        enum Enum 
         {
             HealthPotion,
             ManaPotion,
@@ -45,6 +45,26 @@ namespace Gameplay
             ForestRing,
             ForestLegs,
             ForestBoots,
+
+            Fireball,
+            StoneShard,
+            ThornBurst,
+            SporeOrb,
+
+            SandLance,
+            SunDisk,
+            MirageBolt,
+            ScorpionVolley,
+
+            FrostShard,
+            GlacialOrb,
+            HailStorm,
+            CrystalWall,
+
+            EmberBolt,
+            MagmaBurst,
+            FlameWheel,
+            Meteor,
 
             NumberOfElements,
 

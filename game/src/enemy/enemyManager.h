@@ -56,6 +56,7 @@ namespace Gameplay
     {
         sEnemyHandle handle;
         World::sEnemyType::Enum type = World::sEnemyType::Undefined;
+        World::sBossId::Enum bossId = World::sBossId::Undefined;
         Engine::Math::cVec3f position;
         Engine::Math::cVec3f attackDirection;
         bool isBoss = false;
@@ -71,6 +72,13 @@ namespace Gameplay
         uint64_t transformRevision = 1;
     };
 
+    struct sEnemyDeathEvent
+    {
+        sEnemyHandle handle;
+        bool isBoss = false;
+        World::sBossId::Enum bossId = World::sBossId::Undefined;
+    };
+
     struct sEnemyUpdateContext
     {
         float deltaTime;
@@ -81,16 +89,24 @@ namespace Gameplay
     {
         public:
 
-            sEnemyHandle Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation, bool _isBoss = false);
+            sEnemyHandle Spawn(
+                World::sEnemyType::Enum _type,
+                const Engine::Math::cVec3f& _rPosition,
+                float _rotation,
+                bool _isBoss = false,
+                World::sBossId::Enum _bossId = World::sBossId::Undefined);
             void Update(const sEnemyUpdateContext& _rContext, cProjectileManager& _rProjectileManager);
             void Clear();
             void SetActive(sEnemyHandle _handle, bool _active);
 
             void ApplyDamage(sEnemyHandle _handle, float _damage);
             bool ApplyDamageAt(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage);
+            bool ApplyDamageInRadius(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage);
             const sEnemy* TryGetEnemy(sEnemyHandle _handle) const;
             float FindAimDistance(const Engine::Math::cVec3f& _rOrigin, const Engine::Math::cVec3f& _rDirection, float _maximumDistance) const;
             float ConsumePlayerDamage();
+            const std::vector<sEnemyDeathEvent>& GetDeathEvents() const;
+            void ClearDeathEvents();
             float GetMaxHealth(World::sEnemyType::Enum _type) const;
 
         private:
@@ -115,6 +131,8 @@ namespace Gameplay
             std::vector<sEnemySlot> m_slots;
             std::vector<uint32_t> m_freeSlots;
             std::vector<uint32_t> m_activeSlots;
+
+            std::vector<sEnemyDeathEvent> m_deathEvents;
 
             float m_pendingPlayerDamage = 0.0f;
     };

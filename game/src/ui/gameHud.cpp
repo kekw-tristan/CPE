@@ -116,14 +116,50 @@ namespace UI
 
         // -----------------------------------------------------------------------------------------------------------------
 
-        void DrawSpellIcon(ImDrawList& _rDrawList, const ImVec2& _rPosition, float _scale)
+        void DrawSpellIcon(
+            ImDrawList& _rDrawList,
+            const ImVec2& _rPosition,
+            float _scale,
+            Gameplay::sItemId::Enum _spell)
         {
             const ImVec2 center(_rPosition.x + 32.0f * _scale, _rPosition.y + 26.0f * _scale);
-            const ImVec2 highlight(center.x - 3.0f * _scale, center.y - 3.0f * _scale);
 
-            _rDrawList.AddCircleFilled(center, 18.0f * _scale, IM_COL32(67, 79, 155, 255));
-            _rDrawList.AddCircleFilled(center, 12.0f * _scale, IM_COL32(131, 160, 255, 255));
-            _rDrawList.AddCircleFilled(highlight, 5.0f * _scale, IM_COL32(220, 233, 255, 255));
+            switch (_spell)
+            {
+                case Gameplay::sItemId::StoneShard:
+                {
+                    const ImVec2 points[3] =
+                    {
+                        ImVec2(center.x, center.y - 18.0f * _scale),
+                        ImVec2(center.x + 15.0f * _scale, center.y + 14.0f * _scale),
+                        ImVec2(center.x - 15.0f * _scale, center.y + 14.0f * _scale)
+                    };
+
+                    _rDrawList.AddTriangleFilled(points[0], points[1], points[2], IM_COL32(188, 104, 42, 255));
+                    _rDrawList.AddTriangle(points[0], points[1], points[2], IM_COL32(255, 216, 148, 255), 2.0f * _scale);
+                    break;
+                }
+
+                case Gameplay::sItemId::SporeOrb:
+                    _rDrawList.AddCircleFilled(ImVec2(center.x, center.y - 5.0f * _scale), 15.0f * _scale, IM_COL32(68, 166, 64, 255));
+                    _rDrawList.AddRectFilled(
+                        ImVec2(center.x - 5.0f * _scale, center.y + 3.0f * _scale),
+                        ImVec2(center.x + 5.0f * _scale, center.y + 16.0f * _scale),
+                        IM_COL32(220, 211, 166, 255),
+                        2.0f * _scale);
+                    _rDrawList.AddCircleFilled(ImVec2(center.x - 5.0f * _scale, center.y - 7.0f * _scale), 2.0f * _scale, IM_COL32(209, 241, 152, 255));
+                    _rDrawList.AddCircleFilled(ImVec2(center.x + 6.0f * _scale, center.y - 3.0f * _scale), 2.0f * _scale, IM_COL32(209, 241, 152, 255));
+                    break;
+
+                default:
+                {
+                    const ImVec2 highlight(center.x - 3.0f * _scale, center.y - 3.0f * _scale);
+                    _rDrawList.AddCircleFilled(center, 18.0f * _scale, IM_COL32(67, 79, 155, 255));
+                    _rDrawList.AddCircleFilled(center, 12.0f * _scale, IM_COL32(131, 160, 255, 255));
+                    _rDrawList.AddCircleFilled(highlight, 5.0f * _scale, IM_COL32(220, 233, 255, 255));
+                    break;
+                }
+            }
         }
 
         // -----------------------------------------------------------------------------------------------------------------
@@ -150,23 +186,30 @@ namespace UI
 
         // -----------------------------------------------------------------------------------------------------------------
 
-        void DrawSpellSlot(ImDrawList& _rDrawList, const ImVec2& _rPosition, float _scale, const char* _pKey, bool _hasSpell, const sHudState& _rState)
+        void DrawSpellSlot(
+            ImDrawList& _rDrawList,
+            const ImVec2& _rPosition,
+            float _scale,
+            const char* _pKey,
+            Gameplay::sItemId::Enum _spell,
+            float _cooldown,
+            float _cooldownDuration)
         {
             const ImVec2 slotEnd(_rPosition.x + c_slotSize * _scale, _rPosition.y + c_slotSize * _scale);
             _rDrawList.AddRectFilled(_rPosition, slotEnd, IM_COL32(34, 42, 70, 255), 6.0f * _scale);
 
             ImU32 borderColor = IM_COL32(89, 98, 122, 255);
-            if (_hasSpell)
+            if (_spell != Gameplay::sItemId::Undefined)
             {
-                DrawSpellIcon(_rDrawList, _rPosition, _scale);
+                DrawSpellIcon(_rDrawList, _rPosition, _scale, _spell);
 
-                const float cooldownFraction = GetFraction(_rState.spellCooldown, _rState.spellCooldownDuration);
-                DrawSpellCooldown(_rDrawList, _rPosition, _scale, _rState.spellCooldown, cooldownFraction);
+                const float cooldownFraction = GetFraction(_cooldown, _cooldownDuration);
+                DrawSpellCooldown(_rDrawList, _rPosition, _scale, _cooldown, cooldownFraction);
                 borderColor = cooldownFraction > 0.0f ? IM_COL32(110, 117, 140, 255) : IM_COL32(174, 192, 255, 255);
             }
 
             _rDrawList.AddRect(_rPosition, slotEnd, borderColor, 6.0f * _scale);
-            if (!_hasSpell)
+            if (_spell == Gameplay::sItemId::Undefined)
             {
                 const ImVec2 dashStart(_rPosition.x + 24.0f * _scale, _rPosition.y + 25.0f * _scale);
                 const ImVec2 dashEnd(_rPosition.x + 40.0f * _scale, _rPosition.y + 25.0f * _scale);
@@ -515,7 +558,7 @@ namespace UI
 
         const float scale = std::min(pViewport->Size.x / c_referenceWidth, pViewport->Size.y / c_referenceHeight);
         const ImVec2 center(pViewport->Pos.x + pViewport->Size.x * 0.5f, pViewport->Pos.y + pViewport->Size.y * 0.5f);
-        const ImU32 reticleColor = _rState.spellCooldown > 0.0f
+        const ImU32 reticleColor = _rState.anySpellOnCooldown
             ? IM_COL32(135, 145, 170, 230) : IM_COL32(205, 224, 255, 255);
         const std::array<ImVec2, 4> corners = {
             ImVec2(0.0f, -10.0f), ImVec2(10.0f, 0.0f),
@@ -584,10 +627,15 @@ namespace UI
         {
             const float slotLeft = spellsLeft + static_cast<float>(slotIndex) * (c_slotSize + c_slotSpacing) * scale;
 
-            // Only LMB is connected to an existing spell; all other slots are display placeholders.
-            const bool hasSpell = slotIndex == 0;
-
-            DrawSpellSlot(*pDrawList, ImVec2(slotLeft, top), scale, c_spellKeys[slotIndex], hasSpell, _rState);
+            const Gameplay::sItemId::Enum spell = _rState.inventory.spellSlots[slotIndex].item;
+            DrawSpellSlot(
+                *pDrawList,
+                ImVec2(slotLeft, top),
+                scale,
+                c_spellKeys[slotIndex],
+                spell,
+                _rState.spellCooldowns[slotIndex],
+                _rState.spellCooldownDurations[slotIndex]);
         }
 
         DrawExperienceBar(*pDrawList, ImVec2(left, top + c_xpOffset * scale), scale, _rState);
@@ -1047,6 +1095,26 @@ namespace UI
                 if (acceptsItem)
                 {
                     m_inventoryAction = action;
+                    m_sourceInventorySlot = sourceSlot;
+                    m_destinationInventorySlot = _destinationSlot;
+                    m_hasInventoryAction = true;
+                }
+            }
+        }
+
+        if (pPayload == nullptr && _target == eInventoryDropTarget::Spell)
+        {
+            pPayload = ImGui::AcceptDragDropPayload("SpellSlot");
+
+            if (pPayload != nullptr && pPayload->DataSize == sizeof(size_t))
+            {
+                size_t sourceSlot = 0;
+                std::memcpy(&sourceSlot, pPayload->Data, sizeof(sourceSlot));
+
+                if (sourceSlot < _rState.spellSlots.size() && sourceSlot != _destinationSlot
+                    && _rState.spellSlots[sourceSlot].item != Gameplay::sItemId::Undefined)
+                {
+                    m_inventoryAction = eInventoryAction::MoveSpell;
                     m_sourceInventorySlot = sourceSlot;
                     m_destinationInventorySlot = _destinationSlot;
                     m_hasInventoryAction = true;

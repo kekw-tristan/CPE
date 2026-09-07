@@ -36,6 +36,7 @@ namespace World
     {
         Engine::Math::cVec3f center;
         sEnemyType::Enum type = sEnemyType::Undefined;
+        sBossId::Enum bossId = sBossId::Undefined;
     };
 
 	struct sWorldLayout

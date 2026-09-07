@@ -424,6 +424,43 @@ namespace Gameplay
 
     // ---------------------------------------------------------------------------------------------------------------------
 
+    bool cInventory::MoveSpell(size_t _sourceSlot, size_t _destinationSlot)
+    {
+        if (_sourceSlot >= m_spellSlots.size() || _destinationSlot >= m_spellSlots.size())
+            return false;
+
+        if (_sourceSlot == _destinationSlot)
+            return true;
+
+        sItemStack& source = m_spellSlots[_sourceSlot];
+
+        if (source.IsEmpty())
+            return false;
+
+        std::swap(source, m_spellSlots[_destinationSlot]);
+
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    void cInventory::ClearSpells()
+    {
+        const auto clearSpellItems = [](auto& _rSlots)
+        {
+            for (sItemStack& slot : _rSlots)
+            {
+                if (!slot.IsEmpty() && GetItemDefinition(slot.item).type == sItemType::Spell)
+                    slot = {};
+            }
+        };
+
+        clearSpellItems(m_inventorySlots);
+        clearSpellItems(m_spellSlots);
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
     bool cInventory::UseItem(size_t _usableSlot)
     {
         if (_usableSlot >= m_usableSlots.size())
