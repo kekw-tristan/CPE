@@ -16,9 +16,10 @@ namespace Gameplay
 
         struct sBossDefinition
         {
-            World::sBossId::Enum id = World::sBossId::Undefined;
-            World::sBiomeType::Enum biome = World::sBiomeType::Forest;
-            World::sEnemyType::Enum enemyType = World::sEnemyType::Undefined;
+            World::sBossId::Enum    id          = World::sBossId::Undefined;
+            World::sBiomeType::Enum biome       = World::sBiomeType::Forest;
+            World::sEnemyType::Enum enemyType   = World::sEnemyType::Undefined;
+
             sSpellId::Enum spellReward = sSpellId::Undefined;
         };
 

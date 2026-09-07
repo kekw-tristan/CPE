@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <span>
 #include <vector>
 
 namespace Gameplay
@@ -101,6 +102,7 @@ namespace Gameplay
 
             void ApplyDamage(sEnemyHandle _handle, float _damage);
             bool ApplyDamageAt(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage);
+            sEnemyHandle ApplyDamageAtIgnoring(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage, std::span<const sEnemyHandle> _rIgnoredHandles);
             bool ApplyDamageInRadius(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage);
             const sEnemy* TryGetEnemy(sEnemyHandle _handle) const;
             float FindAimDistance(const Engine::Math::cVec3f& _rOrigin, const Engine::Math::cVec3f& _rDirection, float _maximumDistance) const;

@@ -304,6 +304,17 @@ namespace Gameplay
 
     bool cEnemyManager::ApplyDamageAt(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage)
     {
+        return ApplyDamageAtIgnoring(_rPosition, _radius, _damage, {}).IsValid();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    sEnemyHandle cEnemyManager::ApplyDamageAtIgnoring(
+        const Engine::Math::cVec3f& _rPosition,
+        float _radius,
+        float _damage,
+        std::span<const sEnemyHandle> _rIgnoredHandles)
+    {
         for (uint32_t slotIndex : m_activeSlots)
         {
             sEnemySlot& slot = m_slots[slotIndex];
@@ -313,12 +324,16 @@ namespace Gameplay
         
             if (!SphereIntersectsEnemyCapsule(_rPosition, _radius, slot.enemy))
                 continue;
+
+            const bool wasAlreadyHit = std::find(_rIgnoredHandles.begin(), _rIgnoredHandles.end(), slot.enemy.handle) != _rIgnoredHandles.end();
+            if (wasAlreadyHit)
+                continue;
         
             ApplyDamage(slot.enemy.handle, _damage);
-            return true;
+            return slot.enemy.handle;
         }
     
-        return false;
+        return {};
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

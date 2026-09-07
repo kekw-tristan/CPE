@@ -86,7 +86,11 @@ void cGame::OnInit()
 void cGame::OnUpdate(float _deltaTime)
 {
     UpdateInventoryInput();
-    m_runState.Update(_deltaTime);
+
+    const bool augmentSelectionPending = m_runState.HasPendingAugmentSelection();
+
+    if (!augmentSelectionPending)
+        m_runState.Update(_deltaTime);
 
     constexpr int c_leftAltKey = 342;
     constexpr int c_rightAltKey = 346;
@@ -95,13 +99,13 @@ void cGame::OnUpdate(float _deltaTime)
     if (altDown && !m_altWasDown)
     {
         m_mouseReleased = !m_mouseReleased;
-        Engine::Platform::SetMouseCaptured(!m_inventoryOpen && !m_mouseReleased);
+        Engine::Platform::SetMouseCaptured(!m_inventoryOpen && !m_mouseReleased && !augmentSelectionPending);
     }
     m_altWasDown = altDown;
 
     //UpdateFreeCam(_deltaTime);
 
-    if (!m_inventoryOpen)
+    if (!m_inventoryOpen && !augmentSelectionPending)
     {
         UpdatePlayer();
 
@@ -110,38 +114,47 @@ void cGame::OnUpdate(float _deltaTime)
         UpdatePlayerSpell(_deltaTime);
     }
 
-    if (World::WorldGenerator::Update(m_playerController.GetPosition()))
-        RefreshWorldRenderInstances();
-    
-
-    Gameplay::sEnemyUpdateContext enemyContext{};
-    enemyContext.deltaTime      = _deltaTime;
-    enemyContext.playerPosition = m_playerController.GetPosition();
-
-    m_enemyManager.Update(enemyContext, m_projectileManager);
-    m_projectileManager.Update(_deltaTime, enemyContext.playerPosition, m_enemyManager);
-
-    for (const Gameplay::sEnemyDeathEvent& deathEvent : m_enemyManager.GetDeathEvents())
+    if (!augmentSelectionPending)
     {
-        if (!deathEvent.isBoss || deathEvent.bossId == World::sBossId::Undefined)
-            continue;
+        if (World::WorldGenerator::Update(m_playerController.GetPosition()))
+            RefreshWorldRenderInstances();
 
-        const Gameplay::SpellManager::sBossDefinition& boss = Gameplay::SpellManager::GetBoss(deathEvent.bossId);
 
-        if (!m_runState.GrantSpell(boss.spellReward))
-            continue;
+        Gameplay::sEnemyUpdateContext enemyContext{};
+        enemyContext.deltaTime      = _deltaTime;
+        enemyContext.playerPosition = m_playerController.GetPosition();
 
-        const Gameplay::sSpellDefinition& spell = Gameplay::SpellManager::GetSpell(boss.spellReward);
-        m_inventory.AddItem(spell.inventoryItem);
-    }
+        m_enemyManager.Update(enemyContext, m_projectileManager);
+        m_projectileManager.Update(_deltaTime, enemyContext.playerPosition, m_enemyManager);
 
-    m_enemyManager.ClearDeathEvents();
+        for (const Gameplay::sEnemyDeathEvent& deathEvent : m_enemyManager.GetDeathEvents())
+        {
+            const uint32_t experience = deathEvent.isBoss ? c_bossExperience : c_regularEnemyExperience;
+            ApplyLevelUpRewards(m_runState.GrantExperience(experience));
 
-    const float receivedDamage = m_enemyManager.ConsumePlayerDamage() + m_projectileManager.ConsumePlayerDamage();
-    if (receivedDamage > 0.0f)
-    {
-        m_playerHealth = std::max(0.0f, m_playerHealth - receivedDamage);
-        std::cout << "Player health: " << m_playerHealth << '\n';
+            if (!deathEvent.isBoss || deathEvent.bossId == World::sBossId::Undefined)
+                continue;
+
+            const Gameplay::SpellManager::sBossDefinition& boss = Gameplay::SpellManager::GetBoss(deathEvent.bossId);
+
+            if (!m_runState.GrantSpell(boss.spellReward))
+                continue;
+
+            const Gameplay::sSpellDefinition& spell = Gameplay::SpellManager::GetSpell(boss.spellReward);
+            m_inventory.AddItem(spell.inventoryItem);
+        }
+
+        m_enemyManager.ClearDeathEvents();
+
+        const float receivedDamage = m_enemyManager.ConsumePlayerDamage() + m_projectileManager.ConsumePlayerDamage();
+        if (receivedDamage > 0.0f)
+        {
+            m_playerHealth = std::max(0.0f, m_playerHealth - receivedDamage);
+            std::cout << "Player health: " << m_playerHealth << '\n';
+        }
+
+        if (m_runState.HasPendingAugmentSelection())
+            Engine::Platform::SetMouseCaptured(false);
     }
 
     UpdatePlayerRenderInstances();
@@ -180,9 +193,24 @@ void cGame::OnDrawUI()
 {
     UI::sHudState hudState;
 
-    hudState.health                = m_playerHealth;
-    hudState.maxHealth             = c_playerMaxHealth;
-    hudState.inventory.visible     = m_inventoryOpen;
+    hudState.health                                 = m_playerHealth;
+    hudState.maxHealth                              = m_playerMaxHealth;
+    hudState.mana                                   = m_playerMana;
+    hudState.maxMana                                = m_playerMaxMana;
+    hudState.xp                                     = m_runState.GetExperience();
+    hudState.xpToNextLevel                          = m_runState.GetExperienceToNextLevel();
+    hudState.level                                  = m_runState.GetLevel();
+    hudState.inventory.visible                      = m_inventoryOpen;
+    hudState.augmentSelection.visible               = m_runState.HasPendingAugmentSelection();
+    hudState.augmentSelection.selectionsRemaining   = m_runState.GetPendingAugmentSelections();
+
+    const auto& augmentChoices = m_runState.GetAugmentChoices();
+    for (size_t choiceIndex = 0; choiceIndex < augmentChoices.size(); ++choiceIndex)
+    {
+        const Gameplay::sSpellAugment::Enum augment = augmentChoices[choiceIndex];
+        hudState.augmentSelection.choices[choiceIndex] = augment;
+        hudState.augmentSelection.stackCounts[choiceIndex] = m_runState.GetAugmentCount(augment);
+    }
 
     for (size_t slotIndex = 0; slotIndex < hudState.spellCooldowns.size(); ++slotIndex)
     {
@@ -253,6 +281,10 @@ void cGame::OnDrawUI()
     }
 
     m_hud.Draw(hudState);
+
+    Gameplay::sSpellAugment::Enum selectedAugment = Gameplay::sSpellAugment::Undefined;
+    if (m_hud.ConsumeAugmentSelection(selectedAugment) && m_runState.SelectAugment(selectedAugment))
+        Engine::Platform::SetMouseCaptured(!m_inventoryOpen && !m_mouseReleased && !m_runState.HasPendingAugmentSelection());
 
     UI::eInventoryAction inventoryAction = UI::eInventoryAction::MoveItem;
     size_t sourceInventorySlot = 0;
@@ -420,6 +452,7 @@ void cGame::InitNightSky()
     // An inward-facing cube follows the camera in the shader; the application owns its GPU mesh.
     sMeshData skyMesh = ShapeMeshLibrary::GetMeshData(sMeshTypes::Cube);
     skyMesh.pDebugName = "Geometric night sky";
+
     for (size_t i = 0; i < skyMesh.indices.size(); i += 3)
         std::swap(skyMesh.indices[i + 1], skyMesh.indices[i + 2]);
 
@@ -1029,6 +1062,7 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
         projectile.lifetime = spellStats.duration;
         projectile.radius = spellStats.projectileRadius;
         projectile.isAreaOfEffect = spellDefinition.castType == Gameplay::sSpellCastType::SporeProjectile;
+        projectile.pierces = spellStats.pierceCount;
 
         switch (spellDefinition.castType)
         {
@@ -1056,6 +1090,10 @@ void cGame::BeginRun()
 {
     m_runState.Begin();
     m_inventory.ClearSpells();
+    m_playerMaxHealth = c_playerBaseMaxHealth;
+    m_playerHealth = m_playerMaxHealth;
+    m_playerMaxMana = c_playerBaseMaxMana;
+    m_playerMana = m_playerMaxMana;
 
     if (!m_runState.GrantSpell(Gameplay::sSpellId::Fireball))
         return;
@@ -1091,6 +1129,22 @@ void cGame::BeginRun()
     }
 
     SyncSpellLoadoutFromInventory();
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::ApplyLevelUpRewards(uint32_t _levelUps)
+{
+    if (_levelUps == 0)
+        return;
+
+    const float healthBonus = c_levelUpHealthBonus * static_cast<float>(_levelUps);
+    const float manaBonus = c_levelUpManaBonus * static_cast<float>(_levelUps);
+
+    m_playerMaxHealth += healthBonus;
+    m_playerHealth = std::min(m_playerMaxHealth, m_playerHealth + healthBonus);
+    m_playerMaxMana += manaBonus;
+    m_playerMana = std::min(m_playerMaxMana, m_playerMana + manaBonus);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

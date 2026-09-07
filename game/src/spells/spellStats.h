@@ -10,6 +10,7 @@ namespace Gameplay
         float duration          = 2.5f;
         float projectileRadius  = 0.8f;
         int   projectileCount   = 1;
+        int   pierceCount       = 0;
     };
 }
 

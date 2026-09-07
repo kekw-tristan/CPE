@@ -10,8 +10,9 @@ namespace Gameplay
     {
         enum Enum
         {
-            ExtraProjectile, 
-            ExtraDamage,
+            Multishot,
+            Pierce,
+            DamageBonus,
             ExtraArea,
             ExtraDuration,
             LowerCooldown,

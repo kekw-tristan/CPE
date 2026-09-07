@@ -1,14 +1,14 @@
 #pragma once
 
+#include "enemyManager.h"
 #include "math/vector3.h"
 
+#include <array>
 #include <cstdint>
 #include <vector>
 
 namespace Gameplay
 {
-    class cEnemyManager;
-
     enum class eProjectileType
     {
         EnemyCone,
@@ -20,6 +20,8 @@ namespace Gameplay
 
     struct sProjectile
     {
+        static constexpr size_t c_maxHitEnemies = 5;
+
         uint64_t id = 0;
         Engine::Math::cVec3f position;
         Engine::Math::cVec3f direction;
@@ -28,6 +30,9 @@ namespace Gameplay
         float lifetime       = 0.0f;
         float radius         = 0.8f;
         bool isAreaOfEffect  = false;
+        int piercesRemaining = 0;
+        std::array<sEnemyHandle, c_maxHitEnemies> hitEnemies{};
+        uint8_t hitEnemyCount = 0;
         eProjectileType type = eProjectileType::EnemyCone;
     };
 
@@ -40,6 +45,7 @@ namespace Gameplay
         float lifetime = 0.0f;
         float radius = 0.8f;
         bool isAreaOfEffect = false;
+        int pierces = 0;
     };
 
     class cProjectileManager

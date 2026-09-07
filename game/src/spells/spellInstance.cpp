@@ -114,6 +114,7 @@ namespace Gameplay
             m_stats.duration            += modifier.duration         * multiplier;
             m_stats.projectileRadius    += modifier.projectileRadius * multiplier;
             m_stats.projectileCount     += modifier.projectileCount  * static_cast<int>(count);
+            m_stats.pierceCount         += modifier.pierceCount      * static_cast<int>(count);
         }
 
         m_stats.cooldown         = std::max(0.05f, m_stats.cooldown);
@@ -121,6 +122,7 @@ namespace Gameplay
         m_stats.duration         = std::max(0.0f, m_stats.duration);
         m_stats.projectileRadius = std::max(0.0f, m_stats.projectileRadius);
         m_stats.projectileCount  = std::max(1, m_stats.projectileCount);
+        m_stats.pierceCount      = std::max(0, m_stats.pierceCount);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

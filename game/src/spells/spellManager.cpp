@@ -42,8 +42,9 @@ namespace Gameplay
 
         constexpr std::array<sSpellAugmentDefinition, sSpellAugment::NumberOfElements> c_augments =
         {
-            sSpellAugmentDefinition{ sSpellAugment::ExtraProjectile,    "Extra Projectile", 4, { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1 } },
-            sSpellAugmentDefinition{ sSpellAugment::ExtraDamage,        "Extra Damage",     5, { 8.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0 } },
+            sSpellAugmentDefinition{ sSpellAugment::Multishot,          "Multishot",        4, { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0 } },
+            sSpellAugmentDefinition{ sSpellAugment::Pierce,             "Pierce",           4, { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0, 1 } },
+            sSpellAugmentDefinition{ sSpellAugment::DamageBonus,        "Damage Bonus",     5, { 8.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0, 0 } },
             sSpellAugmentDefinition{ sSpellAugment::ExtraArea,          "Extra Area",       4, { 0.0f, 0.0f, 0.0f, 0.0f, 0.2f, 0 } },
             sSpellAugmentDefinition{ sSpellAugment::ExtraDuration,      "Extra Duration",   4, { 0.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0 } },
             sSpellAugmentDefinition{ sSpellAugment::LowerCooldown,      "Lower Cooldown",   4, { 0.0f, -0.12f, 0.0f, 0.0f, 0.0f, 0 } }

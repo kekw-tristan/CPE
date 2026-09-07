@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../item/item.h"
+#include "../spells/spellAugment.h"
 
 #include <array>
 #include <cstdint>
@@ -49,6 +50,17 @@ namespace UI
         std::array<sInventorySlotHudState, c_numberOfSpellSlots>                    spellSlots{};
     };
 
+    struct sAugmentHudState
+    {
+        static constexpr size_t c_numberOfChoices = 3;
+
+        bool visible = false;
+        uint32_t selectionsRemaining = 0;
+
+        std::array<Gameplay::sSpellAugment::Enum, c_numberOfChoices> choices{};
+        std::array<uint8_t, c_numberOfChoices> stackCounts{};
+    };
+
     struct sHudState
     {
         std::array<sDungeonHudState, 4> dungeons{};
@@ -68,41 +80,44 @@ namespace UI
         unsigned int level          = 1;
 
         sInventoryHudState inventory{};
+        sAugmentHudState augmentSelection{};
     };
 
     class cGameHud
     {
-    public:
+        public:
 
-        void Draw(const sHudState& _rState);
+            void Draw(const sHudState& _rState);
 
-        bool ConsumeInventoryAction(
-            eInventoryAction& _rAction,
-            size_t& _rSourceSlot,
-            size_t& _rDestinationSlot);
+            bool ConsumeInventoryAction(
+                eInventoryAction& _rAction,
+                size_t& _rSourceSlot,
+                size_t& _rDestinationSlot);
+            bool ConsumeAugmentSelection(Gameplay::sSpellAugment::Enum& _rAugment);
 
 
-    private:
+        private:
 
-        enum class eInventoryDropTarget
-        {
-            Inventory,
-            Armor,
-            Usable,
-            Spell
-        };
+            enum class eInventoryDropTarget
+            {
+                Inventory,
+                Armor,
+                Usable,
+                Spell
+            };
 
-        void DrawInventory(const sInventoryHudState& _rState);
-        void AcceptInventorySlotDrop(
-            const sInventoryHudState& _rState,
-            eInventoryDropTarget _target,
-            size_t _destinationSlot);
+            void DrawInventory(const sInventoryHudState& _rState);
+            void DrawAugmentSelection(const sAugmentHudState& _rState);
+            void AcceptInventorySlotDrop(const sInventoryHudState& _rState, eInventoryDropTarget _target, size_t _destinationSlot);
 
-    private:
+        private:
 
-        bool                m_hasInventoryAction = false;
-        eInventoryAction    m_inventoryAction    = eInventoryAction::MoveItem;
-        size_t              m_sourceInventorySlot = 0;
-        size_t              m_destinationInventorySlot = 0;
+            bool                m_hasInventoryAction            = false;
+            eInventoryAction    m_inventoryAction               = eInventoryAction::MoveItem;
+            size_t              m_sourceInventorySlot           = 0;
+            size_t              m_destinationInventorySlot      = 0;
+            bool                m_hasAugmentSelection           = false;
+
+            Gameplay::sSpellAugment::Enum m_augmentSelection = Gameplay::sSpellAugment::Undefined;
     };
 }

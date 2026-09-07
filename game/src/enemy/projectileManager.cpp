@@ -57,6 +57,7 @@ namespace Gameplay
         projectile.lifetime  = _rDesc.lifetime;
         projectile.radius    = _rDesc.radius;
         projectile.isAreaOfEffect = _rDesc.isAreaOfEffect;
+        projectile.piercesRemaining = std::max(0, _rDesc.pierces);
         projectile.type      = _type;
 
         m_projectiles.push_back(projectile);
@@ -82,12 +83,26 @@ namespace Gameplay
 
             if (isPlayerProjectile)
             {
-                const bool hitEnemy = projectile.isAreaOfEffect
-                    ? _rEnemyManager.ApplyDamageInRadius(projectile.position, projectile.radius, projectile.damage)
-                    : _rEnemyManager.ApplyDamageAt(projectile.position, projectile.radius, projectile.damage);
+                if (projectile.isAreaOfEffect)
+                {
+                    if (_rEnemyManager.ApplyDamageInRadius(projectile.position, projectile.radius, projectile.damage))
+                        projectile.lifetime = 0.0f;
+                }
+                else
+                {
+                    const std::span<const sEnemyHandle> hitEnemies(projectile.hitEnemies.data(), projectile.hitEnemyCount);
+                    const sEnemyHandle hitEnemy = _rEnemyManager.ApplyDamageAtIgnoring(projectile.position, projectile.radius, projectile.damage, hitEnemies);
 
-                if (hitEnemy)
-                    projectile.lifetime = 0.0f;
+                    if (hitEnemy.IsValid())
+                    {
+                        projectile.hitEnemies[projectile.hitEnemyCount++] = hitEnemy;
+
+                        if (projectile.piercesRemaining == 0)
+                            projectile.lifetime = 0.0f;
+                        else
+                            --projectile.piercesRemaining;
+                    }
+                }
             }
             else
             {

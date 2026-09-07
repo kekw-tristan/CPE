@@ -33,6 +33,7 @@
 
 #include <unordered_map>
 #include <array>
+#include <cstdint>
 #include <vector>
 #include <map>
 #include <tuple>
@@ -133,6 +134,7 @@ class cGame : public cApplication
         void UpdatePlayerSpell(float _deltaTime);
         void UpdateInventoryInput();
         void BeginRun();
+        void ApplyLevelUpRewards(uint32_t _levelUps);
         void SyncSpellLoadoutFromInventory();
         void UpdatePlayerRenderInstances();
         void UpdateEnemyRenderInstances(float _deltaTime);
@@ -211,11 +213,19 @@ class cGame : public cApplication
         std::vector<GFX::sHealthBarData> m_healthBars;
         std::vector<sProjectileVisual> m_projectileVisuals;
 
-        static constexpr float c_playerMaxHealth     = 100.0f;
+        static constexpr float c_playerBaseMaxHealth     = 100.0f;
+        static constexpr float c_playerBaseMaxMana       = 100.0f;
+        static constexpr float c_levelUpHealthBonus      = 10.0f;
+        static constexpr float c_levelUpManaBonus        = 10.0f;
+        static constexpr uint32_t c_regularEnemyExperience = 25;
+        static constexpr uint32_t c_bossExperience       = 100;
 
         UI::cGameHud m_hud;
 
-        float m_playerHealth        = c_playerMaxHealth;
+        float m_playerMaxHealth     = c_playerBaseMaxHealth;
+        float m_playerHealth        = c_playerBaseMaxHealth;
+        float m_playerMaxMana       = c_playerBaseMaxMana;
+        float m_playerMana          = c_playerBaseMaxMana;
         float m_playerAttackTime    = 0.0f;
         std::array<bool, 4> m_spellKeysWasDown{};
 

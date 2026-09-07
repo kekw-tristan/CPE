@@ -1,6 +1,7 @@
 #include "gameHud.h"
 
 #include "../item/itemDatabase.h"
+#include "../spells/spellManager.h"
 
 #include <imgui.h>
 
@@ -229,6 +230,35 @@ namespace UI
 
             const float progress = GetFraction(static_cast<float>(_rState.xp), static_cast<float>(_rState.xpToNextLevel));
             DrawBar(_rDrawList, _rPosition, ImVec2(c_hudWidth * _scale, c_xpHeight * _scale), progress, IM_COL32(194, 159, 72, 255), _scale, label, eBarDirection::Horizontal);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        const char* GetAugmentDescription(Gameplay::sSpellAugment::Enum _augment)
+        {
+            switch (_augment)
+            {
+                case Gameplay::sSpellAugment::Multishot:
+                    return "+1 Projektil pro Zauber";
+
+                case Gameplay::sSpellAugment::Pierce:
+                    return "+1 durchdrungenes Ziel";
+
+                case Gameplay::sSpellAugment::DamageBonus:
+                    return "+8 Schaden";
+
+                case Gameplay::sSpellAugment::ExtraArea:
+                    return "+0.2 Projektilradius";
+
+                case Gameplay::sSpellAugment::ExtraDuration:
+                    return "+0.5 Sekunden Dauer";
+
+                case Gameplay::sSpellAugment::LowerCooldown:
+                    return "-0.12 Sekunden Cooldown";
+
+                default:
+                    return "";
+            }
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -640,6 +670,7 @@ namespace UI
 
         DrawExperienceBar(*pDrawList, ImVec2(left, top + c_xpOffset * scale), scale, _rState);
         DrawInventory(_rState.inventory);
+        DrawAugmentSelection(_rState.augmentSelection);
     }
 
     // ---------------------------------------------------------------------------------------------------------------------
@@ -1039,6 +1070,109 @@ namespace UI
         m_hasInventoryAction = false;
 
         return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cGameHud::ConsumeAugmentSelection(Gameplay::sSpellAugment::Enum& _rAugment)
+    {
+        if (!m_hasAugmentSelection)
+            return false;
+
+        _rAugment = m_augmentSelection;
+        m_hasAugmentSelection = false;
+        m_augmentSelection = Gameplay::sSpellAugment::Undefined;
+
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    void cGameHud::DrawAugmentSelection(const sAugmentHudState& _rState)
+    {
+        if (!_rState.visible)
+            return;
+
+        const ImGuiViewport* pViewport = ImGui::GetMainViewport();
+        if (pViewport == nullptr)
+            return;
+
+        const float scale = std::clamp(std::min(pViewport->Size.x / c_referenceWidth, pViewport->Size.y / c_referenceHeight), 0.7f, 1.1f);
+        const ImVec2 windowSize(900.0f * scale, 360.0f * scale);
+
+        ImGui::SetNextWindowPos(
+            ImVec2(pViewport->Pos.x + pViewport->Size.x * 0.5f, pViewport->Pos.y + pViewport->Size.y * 0.5f),
+            ImGuiCond_Always,
+            ImVec2(0.5f, 0.5f));
+        ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 14.0f * scale);
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 10.0f * scale);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 7.0f * scale);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(30.0f * scale, 24.0f * scale));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12.0f * scale, 10.0f * scale));
+
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(12, 16, 29, 250));
+        ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(116, 92, 190, 210));
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(25, 27, 50, 255));
+        ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(67, 54, 119, 255));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(93, 76, 157, 255));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(122, 99, 195, 255));
+
+        const ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings;
+        if (!ImGui::Begin("AugmentSelection", nullptr, windowFlags))
+        {
+            ImGui::End();
+            ImGui::PopStyleColor(6);
+            ImGui::PopStyleVar(5);
+            return;
+        }
+
+        ImGui::SetCursorPosX((windowSize.x - ImGui::CalcTextSize("LEVEL UP").x) * 0.5f);
+        ImGui::TextColored(ImVec4(0.89f, 0.80f, 1.00f, 1.00f), "LEVEL UP");
+        ImGui::SetCursorPosX((windowSize.x - ImGui::CalcTextSize("Waehle eine Augmentierung fuer alle Zauber.").x) * 0.5f);
+        ImGui::TextDisabled("Waehle eine Augmentierung fuer alle Zauber.");
+        if (_rState.selectionsRemaining > 1)
+            ImGui::TextColored(ImVec4(0.93f, 0.79f, 0.44f, 1.00f), "%u weitere Auswahlen offen", _rState.selectionsRemaining - 1);
+
+        ImGui::Spacing();
+        const float cardSpacing = 12.0f * scale;
+        const float cardWidth = (ImGui::GetContentRegionAvail().x - cardSpacing * 2.0f) / 3.0f;
+        const ImVec2 cardSize(cardWidth, 210.0f * scale);
+
+        for (size_t choiceIndex = 0; choiceIndex < _rState.choices.size(); ++choiceIndex)
+        {
+            const Gameplay::sSpellAugment::Enum augment = _rState.choices[choiceIndex];
+            if (augment == Gameplay::sSpellAugment::Undefined)
+                continue;
+
+            const Gameplay::sSpellAugmentDefinition& definition = Gameplay::SpellManager::GetAugment(augment);
+            const uint8_t stackCount = _rState.stackCounts[choiceIndex];
+
+            ImGui::PushID(static_cast<int>(choiceIndex));
+            ImGui::BeginChild("AugmentCard", cardSize, true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+            ImGui::TextColored(ImVec4(0.86f, 0.79f, 1.00f, 1.00f), "%s", definition.pName);
+            ImGui::Separator();
+            ImGui::Spacing();
+            ImGui::TextWrapped("%s", GetAugmentDescription(augment));
+            ImGui::SetCursorPosY(cardSize.y - 68.0f * scale);
+            ImGui::TextDisabled("Stack %u / %u", stackCount, definition.maxStacks);
+
+            if (ImGui::Button("Auswaehlen", ImVec2(-1.0f, 32.0f * scale)))
+            {
+                m_augmentSelection = augment;
+                m_hasAugmentSelection = true;
+            }
+            ImGui::EndChild();
+            ImGui::PopID();
+
+            if (choiceIndex + 1 < _rState.choices.size())
+                ImGui::SameLine(0.0f, cardSpacing);
+        }
+
+        ImGui::End();
+        ImGui::PopStyleColor(6);
+        ImGui::PopStyleVar(5);
     }
 
     // ---------------------------------------------------------------------------------------------------------------------
