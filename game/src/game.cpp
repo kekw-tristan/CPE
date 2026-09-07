@@ -90,7 +90,7 @@ void cGame::OnUpdate(float _deltaTime)
     if (altDown && !m_altWasDown)
     {
         m_mouseReleased = !m_mouseReleased;
-        Engine::Platform::SetMouseCaptured(!m_mouseReleased);
+        Engine::Platform::SetMouseCaptured(!m_inventoryOpen && !m_mouseReleased);
     }
     m_altWasDown = altDown;
 
@@ -206,7 +206,63 @@ void cGame::OnDrawUI()
         hudState.inventory.usableSlots[i].amount = usableSlots[i].amount;
     }
 
+    const auto& spellSlots = m_inventory.GetSpellSlots();
+
+    for (size_t i = 0; i < spellSlots.size(); ++i)
+    {
+        hudState.inventory.spellSlots[i].item = spellSlots[i].item;
+        hudState.inventory.spellSlots[i].amount = spellSlots[i].amount;
+    }
+
+    const auto& armorSlots = m_inventory.GetArmorSlots();
+
+    for (size_t i = 0; i < armorSlots.size(); ++i)
+    {
+        hudState.inventory.armorSlots[i].item = armorSlots[i].item;
+        hudState.inventory.armorSlots[i].amount = armorSlots[i].amount;
+    }
+
     m_hud.Draw(hudState);
+
+    UI::eInventoryAction inventoryAction = UI::eInventoryAction::MoveItem;
+    size_t sourceInventorySlot = 0;
+    size_t destinationInventorySlot = 0;
+
+    if (m_hud.ConsumeInventoryAction(inventoryAction, sourceInventorySlot, destinationInventorySlot))
+    {
+        switch (inventoryAction)
+        {
+            case UI::eInventoryAction::MoveItem:
+                m_inventory.MoveItem(sourceInventorySlot, destinationInventorySlot);
+                break;
+
+            case UI::eInventoryAction::EquipArmor:
+                m_inventory.EquipArmor(sourceInventorySlot);
+                break;
+
+            case UI::eInventoryAction::EquipUsable:
+                m_inventory.EquipUsable(sourceInventorySlot, destinationInventorySlot);
+                break;
+
+            case UI::eInventoryAction::EquipSpell:
+                m_inventory.EquipSpell(sourceInventorySlot, destinationInventorySlot);
+                break;
+
+            case UI::eInventoryAction::UnequipArmor:
+                m_inventory.UnequipArmor(
+                    static_cast<Gameplay::sArmorSlot::Enum>(sourceInventorySlot),
+                    destinationInventorySlot);
+                break;
+
+            case UI::eInventoryAction::UnequipUsable:
+                m_inventory.UnequipUsable(sourceInventorySlot, destinationInventorySlot);
+                break;
+
+            case UI::eInventoryAction::UnequipSpell:
+                m_inventory.UnequipSpell(sourceInventorySlot, destinationInventorySlot);
+                break;
+        }
+    }
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -894,16 +950,26 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
 
 void cGame::UpdateInventoryInput()
 {
-    const bool inventoryKeyDown = Engine::Platform::IsKeyDown('I');
+    constexpr int c_escapeKey = 256;
 
-    if (inventoryKeyDown && !m_inventoryKeyWasDown)
+    const bool inventoryKeyDown = Engine::Platform::IsKeyDown('I');
+    const bool escapeKeyDown = Engine::Platform::IsKeyDown(c_escapeKey);
+
+    if (escapeKeyDown && !m_escapeKeyWasDown && m_inventoryOpen)
+    {
+        m_inventoryOpen = false;
+
+        Engine::Platform::SetMouseCaptured(!m_mouseReleased);
+    }
+    else if (inventoryKeyDown && !m_inventoryKeyWasDown)
     {
         m_inventoryOpen = !m_inventoryOpen;
 
-        Engine::Platform::SetMouseCaptured(!m_inventoryOpen);
+        Engine::Platform::SetMouseCaptured(!m_inventoryOpen && !m_mouseReleased);
     }
 
     m_inventoryKeyWasDown = inventoryKeyDown;
+    m_escapeKeyWasDown = escapeKeyDown;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

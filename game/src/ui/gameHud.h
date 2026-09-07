@@ -7,6 +7,17 @@
 
 namespace UI
 {
+    enum class eInventoryAction
+    {
+        MoveItem,
+        EquipArmor,
+        EquipUsable,
+        EquipSpell,
+        UnequipArmor,
+        UnequipUsable,
+        UnequipSpell
+    };
+
     struct sDungeonHudState
     {
         bool  defeated       = false;
@@ -61,11 +72,35 @@ namespace UI
     {
     public:
 
-        void Draw(const sHudState& _rState) const;
+        void Draw(const sHudState& _rState);
+
+        bool ConsumeInventoryAction(
+            eInventoryAction& _rAction,
+            size_t& _rSourceSlot,
+            size_t& _rDestinationSlot);
 
 
     private:
 
-        void DrawInventory(const sInventoryHudState& _rState) const;
+        enum class eInventoryDropTarget
+        {
+            Inventory,
+            Armor,
+            Usable,
+            Spell
+        };
+
+        void DrawInventory(const sInventoryHudState& _rState);
+        void AcceptInventorySlotDrop(
+            const sInventoryHudState& _rState,
+            eInventoryDropTarget _target,
+            size_t _destinationSlot);
+
+    private:
+
+        bool                m_hasInventoryAction = false;
+        eInventoryAction    m_inventoryAction    = eInventoryAction::MoveItem;
+        size_t              m_sourceInventorySlot = 0;
+        size_t              m_destinationInventorySlot = 0;
     };
 }

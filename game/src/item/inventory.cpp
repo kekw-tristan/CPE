@@ -6,6 +6,31 @@
 
 namespace Gameplay
 {
+    namespace
+    {
+        bool CanStoreItem(
+            const cInventory::InventorySlots& _rSlots,
+            sItemId::Enum _item,
+            uint32_t _maxStack,
+            uint32_t _amount)
+        {
+            uint64_t availableCapacity = 0;
+
+            for (const sItemStack& slot : _rSlots)
+            {
+                if (slot.item == _item && slot.amount < _maxStack)
+                    availableCapacity += _maxStack - slot.amount;
+                else if (slot.IsEmpty())
+                    availableCapacity += _maxStack;
+
+                if (availableCapacity >= _amount)
+                    return true;
+            }
+
+            return false;
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------------------------------
 
     bool cInventory::AddItem(sItemId::Enum _item, uint32_t _amount)
@@ -15,6 +40,9 @@ namespace Gameplay
 
         const sItemDefinition& definition = GetItemDefinition(_item);
         const uint32_t maxStack = std::max(1u, definition.maxStack);
+
+        if (!CanStoreItem(m_inventorySlots, _item, maxStack, _amount))
+            return false;
 
         // Fill existing stacks first.
         for (sItemStack& slot : m_inventorySlots)
@@ -49,7 +77,7 @@ namespace Gameplay
                 return true;
         }
 
-        return false;
+        return true;
     }
 
     // ---------------------------------------------------------------------------------------------------------------------
@@ -62,24 +90,38 @@ namespace Gameplay
         if (!HasItem(_item, _amount))
             return false;
 
-        for (sItemStack& slot : m_inventorySlots)
+        auto removeFromSlots = [&_item, &_amount](auto& _rSlots)
         {
-            if (slot.item != _item)
-                continue;
+            for (sItemStack& slot : _rSlots)
+            {
+                if (slot.item != _item)
+                    continue;
 
-            const uint32_t amountToRemove = std::min(slot.amount, _amount);
+                const uint32_t amountToRemove = std::min(slot.amount, _amount);
 
-            slot.amount -= amountToRemove;
-            _amount -= amountToRemove;
+                slot.amount -= amountToRemove;
+                _amount -= amountToRemove;
 
-            if (slot.amount == 0)
-                slot = {};
+                if (slot.amount == 0)
+                    slot = {};
 
-            if (_amount == 0)
-                return true;
-        }
+                if (_amount == 0)
+                    return;
+            }
+        };
 
-        return true;
+        removeFromSlots(m_inventorySlots);
+
+        if (_amount > 0)
+            removeFromSlots(m_usableSlots);
+
+        if (_amount > 0)
+            removeFromSlots(m_spellSlots);
+
+        if (_amount > 0)
+            removeFromSlots(m_armorSlots);
+
+        return _amount == 0;
     }
 
     // ---------------------------------------------------------------------------------------------------------------------
@@ -172,9 +214,9 @@ namespace Gameplay
 
     // ---------------------------------------------------------------------------------------------------------------------
 
-    bool cInventory::UnequipArmor(sArmorSlot::Enum _armorSlot)
+    bool cInventory::UnequipArmor(sArmorSlot::Enum _armorSlot, size_t _inventorySlot)
     {
-        if (_armorSlot == sArmorSlot::Undefined)
+        if (_armorSlot == sArmorSlot::Undefined || _inventorySlot >= m_inventorySlots.size())
             return false;
 
         const size_t armorSlotIndex = static_cast<size_t>(_armorSlot);
@@ -187,18 +229,15 @@ namespace Gameplay
         if (armorSlot.IsEmpty())
             return false;
 
-        for (sItemStack& inventorySlot : m_inventorySlots)
-        {
-            if (!inventorySlot.IsEmpty())
-                continue;
+        sItemStack& inventorySlot = m_inventorySlots[_inventorySlot];
 
-            inventorySlot = armorSlot;
-            armorSlot = {};
+        if (!inventorySlot.IsEmpty())
+            return false;
 
-            return true;
-        }
+        inventorySlot = armorSlot;
+        armorSlot = {};
 
-        return false;
+        return true;
     }
 
     // ---------------------------------------------------------------------------------------------------------------------
@@ -254,9 +293,9 @@ namespace Gameplay
 
     // ---------------------------------------------------------------------------------------------------------------------
 
-    bool cInventory::UnequipUsable(size_t _usableSlot)
+    bool cInventory::UnequipUsable(size_t _usableSlot, size_t _inventorySlot)
     {
-        if (_usableSlot >= m_usableSlots.size())
+        if (_usableSlot >= m_usableSlots.size() || _inventorySlot >= m_inventorySlots.size())
             return false;
 
         sItemStack& usableSlot = m_usableSlots[_usableSlot];
@@ -267,38 +306,120 @@ namespace Gameplay
         const sItemDefinition& definition = GetItemDefinition(usableSlot.item);
         const uint32_t maxStack = std::max(1u, definition.maxStack);
 
-        // First try to merge it back into an existing inventory stack.
-        for (sItemStack& inventorySlot : m_inventorySlots)
+        sItemStack& inventorySlot = m_inventorySlots[_inventorySlot];
+
+        if (inventorySlot.IsEmpty())
         {
-            if (inventorySlot.item != usableSlot.item || inventorySlot.amount >= maxStack)
-                continue;
-
-            const uint32_t available = maxStack - inventorySlot.amount;
-            const uint32_t amountToMove = std::min(usableSlot.amount, available);
-
-            inventorySlot.amount += amountToMove;
-            usableSlot.amount -= amountToMove;
-
-            if (usableSlot.amount == 0)
-            {
-                usableSlot = {};
-                return true;
-            }
-        }
-
-        // Otherwise move the remaining stack into an empty slot.
-        for (sItemStack& inventorySlot : m_inventorySlots)
-        {
-            if (!inventorySlot.IsEmpty())
-                continue;
-
             inventorySlot = usableSlot;
             usableSlot = {};
 
             return true;
         }
 
-        return false;
+        if (inventorySlot.item != usableSlot.item || inventorySlot.amount >= maxStack)
+            return false;
+
+        const uint32_t available = maxStack - inventorySlot.amount;
+        const uint32_t amountToMove = std::min(usableSlot.amount, available);
+
+        inventorySlot.amount += amountToMove;
+        usableSlot.amount -= amountToMove;
+
+        if (usableSlot.amount == 0)
+            usableSlot = {};
+
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::EquipSpell(size_t _inventorySlot, size_t _spellSlot)
+    {
+        if (_inventorySlot >= m_inventorySlots.size() || _spellSlot >= m_spellSlots.size())
+            return false;
+
+        sItemStack& inventorySlot = m_inventorySlots[_inventorySlot];
+
+        if (inventorySlot.IsEmpty())
+            return false;
+
+        const sItemDefinition& definition = GetItemDefinition(inventorySlot.item);
+
+        if (definition.type != sItemType::Spell)
+            return false;
+
+        sItemStack& spellSlot = m_spellSlots[_spellSlot];
+
+        if (spellSlot.IsEmpty())
+        {
+            spellSlot = inventorySlot;
+            inventorySlot = {};
+
+            return true;
+        }
+
+        if (spellSlot.item == inventorySlot.item)
+        {
+            const uint32_t maxStack = std::max(1u, definition.maxStack);
+
+            if (spellSlot.amount < maxStack)
+            {
+                const uint32_t available = maxStack - spellSlot.amount;
+                const uint32_t amountToMove = std::min(inventorySlot.amount, available);
+
+                spellSlot.amount += amountToMove;
+                inventorySlot.amount -= amountToMove;
+
+                if (inventorySlot.amount == 0)
+                    inventorySlot = {};
+
+                return true;
+            }
+        }
+
+        std::swap(spellSlot, inventorySlot);
+
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::UnequipSpell(size_t _spellSlot, size_t _inventorySlot)
+    {
+        if (_spellSlot >= m_spellSlots.size() || _inventorySlot >= m_inventorySlots.size())
+            return false;
+
+        sItemStack& spellSlot = m_spellSlots[_spellSlot];
+
+        if (spellSlot.IsEmpty())
+            return false;
+
+        const sItemDefinition& definition = GetItemDefinition(spellSlot.item);
+        const uint32_t maxStack = std::max(1u, definition.maxStack);
+
+        sItemStack& inventorySlot = m_inventorySlots[_inventorySlot];
+
+        if (inventorySlot.IsEmpty())
+        {
+            inventorySlot = spellSlot;
+            spellSlot = {};
+
+            return true;
+        }
+
+        if (inventorySlot.item != spellSlot.item || inventorySlot.amount >= maxStack)
+            return false;
+
+        const uint32_t available = maxStack - inventorySlot.amount;
+        const uint32_t amountToMove = std::min(spellSlot.amount, available);
+
+        inventorySlot.amount += amountToMove;
+        spellSlot.amount -= amountToMove;
+
+        if (spellSlot.amount == 0)
+            spellSlot = {};
+
+        return true;
     }
 
     // ---------------------------------------------------------------------------------------------------------------------
@@ -352,6 +473,12 @@ namespace Gameplay
         }
 
         for (const sItemStack& slot : m_usableSlots)
+        {
+            if (slot.item == _item)
+                count += slot.amount;
+        }
+
+        for (const sItemStack& slot : m_spellSlots)
         {
             if (slot.item == _item)
                 count += slot.amount;

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <cfloat>
+#include <cstring>
 #include <cstdio>
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -497,7 +498,7 @@ namespace UI
 
     // ---------------------------------------------------------------------------------------------------------------------
 
-    void cGameHud::Draw(const sHudState& _rState) const
+    void cGameHud::Draw(const sHudState& _rState)
     {
         const ImGuiViewport* pViewport = ImGui::GetMainViewport();
         if (pViewport == nullptr || pViewport->Size.x <= 0.0f || pViewport->Size.y <= 0.0f)
@@ -595,7 +596,7 @@ namespace UI
 
     // ---------------------------------------------------------------------------------------------------------------------
 
-    void cGameHud::DrawInventory(const sInventoryHudState& _rState) const
+    void cGameHud::DrawInventory(const sInventoryHudState& _rState)
     {
         if (!_rState.visible)
             return;
@@ -704,7 +705,18 @@ namespace UI
         {
             ImGui::PushID(static_cast<int>(3000 + slotIndex));
 
-            DrawInventorySlot("SpellSlot", _rState.spellSlots[slotIndex], spellSlotSize, scale, c_spellKeys[slotIndex], false);
+            const sInventorySlotHudState& slot = _rState.spellSlots[slotIndex];
+
+            DrawInventorySlot("SpellSlot", slot, spellSlotSize, scale, c_spellKeys[slotIndex], false);
+
+            if (slot.item != Gameplay::sItemId::Undefined && ImGui::BeginDragDropSource())
+            {
+                ImGui::SetDragDropPayload("SpellSlot", &slotIndex, sizeof(slotIndex));
+                ImGui::TextUnformatted(Gameplay::GetItemDefinition(slot.item).pName);
+                ImGui::EndDragDropSource();
+            }
+
+            AcceptInventorySlotDrop(_rState, eInventoryDropTarget::Spell, slotIndex);
 
             ImGui::PopID();
 
@@ -734,7 +746,18 @@ namespace UI
         {
             ImGui::PushID(static_cast<int>(2000 + slotIndex));
 
-            DrawInventorySlot("UsableSlot", _rState.usableSlots[slotIndex], usableSlotSize, scale, c_usableKeys[slotIndex], false);
+            const sInventorySlotHudState& slot = _rState.usableSlots[slotIndex];
+
+            DrawInventorySlot("UsableSlot", slot, usableSlotSize, scale, c_usableKeys[slotIndex], false);
+
+            if (slot.item != Gameplay::sItemId::Undefined && ImGui::BeginDragDropSource())
+            {
+                ImGui::SetDragDropPayload("UsableSlot", &slotIndex, sizeof(slotIndex));
+                ImGui::TextUnformatted(Gameplay::GetItemDefinition(slot.item).pName);
+                ImGui::EndDragDropSource();
+            }
+
+            AcceptInventorySlotDrop(_rState, eInventoryDropTarget::Usable, slotIndex);
 
             ImGui::PopID();
 
@@ -786,6 +809,15 @@ namespace UI
             ImGui::InvisibleButton("ArmorSlot", ImVec2(armorRowWidth, armorRowHeight));
 
             const bool hovered = ImGui::IsItemHovered();
+
+            if (slot.item != Gameplay::sItemId::Undefined && ImGui::BeginDragDropSource())
+            {
+                ImGui::SetDragDropPayload("ArmorSlot", &slotIndex, sizeof(slotIndex));
+                ImGui::TextUnformatted(Gameplay::GetItemDefinition(slot.item).pName);
+                ImGui::EndDragDropSource();
+            }
+
+            AcceptInventorySlotDrop(_rState, eInventoryDropTarget::Armor, slotIndex);
 
             pDrawList->AddRectFilled(rowMin, rowMax, hovered ? IM_COL32(34, 41, 52, 255) : IM_COL32(25, 31, 39, 255), 4.0f * scale);
             pDrawList->AddRect(rowMin, rowMax, hovered ? IM_COL32(87, 101, 122, 220) : IM_COL32(50, 60, 74, 180), 4.0f * scale);
@@ -910,7 +942,18 @@ namespace UI
         {
             ImGui::PushID(static_cast<int>(slotIndex));
 
-            DrawInventorySlot("ItemSlot", _rState.inventorySlots[slotIndex], itemSlotSize, scale);
+            const sInventorySlotHudState& slot = _rState.inventorySlots[slotIndex];
+
+            DrawInventorySlot("ItemSlot", slot, itemSlotSize, scale);
+
+            if (slot.item != Gameplay::sItemId::Undefined && ImGui::BeginDragDropSource())
+            {
+                ImGui::SetDragDropPayload("InventorySlot", &slotIndex, sizeof(slotIndex));
+                ImGui::TextUnformatted(Gameplay::GetItemDefinition(slot.item).pName);
+                ImGui::EndDragDropSource();
+            }
+
+            AcceptInventorySlotDrop(_rState, eInventoryDropTarget::Inventory, slotIndex);
 
             ImGui::PopID();
 
@@ -931,6 +974,144 @@ namespace UI
         ImGui::PopStyleColor(7);
         ImGui::PopStyleVar(6);
     }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cGameHud::ConsumeInventoryAction(
+        eInventoryAction& _rAction,
+        size_t& _rSourceSlot,
+        size_t& _rDestinationSlot)
+    {
+        if (!m_hasInventoryAction)
+            return false;
+
+        _rAction = m_inventoryAction;
+        _rSourceSlot = m_sourceInventorySlot;
+        _rDestinationSlot = m_destinationInventorySlot;
+        m_hasInventoryAction = false;
+
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    void cGameHud::AcceptInventorySlotDrop(
+        const sInventoryHudState& _rState,
+        eInventoryDropTarget _target,
+        size_t _destinationSlot)
+    {
+        if (!ImGui::BeginDragDropTarget())
+            return;
+
+        const ImGuiPayload* pPayload = ImGui::AcceptDragDropPayload("InventorySlot");
+        eInventoryAction action = eInventoryAction::MoveItem;
+
+        if (pPayload != nullptr && pPayload->DataSize == sizeof(size_t))
+        {
+            size_t sourceSlot = 0;
+            std::memcpy(&sourceSlot, pPayload->Data, sizeof(sourceSlot));
+
+            if (sourceSlot < _rState.inventorySlots.size())
+            {
+                const sInventorySlotHudState& source = _rState.inventorySlots[sourceSlot];
+                bool acceptsItem = source.item != Gameplay::sItemId::Undefined;
+
+                if (acceptsItem)
+                {
+                    const Gameplay::sItemDefinition& definition = Gameplay::GetItemDefinition(source.item);
+
+                    switch (_target)
+                    {
+                        case eInventoryDropTarget::Inventory:
+                            acceptsItem = sourceSlot != _destinationSlot;
+                            break;
+
+                        case eInventoryDropTarget::Armor:
+                            action = eInventoryAction::EquipArmor;
+                            acceptsItem = definition.type == Gameplay::sItemType::Armor &&
+                                static_cast<size_t>(definition.armorSlot) == _destinationSlot;
+                            break;
+
+                        case eInventoryDropTarget::Usable:
+                            action = eInventoryAction::EquipUsable;
+                            acceptsItem = definition.type == Gameplay::sItemType::Usable;
+                            break;
+
+                        case eInventoryDropTarget::Spell:
+                            action = eInventoryAction::EquipSpell;
+                            acceptsItem = definition.type == Gameplay::sItemType::Spell;
+                            break;
+                    }
+                }
+
+                if (acceptsItem)
+                {
+                    m_inventoryAction = action;
+                    m_sourceInventorySlot = sourceSlot;
+                    m_destinationInventorySlot = _destinationSlot;
+                    m_hasInventoryAction = true;
+                }
+            }
+        }
+
+        if (pPayload == nullptr && _target == eInventoryDropTarget::Inventory)
+        {
+            pPayload = ImGui::AcceptDragDropPayload("ArmorSlot");
+            action = eInventoryAction::UnequipArmor;
+
+            if (pPayload == nullptr)
+            {
+                pPayload = ImGui::AcceptDragDropPayload("UsableSlot");
+                action = eInventoryAction::UnequipUsable;
+            }
+
+            if (pPayload == nullptr)
+            {
+                pPayload = ImGui::AcceptDragDropPayload("SpellSlot");
+                action = eInventoryAction::UnequipSpell;
+            }
+
+            if (pPayload != nullptr && pPayload->DataSize == sizeof(size_t))
+            {
+                size_t sourceSlot = 0;
+                std::memcpy(&sourceSlot, pPayload->Data, sizeof(sourceSlot));
+
+                bool acceptsItem = false;
+
+                switch (action)
+                {
+                    case eInventoryAction::UnequipArmor:
+                        acceptsItem = sourceSlot < _rState.armorSlots.size() &&
+                            _rState.armorSlots[sourceSlot].item != Gameplay::sItemId::Undefined;
+                        break;
+
+                    case eInventoryAction::UnequipUsable:
+                        acceptsItem = sourceSlot < _rState.usableSlots.size() &&
+                            _rState.usableSlots[sourceSlot].item != Gameplay::sItemId::Undefined;
+                        break;
+
+                    case eInventoryAction::UnequipSpell:
+                        acceptsItem = sourceSlot < _rState.spellSlots.size() &&
+                            _rState.spellSlots[sourceSlot].item != Gameplay::sItemId::Undefined;
+                        break;
+
+                    default:
+                        break;
+                }
+
+                if (acceptsItem)
+                {
+                    m_inventoryAction = action;
+                    m_sourceInventorySlot = sourceSlot;
+                    m_destinationInventorySlot = _destinationSlot;
+                    m_hasInventoryAction = true;
+                }
+            }
+        }
+
+        ImGui::EndDragDropTarget();
+    }
+
     // ---------------------------------------------------------------------------------------------------------------------
 
 }

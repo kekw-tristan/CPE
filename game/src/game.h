@@ -228,4 +228,5 @@ class cGame : public cApplication
 
         bool m_inventoryOpen        = false;
         bool m_inventoryKeyWasDown  = false;
+        bool m_escapeKeyWasDown     = false;
 };
