@@ -37,6 +37,7 @@ namespace Engine::GFX
         sReflectionProbeProjectionType::Enum projectionType = sReflectionProbeProjectionType::Infinite;
 
         bool dirty = true;
+        bool active = true;
     };
 
     struct sReflectionProbeGPU

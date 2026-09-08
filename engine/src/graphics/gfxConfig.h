@@ -1,9 +1,20 @@
 #pragma once 
 
 #include <cstdint>
+#include <array>
 
 namespace Engine::GFX
 {
+    struct sEnvironmentSettings
+    {
+        std::array<float, 3> groundColor = { 0.030f, 0.045f, 0.035f };
+        std::array<float, 3> horizonColor = { 0.22f, 0.34f, 0.50f };
+        std::array<float, 3> zenithColor = { 0.018f, 0.028f, 0.045f };
+        std::array<float, 3> keyDirection = { -0.55f, 0.40f, -0.72f };
+        std::array<float, 3> keyRadiance = { 0.68f, 0.82f, 1.0f };
+        float keyExponent = 1200.0f;
+    };
+
     static constexpr uint32_t c_maxNumberOfFrames       = 2; 
 
     static constexpr uint32_t c_maxNumberOfInstances    = 100000; 
@@ -24,4 +35,5 @@ namespace Engine::GFX
     static constexpr uint32_t c_shadowMapResolution = 2048;
 
     constexpr int c_maxNumberOfActiveReflectionProbes = 8;
+    constexpr int c_maxNumberOfReflectionProbes       = 96;
 }

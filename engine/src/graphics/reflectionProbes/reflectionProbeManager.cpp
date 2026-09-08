@@ -63,6 +63,7 @@ namespace Engine::GFX
             static cReflectionProbeManager& Get();
 
             ReflectionProbeHandle AddProbe(const sReflectionProbe& _rProbe);
+            bool RemoveProbe(ReflectionProbeHandle _probeHandle);
             void SetProbe(ReflectionProbeHandle _probeHandle, const sReflectionProbe& _rProbe);
 
             void Clear();
@@ -105,6 +106,7 @@ namespace Engine::GFX
             float m_cellSize = 32.0f;
 
             std::vector<sReflectionProbe> m_probes;
+            std::vector<ReflectionProbeHandle> m_freeHandles;
 
             std::unordered_map<sCellCoord, std::vector<ReflectionProbeHandle>, sCellCoordHash> m_grid;
         };
@@ -122,13 +124,46 @@ namespace Engine::GFX
 
         ReflectionProbeHandle cReflectionProbeManager::AddProbe(const sReflectionProbe& _rProbe)
         {
-            const ReflectionProbeHandle probeHandle = static_cast<ReflectionProbeHandle>(m_probes.size());
+            sReflectionProbe probe = _rProbe;
+            probe.active = true;
+            probe.dirty = true;
 
-            m_probes.push_back(_rProbe);
+            ReflectionProbeHandle probeHandle;
+
+            if (!m_freeHandles.empty())
+            {
+                probeHandle = m_freeHandles.back();
+                m_freeHandles.pop_back();
+                m_probes[probeHandle] = probe;
+            }
+            else
+            {
+                probeHandle = static_cast<ReflectionProbeHandle>(m_probes.size());
+                m_probes.push_back(probe);
+            }
 
             InsertProbeIntoGrid(probeHandle);
 
             return probeHandle;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool cReflectionProbeManager::RemoveProbe(ReflectionProbeHandle _probeHandle)
+        {
+            const uint32_t probeIndex = GetProbeIndex(_probeHandle);
+            sReflectionProbe& rProbe = m_probes[probeIndex];
+
+            if (!rProbe.active)
+            {
+                return false;
+            }
+
+            rProbe.active = false;
+            rProbe.dirty = false;
+            m_freeHandles.push_back(_probeHandle);
+            RebuildGrid();
+            return true;
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -138,6 +173,7 @@ namespace Engine::GFX
             const uint32_t probeIndex = GetProbeIndex(_probeHandle);
 
             m_probes[probeIndex] = _rProbe;
+            m_probes[probeIndex].dirty = true;
 
             RebuildGrid();
         }
@@ -147,6 +183,7 @@ namespace Engine::GFX
         void cReflectionProbeManager::Clear()
         {
             m_probes.clear();
+            m_freeHandles.clear();
             m_grid.clear();
         }
 
@@ -243,6 +280,11 @@ namespace Engine::GFX
 
                         const sReflectionProbe& rProbe = m_probes[probeIndex];
 
+                        if (!rProbe.active)
+                        {
+                            continue;
+                        }
+
                         sProbeCandidate candidate{};
 
                         candidate.probeHandle               = probeHandle;
@@ -305,6 +347,11 @@ namespace Engine::GFX
             const uint32_t probeIndex = GetProbeIndex(_probeHandle);
 
             const sReflectionProbe& rProbe = m_probes[probeIndex];
+
+            if (!rProbe.active)
+            {
+                return;
+            }
 
             const float minX = std::min(rProbe.boxMin.x(), rProbe.boxMax.x());
             const float minZ = std::min(rProbe.boxMin.z(), rProbe.boxMax.z());
@@ -440,6 +487,13 @@ namespace Engine::GFX
         ReflectionProbeHandle AddProbe(const sReflectionProbe& _rProbe)
         {
             return cReflectionProbeManager::Get().AddProbe(_rProbe);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool RemoveProbe(ReflectionProbeHandle _probeHandle)
+        {
+            return cReflectionProbeManager::Get().RemoveProbe(_probeHandle);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------

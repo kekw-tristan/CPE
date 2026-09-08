@@ -10,6 +10,8 @@
 
 #include "graphics/light/lightManager.h"
 
+#include "graphics/reflectionProbes/reflectionProbeManager.h"
+
 #include "graphics/material/materialManager.h"
 
 #include "graphics/scene/scene.h"
@@ -99,6 +101,7 @@ class cGame : public cApplication
         {
             std::vector<GFX::sInstanceData*> renderInstances;
             std::vector<GFX::LightHandle> lightHandles;
+            std::vector<GFX::ReflectionProbeHandle> reflectionProbeHandles;
         };
 
         struct sProjectileVisual

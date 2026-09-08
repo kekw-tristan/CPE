@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/healthBarData.h"
+#include "graphics/gfxConfig.h"
 
 #include <span>
 #include <array>
@@ -28,6 +29,7 @@ namespace Engine
         const char* pTitle;
         bool hasEditorWindows = false;
         std::array<float, 4> backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+        GFX::sEnvironmentSettings environment;
     };
 
     class cApplication

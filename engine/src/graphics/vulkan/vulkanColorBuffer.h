@@ -33,12 +33,15 @@ namespace Engine::GFX
         public:
 
             VkImageView GetImageView() const;
+            VkImageView GetResolveImageView() const;
+            VkImage     GetResolveImage() const;
             VkFormat GetFormat() const;
 
 
         private:
 
             cVulkanImage m_image;
+            cVulkanImage m_resolveImage;
 
     };
 }

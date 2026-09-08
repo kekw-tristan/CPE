@@ -93,6 +93,28 @@ namespace World
 
         // -------------------------------------------------------------------------------------------------------------------------
 
+        void AddReflectionProbe(sLoadedChunk& _rChunk, const sChunk& _rChunkData)
+        {
+            constexpr float c_probeHeight = 7.0f;
+            constexpr float c_halfChunkSize = static_cast<float>(c_chunkSize) * 0.5f;
+
+            const float worldX = static_cast<float>(_rChunkData.coordinate.x * c_chunkSize);
+            const float worldZ = static_cast<float>(_rChunkData.coordinate.z * c_chunkSize);
+
+            sReflectionProbeDesc probe{};
+            probe.blendDistance = 10.0f;
+            // Overlap neighboring influence volumes throughout the edge fade.
+            const float probeHalfExtent = c_halfChunkSize + probe.blendDistance;
+            probe.position = { worldX, _rChunkData.height + c_probeHeight, worldZ };
+            probe.boxMin = { worldX - probeHalfExtent, _rChunkData.height - 12.0f, worldZ - probeHalfExtent };
+            probe.boxMax = { worldX + probeHalfExtent, _rChunkData.height + 32.0f, worldZ + probeHalfExtent };
+            probe.resolution = 64;
+
+            _rChunk.reflectionProbes.push_back(probe);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
         class cWorldGenerator
         {
             public:
@@ -228,6 +250,7 @@ namespace World
                         std::vector<Physics::sAABBCollider> colliders;
                         ForestGenerator::GenerateChunk(loaded.scene, chunk, randomGenerator,
                             generator.m_layout, loaded.spawns, colliders);
+                        AddReflectionProbe(loaded, chunk);
 
                         loaded.colliders.reserve(colliders.size());
                         for (const auto& collider : colliders)

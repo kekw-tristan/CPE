@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/vulkan/vulkanImage.h"
+#include "graphics/gfxConfig.h"
 
 #include <vulkan/vulkan.h>
 
@@ -24,7 +25,7 @@ namespace Engine::GFX
 
         public:
 
-            void Create(cVulkanDevice& _rDevice, cVulkanCommands& _rCommands);
+            void Create(cVulkanDevice& _rDevice, cVulkanCommands& _rCommands, const sEnvironmentSettings& _rSettings = {});
             void Destroy(cVulkanDevice& _rDevice);
 
         public:

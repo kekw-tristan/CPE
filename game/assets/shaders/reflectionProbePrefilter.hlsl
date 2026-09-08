@@ -24,7 +24,6 @@ ReflectionProbePrefilterPushConstants pushConstants;
 // -----------------------------------------------------------------------------------------------------------------------------
 
 static const float PI = 3.14159265359f;
-static const float CAPTURE_RESOLUTION = 256.0f;
 
 
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -135,7 +134,8 @@ float DistributionGGX(float3 normal, float3 halfVector, float roughness)
 
     float denominator = NdotH2 * (alphaSquared - 1.0f) + 1.0f;
 
-    return alphaSquared / max(PI * denominator * denominator, 0.000001f);
+    denominator = max(denominator, 0.000001f);
+    return alphaSquared / (PI * denominator * denominator);
 }
 
 // -----------------------------------------------------------------------------------------------------------------------------

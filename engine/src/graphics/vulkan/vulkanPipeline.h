@@ -26,7 +26,10 @@ namespace Engine::GFX
 
         public:
 
-            VkPipeline              GetHealthBarPipeline() const;
+            VkPipeline              GetHealthBarPipeline()      const;
+            VkPipeline              GetNormalDepthPipeline()    const { return m_pNormalDepthPipeline; }
+            VkPipeline              GetOcclusionPipeline()      const { return m_pOcclusionPipeline; }
+            VkPipeline              GetOcclusionBlurPipeline()  const { return m_pOcclusionBlurPipeline; }
 
             VkPipeline              GetPipeline(); 
             VkPipelineLayout        GetPipelineLayout();
@@ -41,6 +44,11 @@ namespace Engine::GFX
             VkPipelineLayout        GetReflectionProbePrefilterPipelineLayout();
             VkDescriptorSetLayout   GetReflectionProbePrefilterDescriptorSetLayout();
 
+            VkPipeline              GetBloomPipeline() const;
+            VkPipeline              GetCompositePipeline() const;
+            VkPipelineLayout        GetPostProcessPipelineLayout() const;
+            VkDescriptorSetLayout   GetPostProcessDescriptorSetLayout() const;
+
             VkDescriptorSetLayout   GetFrameUniformDescriptorSetLayout();
 
         private:
@@ -51,10 +59,14 @@ namespace Engine::GFX
             void CreateShadowPipeline(cVulkanDevice& _rDevice);
             void CreateReflectionProbePipeline(cVulkanDevice& _rDevice);
             void CreateReflectionProbePrefilterPipeline(cVulkanDevice& _rDevice);
+            void CreatePostProcessPipelines(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapchain);
 
         private:
 
-            VkPipeline m_pHealthBarPipeline = VK_NULL_HANDLE;
+            VkPipeline m_pHealthBarPipeline     = VK_NULL_HANDLE;
+            VkPipeline m_pNormalDepthPipeline   = VK_NULL_HANDLE;
+            VkPipeline m_pOcclusionPipeline     = VK_NULL_HANDLE;
+            VkPipeline m_pOcclusionBlurPipeline = VK_NULL_HANDLE;
 
             VkPipelineLayout m_pPipelineLayout;
             VkPipeline       m_pGraphicsPipeline; 
@@ -70,6 +82,11 @@ namespace Engine::GFX
             VkDescriptorSetLayout   m_pReflectionProbePrefilterDescriptorSetLayout  = VK_NULL_HANDLE;
 
             VkDescriptorSetLayout m_pFrameUniformDescriptorSetLayout;
+
+            VkPipeline              m_pBloomPipeline                     = VK_NULL_HANDLE;
+            VkPipeline              m_pCompositePipeline                 = VK_NULL_HANDLE;
+            VkPipelineLayout        m_pPostProcessPipelineLayout         = VK_NULL_HANDLE;
+            VkDescriptorSetLayout   m_pPostProcessDescriptorSetLayout    = VK_NULL_HANDLE;
 
     };
 }

@@ -1,10 +1,14 @@
 #include "game.h"
+#include "world/forestAtmosphere.h"
 
 #include "graphics/light/light.h"
 #include "graphics/light/lightManager.h"
 
 #include "graphics/material/material.h"
 #include "graphics/material/materialManager.h"
+
+#include "graphics/reflectionProbes/reflectionProbeManager.h"
+#include "graphics/vulkan/reflectionProbe.h"
 
 #include "graphics/shapeModel/shapeModelDesc.h"
 #include "graphics/shapeModel/shapeModelLoader.h"
@@ -348,7 +352,11 @@ void cGame::OnShutdown()
     m_bossHandles.clear();
 
     for (auto& [coordinate, instances] : m_worldRenderInstances)
+    {
         GFX::ShapeModelLights::Destroy(instances.lightHandles);
+        for (GFX::ReflectionProbeHandle probeHandle : instances.reflectionProbeHandles)
+            GFX::ReflectionProbeManager::RemoveProbe(probeHandle);
+    }
 
     m_worldRenderInstances.clear();
 
@@ -430,20 +438,20 @@ void cGame::InitMeshes()
 
     sMaterial playerSphereMaterial{};
 
-    playerSphereMaterial.roughness        = 0.18f;
+    playerSphereMaterial.roughness        = 0.24f;
     playerSphereMaterial.lightWrap        = 1.0f;
     playerSphereMaterial.ambientStrength  = 0.0f;
-    playerSphereMaterial.emissiveColor    = { 0.5f, 0.15f, 1.0f };
-    playerSphereMaterial.emissiveStrength = 4.0f;
+    playerSphereMaterial.emissiveColor    = { 0.34f, 0.12f, 1.0f };
+    playerSphereMaterial.emissiveStrength = 3.2f;
 
     m_playerSphereMaterial = MaterialManager::CreateMaterial(playerSphereMaterial);
 
     sLight directionalLight0{};
     
     directionalLight0.type          = sLightType::Directional;
-    directionalLight0.color         = { 0.26f, 0.32f, 0.35f };
-    directionalLight0.intensity     = 0.7f;
-    directionalLight0.direction     = { -0.5f, -0.5f, -0.3f };
+    directionalLight0.color         = { World::c_moonRed, World::c_moonGreen, World::c_moonBlue };
+    directionalLight0.intensity     = World::c_moonIntensity;
+    directionalLight0.direction     = { -World::c_moonDirectionX, -World::c_moonDirectionY, -World::c_moonDirectionZ };
     directionalLight0.castsShadow   = true;
     
     LightManager::CreateLight(directionalLight0);
@@ -749,6 +757,8 @@ void cGame::RefreshWorldRenderInstances()
 
         removed.insert(_rEntry.second.renderInstances.begin(), _rEntry.second.renderInstances.end());
         GFX::ShapeModelLights::Destroy(_rEntry.second.lightHandles);
+        for (GFX::ReflectionProbeHandle probeHandle : _rEntry.second.reflectionProbeHandles)
+            GFX::ReflectionProbeManager::RemoveProbe(probeHandle);
         return true;
     });
 
@@ -783,6 +793,19 @@ void cGame::RefreshWorldRenderInstances()
 
         for (const auto& shape : chunk.scene.GetShapeInstances())
             BuildRenderInstances(shape, entry->second);
+
+        for (const World::sReflectionProbeDesc& description : chunk.reflectionProbes)
+        {
+            GFX::sReflectionProbe probe{};
+            probe.position = description.position;
+            probe.boxMin = description.boxMin;
+            probe.boxMax = description.boxMax;
+            probe.blendDistance = description.blendDistance;
+            probe.resolution = description.resolution;
+            probe.projectionType = GFX::sReflectionProbeProjectionType::Box;
+
+            entry->second.reflectionProbeHandles.push_back(GFX::ReflectionProbeManager::AddProbe(probe));
+        }
 
         if (m_enemyModelsLoaded)
             SpawnEnemies(chunk.spawns, coordinate);
@@ -821,11 +844,21 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, sWo
         pInstance->materialIndex = part.materialIndex;
         pInstance->instanceFlags |= sInstanceFlags::InstanceFlagPreserveAtDistance;
 
+        if (model.pDebugName == "rock" || model.pDebugName.starts_with("rock_"))
+        {
+            pInstance->instanceFlags |= sInstanceFlags::InstanceFlagWeathered;
+        }
+
         MeshHandle mesh = GetMesh(part.meshType);
 
         if (part.meshType == sMeshTypes::ChunkPlane)
         {
             pInstance->instanceFlags |= sInstanceFlags::InstanceFlagTerrain;
+        }
+
+        if (part.meshType == sMeshTypes::Crystal)
+        {
+            pInstance->instanceFlags |= sInstanceFlags::InstanceFlagCrystal;
         }
 
         m_meshInstances[mesh].push_back(pInstance);

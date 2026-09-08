@@ -72,7 +72,7 @@ float3 EvaluateNightSky(float3 direction)
     const float3 fogColor   = float3(c_fogRed, c_fogGreen, c_fogBlue);
     float        elevation  = saturate(direction.y);
     float        visibility = smoothstep(0.02f, 0.38f, elevation);
-    float3       color      = lerp(float3(0.018f, 0.028f, 0.045f), float3(0.003f, 0.006f, 0.018f), elevation);
+    float3       color      = float3(c_skyRed, c_skyGreen, c_skyBlue);
 
     // Angular, layered aurora ribbons rather than photographic clouds.
     float ribbonAxis    = dot(direction, normalize(float3(0.3f, 1.0f, -0.25f)));
@@ -97,7 +97,7 @@ float3 EvaluateNightSky(float3 direction)
         color += SkyConstellation(secondCoordinates * 1.3f) * float3(0.43f, 0.30f, 0.57f);
 
     // A faceted diamond moon, split into four differently lit planes and a detached shard.
-    float3 moonAxis     = normalize(float3(-0.55f, 0.40f, -0.72f));
+    float3 moonAxis     = normalize(float3(c_moonDirectionX, c_moonDirectionY, c_moonDirectionZ));
     float3 moonRight    = normalize(cross(float3(0.0f, 1.0f, 0.0f), moonAxis));
     float3 moonUp       = cross(moonAxis, moonRight);
     float2 moon         = float2(dot(direction, moonRight), dot(direction, moonUp));
@@ -107,7 +107,7 @@ float3 EvaluateNightSky(float3 direction)
         float diamond   = abs(moon.x) + abs(moon.y * 0.75f);
         float mask      = 1.0f - smoothstep(0.040f, 0.040f + aa, diamond);
         float facet     = 0.22f + 0.25f * step(0.0f, moon.x) + 0.26f * step(0.0f, moon.y);
-        color           += mask * facet * float3(0.48f, 0.68f, 0.70f);
+        color           += mask * facet * float3(c_moonRed, c_moonGreen, c_moonBlue) * c_moonRadiance;
         float shard     = abs(moon.x - 0.054f) + abs((moon.y + 0.030f) * 0.7f);
         color           += (1.0f - smoothstep(0.009f, 0.009f + aa, shard)) * float3(0.13f, 0.25f, 0.27f);
     }

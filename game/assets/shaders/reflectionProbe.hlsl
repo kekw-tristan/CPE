@@ -201,6 +201,7 @@ struct VSOutput
 
     nointerpolation int materialIndex : MATERIAL_INDEX;
     nointerpolation uint sky : TEXCOORD7;
+    nointerpolation uint surfaceFlags : TEXCOORD8;
 };
 
 
@@ -263,6 +264,7 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
     output.texCoord = input.texCoord;
     output.color = instance.color;
     output.materialIndex = instance.materialIndex;
+    output.surfaceFlags = (uint)instance.instanceFlags;
 
     return output;
 }
@@ -762,11 +764,13 @@ float4 PSMain(VSOutput input) : SV_Target
 
     albedo *= input.color.rgb;
 
+    ApplyForestSurface(input.worldPosition, normal, input.surfaceFlags, metallic, emissiveStrength, albedo, roughness);
+
     // -------------------------------------------------------------------------------------------------------------------------
     // Global IBL
     // -------------------------------------------------------------------------------------------------------------------------
 
-    float3 finalColor = EvaluateAmbient(normal, viewDirection, albedo, roughness, metallic, ambientStrength);
+    float3 finalColor = EvaluateAmbient(normal, viewDirection, albedo, roughness, metallic, ambientStrength * c_ambientLightStrength);
 
     // -------------------------------------------------------------------------------------------------------------------------
     // Direct lighting
@@ -843,5 +847,5 @@ float4 PSMain(VSOutput input) : SV_Target
 
     finalColor += emissiveColor * emissiveStrength;
 
-    return float4(max(finalColor, 0.0f), 1.0f);
+    return float4(clamp(finalColor, 0.0f, 65504.0f), 1.0f);
 }

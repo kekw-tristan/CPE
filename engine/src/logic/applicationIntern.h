@@ -66,6 +66,8 @@ namespace Engine::Logic
             void DrawHealthBars();
 
             void BeginDraw(); 
+            void BeginAmbientOcclusionDraw() { m_vulkanRenderer.BeginAmbientOcclusionDraw(); }
+            void EndAmbientOcclusionDraw() { m_vulkanRenderer.EndAmbientOcclusionDraw(); }
 
             void BeginShadowRendering();
             void EndShadowRendering();

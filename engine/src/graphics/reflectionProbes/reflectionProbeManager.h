@@ -14,6 +14,7 @@ namespace Engine::GFX
 	namespace ReflectionProbeManager
 	{
 		ReflectionProbeHandle AddProbe(const sReflectionProbe& _rProbe);
+		bool RemoveProbe(ReflectionProbeHandle _probeHandle);
 		void SetProbe(ReflectionProbeHandle _probeHandle, const sReflectionProbe& _rProbe);
 
 		void Clear();

@@ -107,11 +107,16 @@ namespace Engine
                     m_pAppIntern->EndReflectionProbeRendering();
 
                     m_pAppIntern->PrefilterReflectionProbe(probeIndex);
+                    break;
                 }
 
                 // ---------------------------------------------------------------------------------------------------------------------
                 // Main
                 // ---------------------------------------------------------------------------------------------------------------------
+
+                m_pAppIntern->BeginAmbientOcclusionDraw();
+                OnDraw();
+                m_pAppIntern->EndAmbientOcclusionDraw();
 
                 m_pAppIntern->BeginDraw();
 

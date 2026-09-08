@@ -1,7 +1,11 @@
 static const uint MAX_REFLECTION_PROBES = 8;
+[[vk::binding(14, 0)]] Texture2D<float4> occlusionGeometry;
+[[vk::binding(15, 0)]] Texture2D<float4> occlusionRaw;
+[[vk::binding(16, 0)]] Texture2D<float4> occlusionFiltered;
 static const int  INSTANCE_FLAG_TERRAIN = 1;
 static const int  INSTANCE_FLAG_SKY = 2;
 static const int  INSTANCE_FLAG_PRESERVE_AT_DISTANCE = 4;
+static const int  INSTANCE_FLAG_CRYSTAL = 8;
 
 struct ReflectionProbeData
 {
@@ -169,11 +173,21 @@ struct VSOutput
     float2 texCoord : TEXCOORD0;
     float4 color    : COLOR0;
 
-    nointerpolation uint2  reflectionProbeIndices  : TEXCOORD1;
-    nointerpolation float2 reflectionProbeWeights  : TEXCOORD2;
-    nointerpolation float  reflectionProbeCoverage : TEXCOORD3;
-
     nointerpolation int materialIndex : MATERIAL_INDEX;
+    nointerpolation uint terrain : TEXCOORD7;
+    nointerpolation uint sky : TEXCOORD8;
+    nointerpolation uint preserveAtDistance : TEXCOORD9;
+    nointerpolation uint crystal : TEXCOORD10;
+    nointerpolation uint surfaceFlags : TEXCOORD11;
+};
+
+struct NormalDepthVSOutput
+{
+    float4 position : SV_Position;
+
+    float3 worldPosition : POSITION0;
+    float3 worldNormal : NORMAL0;
+
     nointerpolation uint terrain : TEXCOORD7;
     nointerpolation uint sky : TEXCOORD8;
     nointerpolation uint preserveAtDistance : TEXCOORD9;
@@ -194,8 +208,6 @@ float3 SafeNormalize(float3 value)
     return value * rsqrt(lengthSquared);
 }
 
-
-float GetReflectionProbeWeight(float3 worldPosition, float3 probePosition, float3 boxMin, float3 boxMax, float blendDistance);
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Vertex Shader
@@ -264,57 +276,51 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
     output.terrain = (instance.instanceFlags & INSTANCE_FLAG_TERRAIN) != 0 ? 1u : 0u;
     output.preserveAtDistance = (instance.instanceFlags & INSTANCE_FLAG_PRESERVE_AT_DISTANCE) != 0 ? 1u : 0u;
+    output.crystal = (instance.instanceFlags & INSTANCE_FLAG_CRYSTAL) != 0 ? 1u : 0u;
     output.texCoord = input.texCoord;
     output.color = instance.color;
 
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Reflection probe selection
-    //
-    // The local origin transformed by the instance matrix is used as one stable anchor for the complete instance.
-    // -------------------------------------------------------------------------------------------------------------------------
+    output.materialIndex = instance.materialIndex;
+    output.surfaceFlags = (uint)instance.instanceFlags;
 
-    float3 reflectionProbeAnchor = mul(float4(0.0f, 0.0f, 0.0f, 1.0f), instance.worldMatrix).xyz;
+    return output;
+}
 
-    uint bestProbeIndex0 = 0;
-    uint bestProbeIndex1 = 0;
+NormalDepthVSOutput VSNormalDepth(VSInput input, uint instanceID : SV_InstanceID)
+{
+    NormalDepthVSOutput output = (NormalDepthVSOutput) 0;
 
-    float bestProbeWeight0 = 0.0f;
-    float bestProbeWeight1 = 0.0f;
+    InstanceData instance = instances[instanceID];
 
-    uint activeProbeCount = min(reflectionProbeCount, MAX_REFLECTION_PROBES);
-
-    for (uint probeIndex = 0; probeIndex < activeProbeCount; ++probeIndex)
+    if ((instance.instanceFlags & INSTANCE_FLAG_SKY) != 0)
     {
-        ReflectionProbeData probe = reflectionProbes[probeIndex];
+        output.sky = 1;
+        output.worldPosition = input.position;
+        output.position = mul(viewProj, float4(cameraPosition.xyz + input.position * 1000.0f, 1.0f));
+        output.position.z = output.position.w * 0.999999f;
 
-        float probeWeight = GetReflectionProbeWeight(
-            reflectionProbeAnchor,
-            probe.positionMaxMip.xyz,
-            probe.boxMinBlendDistance.xyz,
-            probe.boxMax.xyz,
-            probe.boxMinBlendDistance.w
-        );
-
-        if (probeWeight > bestProbeWeight0)
-        {
-            bestProbeWeight1 = bestProbeWeight0;
-            bestProbeIndex1 = bestProbeIndex0;
-
-            bestProbeWeight0 = probeWeight;
-            bestProbeIndex0 = probeIndex;
-        }
-        else if (probeWeight > bestProbeWeight1)
-        {
-            bestProbeWeight1 = probeWeight;
-            bestProbeIndex1 = probeIndex;
-        }
+        return output;
     }
 
-    output.reflectionProbeIndices = uint2(bestProbeIndex0, bestProbeIndex1);
-    output.reflectionProbeWeights = float2(bestProbeWeight0, bestProbeWeight1);
-    output.reflectionProbeCoverage = saturate(bestProbeWeight0);
+    float4 worldPosition = mul(float4(input.position, 1.0f), instance.worldMatrix);
 
-    output.materialIndex = instance.materialIndex;
+    if ((instance.instanceFlags & INSTANCE_FLAG_TERRAIN) != 0)
+    {
+        worldPosition.y += GetTerrainHeight(worldPosition.xz);
+        output.worldNormal = GetTerrainNormal(worldPosition.xz);
+    }
+    else
+    {
+        float3x3 normalMatrix = (float3x3) instance.worldMatrix;
+        output.worldNormal = SafeNormalize(mul(input.normal, normalMatrix));
+    }
+
+    output.position = mul(viewProj, worldPosition);
+    output.worldPosition = worldPosition.xyz;
+
+    output.terrain = (instance.instanceFlags & INSTANCE_FLAG_TERRAIN) != 0 ? 1u : 0u;
+    output.sky = 0u;
+    output.preserveAtDistance = (instance.instanceFlags & INSTANCE_FLAG_PRESERVE_AT_DISTANCE) != 0 ? 1u : 0u;
 
     return output;
 }
@@ -749,61 +755,25 @@ float3 BoxProjectReflection(
 // Reflection Probe Weight
 // -----------------------------------------------------------------------------------------------------------------------------
 
-float GetReflectionProbeWeight(float3 worldPosition, float3 probePosition, float3 boxMin, float3 boxMax, float blendDistance)
+float GetReflectionProbeInfluence(float3 worldPosition, float3 boxMin, float3 boxMax, float blendDistance)
 {
-    bool insideBox =
-        worldPosition.x >= boxMin.x && worldPosition.x <= boxMax.x &&
-        worldPosition.z >= boxMin.z && worldPosition.z <= boxMax.z;
+    float3 edgeDistance = min(worldPosition - boxMin, boxMax - worldPosition);
+    float distanceToEdge = min(edgeDistance.x, min(edgeDistance.y, edgeDistance.z));
 
-    if (!insideBox)
-        return 0.0f;
-
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Center distance
-    //
-    // Probes close to their capture position get a higher priority than probes whose influence box only happens to overlap.
-    // -------------------------------------------------------------------------------------------------------------------------
-
-    float2 halfExtent = max((boxMax.xz - boxMin.xz) * 0.5f, float2(0.0001f, 0.0001f));
-
-    float2 normalizedOffset = abs(worldPosition.xz - probePosition.xz) / halfExtent;
-
-    float normalizedDistanceSquared = dot(normalizedOffset, normalizedOffset);
-
-    float centerWeight = 1.0f / (1.0f + normalizedDistanceSquared * 4.0f);
-
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Influence box edge fade
-    //
-    // Center weighting alone must not be combined with a hard box cutoff, otherwise a visible seam appears at the box edge.
-    // -------------------------------------------------------------------------------------------------------------------------
-
-    if (blendDistance <= 0.0001f)
-        return centerWeight;
-
-    float distanceX = min(worldPosition.x - boxMin.x, boxMax.x - worldPosition.x);
-    float distanceZ = min(worldPosition.z - boxMin.z, boxMax.z - worldPosition.z);
-
-    float edgeWeightX = smoothstep(0.0f, blendDistance, distanceX);
-    float edgeWeightZ = smoothstep(0.0f, blendDistance, distanceZ);
-
-    float edgeWeight = edgeWeightX * edgeWeightZ;
-
-    return centerWeight * edgeWeight;
+    // Also fade vertically; probes must not influence floors outside their volume.
+    return smoothstep(0.0f, max(blendDistance, 0.0001f), distanceToEdge);
 }
 
 
 float3 EvaluateAmbient(
     float3 worldPosition,
-    uint2 reflectionProbeIndices,
-    float2 reflectionProbeWeights,
-    float reflectionProbeCoverage,
     float3 normal,
     float3 viewDirection,
     float3 albedo,
     float roughness,
     float metallic,
-    float ambientStrength)
+    float ambientStrength,
+    float reflectionStrength)
 {
     roughness = clamp(roughness, 0.045f, 1.0f);
     metallic = saturate(metallic);
@@ -824,10 +794,26 @@ float3 EvaluateAmbient(
     // -------------------------------------------------------------------------------------------------------------------------
     // Diffuse IBL
     // -------------------------------------------------------------------------------------------------------------------------
-
-    float3 irradiance = irradianceMap.SampleLevel(environmentSampler, normal, 0.0f).rgb;
-
+    
+    const float3 rawIrradiance = irradianceMap.SampleLevel(environmentSampler, normal, 0.0f).rgb;
+    
+    // Detect directions receiving almost no environment illumination.
+    const float irradianceLuminance = dot(rawIrradiance, float3(0.2126f, 0.7152f, 0.0722f));
+    
+    const float darkSurfaceMask = 1.0f - smoothstep(0.015f, 0.060f, irradianceLuminance);
+    
+    // Minimum night illumination so surfaces never become completely black.
+    const float3 ambientFloor = float3(0.065f, 0.080f, 0.115f);
+    
+    float3 irradiance = max(rawIrradiance, ambientFloor);
+    
     float3 diffuseAmbient = kD * albedo * irradiance;
+    
+    // Small stylized night fill.
+    // Only affects surfaces facing directions with almost no environment illumination.
+    const float3 readableAlbedo = lerp(albedo, sqrt(max(albedo, 0.0f)), 0.35f);
+
+    diffuseAmbient += kD * readableAlbedo * float3(0.04f, 0.05f, 0.07f) * darkSurfaceMask;
 
     // -------------------------------------------------------------------------------------------------------------------------
     // Specular IBL
@@ -853,109 +839,52 @@ float3 EvaluateAmbient(
     // Local reflection probes
     // -------------------------------------------------------------------------------------------------------------------------
 
-    float3 localProbeColor = float3(0.0f, 0.0f, 0.0f);
+    float3 localProbeColor = 0.0f;
     float totalProbeWeight = 0.0f;
+    float probeCoverage = 0.0f;
+    float probeWeightSharpness = lerp(4.0f, 1.0f, smoothstep(0.15f, 0.60f, roughness));
 
-    // Smooth surfaces should strongly favor the dominant probe.
-    // On mirror-like surfaces the secondary probe is disabled completely to avoid parallax-correction ghosting.
-
-    float roughnessBlend = smoothstep(0.15f, 0.60f, roughness);
-    float probeWeightSharpness = lerp(8.0f, 1.0f, roughnessBlend);
-
-    float probeWeight0 = pow(reflectionProbeWeights.x, probeWeightSharpness);
-    float probeWeight1 = pow(reflectionProbeWeights.y, probeWeightSharpness) * roughnessBlend;
-
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Primary probe
-    // -------------------------------------------------------------------------------------------------------------------------
-
-    if (probeWeight0 > 0.0001f)
+    // Constant descriptor indices avoid requiring descriptor-indexing device features.
+    // Evaluate influence per fragment so large meshes do not jump at instance boundaries.
+    [unroll]
+    for (uint probeIndex = 0; probeIndex < MAX_REFLECTION_PROBES; ++probeIndex)
     {
-        uint probeIndex = reflectionProbeIndices.x;
-
-        ReflectionProbeData probe = reflectionProbes[probeIndex];
-
-        uint projectionType = (uint) probe.boxMax.w;
-
-        float3 correctedReflectionDirection = reflectionDirection;
-
-        if (projectionType == REFLECTION_PROBE_PROJECTION_BOX)
+        if (probeIndex < min(reflectionProbeCount, MAX_REFLECTION_PROBES))
         {
-            correctedReflectionDirection = BoxProjectReflection(
-                worldPosition,
-                reflectionDirection,
-                probe.positionMaxMip.xyz,
-                probe.boxMinBlendDistance.xyz,
-                probe.boxMax.xyz
-            );
+            ReflectionProbeData probe = reflectionProbes[probeIndex];
+            float influence = GetReflectionProbeInfluence(
+                worldPosition, probe.boxMinBlendDistance.xyz, probe.boxMax.xyz, probe.boxMinBlendDistance.w);
+
+            if (influence > 0.0f)
+            {
+                float3 halfExtent = max((probe.boxMax.xyz - probe.boxMinBlendDistance.xyz) * 0.5f, 0.0001f);
+                float3 normalizedOffset = (worldPosition - probe.positionMaxMip.xyz) / halfExtent;
+                float centerWeight = rcp(1.0f + dot(normalizedOffset, normalizedOffset) * 4.0f);
+                float weight = pow(centerWeight, probeWeightSharpness) * influence;
+                float3 direction = reflectionDirection;
+
+                if ((uint)probe.boxMax.w == REFLECTION_PROBE_PROJECTION_BOX)
+                {
+                    direction = BoxProjectReflection(
+                        worldPosition, reflectionDirection, probe.positionMaxMip.xyz,
+                        probe.boxMinBlendDistance.xyz, probe.boxMax.xyz);
+                }
+
+                float3 probeColor = reflectionProbeMaps[probeIndex].SampleLevel(
+                    environmentSampler, direction, roughness * probe.positionMaxMip.w).rgb;
+                localProbeColor += probeColor * weight;
+                totalProbeWeight += weight;
+                probeCoverage = max(probeCoverage, influence);
+            }
         }
-
-        const float minimumProbeRoughness = 0.20f;
-
-        float probeRoughness = max(roughness, minimumProbeRoughness);
-        float mipLevel = probeRoughness * probe.positionMaxMip.w;
-
-        float3 probeColor = reflectionProbeMaps[probeIndex].SampleLevel(
-            environmentSampler,
-            correctedReflectionDirection,
-            mipLevel
-        ).rgb;
-
-        localProbeColor += probeColor * probeWeight0;
-        totalProbeWeight += probeWeight0;
     }
-
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Secondary probe
-    // -------------------------------------------------------------------------------------------------------------------------
-
-    if (probeWeight1 > 0.0001f)
-    {
-        uint probeIndex = reflectionProbeIndices.y;
-
-        ReflectionProbeData probe = reflectionProbes[probeIndex];
-        
-        uint projectionType = (uint) probe.boxMax.w;
-
-        float3 correctedReflectionDirection = reflectionDirection;
-
-        if (projectionType == REFLECTION_PROBE_PROJECTION_BOX)
-        {
-                    correctedReflectionDirection = BoxProjectReflection(
-                worldPosition,
-                reflectionDirection,
-                probe.positionMaxMip.xyz,
-                probe.boxMinBlendDistance.xyz,
-                probe.boxMax.xyz
-            );
-        }
-
-        const float minimumProbeRoughness = 0.20f;
-
-        float probeRoughness = max(roughness, minimumProbeRoughness);
-        float mipLevel = probeRoughness * probe.positionMaxMip.w;
-
-        float3 probeColor = reflectionProbeMaps[probeIndex].SampleLevel(
-            environmentSampler,
-            correctedReflectionDirection,
-            mipLevel
-        ).rgb;
-
-        localProbeColor += probeColor * probeWeight1;
-        totalProbeWeight += probeWeight1;
-    }
-
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Local / global blend
-    // -------------------------------------------------------------------------------------------------------------------------
 
     float3 prefilteredColor = environmentColor;
 
-    if (totalProbeWeight > 0.0001f)
+    if (totalProbeWeight > 0.0f)
     {
-        localProbeColor /= totalProbeWeight;
-
-        prefilteredColor = lerp(environmentColor, localProbeColor, saturate(reflectionProbeCoverage));
+        // Coverage is independent of center priority and material roughness.
+        prefilteredColor = lerp(environmentColor, localProbeColor / totalProbeWeight, probeCoverage);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -966,7 +895,7 @@ float3 EvaluateAmbient(
 
     float3 specularAmbient = prefilteredColor * (F0 * brdf.x + brdf.y);
 
-    return (diffuseAmbient + specularAmbient) * ambientStrength;
+    return diffuseAmbient * ambientStrength + specularAmbient * reflectionStrength;
 }
 // -----------------------------------------------------------------------------------------------------------------------------
 
@@ -977,24 +906,151 @@ float InterleavedGradientNoise(float2 position)
 
 
 // -----------------------------------------------------------------------------------------------------------------------------
-// Tone Mapping
-// -----------------------------------------------------------------------------------------------------------------------------
-
-float3 ACESFilm(float3 color)
-{
-    const float a = 2.51f;
-    const float b = 0.03f;
-    const float c = 2.43f;
-    const float d = 0.59f;
-    const float e = 0.14f;
-
-    return saturate((color * (a * color + b)) / (color * (c * color + d) + e));
-}
-
-
-// -----------------------------------------------------------------------------------------------------------------------------
 // Pixel Shader
 // -----------------------------------------------------------------------------------------------------------------------------
+
+float SampleAmbientOcclusion(float2 pixelPosition, float viewDepth)
+{
+    uint width;
+    uint height;
+    occlusionFiltered.GetDimensions(width, height);
+    float2 position = pixelPosition * viewportSize.zw * float2(width, height) - 0.5f;
+    int2 base = (int2)floor(position);
+    float2 f = frac(position);
+    float visibility = 0.0f;
+    float totalWeight = 0.0f;
+
+    [unroll]
+    for (int y = 0; y < 2; ++y)
+    {
+        [unroll]
+        for (int x = 0; x < 2; ++x)
+        {
+            int2 coord = clamp(base + int2(x, y), int2(0, 0), int2(width, height) - 1);
+            float2 sample = occlusionFiltered.Load(int3(coord, 0)).rg;
+            float weight = (x == 0 ? 1.0f - f.x : f.x) * (y == 0 ? 1.0f - f.y : f.y);
+            weight *= exp(-abs(sample.y - viewDepth) / (0.15f + viewDepth * 0.005f));
+            weight *= sample.y > 0.0f ? 1.0f : 0.0f;
+            visibility += sample.x * weight;
+            totalWeight += weight;
+        }
+    }
+
+    return totalWeight > 0.0001f ? visibility / totalWeight : 1.0f;
+}
+
+float4 PSNormalDepth(NormalDepthVSOutput input) : SV_Target
+{
+    if (input.sky != 0)
+    {
+        discard;
+    }
+
+    if (input.terrain == 0 && input.preserveAtDistance == 0)
+    {
+        float coverage = 1.0f - smoothstep(c_detailFadeStart, c_detailFadeEnd, length(input.worldPosition - cameraPosition.xyz));
+        if (coverage <= 0.0f || InterleavedGradientNoise(input.position.xy) > coverage)
+        {
+            discard;
+        }
+    }
+
+    float3 normal = SafeNormalize(mul((float3x3)viewMatrix, SafeNormalize(input.worldNormal)));
+    float depth = -mul(viewMatrix, float4(input.worldPosition, 1.0f)).z;
+    return float4(normal, depth);
+}
+
+struct OcclusionOutput
+{
+    float4 position : SV_Position;
+    float2 uv : TEXCOORD0;
+};
+
+OcclusionOutput VSOcclusion(uint vertexID : SV_VertexID)
+{
+    OcclusionOutput output;
+    output.uv = float2(vertexID == 2 ? 2.0f : 0.0f, vertexID == 1 ? 2.0f : 0.0f);
+    output.position = float4(output.uv * 2.0f - 1.0f, 0.0f, 1.0f);
+    return output;
+}
+
+float3 OcclusionViewPosition(float2 uv, float depth)
+{
+    return float3((uv * 2.0f - 1.0f) * depth / float2(projMatrix[0][0], projMatrix[1][1]), -depth);
+}
+
+float4 PSOcclusion(OcclusionOutput input) : SV_Target
+{
+    uint width;
+    uint height;
+    occlusionGeometry.GetDimensions(width, height);
+    int2 size = int2(width, height);
+    int2 coord = min((int2)(input.uv * size), size - 1);
+    float4 geometry = occlusionGeometry.Load(int3(coord, 0));
+    if (geometry.w <= 0.0f)
+    {
+        return float4(1.0f, 0.0f, 0.0f, 0.0f);
+    }
+
+    float2 centerUV = (float2(coord) + 0.5f) / size;
+    float3 position = OcclusionViewPosition(centerUV, geometry.w);
+    float radiusPixels = min(72.0f, c_occlusionRadius * abs(projMatrix[1][1]) * height * 0.5f / geometry.w);
+    float angle = InterleavedGradientNoise(input.position.xy) * 6.2831853f;
+    float occlusion = 0.0f;
+
+    [unroll]
+    for (uint i = 0; i < 16; ++i)
+    {
+        float sampleAngle = angle + float(i % 8) * 0.7853982f;
+        float radius = radiusPixels * (i < 8 ? 0.35f : 0.85f);
+        int2 sampleCoord = coord + (int2)round(float2(cos(sampleAngle), sin(sampleAngle)) * radius);
+        if (any(sampleCoord < 0) || any(sampleCoord >= size))
+        {
+            continue;
+        }
+
+        float depth = occlusionGeometry.Load(int3(sampleCoord, 0)).w;
+        if (depth <= 0.0f)
+        {
+            continue;
+        }
+
+        float3 delta = OcclusionViewPosition((float2(sampleCoord) + 0.5f) / size, depth) - position;
+        float distanceSquared = dot(delta, delta);
+        float horizon = max(dot(geometry.xyz, delta) * rsqrt(max(distanceSquared, 0.0001f)) - 0.08f, 0.0f);
+        occlusion += horizon * saturate(1.0f - distanceSquared / (c_occlusionRadius * c_occlusionRadius));
+    }
+
+    float visibility = max(c_occlusionMinVisibility, 1.0f - occlusion * c_occlusionStrength / 16.0f);
+    return float4(visibility, geometry.w, 0.0f, 0.0f);
+}
+
+float4 PSOcclusionBlur(OcclusionOutput input) : SV_Target
+{
+    uint width;
+    uint height;
+    occlusionRaw.GetDimensions(width, height);
+    int2 size = int2(width, height);
+    int2 coord = min((int2)(input.uv * size), size - 1);
+    float2 center = occlusionRaw.Load(int3(coord, 0)).rg;
+    float visibility = 0.0f;
+    float totalWeight = 0.0f;
+
+    [unroll]
+    for (int y = -2; y <= 2; ++y)
+    {
+        [unroll]
+        for (int x = -2; x <= 2; ++x)
+        {
+            float2 sample = occlusionRaw.Load(int3(clamp(coord + int2(x, y), int2(0, 0), size - 1), 0)).rg;
+            float weight = exp(-float(x * x + y * y) * 0.5f - abs(sample.y - center.y) / (0.15f + center.y * 0.005f));
+            visibility += sample.x * weight;
+            totalWeight += weight;
+        }
+    }
+
+    return float4(visibility / max(totalWeight, 0.0001f), center.y, 0.0f, 0.0f);
+}
 
 float4 PSMain(VSOutput input) : SV_Target
 {
@@ -1054,22 +1110,31 @@ float4 PSMain(VSOutput input) : SV_Target
 
     albedo *= input.color.rgb;
 
+    ApplyForestSurface(input.worldPosition, normal, input.surfaceFlags, metallic, emissiveStrength, albedo, roughness);
+
+    const float crystalMask = input.crystal != 0 ? 1.0f : 0.0f;
+
+    if (crystalMask > 0.0f)
+    {
+        roughness = min(roughness, 0.16f);
+        metallic = max(metallic, 0.72f);
+    }
+
     // -------------------------------------------------------------------------------------------------------------------------
     // Ambient
     // -------------------------------------------------------------------------------------------------------------------------
 
     float3 finalColor = EvaluateAmbient(
         input.worldPosition,
-        input.reflectionProbeIndices,
-        input.reflectionProbeWeights,
-        input.reflectionProbeCoverage,
         normal,
         viewDirection,
         albedo,
         roughness,
         metallic,
-        ambientStrength * c_ambientLightStrength
+        ambientStrength * c_ambientLightStrength,
+        lerp(1.0f, 2.5f, crystalMask)
     );
+    finalColor *= SampleAmbientOcclusion(input.position.xy, GetCameraViewDepth(input.worldPosition));
     // -------------------------------------------------------------------------------------------------------------------------
     // Direct Lighting
     // -------------------------------------------------------------------------------------------------------------------------
@@ -1155,25 +1220,22 @@ float4 PSMain(VSOutput input) : SV_Target
     // Emissive
     // -------------------------------------------------------------------------------------------------------------------------
 
-    finalColor += emissiveColor * emissiveStrength;
+    const float crystalFacet = 0.72f + 0.28f * abs(dot(normal, float3(0.577f, 0.577f, 0.577f)));
 
-    // -------------------------------------------------------------------------------------------------------------------------
-    // Tone Mapping
-    // -------------------------------------------------------------------------------------------------------------------------
-
-    finalColor = ACESFilm(finalColor);
+    finalColor += emissiveColor * emissiveStrength * (1.0f + crystalMask * crystalFacet * 0.12f);
 
     // The same display-linear color clears the background, hiding the outer terrain edge.
     const float fogDistance = length(input.worldPosition - cameraPosition.xyz);
     const float fogDepth = max(fogDistance - c_fogStart, 0.0f);
+    const float cameraHeight = max(cameraPosition.y - c_heightFogBaseHeight, 0.0f);
+    const float fragmentHeight = max(input.worldPosition.y - c_heightFogBaseHeight, 0.0f);
+    const float averageHeight = 0.5f * (cameraHeight + fragmentHeight);
+    const float heightFogFactor = exp(-averageHeight * c_heightFogFalloff);
+    const float fogExtinction = c_fogDensity + c_heightFogDensity * heightFogFactor;
     const float fogAmount = input.preserveAtDistance != 0 ? 0.0f :
-        max(1.0f - exp(-fogDepth * c_fogDensity), smoothstep(c_fogEdgeStart, c_fogEnd, fogDistance));
+        max(1.0f - exp(-fogDepth * fogExtinction), smoothstep(c_fogEdgeStart, c_fogEnd, fogDistance));
     const float3 fogColor = float3(c_fogRed, c_fogGreen, c_fogBlue);
     finalColor = lerp(finalColor, fogColor, fogAmount);
 
-    float dither = InterleavedGradientNoise(input.position.xy) - 0.5f;
-
-    finalColor += dither / 255.0f;
-
-    return float4(saturate(finalColor), input.color.a);
+    return float4(clamp(finalColor, 0.0f, 65504.0f), input.color.a);
 }

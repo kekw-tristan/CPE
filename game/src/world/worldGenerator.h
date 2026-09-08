@@ -6,6 +6,7 @@
 #include "enemy/enemySpawn.h"
 
 #include <map>
+#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -13,11 +14,22 @@ namespace World
 {
     struct sWorldLayout;
 
+    struct sReflectionProbeDesc
+    {
+        Engine::Math::cVec3f position;
+        Engine::Math::cVec3f boxMin;
+        Engine::Math::cVec3f boxMax;
+
+        float blendDistance = 8.0f;
+        uint32_t resolution = 64;
+    };
+
     struct sLoadedChunk
     {
         Engine::GFX::cScene scene;
         std::vector<Engine::Physics::sColliderHandle> colliders;
         std::vector<sEnemySpawn> spawns;
+        std::vector<sReflectionProbeDesc> reflectionProbes;
     };
 
     namespace WorldGenerator

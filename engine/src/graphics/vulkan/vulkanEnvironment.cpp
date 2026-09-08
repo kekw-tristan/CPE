@@ -84,74 +84,30 @@ namespace Engine::GFX
 
         // ---------------------------------------------------------------------------------------------------------------------
 
-        Math::cVec3f EvaluateEnvironment(const Math::cVec3f& _rDirection)
+        Math::cVec3f EvaluateEnvironment(const Math::cVec3f& _rDirection, const sEnvironmentSettings& _rSettings)
         {
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Base environment
-            // -------------------------------------------------------------------------------------------------------------------------
+            const auto colorFromArray = [](const std::array<float, 3>& _rColor)
+            {
+                return Math::cVec3f(_rColor[0], _rColor[1], _rColor[2]);
+            };
 
-            const Math::cVec3f groundColor = { 0.030f, 0.045f, 0.035f };
-            const Math::cVec3f horizonColor = { 0.14f, 0.18f, 0.24f };
-            const Math::cVec3f skyColor = { 0.035f, 0.075f, 0.18f };
+            const Math::cVec3f ground = colorFromArray(_rSettings.groundColor);
+            const Math::cVec3f horizon = colorFromArray(_rSettings.horizonColor);
+            const Math::cVec3f zenith = colorFromArray(_rSettings.zenithColor);
+            const Math::cVec3f keyDirection = colorFromArray(_rSettings.keyDirection).normalized();
 
-            float hemisphere = Saturate(_rDirection.y() * 0.5f + 0.5f);
+            // Same horizon transition as the visible sky; no game-owned definitions in the engine.
+            float skyBlend = Saturate((_rDirection.y() - 0.02f) / 0.36f);
+            skyBlend = skyBlend * skyBlend * (3.0f - 2.0f * skyBlend);
+            Math::cVec3f color = Math::cVec3f::lerp(horizon, zenith, skyBlend);
 
-            // Smooth the hemisphere transition.
-            hemisphere = hemisphere * hemisphere * (3.0f - 2.0f * hemisphere);
+            if (_rDirection.y() < 0.0f)
+            {
+                color = Math::cVec3f::lerp(horizon, ground, Saturate(-_rDirection.y() * 4.0f));
+            }
 
-            Math::cVec3f color = Math::cVec3f::lerp(groundColor, skyColor, hemisphere);
-
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Soft horizon
-            // -------------------------------------------------------------------------------------------------------------------------
-
-            const float horizonBase = Saturate(1.0f - std::abs(_rDirection.y()));
-            const float horizonFactor = std::pow(horizonBase, 4.0f) * 0.30f;
-
-            color += horizonColor * horizonFactor;
-
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Warm key reflection
-            // -------------------------------------------------------------------------------------------------------------------------
-
-            const Math::cVec3f keyDirection = Math::cVec3f(-0.65f, 0.45f, -0.55f).normalized();
-            const Math::cVec3f keyColor = { 2.2f, 1.65f, 1.05f };
-
-            const float keyFactor = std::pow(Saturate(_rDirection.dot(keyDirection)), 64.0f);
-
-            color += keyColor * keyFactor;
-
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Cool fill reflection
-            // -------------------------------------------------------------------------------------------------------------------------
-
-            const Math::cVec3f fillDirection = Math::cVec3f(0.70f, 0.15f, 0.45f).normalized();
-            const Math::cVec3f fillColor = { 0.18f, 0.38f, 1.0f };
-
-            const float fillFactor = std::pow(Saturate(_rDirection.dot(fillDirection)), 28.0f);
-
-            color += fillColor * fillFactor;
-
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Overhead reflection
-            // -------------------------------------------------------------------------------------------------------------------------
-
-            const Math::cVec3f topDirection = { 0.0f, 1.0f, 0.0f };
-            const Math::cVec3f topColor = { 0.55f, 0.65f, 0.85f };
-
-            const float topFactor = std::pow(Saturate(_rDirection.dot(topDirection)), 8.0f);
-
-            color += topColor * topFactor;
-
-            // -------------------------------------------------------------------------------------------------------------------------
-            // Ground bounce
-            // -------------------------------------------------------------------------------------------------------------------------
-
-            const float groundFactor = std::pow(Saturate(-_rDirection.y()), 2.0f);
-
-            color += Math::cVec3f(0.025f, 0.055f, 0.025f) * groundFactor;
-            return { 0.15f, 0.18f, 0.22f };
-            return color;
+            const float key = std::pow(Saturate(_rDirection.dot(keyDirection)), _rSettings.keyExponent);
+            return color + colorFromArray(_rSettings.keyRadiance) * key;
         }
 
         // ---------------------------------------------------------------------------------------------------------------------
@@ -185,11 +141,11 @@ namespace Engine::GFX
 
         // ---------------------------------------------------------------------------------------------------------------------
 
-        Math::cVec3f PrefilterEnvironment(const Math::cVec3f& _rReflectionDirection, float _roughness)
+        Math::cVec3f PrefilterEnvironment(const Math::cVec3f& _rReflectionDirection, float _roughness, const sEnvironmentSettings& _rSettings)
         {
             if (_roughness <= 0.001f)
             {
-                return EvaluateEnvironment(_rReflectionDirection);
+                return EvaluateEnvironment(_rReflectionDirection, _rSettings);
             }
 
             constexpr uint32_t c_sampleCount = 128;
@@ -216,13 +172,13 @@ namespace Engine::GFX
                     continue;
                 }
 
-                prefilteredColor += EvaluateEnvironment(lightDirection) * NdotL;
+                prefilteredColor += EvaluateEnvironment(lightDirection, _rSettings) * NdotL;
                 totalWeight += NdotL;
             }
 
             if (totalWeight <= 0.000001f)
             {
-                return EvaluateEnvironment(_rReflectionDirection);
+                return EvaluateEnvironment(_rReflectionDirection, _rSettings);
             }
 
             return prefilteredColor / totalWeight;
@@ -251,7 +207,7 @@ namespace Engine::GFX
 
         // ---------------------------------------------------------------------------------------------------------------------
 
-        Math::cVec3f EvaluateDiffuseIrradiance(const Math::cVec3f& _rNormal)
+        Math::cVec3f EvaluateDiffuseIrradiance(const Math::cVec3f& _rNormal, const sEnvironmentSettings& _rSettings)
         {
             constexpr uint32_t c_sampleCount = 256;
 
@@ -262,7 +218,7 @@ namespace Engine::GFX
                 const sFloat2 xi = Hammersley(sampleIndex, c_sampleCount);
                 const Math::cVec3f sampleDirection = CosineSampleHemisphere(xi, _rNormal);
 
-                irradiance += EvaluateEnvironment(sampleDirection);
+                irradiance += EvaluateEnvironment(sampleDirection, _rSettings);
             }
 
             return irradiance / static_cast<float>(c_sampleCount);
@@ -287,7 +243,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanEnvironment::Create(cVulkanDevice& _rDevice, cVulkanCommands& _rCommands)
+    void cVulkanEnvironment::Create(cVulkanDevice& _rDevice, cVulkanCommands& _rCommands, const sEnvironmentSettings& _rSettings)
     {
         constexpr uint32_t cubeSize = 128;
         constexpr uint32_t irradianceSize = 32;
@@ -331,7 +287,7 @@ namespace Engine::GFX
                     for (uint32_t x = 0; x < mipWidth; ++x)
                     {
                         const Math::cVec3f direction = GetCubeDirection(face, x, y, mipWidth);
-                        const Math::cVec3f color = PrefilterEnvironment(direction, roughness);
+                        const Math::cVec3f color = PrefilterEnvironment(direction, roughness, _rSettings);
 
                         environmentPixels.push_back(color.x());
                         environmentPixels.push_back(color.y());
@@ -382,7 +338,7 @@ namespace Engine::GFX
                 for (uint32_t x = 0; x < irradianceSize; ++x)
                 {
                     const Math::cVec3f direction = GetCubeDirection(face, x, y, irradianceSize);
-                    const Math::cVec3f irradiance = EvaluateDiffuseIrradiance(direction);
+                    const Math::cVec3f irradiance = EvaluateDiffuseIrradiance(direction, _rSettings);
 
                     const size_t pixelIndex = (((static_cast<size_t>(face) * irradianceSize + y) * irradianceSize + x) * channelCount);
 
@@ -434,7 +390,8 @@ namespace Engine::GFX
         samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
         samplerInfo.unnormalizedCoordinates = VK_FALSE;
         samplerInfo.minLod = 0.0f;
-        samplerInfo.maxLod = static_cast<float>(m_environmentImage.GetMipLevels() - 1);
+        // Shared by environment and local probes, which may have more mip levels.
+        samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
 
         if (vkCreateSampler(_rDevice.GetDevice(), &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS)
         {

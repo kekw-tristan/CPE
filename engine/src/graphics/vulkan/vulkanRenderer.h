@@ -44,6 +44,7 @@ namespace Engine::GFX
             None,
             Shadow,
             ReflectionProbe,
+            AmbientOcclusion,
             Main
         };
     };
@@ -60,7 +61,7 @@ namespace Engine::GFX
 
         public:
         
-            void Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline);  
+            void Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline, const sEnvironmentSettings& _rEnvironment = {});
             void ShutDown();  
             void RecreateDepthBuffer();
             void RecreateColorBuffer();
@@ -81,6 +82,8 @@ namespace Engine::GFX
             void DrawHealthBars();
 
             void BeginDraw(); 
+            void BeginAmbientOcclusionDraw();
+            void EndAmbientOcclusionDraw();
 
         public:
 
@@ -105,6 +108,20 @@ namespace Engine::GFX
         private:
 
             void EndDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex);
+            void EndUIDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex);
+            void CreateBloomBuffer();
+            void DestroyBloomBuffer();
+            void CreatePostProcessSampler();
+            void UpdatePostProcessDescriptorSet();
+            void DrawBloomPass(VkCommandBuffer _pCommandBuffer);
+            void DrawBloomLevel(VkCommandBuffer _pCommandBuffer, cVulkanImage& _rTarget, VkDescriptorSet _descriptorSet, uint32_t _mode);
+            void DrawCompositePass(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex);
+            void BeginUIDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex);
+            void CreateAmbientOcclusionBuffers();
+            void DestroyAmbientOcclusionBuffers();
+            void UpdateAmbientOcclusionDescriptors();
+            void TransitionAmbientOcclusionImage(cVulkanImage& _rImage, bool _renderTarget);
+            void DrawAmbientOcclusionFilter(cVulkanImage& _rTarget, VkPipeline _pipeline);
 
         private:
 
@@ -113,6 +130,7 @@ namespace Engine::GFX
             void CreateDescriptorPool();
             void CreateImGuiDescriptorPool();
             void CreateDescriptorSets();
+            void CreatePostProcessDescriptorSet();
             void CreateMaterialBuffer();
 
             void UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera);
@@ -137,8 +155,10 @@ namespace Engine::GFX
 
         private:
 
-            void CreateReflectionProbePrefilterDescriptorSets();
+            void CreateReflectionProbePrefilterDescriptorSets(uint32_t _firstProbeIndex = 0);
+            void UpdateReflectionProbePrefilterDescriptorSet(uint32_t _probeIndex);
             void GenerateReflectionProbeCaptureMipmaps();
+            void EnsureReflectionProbeResources();
 
         private:
 
@@ -158,22 +178,39 @@ namespace Engine::GFX
 
             cVulkanDepthBuffer m_depthBuffer;
             cVulkanColorBuffer m_colorBuffer;
+
+            cVulkanImage m_occlusionGeometry;
+            cVulkanImage m_occlusionDepth;
+            cVulkanImage m_occlusionRaw;
+            cVulkanImage m_occlusionFiltered;
+
+            static constexpr uint32_t c_bloomLevelCount = 6;
+            static constexpr uint32_t c_bloomPassCount  = c_bloomLevelCount * 2 - 1;
+
+            std::array<cVulkanImage, c_bloomLevelCount> m_bloomDownsampleImages;
+            std::array<cVulkanImage, c_bloomLevelCount - 1> m_bloomUpsampleImages;
+            std::array<VkDescriptorSet, c_bloomPassCount> m_bloomDescriptorSets{};
+
+            VkSampler       m_postProcessSampler        = VK_NULL_HANDLE;
+            VkDescriptorSet m_postProcessDescriptorSet  = VK_NULL_HANDLE;
             
             std::vector<const cVulkanMesh*> m_submittedMeshes;
-            std::vector<VkSemaphore> m_renderFinishedSemaphores;  
-            std::vector<VkFence> m_imagesInFlight;  
+            std::vector<VkSemaphore>        m_renderFinishedSemaphores;  
+            std::vector<VkFence>            m_imagesInFlight;  
 
             bool m_hasFrameStarted; 
             uint32_t m_imageIndex;
 
             cVulkanBuffer m_materialBuffer;
-            cVulkanBuffer m_materialStagingBuffer;
+            std::array<cVulkanBuffer, c_maxNumberOfFrames> m_materialStagingBuffers;
 
-            cShadowMap m_shadowMap;
-            std::vector<int32_t> m_lightShadowIndices; 
-            std::vector<uint32_t> m_activeLightIndices;
-            std::vector<uint32_t> m_previousActiveLightIndices;
+            cShadowMap m_shadowMap
+                ;
+            std::vector<int32_t>                    m_lightShadowIndices; 
+            std::vector<uint32_t>                   m_activeLightIndices;
+            std::vector<uint32_t>                   m_previousActiveLightIndices;
             std::vector<std::pair<float, uint32_t>> m_activeLightCandidates;
+
             sRenderPassType::Enum m_renderPassType = sRenderPassType::None;
 
             std::array<double, 2> m_gpuPassMilliseconds = { -1.0, -1.0 };
@@ -191,11 +228,14 @@ namespace Engine::GFX
             cVulkanImage m_reflectionProbeDepthImage;
 
             VkImageLayout m_reflectionProbeDepthLayout          = VK_IMAGE_LAYOUT_UNDEFINED;
+            uint32_t m_reflectionProbeDepthResolution           = 1;
 
             uint32_t m_reflectionProbeCount = 0;
             uint32_t m_activeReflectionProbeIndex = UINT32_MAX;
 
             std::vector<std::unique_ptr<cVulkanReflectionProbe>> m_vulkanReflectionProbes;
+            std::vector<ReflectionProbeHandle> m_activeReflectionProbeHandles;
+            std::vector<ReflectionProbeHandle> m_visibleReflectionProbeHandles;
 
             std::vector<VkImageLayout> m_reflectionProbeCaptureLayouts;
             std::vector<VkImageLayout> m_reflectionProbePrefilteredLayouts;

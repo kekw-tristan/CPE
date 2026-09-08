@@ -14,6 +14,8 @@ namespace Engine::GFX
             InstanceFlagTerrain,
             InstanceFlagSky = 2,
             InstanceFlagPreserveAtDistance = 4,
+            InstanceFlagCrystal = 8,
+            InstanceFlagWeathered = 16,
 
             NumberOfElements,
             Undefined = -1

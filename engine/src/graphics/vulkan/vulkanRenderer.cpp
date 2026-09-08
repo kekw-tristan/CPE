@@ -46,7 +46,7 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline)
+    void cVulkanRenderer::Init(cVulkanDevice& _rDevice, cVulkanSwapchain& _rSwapChain, cVulkanCommands& _rCommands, cVulkanPipeline& _rPipeline, const sEnvironmentSettings& _rEnvironment)
     {
         m_pDevice = &_rDevice;
         m_pSwapchain = &_rSwapChain;
@@ -74,6 +74,9 @@ namespace Engine::GFX
 
         m_depthBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
         m_colorBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
+        CreateBloomBuffer();
+        CreatePostProcessSampler();
+        CreateAmbientOcclusionBuffers();
 
         // -------------------------------------------------------------------------------------------------------------------------
         // Shadows
@@ -85,7 +88,7 @@ namespace Engine::GFX
         // Global IBL
         // -------------------------------------------------------------------------------------------------------------------------
 
-        m_environment.Create(*m_pDevice, *m_pCommands);
+        m_environment.Create(*m_pDevice, *m_pCommands, _rEnvironment);
         m_brdfLUT.Create(*m_pDevice, *m_pCommands);
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -131,6 +134,8 @@ namespace Engine::GFX
         const uint32_t reflectionProbeCount = ReflectionProbeManager::GetProbeCount();
 
         m_activeReflectionProbeIndex = UINT32_MAX;
+        m_activeReflectionProbeHandles.reserve(c_maxNumberOfActiveReflectionProbes);
+        m_visibleReflectionProbeHandles.reserve(c_maxNumberOfActiveReflectionProbes);
 
         m_vulkanReflectionProbes.clear();
         m_vulkanReflectionProbes.reserve(reflectionProbeCount);
@@ -172,6 +177,7 @@ namespace Engine::GFX
         );
 
         m_reflectionProbeDepthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        m_reflectionProbeDepthResolution = maximumReflectionProbeResolution;
 
         // -------------------------------------------------------------------------------------------------------------------------
         // Descriptor resources
@@ -184,6 +190,7 @@ namespace Engine::GFX
         CreateImGuiDescriptorPool();
 
         CreateDescriptorSets();
+        CreatePostProcessDescriptorSet();
         CreateReflectionProbePrefilterDescriptorSets();
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -206,6 +213,15 @@ namespace Engine::GFX
 
         m_depthBuffer.ShutDown(*m_pDevice);
         m_colorBuffer.ShutDown(*m_pDevice);
+        DestroyBloomBuffer();
+
+        DestroyAmbientOcclusionBuffers();
+
+        if (m_postProcessSampler != VK_NULL_HANDLE)
+        {
+            vkDestroySampler(device, m_postProcessSampler, nullptr);
+            m_postProcessSampler = VK_NULL_HANDLE;
+        }
 
         m_shadowMap.Destroy(*m_pDevice);
         m_environment.Destroy(*m_pDevice);
@@ -228,7 +244,10 @@ namespace Engine::GFX
         m_reflectionProbePrefilterDescriptorSets.clear();
 
         m_materialBuffer.Shutdown(*m_pDevice);
-        m_materialStagingBuffer.Shutdown(*m_pDevice);
+        for (cVulkanBuffer& rBuffer : m_materialStagingBuffers)
+        {
+            rBuffer.Shutdown(*m_pDevice);
+        }
 
         for (sVulkanFrame& rFrame : m_frames)
         {
@@ -328,6 +347,362 @@ namespace Engine::GFX
         m_colorBuffer.ShutDown(*m_pDevice);
 
         m_colorBuffer.Init(*m_pDevice, *m_pSwapchain, *m_pCommands);
+        DestroyBloomBuffer();
+        CreateBloomBuffer();
+        DestroyAmbientOcclusionBuffers();
+        CreateAmbientOcclusionBuffers();
+        UpdatePostProcessDescriptorSet();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::CreateAmbientOcclusionBuffers()
+    {
+        const VkExtent2D extent = m_pSwapchain->GetExtent();
+        const uint32_t halfWidth = std::max(1u, (extent.width + 1) / 2);
+        const uint32_t halfHeight = std::max(1u, (extent.height + 1) / 2);
+        const VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+        m_occlusionGeometry.Create(*m_pDevice, extent.width, extent.height, VK_FORMAT_R16G16B16A16_SFLOAT,
+            usage, VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_1_BIT);
+        m_occlusionRaw.Create(*m_pDevice, halfWidth, halfHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
+            usage, VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_1_BIT);
+        m_occlusionFiltered.Create(*m_pDevice, halfWidth, halfHeight, VK_FORMAT_R16G16B16A16_SFLOAT,
+            usage, VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_1_BIT);
+        m_occlusionDepth.Create(*m_pDevice, extent.width, extent.height, VK_FORMAT_D32_SFLOAT,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, VK_SAMPLE_COUNT_1_BIT);
+
+        VkCommandBuffer commandBuffer = m_pCommands->BeginSingleTimeCommands(*m_pDevice);
+        for (cVulkanImage* pImage : { &m_occlusionGeometry, &m_occlusionRaw, &m_occlusionFiltered })
+        {
+            pImage->TransitionLayout(*m_pDevice, commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT);
+        }
+        m_occlusionDepth.TransitionLayout(*m_pDevice, commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT);
+        m_pCommands->EndSingleTimeCommands(*m_pDevice, commandBuffer);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::DestroyAmbientOcclusionBuffers()
+    {
+        m_occlusionGeometry.Destroy(*m_pDevice);
+        m_occlusionDepth.Destroy(*m_pDevice);
+        m_occlusionRaw.Destroy(*m_pDevice);
+        m_occlusionFiltered.Destroy(*m_pDevice);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::UpdateAmbientOcclusionDescriptors()
+    {
+        const std::array<VkImageView, 3> views =
+        {
+            m_occlusionGeometry.GetImageView(), m_occlusionRaw.GetImageView(), m_occlusionFiltered.GetImageView()
+        };
+
+        // Called only during initialization or resize, with no frames in flight.
+        for (sVulkanFrame& rFrame : m_frames)
+        {
+            std::array<VkDescriptorImageInfo, 3> images{};
+            std::array<VkWriteDescriptorSet, 3> writes{};
+            for (uint32_t index = 0; index < views.size(); ++index)
+            {
+                images[index].imageView = views[index];
+                images[index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                writes[index] = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, rFrame.frameDescriptorSet,
+                    14 + index, 0, 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, &images[index], nullptr, nullptr };
+            }
+            vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::TransitionAmbientOcclusionImage(cVulkanImage& _rImage, bool _renderTarget)
+    {
+        VkImageMemoryBarrier barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout           = _renderTarget ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        barrier.newLayout           = _renderTarget ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask       = _renderTarget ? VK_ACCESS_SHADER_READ_BIT : VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        barrier.dstAccessMask       = _renderTarget ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_SHADER_READ_BIT;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image               = _rImage.GetImage();
+        barrier.subresourceRange    = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+
+        vkCmdPipelineBarrier(m_frames[m_currentFrame].pCommandBuffer,
+            _renderTarget ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            _renderTarget ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::BeginAmbientOcclusionDraw()
+    {
+        if (!m_hasFrameStarted || m_renderPassType != sRenderPassType::None)
+        {
+            throw std::runtime_error("Ambient occlusion geometry must begin outside other render passes!");
+        }
+
+        const sVulkanFrame& rFrame  = m_frames[m_currentFrame];
+        VkCommandBuffer commandBuffer = rFrame.pCommandBuffer;
+        TransitionAmbientOcclusionImage(m_occlusionGeometry, true);
+
+        VkMemoryBarrier depthBarrier{};
+        depthBarrier.sType                      = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        depthBarrier.srcAccessMask              = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        depthBarrier.dstAccessMask              = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        const VkPipelineStageFlags depthStages  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+
+        vkCmdPipelineBarrier(commandBuffer, depthStages, depthStages, 0, 1, &depthBarrier, 0, nullptr, 0, nullptr);
+
+        VkRenderingAttachmentInfo color{};
+        color.sType         = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        color.imageView     = m_occlusionGeometry.GetImageView();
+        color.imageLayout   = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        color.loadOp        = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        color.storeOp       = VK_ATTACHMENT_STORE_OP_STORE;
+
+        VkRenderingAttachmentInfo depth{};
+        depth.sType                     = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        depth.imageView                 = m_occlusionDepth.GetImageView();
+        depth.imageLayout               = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depth.loadOp                    = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth.storeOp                   = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth.clearValue.depthStencil   = { 1.0f, 0 };
+
+        VkRenderingInfo rendering{};
+        rendering.sType                 = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        rendering.renderArea.extent     = { m_occlusionGeometry.GetWidth(), m_occlusionGeometry.GetHeight() };
+        rendering.layerCount            = 1;
+        rendering.colorAttachmentCount  = 1;
+        rendering.pColorAttachments     = &color;
+        rendering.pDepthAttachment      = &depth;
+        vkCmdBeginRendering(commandBuffer, &rendering);
+
+        VkViewport viewport = { 0.0f, 0.0f, static_cast<float>(rendering.renderArea.extent.width),
+            static_cast<float>(rendering.renderArea.extent.height), 0.0f, 1.0f };
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffer, 0, 1, &rendering.renderArea);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetNormalDepthPipeline());
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(),
+            0, 1, &rFrame.frameDescriptorSet, 0, nullptr);
+        m_renderPassType = sRenderPassType::AmbientOcclusion;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::DrawAmbientOcclusionFilter(cVulkanImage& _rTarget, VkPipeline _pipeline)
+    {
+        const sVulkanFrame& rFrame = m_frames[m_currentFrame];
+        VkCommandBuffer commandBuffer = rFrame.pCommandBuffer;
+        TransitionAmbientOcclusionImage(_rTarget, true);
+
+        VkRenderingAttachmentInfo color{};
+        color.sType         = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        color.imageView     = _rTarget.GetImageView();
+        color.imageLayout   = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        color.loadOp        = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        color.storeOp       = VK_ATTACHMENT_STORE_OP_STORE;
+
+        VkRenderingInfo rendering{};
+        rendering.sType                 = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        rendering.renderArea.extent     = { _rTarget.GetWidth(), _rTarget.GetHeight() };
+        rendering.layerCount            = 1;
+        rendering.colorAttachmentCount  = 1;
+        rendering.pColorAttachments     = &color;
+
+        vkCmdBeginRendering(commandBuffer, &rendering);
+
+        VkViewport viewport = { 0.0f, 0.0f, static_cast<float>(_rTarget.GetWidth()), static_cast<float>(_rTarget.GetHeight()), 0.0f, 1.0f };
+
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffer, 0, 1, &rendering.renderArea);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(),
+            0, 1, &rFrame.frameDescriptorSet, 0, nullptr);
+
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        vkCmdEndRendering(commandBuffer);
+        TransitionAmbientOcclusionImage(_rTarget, false);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::EndAmbientOcclusionDraw()
+    {
+        if (m_renderPassType != sRenderPassType::AmbientOcclusion)
+        {
+            throw std::runtime_error("No ambient occlusion geometry pass is active!");
+        }
+
+        vkCmdEndRendering(m_frames[m_currentFrame].pCommandBuffer);
+        m_renderPassType = sRenderPassType::None;
+        TransitionAmbientOcclusionImage(m_occlusionGeometry, false);
+        DrawAmbientOcclusionFilter(m_occlusionRaw, m_pPipeline->GetOcclusionPipeline());
+        DrawAmbientOcclusionFilter(m_occlusionFiltered, m_pPipeline->GetOcclusionBlurPipeline());
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::CreateBloomBuffer()
+    {
+        const VkExtent2D extent = m_pSwapchain->GetExtent();
+        uint32_t width = std::max(1u, (extent.width + 1) / 2);
+        uint32_t height = std::max(1u, (extent.height + 1) / 2);
+
+        VkCommandBuffer commandBuffer = m_pCommands->BeginSingleTimeCommands(*m_pDevice);
+
+        const auto createImage = [&](cVulkanImage& _rImage)
+        {
+            _rImage.Create(
+                *m_pDevice, width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT, VK_SAMPLE_COUNT_1_BIT);
+            _rImage.TransitionLayout(
+                *m_pDevice, commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT);
+        };
+
+        for (uint32_t level = 0; level < c_bloomLevelCount; ++level)
+        {
+            createImage(m_bloomDownsampleImages[level]);
+
+            if (level + 1 < c_bloomLevelCount)
+            {
+                createImage(m_bloomUpsampleImages[level]);
+            }
+
+            width = std::max(1u, (width + 1) / 2);
+            height = std::max(1u, (height + 1) / 2);
+        }
+
+        m_pCommands->EndSingleTimeCommands(*m_pDevice, commandBuffer);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::DestroyBloomBuffer()
+    {
+        for (cVulkanImage& rImage : m_bloomDownsampleImages)
+        {
+            rImage.Destroy(*m_pDevice);
+        }
+
+        for (cVulkanImage& rImage : m_bloomUpsampleImages)
+        {
+            rImage.Destroy(*m_pDevice);
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::CreatePostProcessSampler()
+    {
+        VkSamplerCreateInfo samplerInfo{};
+        samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter               = VK_FILTER_LINEAR;
+        samplerInfo.minFilter               = VK_FILTER_LINEAR;
+        samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.mipLodBias              = 0.0f;
+        samplerInfo.anisotropyEnable        = VK_FALSE;
+        samplerInfo.compareEnable           = VK_FALSE;
+        samplerInfo.minLod                  = 0.0f;
+        samplerInfo.maxLod                  = 0.0f;
+        samplerInfo.borderColor             = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+
+        if (vkCreateSampler(m_pDevice->GetDevice(), &samplerInfo, nullptr, &m_postProcessSampler) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create post-process sampler!");
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::CreatePostProcessDescriptorSet()
+    {
+        const VkDescriptorSetLayout layout = m_pPipeline->GetPostProcessDescriptorSetLayout();
+
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool     = m_pDescriptorPool;
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.pSetLayouts        = &layout;
+
+        if (vkAllocateDescriptorSets(m_pDevice->GetDevice(), &allocInfo, &m_postProcessDescriptorSet) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to allocate post-process descriptor set!");
+        }
+
+        std::array<VkDescriptorSetLayout, c_bloomPassCount> bloomLayouts{};
+        bloomLayouts.fill(layout);
+        allocInfo.descriptorSetCount = c_bloomPassCount;
+        allocInfo.pSetLayouts = bloomLayouts.data();
+
+        if (vkAllocateDescriptorSets(m_pDevice->GetDevice(), &allocInfo, m_bloomDescriptorSets.data()) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to allocate bloom descriptor sets!");
+        }
+
+        UpdatePostProcessDescriptorSet();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::UpdatePostProcessDescriptorSet()
+    {
+        if (m_postProcessDescriptorSet == VK_NULL_HANDLE)
+        {
+            return;
+        }
+
+        UpdateAmbientOcclusionDescriptors();
+
+        const auto updateSet = [&](VkDescriptorSet _set, VkImageView _source, VkImageView _bloom)
+        {
+            VkDescriptorImageInfo sceneImageInfo{};
+            sceneImageInfo.imageView = _source;
+            sceneImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            VkDescriptorImageInfo samplerInfo{};
+            samplerInfo.sampler = m_postProcessSampler;
+
+            VkDescriptorImageInfo bloomImageInfo{};
+            bloomImageInfo.imageView = _bloom;
+            bloomImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            std::array<VkWriteDescriptorSet, 4> writes{};
+            writes[0] = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, _set, 0, 0, 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, &sceneImageInfo, nullptr, nullptr };
+            writes[1] = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, _set, 1, 0, 1, VK_DESCRIPTOR_TYPE_SAMPLER, &samplerInfo, nullptr, nullptr };
+            writes[2] = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, _set, 2, 0, 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, &bloomImageInfo, nullptr, nullptr };
+            writes[3] = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, _set, 3, 0, 1, VK_DESCRIPTOR_TYPE_SAMPLER, &samplerInfo, nullptr, nullptr };
+            vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+        };
+
+        updateSet(m_postProcessDescriptorSet, m_colorBuffer.GetResolveImageView(), m_bloomUpsampleImages[0].GetImageView());
+
+        for (uint32_t level = 0; level < c_bloomLevelCount; ++level)
+        {
+            const VkImageView source = level == 0
+                ? m_colorBuffer.GetResolveImageView() : m_bloomDownsampleImages[level - 1].GetImageView();
+            updateSet(m_bloomDescriptorSets[level], source, source);
+
+            if (level + 1 < c_bloomLevelCount)
+            {
+                const VkImageView lowResolution = level + 2 == c_bloomLevelCount
+                    ? m_bloomDownsampleImages[level + 1].GetImageView() : m_bloomUpsampleImages[level + 1].GetImageView();
+                updateSet(m_bloomDescriptorSets[c_bloomLevelCount + level], m_bloomDownsampleImages[level].GetImageView(), lowResolution);
+            }
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -422,6 +797,8 @@ namespace Engine::GFX
 
         frame.healthBarCount = 0;
 
+        EnsureReflectionProbeResources();
+
         SelectActiveLights(_rCamera);
         UpdateFrameUniformBuffer(frame, _rCamera);
 
@@ -466,9 +843,11 @@ namespace Engine::GFX
         sVulkanFrame&   rFrame          = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
 
-        GFX::ImGuiManager::EndFrame(pCommandBuffer); 
-
         EndDraw(pCommandBuffer, m_imageIndex);
+
+        GFX::ImGuiManager::EndFrame(pCommandBuffer);
+
+        EndUIDraw(pCommandBuffer, m_imageIndex);
 
         if (vkEndCommandBuffer(pCommandBuffer) != VK_SUCCESS)
         {
@@ -963,14 +1342,34 @@ namespace Engine::GFX
 
         VkDeviceSize materialSize = sizeof(sMaterial) * rMaterials.size();
 
-        m_materialStagingBuffer.Write(rMaterials.data(), materialSize);
+        if (rMaterials.size() > c_maxNumberOfMaterials)
+        {
+            throw std::length_error("Material count exceeds the GPU buffer capacity!");
+        }
+
+        // BeginFrame waited for this frame's fence before the CPU reuses its staging memory.
+        cVulkanBuffer& rStagingBuffer = m_materialStagingBuffers[m_currentFrame];
+        rStagingBuffer.Write(rMaterials.data(), materialSize);
+
+        VkBufferMemoryBarrier beforeUpload{};
+        beforeUpload.sType                  = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        beforeUpload.srcAccessMask          = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+        beforeUpload.dstAccessMask          = VK_ACCESS_TRANSFER_WRITE_BIT;
+        beforeUpload.srcQueueFamilyIndex    = VK_QUEUE_FAMILY_IGNORED;
+        beforeUpload.dstQueueFamilyIndex    = VK_QUEUE_FAMILY_IGNORED;
+        beforeUpload.buffer                 = m_materialBuffer.GetBuffer();
+        beforeUpload.size                   = VK_WHOLE_SIZE;
+
+        vkCmdPipelineBarrier(
+            pCommandBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &beforeUpload, 0, nullptr);
 
         VkBufferCopy copyRegion{};
-        copyRegion.srcOffset = 0;
-        copyRegion.dstOffset = 0;
-        copyRegion.size = materialSize;
+        copyRegion.srcOffset    = 0;
+        copyRegion.dstOffset    = 0;
+        copyRegion.size         = materialSize;
 
-        vkCmdCopyBuffer(pCommandBuffer, m_materialStagingBuffer.GetBuffer(), m_materialBuffer.GetBuffer(), 1, &copyRegion);
+        vkCmdCopyBuffer(pCommandBuffer, rStagingBuffer.GetBuffer(), m_materialBuffer.GetBuffer(), 1, &copyRegion);
     
         VkBufferMemoryBarrier barrier{};
 
@@ -1461,63 +1860,156 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cVulkanRenderer::CreateReflectionProbePrefilterDescriptorSets()
+    void cVulkanRenderer::CreateReflectionProbePrefilterDescriptorSets(uint32_t _firstProbeIndex)
     {
         const uint32_t reflectionProbeCount = ReflectionProbeManager::GetProbeCount();
 
-        if (reflectionProbeCount == 0)
+        if (_firstProbeIndex >= reflectionProbeCount)
         {
             return;
         }
 
+        const uint32_t descriptorSetCount = reflectionProbeCount - _firstProbeIndex;
+
         m_reflectionProbePrefilterDescriptorSets.resize(reflectionProbeCount, VK_NULL_HANDLE);
 
-        std::vector<VkDescriptorSetLayout> layouts(reflectionProbeCount, m_pPipeline->GetReflectionProbePrefilterDescriptorSetLayout());
+        std::vector<VkDescriptorSetLayout> layouts(descriptorSetCount, m_pPipeline->GetReflectionProbePrefilterDescriptorSetLayout());
+        std::vector<VkDescriptorSet> descriptorSets(descriptorSetCount, VK_NULL_HANDLE);
 
         VkDescriptorSetAllocateInfo allocInfo{};
 
         allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool     = m_pDescriptorPool;
-        allocInfo.descriptorSetCount = reflectionProbeCount;
+        allocInfo.descriptorSetCount = descriptorSetCount;
         allocInfo.pSetLayouts        = layouts.data();
 
-        if (vkAllocateDescriptorSets(m_pDevice->GetDevice(), &allocInfo, m_reflectionProbePrefilterDescriptorSets.data()) != VK_SUCCESS)
+        if (vkAllocateDescriptorSets(m_pDevice->GetDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS)
         {
             throw std::runtime_error("Failed to allocate reflection probe prefilter descriptor sets!");
         }
 
-        for (ReflectionProbeHandle probeHandle = 0; probeHandle < reflectionProbeCount; ++probeHandle)
+        for (ReflectionProbeHandle probeHandle = _firstProbeIndex; probeHandle < reflectionProbeCount; ++probeHandle)
         {
-            VkDescriptorImageInfo captureImageInfo{};
-
-            captureImageInfo.sampler        = VK_NULL_HANDLE;
-            captureImageInfo.imageView      = m_vulkanReflectionProbes[probeHandle]->GetCaptureImageView();
-            captureImageInfo.imageLayout    = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-            VkDescriptorImageInfo captureSamplerInfo{};
-
-            captureSamplerInfo.sampler      = m_vulkanReflectionProbes[probeHandle]->GetSampler();
-            captureSamplerInfo.imageView    = VK_NULL_HANDLE;
-            captureSamplerInfo.imageLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-
-            descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet          = m_reflectionProbePrefilterDescriptorSets[probeHandle];
-            descriptorWrites[0].dstBinding      = 0;
-            descriptorWrites[0].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pImageInfo      = &captureImageInfo;
-
-            descriptorWrites[1].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet          = m_reflectionProbePrefilterDescriptorSets[probeHandle];
-            descriptorWrites[1].dstBinding      = 1;
-            descriptorWrites[1].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo      = &captureSamplerInfo;
-
-            vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+            m_reflectionProbePrefilterDescriptorSets[probeHandle] = descriptorSets[probeHandle - _firstProbeIndex];
+            UpdateReflectionProbePrefilterDescriptorSet(probeHandle);
         }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::UpdateReflectionProbePrefilterDescriptorSet(uint32_t _probeIndex)
+    {
+        VkDescriptorImageInfo captureImageInfo{};
+
+        captureImageInfo.sampler        = VK_NULL_HANDLE;
+        captureImageInfo.imageView      = m_vulkanReflectionProbes[_probeIndex]->GetCaptureImageView();
+        captureImageInfo.imageLayout    = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        VkDescriptorImageInfo captureSamplerInfo{};
+
+        captureSamplerInfo.sampler      = m_vulkanReflectionProbes[_probeIndex]->GetSampler();
+        captureSamplerInfo.imageView    = VK_NULL_HANDLE;
+        captureSamplerInfo.imageLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+
+        descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet          = m_reflectionProbePrefilterDescriptorSets[_probeIndex];
+        descriptorWrites[0].dstBinding      = 0;
+        descriptorWrites[0].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pImageInfo      = &captureImageInfo;
+
+        descriptorWrites[1].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet          = m_reflectionProbePrefilterDescriptorSets[_probeIndex];
+        descriptorWrites[1].dstBinding      = 1;
+        descriptorWrites[1].descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pImageInfo      = &captureSamplerInfo;
+
+        vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::EnsureReflectionProbeResources()
+    {
+        const uint32_t requestedProbeCount = ReflectionProbeManager::GetProbeCount();
+        const uint32_t existingProbeCount = static_cast<uint32_t>(m_vulkanReflectionProbes.size());
+
+        if (requestedProbeCount > c_maxNumberOfReflectionProbes)
+        {
+            throw std::runtime_error("Reflection probe count exceeds the streaming probe capacity!");
+        }
+
+        m_reflectionProbeCount = requestedProbeCount;
+        const uint32_t resourceCount = std::max(requestedProbeCount, existingProbeCount);
+        m_reflectionProbeCaptureLayouts.resize(resourceCount, VK_IMAGE_LAYOUT_UNDEFINED);
+        m_reflectionProbePrefilteredLayouts.resize(resourceCount, VK_IMAGE_LAYOUT_UNDEFINED);
+        m_vulkanReflectionProbes.reserve(requestedProbeCount);
+
+        uint32_t maximumResolution = m_reflectionProbeDepthResolution;
+        bool waitedForResources = false;
+
+        for (ReflectionProbeHandle probeHandle = 0; probeHandle < std::min(requestedProbeCount, existingProbeCount); ++probeHandle)
+        {
+            const sReflectionProbe& rProbe = ReflectionProbeManager::GetProbe(probeHandle);
+            cVulkanReflectionProbe& rVulkanProbe = *m_vulkanReflectionProbes[probeHandle];
+
+            if (!rProbe.active || rProbe.resolution == rVulkanProbe.GetResolution())
+            {
+                continue;
+            }
+
+            // A streamed handle can be reused with a different capture resolution.
+            if (!waitedForResources)
+            {
+                m_pDevice->WaitIdle();
+                waitedForResources = true;
+            }
+
+            rVulkanProbe.Destroy(*m_pDevice);
+            rVulkanProbe.Create(*m_pDevice, rProbe.resolution);
+            m_reflectionProbeCaptureLayouts[probeHandle] = VK_IMAGE_LAYOUT_UNDEFINED;
+            m_reflectionProbePrefilteredLayouts[probeHandle] = VK_IMAGE_LAYOUT_UNDEFINED;
+            ReflectionProbeManager::SetProbeDirty(probeHandle, true);
+            UpdateReflectionProbePrefilterDescriptorSet(probeHandle);
+            maximumResolution = std::max(maximumResolution, rProbe.resolution);
+        }
+
+        for (ReflectionProbeHandle probeHandle = existingProbeCount; probeHandle < requestedProbeCount; ++probeHandle)
+        {
+            const sReflectionProbe& rProbe = ReflectionProbeManager::GetProbe(probeHandle);
+            std::unique_ptr<cVulkanReflectionProbe> pProbe = std::make_unique<cVulkanReflectionProbe>();
+
+            pProbe->Create(*m_pDevice, rProbe.resolution);
+
+            maximumResolution = std::max(maximumResolution, rProbe.resolution);
+            m_vulkanReflectionProbes.push_back(std::move(pProbe));
+        }
+
+        if (maximumResolution > m_reflectionProbeDepthResolution)
+        {
+            if (!waitedForResources)
+            {
+                m_pDevice->WaitIdle();
+            }
+            m_reflectionProbeDepthImage.Destroy(*m_pDevice);
+            m_reflectionProbeDepthImage.Create(
+                *m_pDevice,
+                maximumResolution,
+                maximumResolution,
+                VK_FORMAT_D32_SFLOAT,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                VK_IMAGE_ASPECT_DEPTH_BIT,
+                VK_SAMPLE_COUNT_1_BIT
+            );
+
+            m_reflectionProbeDepthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            m_reflectionProbeDepthResolution = maximumResolution;
+        }
+
+        CreateReflectionProbePrefilterDescriptorSets(existingProbeCount);
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -1905,7 +2397,7 @@ namespace Engine::GFX
 
                 pushConstants.faceIndex         = faceIndex;
                 pushConstants.roughness         = roughness;
-                pushConstants.sampleCount       = 64;
+                pushConstants.sampleCount       = mipLevel == 0 ? 1u : std::min(1024u, 64u << std::min(mipLevel, 4u));
                 pushConstants.captureResolution = static_cast<float>(rVulkanProbe.GetResolution());
 
                 vkCmdPushConstants(
@@ -2033,35 +2525,25 @@ namespace Engine::GFX
 
         m_renderPassType = sRenderPassType::Main;
 
-        VkImage     swapchainImage     = m_pSwapchain->GetImages()[m_imageIndex];
-        VkImageView swapchainImageView = m_pSwapchain->GetImageViews()[m_imageIndex];
         VkExtent2D  extent             = m_pSwapchain->GetExtent();
 
-        VkImageMemoryBarrier barrierToColorAttachment{};
+        VkImageMemoryBarrier sceneBarrier{};
 
-        barrierToColorAttachment.sType                              = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrierToColorAttachment.oldLayout                          = VK_IMAGE_LAYOUT_UNDEFINED;
-        barrierToColorAttachment.newLayout                          = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        barrierToColorAttachment.srcQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
-        barrierToColorAttachment.dstQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
-        barrierToColorAttachment.image                              = swapchainImage;
-        barrierToColorAttachment.subresourceRange.aspectMask        = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrierToColorAttachment.subresourceRange.baseMipLevel      = 0;
-        barrierToColorAttachment.subresourceRange.levelCount        = 1;
-        barrierToColorAttachment.subresourceRange.baseArrayLayer    = 0;
-        barrierToColorAttachment.subresourceRange.layerCount        = 1;
-        barrierToColorAttachment.srcAccessMask                      = 0;
-        barrierToColorAttachment.dstAccessMask                      = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        sceneBarrier.sType                              = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        sceneBarrier.oldLayout                          = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        sceneBarrier.newLayout                          = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        sceneBarrier.srcQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
+        sceneBarrier.dstQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
+        sceneBarrier.image                              = m_colorBuffer.GetResolveImage();
+        sceneBarrier.subresourceRange.aspectMask        = VK_IMAGE_ASPECT_COLOR_BIT;
+        sceneBarrier.subresourceRange.baseMipLevel      = 0;
+        sceneBarrier.subresourceRange.levelCount        = 1;
+        sceneBarrier.subresourceRange.baseArrayLayer    = 0;
+        sceneBarrier.subresourceRange.layerCount        = 1;
+        sceneBarrier.srcAccessMask                      = VK_ACCESS_SHADER_READ_BIT;
+        sceneBarrier.dstAccessMask                      = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-        vkCmdPipelineBarrier(
-            pCommandBuffer,
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &barrierToColorAttachment
-        );
+        vkCmdPipelineBarrier(pCommandBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &sceneBarrier);
 
         VkClearValue clearValue{};
 
@@ -2079,8 +2561,15 @@ namespace Engine::GFX
         colorAttachment.storeOp             = VK_ATTACHMENT_STORE_OP_STORE;
         colorAttachment.clearValue          = clearValue;
         colorAttachment.resolveMode         = VK_RESOLVE_MODE_AVERAGE_BIT;
-        colorAttachment.resolveImageView    = swapchainImageView;
+        colorAttachment.resolveImageView    = m_colorBuffer.GetResolveImageView();
         colorAttachment.resolveImageLayout  = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        if (m_pDevice->GetMSAASamples() == VK_SAMPLE_COUNT_1_BIT)
+        {
+            colorAttachment.imageView = m_colorBuffer.GetResolveImageView();
+            colorAttachment.resolveMode = VK_RESOLVE_MODE_NONE;
+            colorAttachment.resolveImageView = VK_NULL_HANDLE;
+        }
 
         VkRenderingAttachmentInfo depthAttachment{};
 
@@ -2133,12 +2622,17 @@ namespace Engine::GFX
 
     bool cVulkanRenderer::NeedsReflectionProbeUpdate(uint32_t _probeIndex) const
     {
-        if (_probeIndex >= ReflectionProbeManager::GetProbeCount())
+        if (_probeIndex >= ReflectionProbeManager::GetProbeCount()
+            || _probeIndex >= m_vulkanReflectionProbes.size())
         {
             return false;
         }
 
-        return ReflectionProbeManager::GetProbe(_probeIndex).dirty;
+        const sReflectionProbe& rProbe = ReflectionProbeManager::GetProbe(_probeIndex);
+
+        return rProbe.active
+            && rProbe.dirty
+            && std::find(m_activeReflectionProbeHandles.begin(), m_activeReflectionProbeHandles.end(), _probeIndex) != m_activeReflectionProbeHandles.end();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -2423,13 +2917,195 @@ namespace Engine::GFX
         vkCmdEndRendering(_pCommandBuffer);
         m_renderPassType = sRenderPassType::None;
 
+        VkImageMemoryBarrier sceneBarrier{};
+        sceneBarrier.sType                              = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        sceneBarrier.oldLayout                          = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        sceneBarrier.newLayout                          = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        sceneBarrier.srcQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
+        sceneBarrier.dstQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
+        sceneBarrier.image                              = m_colorBuffer.GetResolveImage();
+        sceneBarrier.subresourceRange.aspectMask        = VK_IMAGE_ASPECT_COLOR_BIT;
+        sceneBarrier.subresourceRange.baseMipLevel      = 0;
+        sceneBarrier.subresourceRange.levelCount        = 1;
+        sceneBarrier.subresourceRange.baseArrayLayer    = 0;
+        sceneBarrier.subresourceRange.layerCount        = 1;
+        sceneBarrier.srcAccessMask                      = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        sceneBarrier.dstAccessMask                      = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(_pCommandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &sceneBarrier);
+
+        DrawBloomPass(_pCommandBuffer);
+        DrawCompositePass(_pCommandBuffer, _imageIndex);
+        BeginUIDraw(_pCommandBuffer, _imageIndex);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::DrawBloomPass(VkCommandBuffer _pCommandBuffer)
+    {
+        for (uint32_t level = 0; level < c_bloomLevelCount; ++level)
+        {
+            DrawBloomLevel(_pCommandBuffer, m_bloomDownsampleImages[level], m_bloomDescriptorSets[level], level == 0 ? 0u : 1u);
+        }
+
+        for (uint32_t level = c_bloomLevelCount - 1; level > 0; --level)
+        {
+            DrawBloomLevel(_pCommandBuffer, m_bloomUpsampleImages[level - 1], m_bloomDescriptorSets[c_bloomLevelCount + level - 1], 2u);
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::DrawBloomLevel(
+        VkCommandBuffer _pCommandBuffer, cVulkanImage& _rTarget, VkDescriptorSet _descriptorSet, uint32_t _mode)
+    {
+        VkImageMemoryBarrier bloomBarrier{};
+        bloomBarrier.sType                              = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        bloomBarrier.oldLayout                          = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        bloomBarrier.newLayout                          = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        bloomBarrier.srcQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
+        bloomBarrier.dstQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
+        bloomBarrier.image                              = _rTarget.GetImage();
+        bloomBarrier.subresourceRange.aspectMask        = VK_IMAGE_ASPECT_COLOR_BIT;
+        bloomBarrier.subresourceRange.baseMipLevel      = 0;
+        bloomBarrier.subresourceRange.levelCount        = 1;
+        bloomBarrier.subresourceRange.baseArrayLayer    = 0;
+        bloomBarrier.subresourceRange.layerCount        = 1;
+        bloomBarrier.srcAccessMask                      = VK_ACCESS_SHADER_READ_BIT;
+        bloomBarrier.dstAccessMask                      = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+        vkCmdPipelineBarrier(_pCommandBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &bloomBarrier);
+
+        VkClearValue clearValue{};
+
+        VkRenderingAttachmentInfo colorAttachment{};
+        colorAttachment.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        colorAttachment.imageView   = _rTarget.GetImageView();
+        colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.clearValue  = clearValue;
+
+        VkRenderingInfo renderingInfo{};
+        renderingInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        renderingInfo.renderArea.extent    = { _rTarget.GetWidth(), _rTarget.GetHeight() };
+        renderingInfo.layerCount           = 1;
+        renderingInfo.colorAttachmentCount = 1;
+        renderingInfo.pColorAttachments    = &colorAttachment;
+
+        vkCmdBeginRendering(_pCommandBuffer, &renderingInfo);
+
+        VkViewport viewport{};
+        viewport.width    = static_cast<float>(_rTarget.GetWidth());
+        viewport.height   = static_cast<float>(_rTarget.GetHeight());
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(_pCommandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+        scissor.extent = { _rTarget.GetWidth(), _rTarget.GetHeight() };
+        vkCmdSetScissor(_pCommandBuffer, 0, 1, &scissor);
+
+        vkCmdBindPipeline(_pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetBloomPipeline());
+        vkCmdBindDescriptorSets(_pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPostProcessPipelineLayout(), 0, 1, &_descriptorSet, 0, nullptr);
+        vkCmdPushConstants(_pCommandBuffer, m_pPipeline->GetPostProcessPipelineLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(_mode), &_mode);
+        vkCmdDraw(_pCommandBuffer, 3, 1, 0, 0);
+        vkCmdEndRendering(_pCommandBuffer);
+
+        bloomBarrier.oldLayout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        bloomBarrier.newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        bloomBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        bloomBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(_pCommandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &bloomBarrier);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::DrawCompositePass(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex)
+    {
+        VkImageMemoryBarrier swapchainBarrier{};
+        swapchainBarrier.sType                              = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        swapchainBarrier.oldLayout                          = VK_IMAGE_LAYOUT_UNDEFINED;
+        swapchainBarrier.newLayout                          = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        swapchainBarrier.srcQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
+        swapchainBarrier.dstQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
+        swapchainBarrier.image                              = m_pSwapchain->GetImages()[_imageIndex];
+        swapchainBarrier.subresourceRange.aspectMask        = VK_IMAGE_ASPECT_COLOR_BIT;
+        swapchainBarrier.subresourceRange.baseMipLevel      = 0;
+        swapchainBarrier.subresourceRange.levelCount        = 1;
+        swapchainBarrier.subresourceRange.baseArrayLayer    = 0;
+        swapchainBarrier.subresourceRange.layerCount        = 1;
+        swapchainBarrier.dstAccessMask                      = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+        // Chain the transition to the image-available semaphore's wait stage.
+        vkCmdPipelineBarrier(_pCommandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &swapchainBarrier);
+
+        VkRenderingAttachmentInfo colorAttachment{};
+        colorAttachment.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        colorAttachment.imageView   = m_pSwapchain->GetImageViews()[_imageIndex];
+        colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
+
+        VkRenderingInfo renderingInfo{};
+        renderingInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        renderingInfo.renderArea.extent    = m_pSwapchain->GetExtent();
+        renderingInfo.layerCount           = 1;
+        renderingInfo.colorAttachmentCount = 1;
+        renderingInfo.pColorAttachments    = &colorAttachment;
+
+        vkCmdBeginRendering(_pCommandBuffer, &renderingInfo);
+
+        VkViewport viewport{};
+        viewport.width    = static_cast<float>(m_pSwapchain->GetExtent().width);
+        viewport.height   = static_cast<float>(m_pSwapchain->GetExtent().height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(_pCommandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+        scissor.extent = m_pSwapchain->GetExtent();
+        vkCmdSetScissor(_pCommandBuffer, 0, 1, &scissor);
+
+        vkCmdBindPipeline(_pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetCompositePipeline());
+        vkCmdBindDescriptorSets(_pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPostProcessPipelineLayout(), 0, 1, &m_postProcessDescriptorSet, 0, nullptr);
+        vkCmdDraw(_pCommandBuffer, 3, 1, 0, 0);
+        vkCmdEndRendering(_pCommandBuffer);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::BeginUIDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex)
+    {
+        VkRenderingAttachmentInfo colorAttachment{};
+        colorAttachment.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        colorAttachment.imageView   = m_pSwapchain->GetImageViews()[_imageIndex];
+        colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD;
+        colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
+
+        VkRenderingInfo renderingInfo{};
+        renderingInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        renderingInfo.renderArea.extent    = m_pSwapchain->GetExtent();
+        renderingInfo.layerCount           = 1;
+        renderingInfo.colorAttachmentCount = 1;
+        renderingInfo.pColorAttachments    = &colorAttachment;
+
+        vkCmdBeginRendering(_pCommandBuffer, &renderingInfo);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::EndUIDraw(VkCommandBuffer _pCommandBuffer, uint32_t _imageIndex)
+    {
+        vkCmdEndRendering(_pCommandBuffer);
+
         const sVulkanFrame& rFrame = m_frames[m_currentFrame];
         if (rFrame.timestampQueryPool != VK_NULL_HANDLE)
         {
             vkCmdWriteTimestamp(_pCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, rFrame.timestampQueryPool, 3);
         }
-
-        VkImage swapchainImage = m_pSwapchain->GetImages()[_imageIndex];
 
         VkImageMemoryBarrier barrierToPresent{};
 
@@ -2438,7 +3114,7 @@ namespace Engine::GFX
         barrierToPresent.newLayout                          = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         barrierToPresent.srcQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
         barrierToPresent.dstQueueFamilyIndex                = VK_QUEUE_FAMILY_IGNORED;
-        barrierToPresent.image                              = swapchainImage;
+        barrierToPresent.image                              = m_pSwapchain->GetImages()[_imageIndex];
         barrierToPresent.subresourceRange.aspectMask        = VK_IMAGE_ASPECT_COLOR_BIT;
         barrierToPresent.subresourceRange.baseMipLevel      = 0;
         barrierToPresent.subresourceRange.levelCount        = 1;
@@ -2577,8 +3253,6 @@ namespace Engine::GFX
 
     void cVulkanRenderer::CreateDescriptorPool()
     {
-        const uint32_t reflectionProbeCount = ReflectionProbeManager::GetProbeCount();
-
         std::array<VkDescriptorPoolSize, 4> poolSizes{};
 
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -2588,17 +3262,17 @@ namespace Engine::GFX
         poolSizes[1].descriptorCount = c_maxNumberOfFrames * 5;
 
         poolSizes[2].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        poolSizes[2].descriptorCount = c_maxNumberOfFrames * (4 + c_maxNumberOfActiveReflectionProbes) + reflectionProbeCount;
+        poolSizes[2].descriptorCount = c_maxNumberOfFrames * (7 + c_maxNumberOfActiveReflectionProbes) + c_maxNumberOfReflectionProbes + 2 * (1 + c_bloomPassCount);
 
         poolSizes[3].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-        poolSizes[3].descriptorCount = c_maxNumberOfFrames * 3 + reflectionProbeCount;
+        poolSizes[3].descriptorCount = c_maxNumberOfFrames * 3 + c_maxNumberOfReflectionProbes + 2 * (1 + c_bloomPassCount);
 
         VkDescriptorPoolCreateInfo poolInfo{};
 
         poolInfo.sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount  = static_cast<uint32_t>(poolSizes.size());
         poolInfo.pPoolSizes     = poolSizes.data();
-        poolInfo.maxSets        = c_maxNumberOfFrames + reflectionProbeCount;
+        poolInfo.maxSets        = c_maxNumberOfFrames + c_maxNumberOfReflectionProbes + 1 + c_bloomPassCount;
 
         if (vkCreateDescriptorPool(m_pDevice->GetDevice(), &poolInfo, nullptr, &m_pDescriptorPool) != VK_SUCCESS)
         {
@@ -2882,8 +3556,11 @@ namespace Engine::GFX
     {
         
         m_materialBuffer.Create(*m_pDevice, sizeof(sMaterial) * c_maxNumberOfMaterials, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        m_materialStagingBuffer.Create(*m_pDevice, sizeof(sMaterial) * c_maxNumberOfMaterials, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        m_materialStagingBuffer.Map(*m_pDevice, sizeof(sMaterial) * c_maxNumberOfMaterials, 0);
+        for (cVulkanBuffer& rBuffer : m_materialStagingBuffers)
+        {
+            rBuffer.Create(*m_pDevice, sizeof(sMaterial) * c_maxNumberOfMaterials, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            rBuffer.Map(*m_pDevice, sizeof(sMaterial) * c_maxNumberOfMaterials, 0);
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -2926,13 +3603,23 @@ namespace Engine::GFX
         frameData.materialCount    = static_cast<uint32_t>(MaterialManager::GetMaterials().size());
         frameData.activeLightCount = static_cast<uint32_t>(m_activeLightIndices.size());
 
-        const std::vector<ReflectionProbeHandle> activeProbeHandles = ReflectionProbeManager::FindActiveProbeIndices(cameraPosition, c_maxNumberOfActiveReflectionProbes, 1);
-        UpdateReflectionProbeDescriptors(_rFrame, activeProbeHandles);
-        frameData.reflectionProbeCount = static_cast<uint32_t>(activeProbeHandles.size());
+        m_activeReflectionProbeHandles = ReflectionProbeManager::FindActiveProbeIndices(cameraPosition, c_maxNumberOfActiveReflectionProbes, 1);
+        m_visibleReflectionProbeHandles.clear();
+
+        for (ReflectionProbeHandle probeHandle : m_activeReflectionProbeHandles)
+        {
+            if (!ReflectionProbeManager::GetProbe(probeHandle).dirty)
+            {
+                m_visibleReflectionProbeHandles.push_back(probeHandle);
+            }
+        }
+
+        UpdateReflectionProbeDescriptors(_rFrame, m_visibleReflectionProbeHandles);
+        frameData.reflectionProbeCount = static_cast<uint32_t>(m_visibleReflectionProbeHandles.size());
 
         for (uint32_t slotIndex = 0; slotIndex < frameData.reflectionProbeCount; ++slotIndex)
         {
-            const ReflectionProbeHandle probeHandle = activeProbeHandles[slotIndex];
+            const ReflectionProbeHandle probeHandle = m_visibleReflectionProbeHandles[slotIndex];
 
             const sReflectionProbe&       rProbe        = ReflectionProbeManager::GetProbe(probeHandle);
             const cVulkanReflectionProbe& rVulkanProbe  = *m_vulkanReflectionProbes[probeHandle];

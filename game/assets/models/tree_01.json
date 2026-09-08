@@ -2,39 +2,39 @@
     "materials": [
         {
             "albedo": [
-                0.14215683937072754,
-                0.058535173535346985,
-                0.0
+                0.24,
+                0.11,
+                0.035
             ],
-            "ambientStrength": 1.0099999904632568,
+            "ambientStrength": 1.25,
             "emissiveColor": [
                 0.0,
                 0.0,
                 0.0
             ],
             "emissiveStrength": 0.0,
-            "lightWrap": 0.6299999952316284,
+            "lightWrap": 0.24,
             "metallic": 0.0,
-            "roughness": 1.0,
-            "shapeContrast": 1.3799999952316284
+            "roughness": 0.90,
+            "shapeContrast": 1.10
         },
         {
             "albedo": [
-                0.00677624624222517,
-                0.23039215803146362,
-                0.0
+                0.035,
+                0.28,
+                0.07
             ],
-            "ambientStrength": 1.0,
+            "ambientStrength": 1.35,
             "emissiveColor": [
                 0.0,
                 0.0,
                 0.0
             ],
             "emissiveStrength": 0.0,
-            "lightWrap": 0.0,
-            "metallic": 1.0,
-            "roughness": 1.0,
-            "shapeContrast": 1.0
+            "lightWrap": 0.45,
+            "metallic": 0.0,
+            "roughness": 0.80,
+            "shapeContrast": 1.15
         }
     ],
     "name": "tree",

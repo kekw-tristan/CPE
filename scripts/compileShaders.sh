@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,10 +12,11 @@ MAIN_SHADER_SOURCE="$SHADER_DIR/main.hlsl"
 SHADOW_SHADER_SOURCE="$SHADER_DIR/shadow.hlsl"
 REFLECTION_PROBE_SHADER_SOURCE="$SHADER_DIR/reflectionProbe.hlsl"
 REFLECTION_PROBE_PREFILTER_SHADER_SOURCE="$SHADER_DIR/reflectionProbePrefilter.hlsl"
+POST_PROCESS_SHADER_SOURCE="$SHADER_DIR/postProcess.hlsl"
 
 if ! command -v dxc >/dev/null 2>&1; then
     echo "Error: dxc wurde nicht gefunden."
-    echo "Stelle sicher, dass DXC installiert und im PATH verfÃƒÂ¼gbar ist."
+    echo "Stelle sicher, dass DXC installiert und im PATH verfügbar ist."
     exit 1
 fi
 
@@ -42,6 +44,12 @@ if [ ! -f "$REFLECTION_PROBE_PREFILTER_SHADER_SOURCE" ]; then
     exit 1
 fi
 
+if [ ! -f "$POST_PROCESS_SHADER_SOURCE" ]; then
+    echo "Error: Shader-Datei wurde nicht gefunden:"
+    echo "$POST_PROCESS_SHADER_SOURCE"
+    exit 1
+fi
+
 mkdir -p "$OUTPUT_DIR"
 
 echo "Compiling main vertex shader..."
@@ -61,6 +69,78 @@ dxc \
     -E PSMain \
     "$MAIN_SHADER_SOURCE" \
     -Fo "$OUTPUT_DIR/main.frag.spv"
+
+echo "Compiling normal/depth vertex shader..."
+
+dxc \
+    -spirv \
+    -T vs_6_0 \
+    -E VSNormalDepth \
+    "$MAIN_SHADER_SOURCE" \
+    -Fo "$OUTPUT_DIR/normalDepth.vert.spv"
+
+echo "Compiling normal/depth fragment shader..."
+
+dxc \
+    -spirv \
+    -T ps_6_0 \
+    -E PSNormalDepth \
+    "$MAIN_SHADER_SOURCE" \
+    -Fo "$OUTPUT_DIR/normalDepth.frag.spv"
+
+echo "Compiling occlusion vertex shader..."
+
+dxc \
+    -spirv \
+    -T vs_6_0 \
+    -E VSOcclusion \
+    "$MAIN_SHADER_SOURCE" \
+    -Fo "$OUTPUT_DIR/occlusion.vert.spv"
+
+echo "Compiling occlusion fragment shader..."
+
+dxc \
+    -spirv \
+    -T ps_6_0 \
+    -E PSOcclusion \
+    "$MAIN_SHADER_SOURCE" \
+    -Fo "$OUTPUT_DIR/occlusion.frag.spv"
+
+echo "Compiling occlusion blur fragment shader..."
+
+dxc \
+    -spirv \
+    -T ps_6_0 \
+    -E PSOcclusionBlur \
+    "$MAIN_SHADER_SOURCE" \
+    -Fo "$OUTPUT_DIR/occlusionBlur.frag.spv"
+
+echo "Compiling post-process vertex shader..."
+
+dxc \
+    -spirv \
+    -T vs_6_0 \
+    -E VSMain \
+    "$POST_PROCESS_SHADER_SOURCE" \
+    -Fo "$OUTPUT_DIR/postProcess.vert.spv"
+
+echo "Compiling bloom fragment shader..."
+
+dxc \
+    -spirv \
+    -T ps_6_0 \
+    -E PSBloom \
+    "$POST_PROCESS_SHADER_SOURCE" \
+    -Fo "$OUTPUT_DIR/postProcessBloom.frag.spv"
+
+echo "Compiling composite fragment shader..."
+
+dxc \
+    -spirv \
+    -T ps_6_0 \
+    -E PSComposite \
+    "$POST_PROCESS_SHADER_SOURCE" \
+    -Fo "$OUTPUT_DIR/postProcessComposite.frag.spv"
 
 echo "Compiling shadow vertex shader..."
 
@@ -108,7 +188,7 @@ dxc \
     -Fo "$OUTPUT_DIR/reflectionProbePrefilter.frag.spv"
 
 echo
-echo "Compiling health bar vert shader..."
+echo "Compiling health bar vertex shader..."
 
 dxc \
     -spirv \
@@ -117,7 +197,7 @@ dxc \
     "$SHADER_DIR/healthBar.hlsl" \
     -Fo "$OUTPUT_DIR/healthBar.vert.spv"
 
-echo "Compiling health bar frag shader..."
+echo "Compiling health bar fragment shader..."
 
 dxc \
     -spirv \
@@ -126,15 +206,24 @@ dxc \
     "$SHADER_DIR/healthBar.hlsl" \
     -Fo "$OUTPUT_DIR/healthBar.frag.spv"
 
+echo
 echo "HLSL shaders compiled successfully."
 echo
 echo "Output:"
-echo "$OUTPUT_DIR/healthBar.vert.spv"
-echo "$OUTPUT_DIR/healthBar.frag.spv"
 echo "$OUTPUT_DIR/main.vert.spv"
 echo "$OUTPUT_DIR/main.frag.spv"
+echo "$OUTPUT_DIR/normalDepth.vert.spv"
+echo "$OUTPUT_DIR/normalDepth.frag.spv"
+echo "$OUTPUT_DIR/occlusion.vert.spv"
+echo "$OUTPUT_DIR/occlusion.frag.spv"
+echo "$OUTPUT_DIR/occlusionBlur.frag.spv"
+echo "$OUTPUT_DIR/postProcess.vert.spv"
+echo "$OUTPUT_DIR/postProcessBloom.frag.spv"
+echo "$OUTPUT_DIR/postProcessComposite.frag.spv"
 echo "$OUTPUT_DIR/shadow.vert.spv"
 echo "$OUTPUT_DIR/reflectionProbe.vert.spv"
 echo "$OUTPUT_DIR/reflectionProbe.frag.spv"
 echo "$OUTPUT_DIR/reflectionProbePrefilter.vert.spv"
 echo "$OUTPUT_DIR/reflectionProbePrefilter.frag.spv"
+echo "$OUTPUT_DIR/healthBar.vert.spv"
+echo "$OUTPUT_DIR/healthBar.frag.spv"

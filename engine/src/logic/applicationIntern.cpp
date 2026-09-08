@@ -33,7 +33,7 @@ namespace Engine::Logic
         m_vulkanCommands .Init(m_vulkanDevice);
         m_vulkanSwapchain.Init(m_vulkanContext, m_vulkanDevice, m_window);
         m_vulkanPipeline .Init(m_vulkanDevice, m_vulkanSwapchain);
-        m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline);
+        m_vulkanRenderer .Init(m_vulkanDevice, m_vulkanSwapchain, m_vulkanCommands, m_vulkanPipeline, m_appConfig.environment);
 
         m_vulkanRenderer.SetBackgroundColor(m_appConfig.backgroundColor);
 
@@ -384,7 +384,7 @@ namespace Engine::Logic
         imGuiInitDesc.colorFormat           = m_vulkanSwapchain.GetImageFormat();
         imGuiInitDesc.depthFormat           = VK_FORMAT_D32_SFLOAT;
 
-        imGuiInitDesc.msaaSamples           = m_vulkanDevice.GetMSAASamples();
+        imGuiInitDesc.msaaSamples           = VK_SAMPLE_COUNT_1_BIT;
 
         GFX::ImGuiManager::Init(imGuiInitDesc);
 
