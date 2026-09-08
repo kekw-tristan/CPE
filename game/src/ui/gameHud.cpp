@@ -189,6 +189,27 @@ namespace UI
 
         // -----------------------------------------------------------------------------------------------------------------
 
+        void DrawSpellManaCost(ImDrawList& _rDrawList, const ImVec2& _rPosition, float _scale, float _manaCost)
+        {
+            char label[16];
+            std::snprintf(label, sizeof(label), "%.0f", _manaCost);
+
+            const float fontSize = 12.0f * _scale;
+            const ImVec2 textSize = ImGui::CalcTextSize(label, nullptr, false, 0.0f);
+            const ImVec2 labelPosition(
+                _rPosition.x + c_slotSize * _scale - textSize.x - 5.0f * _scale,
+                _rPosition.y + 4.0f * _scale);
+            const ImVec2 backgroundStart(labelPosition.x - 3.0f * _scale, labelPosition.y - 1.0f * _scale);
+            const ImVec2 backgroundEnd(
+                labelPosition.x + textSize.x + 3.0f * _scale,
+                labelPosition.y + fontSize + 1.0f * _scale);
+
+            _rDrawList.AddRectFilled(backgroundStart, backgroundEnd, IM_COL32(19, 54, 104, 230), 3.0f * _scale);
+            DrawText(_rDrawList, labelPosition, fontSize, label);
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------
+
         void DrawSpellSlot(
             ImDrawList& _rDrawList,
             const ImVec2& _rPosition,
@@ -196,7 +217,8 @@ namespace UI
             const char* _pKey,
             Gameplay::sItemId::Enum _spell,
             float _cooldown,
-            float _cooldownDuration)
+            float _cooldownDuration,
+            float _manaCost)
         {
             const ImVec2 slotEnd(_rPosition.x + c_slotSize * _scale, _rPosition.y + c_slotSize * _scale);
             _rDrawList.AddRectFilled(_rPosition, slotEnd, IM_COL32(34, 42, 70, 255), 6.0f * _scale);
@@ -208,6 +230,7 @@ namespace UI
 
                 const float cooldownFraction = GetFraction(_cooldown, _cooldownDuration);
                 DrawSpellCooldown(_rDrawList, _rPosition, _scale, _cooldown, cooldownFraction);
+                DrawSpellManaCost(_rDrawList, _rPosition, _scale, _manaCost);
                 borderColor = cooldownFraction > 0.0f ? IM_COL32(110, 117, 140, 255) : IM_COL32(174, 192, 255, 255);
             }
 
@@ -667,7 +690,8 @@ namespace UI
                 c_spellKeys[slotIndex],
                 spell,
                 _rState.spellCooldowns[slotIndex],
-                _rState.spellCooldownDurations[slotIndex]);
+                _rState.spellCooldownDurations[slotIndex],
+                _rState.spellManaCosts[slotIndex]);
         }
 
         DrawExperienceBar(*pDrawList, ImVec2(left, top + c_xpOffset * scale), scale, _rState);

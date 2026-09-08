@@ -29,6 +29,7 @@ namespace Gameplay
         World::sBossId::Enum sourceBoss     = World::sBossId::Undefined;
         sItemId::Enum        inventoryItem  = sItemId::Undefined;
         sSpellCastType::Enum castType       = sSpellCastType::Undefined;
+        float                manaCost       = 0.0f;
 
         std::string          name;
         sSpellStats          baseStats; 

@@ -220,6 +220,7 @@ void cGame::OnDrawUI()
 
         hudState.spellCooldowns[slotIndex]          = pSpell->GetCooldownRemaining();
         hudState.spellCooldownDurations[slotIndex]  = pSpell->GetSpellStats().cooldown;
+        hudState.spellManaCosts[slotIndex]          = Gameplay::SpellManager::GetSpell(pSpell->GetSpellId()).manaCost;
         hudState.anySpellOnCooldown                 = hudState.anySpellOnCooldown || pSpell->IsOnCooldown();
     }
 
@@ -1006,6 +1007,9 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
         && spellDefinition.castType != Gameplay::sSpellCastType::SporeProjectile)
         return;
 
+    if (m_playerMana < spellDefinition.manaCost)
+        return;
+
     const Gameplay::sSpellStats& spellStats = pSpell->GetSpellStats();
 
     using Engine::Math::cVec3f;
@@ -1080,6 +1084,7 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
         }
     }
 
+    m_playerMana = std::max(0.0f, m_playerMana - spellDefinition.manaCost);
     m_runState.StartSpellCooldown(spellSlot);
     m_playerAttackTime = 0.4f;
 }

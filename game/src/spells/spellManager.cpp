@@ -17,25 +17,25 @@ namespace Gameplay
 
         const std::array<sSpellDefinition, sSpellId::NumberOfElements> c_spells =
         {
-            sSpellDefinition{ sSpellId::Fireball,       World::sBossId::ForestCrawler,   sItemId::Fireball,       sSpellCastType::Projectile,       "Fireball",        { 25.0f, 1.00f, 13.0f, 2.5f, 0.8f, 1 } },
-            sSpellDefinition{ sSpellId::StoneShard,     World::sBossId::ForestBrute,     sItemId::StoneShard,     sSpellCastType::ConeProjectile,   "Stone Cone",      { 32.0f, 1.20f, 10.0f, 2.2f, 0.6f, 1 } },
-            sSpellDefinition{ sSpellId::ThornBurst,     World::sBossId::ForestThornwolf, sItemId::ThornBurst,     sSpellCastType::Projectile,       "Thorn Burst",     { 18.0f, 0.85f, 15.0f, 1.8f, 0.6f, 3 } },
-            sSpellDefinition{ sSpellId::SporeOrb,       World::sBossId::ForestSporecap,  sItemId::SporeOrb,       sSpellCastType::SporeProjectile,  "Spore Orb",       { 20.0f, 1.10f, 8.0f, 3.5f, 2.0f, 1 } },
+            sSpellDefinition{ sSpellId::Fireball,       World::sBossId::ForestCrawler,   sItemId::Fireball,       sSpellCastType::Projectile,       10.0f, "Fireball",        { 25.0f, 1.00f, 13.0f, 2.5f, 0.8f, 1 } },
+            sSpellDefinition{ sSpellId::StoneShard,     World::sBossId::ForestBrute,     sItemId::StoneShard,     sSpellCastType::ConeProjectile,   15.0f, "Stone Cone",      { 32.0f, 1.20f, 10.0f, 2.2f, 0.6f, 1 } },
+            sSpellDefinition{ sSpellId::ThornBurst,     World::sBossId::ForestThornwolf, sItemId::ThornBurst,     sSpellCastType::Projectile,       14.0f, "Thorn Burst",     { 18.0f, 0.85f, 15.0f, 1.8f, 0.6f, 3 } },
+            sSpellDefinition{ sSpellId::SporeOrb,       World::sBossId::ForestSporecap,  sItemId::SporeOrb,       sSpellCastType::SporeProjectile,  18.0f, "Spore Orb",       { 20.0f, 1.10f, 8.0f, 3.5f, 2.0f, 1 } },
 
-            sSpellDefinition{ sSpellId::SandLance,      World::sBossId::DesertLancer,    sItemId::SandLance,      sSpellCastType::Projectile,       "Sand Lance",      { 35.0f, 1.10f, 18.0f, 1.8f, 0.5f, 1 } },
-            sSpellDefinition{ sSpellId::SunDisk,        World::sBossId::DesertSentinel,  sItemId::SunDisk,        sSpellCastType::Projectile,       "Sun Disk",        { 28.0f, 1.25f, 12.0f, 2.8f, 1.0f, 1 } },
-            sSpellDefinition{ sSpellId::MirageBolt,     World::sBossId::DesertStalker,   sItemId::MirageBolt,     sSpellCastType::Projectile,       "Mirage Bolt",     { 16.0f, 0.70f, 17.0f, 1.5f, 0.5f, 2 } },
-            sSpellDefinition{ sSpellId::ScorpionVolley, World::sBossId::DesertScorpion,  sItemId::ScorpionVolley, sSpellCastType::Projectile,       "Scorpion Volley", { 14.0f, 1.00f, 14.0f, 2.0f, 0.5f, 5 } },
+            sSpellDefinition{ sSpellId::SandLance,      World::sBossId::DesertLancer,    sItemId::SandLance,      sSpellCastType::Projectile,       14.0f, "Sand Lance",      { 35.0f, 1.10f, 18.0f, 1.8f, 0.5f, 1 } },
+            sSpellDefinition{ sSpellId::SunDisk,        World::sBossId::DesertSentinel,  sItemId::SunDisk,        sSpellCastType::Projectile,       18.0f, "Sun Disk",        { 28.0f, 1.25f, 12.0f, 2.8f, 1.0f, 1 } },
+            sSpellDefinition{ sSpellId::MirageBolt,     World::sBossId::DesertStalker,   sItemId::MirageBolt,     sSpellCastType::Projectile,       15.0f, "Mirage Bolt",     { 16.0f, 0.70f, 17.0f, 1.5f, 0.5f, 2 } },
+            sSpellDefinition{ sSpellId::ScorpionVolley, World::sBossId::DesertScorpion,  sItemId::ScorpionVolley, sSpellCastType::Projectile,       20.0f, "Scorpion Volley", { 14.0f, 1.00f, 14.0f, 2.0f, 0.5f, 5 } },
 
-            sSpellDefinition{ sSpellId::FrostShard,     World::sBossId::IceWraith,       sItemId::FrostShard,     sSpellCastType::Projectile,       "Frost Shard",     { 24.0f, 0.90f, 14.0f, 2.5f, 0.7f, 1 } },
-            sSpellDefinition{ sSpellId::GlacialOrb,     World::sBossId::IceGolem,        sItemId::GlacialOrb,     sSpellCastType::Projectile,       "Glacial Orb",     { 38.0f, 1.40f, 8.0f, 3.5f, 1.2f, 1 } },
-            sSpellDefinition{ sSpellId::HailStorm,      World::sBossId::IceHarpy,        sItemId::HailStorm,      sSpellCastType::Projectile,       "Hail Storm",      { 12.0f, 0.80f, 16.0f, 1.6f, 0.4f, 6 } },
-            sSpellDefinition{ sSpellId::CrystalWall,    World::sBossId::IceTitan,        sItemId::CrystalWall,    sSpellCastType::Projectile,       "Crystal Wall",    { 40.0f, 1.50f, 7.0f, 3.0f, 1.4f, 1 } },
+            sSpellDefinition{ sSpellId::FrostShard,     World::sBossId::IceWraith,       sItemId::FrostShard,     sSpellCastType::Projectile,       16.0f, "Frost Shard",     { 24.0f, 0.90f, 14.0f, 2.5f, 0.7f, 1 } },
+            sSpellDefinition{ sSpellId::GlacialOrb,     World::sBossId::IceGolem,        sItemId::GlacialOrb,     sSpellCastType::Projectile,       22.0f, "Glacial Orb",     { 38.0f, 1.40f, 8.0f, 3.5f, 1.2f, 1 } },
+            sSpellDefinition{ sSpellId::HailStorm,      World::sBossId::IceHarpy,        sItemId::HailStorm,      sSpellCastType::Projectile,       20.0f, "Hail Storm",      { 12.0f, 0.80f, 16.0f, 1.6f, 0.4f, 6 } },
+            sSpellDefinition{ sSpellId::CrystalWall,    World::sBossId::IceTitan,        sItemId::CrystalWall,    sSpellCastType::Projectile,       24.0f, "Crystal Wall",    { 40.0f, 1.50f, 7.0f, 3.0f, 1.4f, 1 } },
 
-            sSpellDefinition{ sSpellId::EmberBolt,      World::sBossId::LavaImp,         sItemId::EmberBolt,      sSpellCastType::Projectile,       "Ember Bolt",      { 22.0f, 0.75f, 16.0f, 2.0f, 0.6f, 1 } },
-            sSpellDefinition{ sSpellId::MagmaBurst,     World::sBossId::LavaGolem,       sItemId::MagmaBurst,     sSpellCastType::Projectile,       "Magma Burst",     { 45.0f, 1.60f, 9.0f, 2.8f, 1.3f, 1 } },
-            sSpellDefinition{ sSpellId::FlameWheel,     World::sBossId::LavaWyrm,        sItemId::FlameWheel,     sSpellCastType::Projectile,       "Flame Wheel",     { 17.0f, 0.95f, 15.0f, 2.4f, 0.7f, 4 } },
-            sSpellDefinition{ sSpellId::Meteor,         World::sBossId::LavaTitan,       sItemId::Meteor,         sSpellCastType::Projectile,       "Meteor",          { 55.0f, 2.00f, 7.0f, 3.0f, 1.5f, 1 } }
+            sSpellDefinition{ sSpellId::EmberBolt,      World::sBossId::LavaImp,         sItemId::EmberBolt,      sSpellCastType::Projectile,       17.0f, "Ember Bolt",      { 22.0f, 0.75f, 16.0f, 2.0f, 0.6f, 1 } },
+            sSpellDefinition{ sSpellId::MagmaBurst,     World::sBossId::LavaGolem,       sItemId::MagmaBurst,     sSpellCastType::Projectile,       25.0f, "Magma Burst",     { 45.0f, 1.60f, 9.0f, 2.8f, 1.3f, 1 } },
+            sSpellDefinition{ sSpellId::FlameWheel,     World::sBossId::LavaWyrm,        sItemId::FlameWheel,     sSpellCastType::Projectile,       22.0f, "Flame Wheel",     { 17.0f, 0.95f, 15.0f, 2.4f, 0.7f, 4 } },
+            sSpellDefinition{ sSpellId::Meteor,         World::sBossId::LavaTitan,       sItemId::Meteor,         sSpellCastType::Projectile,       30.0f, "Meteor",          { 55.0f, 2.00f, 7.0f, 3.0f, 1.5f, 1 } }
         };
 
         // -------------------------------------------------------------------------------------------------------------------------
