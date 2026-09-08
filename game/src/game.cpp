@@ -88,6 +88,7 @@ void cGame::OnUpdate(float _deltaTime)
     UpdateInventoryInput();
 
     const bool augmentSelectionPending = m_runState.HasPendingAugmentSelection();
+    UpdateUsableInput(!m_inventoryOpen && !augmentSelectionPending);
 
     if (!augmentSelectionPending)
         m_runState.Update(_deltaTime);
@@ -305,6 +306,10 @@ void cGame::OnDrawUI()
 
             case UI::eInventoryAction::EquipUsable:
                 m_inventory.EquipUsable(sourceInventorySlot, destinationInventorySlot);
+                break;
+
+            case UI::eInventoryAction::MoveUsable:
+                m_inventory.MoveUsable(sourceInventorySlot, destinationInventorySlot);
                 break;
 
             case UI::eInventoryAction::EquipSpell:
@@ -1162,6 +1167,46 @@ void cGame::SyncSpellLoadoutFromInventory()
     {
         const Gameplay::sSpellId::Enum spellId = Gameplay::SpellManager::GetSpellId(spellSlots[slotIndex].item);
         m_runState.SetSpellSlot(slotIndex, spellId);
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::UpdateUsableInput(bool _gameplayInputEnabled)
+{
+    constexpr std::array<int, Gameplay::cInventory::c_numberOfUsableSlots> c_usableKeys = { '1', '2', '3', '4' };
+
+    const auto& usableSlots = m_inventory.GetUsableSlots();
+
+    for (size_t slotIndex = 0; slotIndex < c_usableKeys.size(); ++slotIndex)
+    {
+        const bool keyDown = Engine::Platform::IsKeyDown(c_usableKeys[slotIndex]);
+        const bool keyPressed = keyDown && !m_usableKeysWasDown[slotIndex];
+        m_usableKeysWasDown[slotIndex] = keyDown;
+
+        if (!_gameplayInputEnabled || !keyPressed)
+            continue;
+
+        const Gameplay::sItemStack& usableSlot = usableSlots[slotIndex];
+
+        switch (usableSlot.item)
+        {
+            case Gameplay::sItemId::HealthPotion:
+            {
+                const float restoredHealth = std::min(m_playerMaxHealth, m_playerHealth + c_healthPotionRestore);
+                if (restoredHealth > m_playerHealth && m_inventory.UseItem(slotIndex))
+                    m_playerHealth = restoredHealth;
+                break;
+            }
+
+            case Gameplay::sItemId::ManaPotion:
+            {
+                const float restoredMana = std::min(m_playerMaxMana, m_playerMana + c_manaPotionRestore);
+                if (restoredMana > m_playerMana && m_inventory.UseItem(slotIndex))
+                    m_playerMana = restoredMana;
+                break;
+            }
+        }
     }
 }
 

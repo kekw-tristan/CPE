@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <cfloat>
+#include <cmath>
 #include <cstring>
 #include <cstdio>
 #include <cstddef>
@@ -28,22 +29,21 @@ namespace UI
         // Layout dimensions are expressed at the reference resolution and scaled together.
         constexpr float c_referenceWidth        = 1280.0f;
         constexpr float c_referenceHeight       = 720.0f;
-        constexpr float c_resourceColumnWidth   = 80.0f;
-        constexpr float c_resourceBarWidth      = 56.0f;
+        constexpr float c_resourceOrbRadius     = 66.0f;
+        constexpr float c_resourceEdgeInset     = 22.0f;
+        constexpr int c_resourceRingSegments    = 48;
         constexpr float c_slotSize              = 64.0f;
         constexpr float c_slotSpacing           = 8.0f;
-        constexpr float c_resourceSpacing       = 16.0f;
-        constexpr float c_panelPadding          = 8.0f;
-        constexpr float c_resourceLabelOffset   = 70.0f;
-        constexpr float c_xpOffset              = 90.0f;
-        constexpr float c_xpHeight              = 20.0f;
+        constexpr float c_groupSpacing          = 12.0f;
+        constexpr float c_xpHeight              = 22.0f;
+        constexpr float c_xpSlotGap             = 8.0f;
         constexpr float c_bottomMargin          = 14.0f;
+        constexpr float c_hudScale              = 0.84f;
 
         constexpr std::array<const char*, 6> c_spellKeys = { "LMB", "RMB", "Q", "E", "R", "F" };
+        constexpr std::array<const char*, 4> c_usableKeys = { "1", "2", "3", "4" };
 
-        constexpr float c_spellBarWidth = static_cast<float>(c_spellKeys.size()) * c_slotSize + static_cast<float>(c_spellKeys.size() - 1) * c_slotSpacing;
-        constexpr float c_hudWidth      = 2.0f * (c_resourceColumnWidth + c_resourceSpacing) + c_spellBarWidth;
-        constexpr float c_panelBottom   = c_xpOffset + c_xpHeight + c_panelPadding;
+        constexpr float c_spellBarWidth         = static_cast<float>(c_spellKeys.size()) * c_slotSize + static_cast<float>(c_spellKeys.size() - 1) * c_slotSpacing;
 
         enum class eBarDirection
         {
@@ -73,10 +73,28 @@ namespace UI
 
         // -----------------------------------------------------------------------------------------------------------------
 
+        void DrawCenteredText(ImDrawList& _rDrawList, const ImVec2& _rCenter, float _fontSize, const char* _pText)
+        {
+            const ImVec2 textSize = ImGui::GetFont()->CalcTextSizeA(_fontSize, FLT_MAX, 0.0f, _pText);
+            DrawText(
+                _rDrawList,
+                ImVec2(_rCenter.x - textSize.x * 0.5f, _rCenter.y - textSize.y * 0.5f),
+                _fontSize,
+                _pText);
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------
+
         void DrawBar(ImDrawList& _rDrawList, const ImVec2& _rPosition, const ImVec2& _rSize, float _fraction, ImU32 _color, float _scale, const char* _pLabel, eBarDirection _direction)
         {
             const ImVec2 end(_rPosition.x + _rSize.x, _rPosition.y + _rSize.y);
-            _rDrawList.AddRectFilled(_rPosition, end, IM_COL32(14, 18, 28, 240), 4.0f * _scale);
+
+            _rDrawList.AddRectFilled(_rPosition, end, IM_COL32(13, 17, 23, 248), 5.0f * _scale);
+            _rDrawList.AddRectFilled(
+                ImVec2(_rPosition.x + 2.0f * _scale, _rPosition.y + 2.0f * _scale),
+                ImVec2(end.x - 2.0f * _scale, end.y - 2.0f * _scale),
+                IM_COL32(18, 23, 30, 245),
+                3.0f * _scale);
 
             if (_fraction > 0.0f)
             {
@@ -95,26 +113,64 @@ namespace UI
                 _rDrawList.AddRectFilled(fillStart, fillEnd, _color, 4.0f * _scale);
             }
 
-            _rDrawList.AddRect(_rPosition, end, IM_COL32(125, 135, 158, 210), 4.0f * _scale);
+            _rDrawList.AddRect(_rPosition, end, IM_COL32(66, 76, 91, 220), 5.0f * _scale);
+            _rDrawList.AddRect(
+                ImVec2(_rPosition.x + 1.0f * _scale, _rPosition.y + 1.0f * _scale),
+                ImVec2(end.x - 1.0f * _scale, end.y - 1.0f * _scale),
+                IM_COL32(112, 128, 154, 60),
+                4.0f * _scale);
 
             DrawText(_rDrawList, ImVec2(_rPosition.x + 6.0f * _scale, _rPosition.y + 4.0f * _scale), 13.0f * _scale, _pLabel);
         }
 
         // -----------------------------------------------------------------------------------------------------------------
 
-        void DrawResourceBar(ImDrawList& _rDrawList, const ImVec2& _rColumnPosition, float _scale, const char* _pName, float _value, float _maximum, ImU32 _color)
+        void DrawResourceOrb(
+            ImDrawList& _rDrawList,
+            const ImVec2& _rCenter,
+            float _scale,
+            const char* _pName,
+            float _value,
+            float _maximum,
+            ImU32 _color)
         {
-            const float  barInset = (c_resourceColumnWidth - c_resourceBarWidth) * 0.5f * _scale;
+            constexpr float c_twoPi = 6.28318530718f;
 
-            const ImVec2 barPosition(_rColumnPosition.x + barInset, _rColumnPosition.y);
-            const ImVec2 barSize(c_resourceBarWidth * _scale, c_slotSize * _scale);
+            const float radius = c_resourceOrbRadius * _scale;
+            const float fraction = GetFraction(_value, _maximum);
 
-            DrawBar(_rDrawList, barPosition, barSize, GetFraction(_value, _maximum), _color, _scale, "", eBarDirection::Vertical);
+            _rDrawList.AddCircleFilled(_rCenter, radius, IM_COL32(13, 17, 23, 248), c_resourceRingSegments);
+            _rDrawList.AddCircle(_rCenter, radius, IM_COL32(55, 66, 82, 190), c_resourceRingSegments, 1.5f * _scale);
+            _rDrawList.AddCircle(
+                _rCenter,
+                radius - 4.0f * _scale,
+                IM_COL32(54, 65, 80, 180),
+                c_resourceRingSegments,
+                5.0f * _scale);
 
-            char label[96];
-            std::snprintf(label, sizeof(label), "%s %.0f/%.0f", _pName, _value, _maximum);
-            const ImVec2 labelPosition(_rColumnPosition.x, _rColumnPosition.y + c_resourceLabelOffset * _scale);
-            DrawText(_rDrawList, labelPosition, 12.0f * _scale, label);
+            if (fraction > 0.0f)
+            {
+                const int pointCount = std::max(2, static_cast<int>(std::ceil(fraction * static_cast<float>(c_resourceRingSegments))) + 1);
+                std::array<ImVec2, c_resourceRingSegments + 1> points{};
+
+                for (int pointIndex = 0; pointIndex < pointCount; ++pointIndex)
+                {
+                    const float progress = static_cast<float>(pointIndex) / static_cast<float>(pointCount - 1);
+                    const float angle = -0.25f * c_twoPi + fraction * c_twoPi * progress;
+                    points[pointIndex] = ImVec2(
+                        _rCenter.x + std::cos(angle) * (radius - 4.0f * _scale),
+                        _rCenter.y + std::sin(angle) * (radius - 4.0f * _scale));
+                }
+
+                _rDrawList.AddPolyline(points.data(), pointCount, _color, 0, 5.0f * _scale);
+            }
+
+            _rDrawList.AddCircleFilled(_rCenter, radius - 8.0f * _scale, IM_COL32(18, 23, 30, 245), c_resourceRingSegments);
+
+            char amount[32];
+            std::snprintf(amount, sizeof(amount), "%.0f / %.0f", _value, _maximum);
+            DrawCenteredText(_rDrawList, ImVec2(_rCenter.x, _rCenter.y - 11.0f * _scale), 11.0f * _scale, _pName);
+            DrawCenteredText(_rDrawList, ImVec2(_rCenter.x, _rCenter.y + 8.0f * _scale), 12.0f * _scale, amount);
         }
 
         // -----------------------------------------------------------------------------------------------------------------
@@ -218,12 +274,17 @@ namespace UI
             Gameplay::sItemId::Enum _spell,
             float _cooldown,
             float _cooldownDuration,
-            float _manaCost)
+        float _manaCost)
         {
             const ImVec2 slotEnd(_rPosition.x + c_slotSize * _scale, _rPosition.y + c_slotSize * _scale);
-            _rDrawList.AddRectFilled(_rPosition, slotEnd, IM_COL32(34, 42, 70, 255), 6.0f * _scale);
+            _rDrawList.AddRectFilled(_rPosition, slotEnd, IM_COL32(24, 29, 37, 255), 8.0f * _scale);
+            _rDrawList.AddRectFilled(
+                ImVec2(_rPosition.x + 2.0f * _scale, _rPosition.y + 2.0f * _scale),
+                ImVec2(slotEnd.x - 2.0f * _scale, slotEnd.y - 2.0f * _scale),
+                IM_COL32(27, 33, 42, 255),
+                6.0f * _scale);
 
-            ImU32 borderColor = IM_COL32(89, 98, 122, 255);
+            ImU32 borderColor = IM_COL32(66, 76, 91, 255);
             if (_spell != Gameplay::sItemId::Undefined)
             {
                 DrawSpellIcon(_rDrawList, _rPosition, _scale, _spell);
@@ -231,10 +292,10 @@ namespace UI
                 const float cooldownFraction = GetFraction(_cooldown, _cooldownDuration);
                 DrawSpellCooldown(_rDrawList, _rPosition, _scale, _cooldown, cooldownFraction);
                 DrawSpellManaCost(_rDrawList, _rPosition, _scale, _manaCost);
-                borderColor = cooldownFraction > 0.0f ? IM_COL32(110, 117, 140, 255) : IM_COL32(174, 192, 255, 255);
+                borderColor = cooldownFraction > 0.0f ? IM_COL32(89, 98, 112, 255) : IM_COL32(112, 128, 154, 255);
             }
 
-            _rDrawList.AddRect(_rPosition, slotEnd, borderColor, 6.0f * _scale);
+            _rDrawList.AddRect(_rPosition, slotEnd, borderColor, 8.0f * _scale, 0, 1.5f * _scale);
             if (_spell == Gameplay::sItemId::Undefined)
             {
                 const ImVec2 dashStart(_rPosition.x + 24.0f * _scale, _rPosition.y + 25.0f * _scale);
@@ -242,19 +303,119 @@ namespace UI
                 _rDrawList.AddLine(dashStart, dashEnd, borderColor);
             }
 
+            _rDrawList.AddRectFilled(
+                ImVec2(_rPosition.x + 4.0f * _scale, _rPosition.y + 42.0f * _scale),
+                ImVec2(_rPosition.x + 39.0f * _scale, _rPosition.y + 61.0f * _scale),
+                IM_COL32(18, 23, 30, 220),
+                3.0f * _scale);
             const ImVec2 keyPosition(_rPosition.x + 8.0f * _scale, _rPosition.y + 45.0f * _scale);
             DrawText(_rDrawList, keyPosition, 13.0f * _scale, _pKey);
         }
 
         // -----------------------------------------------------------------------------------------------------------------
 
-        void DrawExperienceBar(ImDrawList& _rDrawList, const ImVec2& _rPosition, float _scale, const sHudState& _rState)
+        void DrawUsableSlot(
+            ImDrawList& _rDrawList,
+            const ImVec2& _rPosition,
+            float _scale,
+            const char* _pKey,
+            const sInventorySlotHudState& _rSlot)
+        {
+            const ImVec2 slotEnd(_rPosition.x + c_slotSize * _scale, _rPosition.y + c_slotSize * _scale);
+            const ImU32 borderColor = _rSlot.item == Gameplay::sItemId::Undefined
+                ? IM_COL32(66, 76, 91, 255)
+                : IM_COL32(112, 128, 154, 255);
+
+            _rDrawList.AddRectFilled(_rPosition, slotEnd, IM_COL32(24, 29, 37, 255), 8.0f * _scale);
+            _rDrawList.AddRectFilled(
+                ImVec2(_rPosition.x + 2.0f * _scale, _rPosition.y + 2.0f * _scale),
+                ImVec2(slotEnd.x - 2.0f * _scale, slotEnd.y - 2.0f * _scale),
+                IM_COL32(27, 33, 42, 255),
+                6.0f * _scale);
+
+            if (_rSlot.item == Gameplay::sItemId::Undefined)
+            {
+                const ImVec2 dashStart(_rPosition.x + 24.0f * _scale, _rPosition.y + 25.0f * _scale);
+                const ImVec2 dashEnd(_rPosition.x + 40.0f * _scale, _rPosition.y + 25.0f * _scale);
+                _rDrawList.AddLine(dashStart, dashEnd, borderColor);
+            }
+            else
+            {
+                const ImU32 potionColor = _rSlot.item == Gameplay::sItemId::HealthPotion
+                    ? IM_COL32(190, 58, 72, 255)
+                    : IM_COL32(50, 118, 214, 255);
+                const ImVec2 bottleStart(_rPosition.x + 22.0f * _scale, _rPosition.y + 16.0f * _scale);
+                const ImVec2 bottleEnd(_rPosition.x + 42.0f * _scale, _rPosition.y + 43.0f * _scale);
+
+                _rDrawList.AddRectFilled(bottleStart, bottleEnd, potionColor, 4.0f * _scale);
+                _rDrawList.AddRect(
+                    bottleStart,
+                    bottleEnd,
+                    IM_COL32(229, 238, 255, 230),
+                    4.0f * _scale,
+                    0,
+                    1.5f * _scale);
+                _rDrawList.AddRectFilled(
+                    ImVec2(_rPosition.x + 27.0f * _scale, _rPosition.y + 10.0f * _scale),
+                    ImVec2(_rPosition.x + 37.0f * _scale, _rPosition.y + 18.0f * _scale),
+                    potionColor,
+                    2.0f * _scale);
+
+                if (_rSlot.item == Gameplay::sItemId::HealthPotion)
+                {
+                    const ImVec2 center(_rPosition.x + 32.0f * _scale, _rPosition.y + 29.0f * _scale);
+                    _rDrawList.AddLine(
+                        ImVec2(center.x - 5.0f * _scale, center.y),
+                        ImVec2(center.x + 5.0f * _scale, center.y),
+                        IM_COL32(255, 238, 238, 255),
+                        2.0f * _scale);
+                    _rDrawList.AddLine(
+                        ImVec2(center.x, center.y - 5.0f * _scale),
+                        ImVec2(center.x, center.y + 5.0f * _scale),
+                        IM_COL32(255, 238, 238, 255),
+                        2.0f * _scale);
+                }
+                else if (_rSlot.item == Gameplay::sItemId::ManaPotion)
+                {
+                    _rDrawList.AddCircleFilled(
+                        ImVec2(_rPosition.x + 32.0f * _scale, _rPosition.y + 29.0f * _scale),
+                        5.0f * _scale,
+                        IM_COL32(220, 240, 255, 255));
+                }
+
+                char amount[16];
+                std::snprintf(amount, sizeof(amount), "%u", _rSlot.amount);
+                const ImVec2 amountSize = ImGui::GetFont()->CalcTextSizeA(12.0f * _scale, FLT_MAX, 0.0f, amount);
+                DrawText(
+                    _rDrawList,
+                    ImVec2(slotEnd.x - amountSize.x - 5.0f * _scale, slotEnd.y - amountSize.y - 4.0f * _scale),
+                    12.0f * _scale,
+                    amount);
+            }
+
+            _rDrawList.AddRect(_rPosition, slotEnd, borderColor, 8.0f * _scale, 0, 1.5f * _scale);
+            _rDrawList.AddRectFilled(
+                ImVec2(_rPosition.x + 4.0f * _scale, _rPosition.y + 42.0f * _scale),
+                ImVec2(_rPosition.x + 25.0f * _scale, _rPosition.y + 61.0f * _scale),
+                IM_COL32(18, 23, 30, 220),
+                3.0f * _scale);
+            DrawText(_rDrawList, ImVec2(_rPosition.x + 8.0f * _scale, _rPosition.y + 45.0f * _scale), 13.0f * _scale, _pKey);
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------
+
+        void DrawExperienceBar(
+            ImDrawList& _rDrawList,
+            const ImVec2& _rPosition,
+            const ImVec2& _rSize,
+            float _scale,
+            const sHudState& _rState)
         {
             char label[96];
             std::snprintf(label, sizeof(label), "Level %u    XP  %u / %u", _rState.level, _rState.xp, _rState.xpToNextLevel);
 
             const float progress = GetFraction(static_cast<float>(_rState.xp), static_cast<float>(_rState.xpToNextLevel));
-            DrawBar(_rDrawList, _rPosition, ImVec2(c_hudWidth * _scale, c_xpHeight * _scale), progress, IM_COL32(194, 159, 72, 255), _scale, label, eBarDirection::Horizontal);
+            DrawBar(_rDrawList, _rPosition, _rSize, progress, IM_COL32(194, 159, 72, 255), _scale, label, eBarDirection::Horizontal);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -611,7 +772,7 @@ namespace UI
             return;
         }
 
-        const float scale = std::min(pViewport->Size.x / c_referenceWidth, pViewport->Size.y / c_referenceHeight);
+        const float scale = c_hudScale * std::min(pViewport->Size.x / c_referenceWidth, pViewport->Size.y / c_referenceHeight);
         const ImVec2 center(pViewport->Pos.x + pViewport->Size.x * 0.5f, pViewport->Pos.y + pViewport->Size.y * 0.5f);
         const ImU32 reticleColor = _rState.anySpellOnCooldown
             ? IM_COL32(135, 145, 170, 230) : IM_COL32(205, 224, 255, 255);
@@ -664,20 +825,34 @@ namespace UI
         std::snprintf(progress, sizeof(progress), "Ring 1: Wald - Bosse %u/4%s", defeated, defeated == 4 ? " - Abgeschlossen!" : "");
         //DrawText(*pDrawList, ImVec2(questOrigin.x + 8.0f * scale, questOrigin.y + 8.0f * scale), 15.0f * scale, progress);
         //DrawText(*pDrawList, ImVec2(questOrigin.x + 8.0f * scale, questOrigin.y + 134.0f * scale), 12.0f * scale, "Eingang jeweils im Sueden (-Z). Flucht setzt Boss zurueck.");
-        const float width = c_hudWidth * scale;
-        const float left  = pViewport->Pos.x + (pViewport->Size.x - width) * 0.5f;
-        const float top   = pViewport->Pos.y + pViewport->Size.y - (c_panelBottom + c_bottomMargin) * scale;
+        const float xpTop = pViewport->Pos.y + pViewport->Size.y - (c_xpHeight + c_bottomMargin) * scale;
+        const float slotsTop = xpTop - (c_slotSize + c_xpSlotGap) * scale;
+        const float resourceCenterY = slotsTop + c_slotSize * 0.5f * scale;
+        const ImVec2 healthOrbCenter(
+            pViewport->Pos.x + (c_resourceEdgeInset + c_resourceOrbRadius) * scale,
+            resourceCenterY);
+        const ImVec2 manaOrbCenter(
+            pViewport->Pos.x + pViewport->Size.x - (c_resourceEdgeInset + c_resourceOrbRadius) * scale,
+            resourceCenterY);
+        const float usablesLeft = healthOrbCenter.x + (c_resourceOrbRadius + c_groupSpacing) * scale;
+        const float spellsRight = manaOrbCenter.x - (c_resourceOrbRadius + c_groupSpacing) * scale;
+        const float spellsLeft = spellsRight - c_spellBarWidth * scale;
+        const float xpLeft = usablesLeft;
 
-        const ImVec2 panelStart(left - c_panelPadding * scale, top - c_panelPadding * scale);
-        const ImVec2 panelEnd(left + width + c_panelPadding * scale, top + c_panelBottom * scale);
-        pDrawList->AddRectFilled(panelStart, panelEnd, IM_COL32(9, 12, 20, 205), c_panelPadding * scale);
+        DrawResourceOrb(*pDrawList, healthOrbCenter, scale, "HP", _rState.health, _rState.maxHealth, IM_COL32(194, 58, 76, 255));
+        DrawResourceOrb(*pDrawList, manaOrbCenter, scale, "MANA", _rState.mana, _rState.maxMana, IM_COL32(54, 126, 224, 255));
 
-        DrawResourceBar(*pDrawList, ImVec2(left, top), scale, "HP", _rState.health, _rState.maxHealth, IM_COL32(178, 48, 65, 255));
+        for (size_t slotIndex = 0; slotIndex < c_usableKeys.size(); ++slotIndex)
+        {
+            const float slotLeft = usablesLeft + static_cast<float>(slotIndex) * (c_slotSize + c_slotSpacing) * scale;
+            DrawUsableSlot(
+                *pDrawList,
+                ImVec2(slotLeft, slotsTop),
+                scale,
+                c_usableKeys[slotIndex],
+                _rState.inventory.usableSlots[slotIndex]);
+        }
 
-        const float manaLeft = left + width - c_resourceColumnWidth * scale;
-        DrawResourceBar(*pDrawList, ImVec2(manaLeft, top), scale, "Mana", _rState.mana, _rState.maxMana, IM_COL32(42, 100, 190, 255));
-
-        const float spellsLeft = left + (c_resourceColumnWidth + c_resourceSpacing) * scale;
         for (size_t slotIndex = 0; slotIndex < c_spellKeys.size(); ++slotIndex)
         {
             const float slotLeft = spellsLeft + static_cast<float>(slotIndex) * (c_slotSize + c_slotSpacing) * scale;
@@ -685,7 +860,7 @@ namespace UI
             const Gameplay::sItemId::Enum spell = _rState.inventory.spellSlots[slotIndex].item;
             DrawSpellSlot(
                 *pDrawList,
-                ImVec2(slotLeft, top),
+                ImVec2(slotLeft, slotsTop),
                 scale,
                 c_spellKeys[slotIndex],
                 spell,
@@ -694,7 +869,12 @@ namespace UI
                 _rState.spellManaCosts[slotIndex]);
         }
 
-        DrawExperienceBar(*pDrawList, ImVec2(left, top + c_xpOffset * scale), scale, _rState);
+        DrawExperienceBar(
+            *pDrawList,
+            ImVec2(xpLeft, xpTop),
+            ImVec2(spellsRight - usablesLeft, c_xpHeight * scale),
+            scale,
+            _rState);
         DrawInventory(_rState.inventory);
         DrawAugmentSelection(_rState.augmentSelection);
     }
@@ -836,8 +1016,6 @@ namespace UI
 
         ImGui::SetCursorPosX(10.0f * scale);
         ImGui::Separator();
-
-        constexpr std::array<const char*, 4> c_usableKeys = { "1", "2", "3", "4" };
 
         const float usableSpacing = 8.0f * scale;
         const float usableAreaWidth = ImGui::GetContentRegionAvail().x - 10.0f * scale;
@@ -1275,6 +1453,26 @@ namespace UI
                     && _rState.spellSlots[sourceSlot].item != Gameplay::sItemId::Undefined)
                 {
                     m_inventoryAction = eInventoryAction::MoveSpell;
+                    m_sourceInventorySlot = sourceSlot;
+                    m_destinationInventorySlot = _destinationSlot;
+                    m_hasInventoryAction = true;
+                }
+            }
+        }
+
+        if (pPayload == nullptr && _target == eInventoryDropTarget::Usable)
+        {
+            pPayload = ImGui::AcceptDragDropPayload("UsableSlot");
+
+            if (pPayload != nullptr && pPayload->DataSize == sizeof(size_t))
+            {
+                size_t sourceSlot = 0;
+                std::memcpy(&sourceSlot, pPayload->Data, sizeof(sourceSlot));
+
+                if (sourceSlot < _rState.usableSlots.size() && sourceSlot != _destinationSlot
+                    && _rState.usableSlots[sourceSlot].item != Gameplay::sItemId::Undefined)
+                {
+                    m_inventoryAction = eInventoryAction::MoveUsable;
                     m_sourceInventorySlot = sourceSlot;
                     m_destinationInventorySlot = _destinationSlot;
                     m_hasInventoryAction = true;

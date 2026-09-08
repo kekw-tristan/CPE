@@ -132,6 +132,7 @@ class cGame : public cApplication
 
         void UpdatePlayer();
         void UpdatePlayerSpell(float _deltaTime);
+        void UpdateUsableInput(bool _gameplayInputEnabled);
         void UpdateInventoryInput();
         void BeginRun();
         void ApplyLevelUpRewards(uint32_t _levelUps);
@@ -217,8 +218,11 @@ class cGame : public cApplication
         static constexpr float c_playerBaseMaxMana       = 100.0f;
         static constexpr float c_levelUpHealthBonus      = 10.0f;
         static constexpr float c_levelUpManaBonus        = 10.0f;
-        static constexpr uint32_t c_regularEnemyExperience = 25;
-        static constexpr uint32_t c_bossExperience       = 100;
+        static constexpr float c_healthPotionRestore     = 35.0f;
+        static constexpr float c_manaPotionRestore       = 35.0f;
+
+        static constexpr uint32_t c_regularEnemyExperience  = 25;
+        static constexpr uint32_t c_bossExperience          = 100;
 
         UI::cGameHud m_hud;
 
@@ -228,6 +232,7 @@ class cGame : public cApplication
         float m_playerMana          = c_playerBaseMaxMana;
         float m_playerAttackTime    = 0.0f;
         std::array<bool, 4> m_spellKeysWasDown{};
+        std::array<bool, Gameplay::cInventory::c_numberOfUsableSlots> m_usableKeysWasDown{};
 
         GFX::sShapeModelDesc m_enemy03Model;
         GFX::sShapeModelDesc m_enemy04Model;

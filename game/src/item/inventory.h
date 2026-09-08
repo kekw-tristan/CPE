@@ -36,6 +36,7 @@ namespace Gameplay
 
             bool EquipUsable(size_t _inventorySlot, size_t _usableSlot);
             bool UnequipUsable(size_t _usableSlot, size_t _inventorySlot);
+            bool MoveUsable(size_t _sourceSlot, size_t _destinationSlot);
 
             bool EquipSpell(size_t _inventorySlot, size_t _spellSlot);
             bool UnequipSpell(size_t _spellSlot, size_t _inventorySlot);

@@ -14,6 +14,7 @@ namespace UI
         MoveItem,
         EquipArmor,
         EquipUsable,
+        MoveUsable,
         EquipSpell,
         MoveSpell,
         UnequipArmor,
