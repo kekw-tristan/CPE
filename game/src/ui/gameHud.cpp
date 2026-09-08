@@ -10,6 +10,8 @@
 #include <cfloat>
 #include <cstring>
 #include <cstdio>
+#include <cstddef>
+#include <cstdint>
 
 // -------------------------------------------------------------------------------------------------------------------------
 

@@ -4,11 +4,13 @@
 
 #include <array>
 #include <cstdint>
+#include <cstddef>
 
 namespace Gameplay
 {
     class cInventory
     {
+
         public:
 
             static constexpr size_t c_numberOfInventorySlots    = 24;
@@ -77,6 +79,7 @@ namespace Gameplay
             ArmorSlots      m_armorSlots{};
             UsableSlots     m_usableSlots{};
             SpellSlots      m_spellSlots{};
+            
     };
 
 }
