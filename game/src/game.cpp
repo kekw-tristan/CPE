@@ -61,6 +61,7 @@ void cGame::OnInit()
     InitNightSky();
 
     World::WorldGenerator::Generate(1337);
+    m_playerController.SetPosition({ 0.0f, World::GetTerrainSurfaceHeight(0.0f, -24.0f) + 0.1f, -24.0f });
 
     if (LoadPlayerModel())
         BuildPlayerRenderInstances();

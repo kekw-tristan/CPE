@@ -63,11 +63,11 @@ FOREST_CONSTANT c_occlusionMinVisibility = 0.86f;
 // Fog
 // -----------------------------------------------------------------------------------------------------------------------------
 
-FOREST_CONSTANT c_fogStart = 18.0f;
-FOREST_CONSTANT c_fogDensity = 0.020f;
+FOREST_CONSTANT c_fogStart = 38.0f;
+FOREST_CONSTANT c_fogDensity = 0.009f;
 
-FOREST_CONSTANT c_heightFogBaseHeight = 2.0f;
-FOREST_CONSTANT c_heightFogFalloff = 0.16f;
+FOREST_CONSTANT c_heightFogBaseHeight = 18.0f;
+FOREST_CONSTANT c_heightFogFalloff = 0.055f;
 FOREST_CONSTANT c_heightFogDensity = 0.016f;
 
 
@@ -85,11 +85,11 @@ FOREST_CONSTANT c_displayGamma = 1.22f;
 // Distance fading
 // -----------------------------------------------------------------------------------------------------------------------------
 
-FOREST_CONSTANT c_fogEdgeStart = 52.0f;
-FOREST_CONSTANT c_fogEnd = 124.0f;
+FOREST_CONSTANT c_fogEdgeStart = 150.0f;
+FOREST_CONSTANT c_fogEnd = 220.0f;
 
-FOREST_CONSTANT c_detailFadeStart = 80.0f;
-FOREST_CONSTANT c_detailFadeEnd = 112.0f;
+FOREST_CONSTANT c_detailFadeStart = 150.0f;
+FOREST_CONSTANT c_detailFadeEnd = 210.0f;
 
 
 #undef FOREST_CONSTANT
@@ -155,6 +155,12 @@ void ApplyForestSurface(
 
     if ((flags & 1u) != 0)
     {
+        float exposedRock = max(1.0f - smoothstep(0.72f, 0.94f, normal.y),
+            smoothstep(48.0f, 85.0f, worldPosition.y) * 0.7f);
+        albedo = lerp(albedo, float3(0.24f, 0.28f, 0.32f), exposedRock * 0.82f);
+        float meadow = smoothstep(0.45f, 0.75f, ForestNoise(worldPosition.xz * 0.018f));
+        albedo = lerp(albedo, albedo * float3(0.75f, 1.12f, 1.08f), meadow * (1.0f - exposedRock));
+
         float soil = smoothstep(0.38f, 0.72f, broad * 0.65f + patches * 0.35f);
 
         float damp =

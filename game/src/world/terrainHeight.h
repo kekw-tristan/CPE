@@ -16,57 +16,30 @@ namespace World
         using std::sqrt;
 #endif
 
-        const float radius = sqrt(_x * _x + _z * _z);
+        // Warped ridges break up the skyline without a repeating concentric ring.
+        const float warpedX = _x + sin(_z * 0.006f) * 42.0f;
+        const float warpedZ = _z + sin(_x * 0.004f + 1.3f) * 55.0f;
+        const float ridge = sin(warpedX * 0.008f + warpedZ * 0.003f);
+        const float mountains = ridge * ridge * 62.0f
+            + sin(warpedZ * 0.005f - warpedX * 0.002f) * 23.0f;
 
-        // -------------------------------------------------------------------------------------------------------------------------
-        // Spawn blend
-        // -------------------------------------------------------------------------------------------------------------------------
+        // A winding, broad valley separates the mountain shoulders.
+        const float valleyAxis = _x - sin(_z * 0.005f) * 105.0f;
+        const float valley = 1.0f / (1.0f + valleyAxis * valleyAxis * 0.00012f);
+        const float foothills = sin(warpedX * 0.019f) * cos(warpedZ * 0.015f) * 5.0f;
+        const float detail = sin(_x * 0.043f + _z * 0.026f) * 0.65f;
+        const float landscape = mountains * (1.0f - valley * 0.65f)
+            - valley * 20.0f + foothills + detail;
 
-        const float blend = (radius - 35.0f) / 100.0f;
+        // The entire sanctuary and its stairs sit on a level overlook.
+        // A long smooth shoulder provides walkable descents into the valleys.
+        const float spawnZ = _z - 34.0f;
+        const float radius = sqrt(_x * _x + spawnZ * spawnZ);
+        const float blend = (radius - 90.0f) / 180.0f;
         const float t = blend < 0.0f ? 0.0f : (blend > 1.0f ? 1.0f : blend);
         const float envelope = t * t * (3.0f - 2.0f * t);
 
-        // -------------------------------------------------------------------------------------------------------------------------
-        // Large mountains
-        // -------------------------------------------------------------------------------------------------------------------------
-
-        const float mountainA =
-            sin(_x * 0.0045f + _z * 0.0025f)
-            * cos(_z * 0.0035f)
-            * 10.0f;
-
-        const float mountainB =
-            sin(_x * 0.0070f - _z * 0.0050f + 1.7f)
-            * 6.0f;
-
-        // -------------------------------------------------------------------------------------------------------------------------
-        // Rolling hills
-        // -------------------------------------------------------------------------------------------------------------------------
-
-        const float hills =
-            sin(_x * 0.0140f + _z * 0.0100f)
-            * cos(_z * 0.0110f - _x * 0.0040f)
-            * 4.0f;
-
-        // -------------------------------------------------------------------------------------------------------------------------
-        // Small terrain variation
-        // -------------------------------------------------------------------------------------------------------------------------
-
-        const float detail =
-            sin(_x * 0.0310f + _z * 0.0270f)
-            * 1.25f;
-
-        // -------------------------------------------------------------------------------------------------------------------------
-        // Mountain belt
-        // -------------------------------------------------------------------------------------------------------------------------
-
-        const float mountainRing =
-            sin(radius * 0.018f - 1.2f)
-            * 5.0f;
-
-        // -------------------------------------------------------------------------------------------------------------------------
-
-        return envelope * (mountainA + mountainB + hills + detail + mountainRing);
+        return 48.0f + envelope * (landscape - 48.0f);
     }
 
 #ifdef __cplusplus

@@ -1,0 +1,229 @@
+{
+    "name": "moon_undergrowth",
+    "materials": [
+        {
+            "albedo": [
+                0.12,
+                0.25,
+                0.19
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        },
+        {
+            "albedo": [
+                0.19,
+                0.41,
+                0.34
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        },
+        {
+            "albedo": [
+                0.47,
+                0.32,
+                0.65
+            ],
+            "roughness": 0.28,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0.37,
+                0.18,
+                0.68
+            ],
+            "emissiveStrength": 0.65
+        },
+        {
+            "albedo": [
+                0.34,
+                0.43,
+                0.35
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "Cone",
+            "position": [
+                -0.4,
+                0.4,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                -0.4
+            ],
+            "scale": [
+                0.5,
+                0.9,
+                0.45
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cone",
+            "position": [
+                0.3,
+                0.3,
+                0.1
+            ],
+            "rotation": [
+                0,
+                0,
+                0.45
+            ],
+            "scale": [
+                0.4,
+                0.8,
+                0.4
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Cylinder",
+            "position": [
+                0,
+                0.35,
+                0.35
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.12,
+                0.7,
+                0.12
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0,
+                0.7,
+                0.35
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.23,
+                0.6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Cylinder",
+            "position": [
+                0.55,
+                0.2,
+                -0.3
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.1,
+                0.4,
+                0.1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.55,
+                0.43,
+                -0.3
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.38,
+                0.16,
+                0.38
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 2
+        }
+    ]
+}

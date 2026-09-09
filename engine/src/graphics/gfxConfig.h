@@ -28,8 +28,8 @@ namespace Engine::GFX
 
     static constexpr float c_directionalCascadeSplits[c_directionalCascadeCount] =
     {
-        30.f,
-        150.f,
+        40.f,
+        300.f,
     };
 
     static constexpr uint32_t c_shadowMapResolution = 4096;

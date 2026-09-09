@@ -137,6 +137,75 @@ namespace World
 
         // -------------------------------------------------------------------------------------------------------------------------
 
+        struct sForestClearing
+        {
+            Math::cVec3f center;
+            float radius = 0.0f;
+            uint32_t variant = 0;
+        };
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        float GetSlope(float _x, float _z)
+        {
+            const float dx = (GetTerrainHeight(_x + 1.0f, _z) - GetTerrainHeight(_x - 1.0f, _z)) * 0.5f;
+            const float dz = (GetTerrainHeight(_x, _z + 1.0f) - GetTerrainHeight(_x, _z - 1.0f)) * 0.5f;
+            return std::sqrt(dx * dx + dz * dz);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool IsInsideClearing(const Math::cVec3f& _rPosition, const sForestClearing& _rClearing, float _padding = 0.0f)
+        {
+            const float dx = _rPosition.x() - _rClearing.center.x();
+            const float dz = _rPosition.z() - _rClearing.center.z();
+            const float radius = _rClearing.radius + _padding;
+            return _rClearing.radius > 0.0f && dx * dx + dz * dz < radius * radius;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        sForestClearing ChooseClearing(const sChunk& _rChunk, std::mt19937& _rRandomGenerator, const sWorldLayout& _rLayout)
+        {
+            sForestClearing clearing{};
+            std::uniform_int_distribution<uint32_t> chance(0, 4);
+            std::uniform_real_distribution<float> offset(-3.0f, 3.0f);
+            std::uniform_int_distribution<uint32_t> variant(0, 2);
+            if (chance(_rRandomGenerator) != 0)
+                return clearing;
+
+            const float x = static_cast<float>(_rChunk.coordinate.x * c_chunkSize) + offset(_rRandomGenerator);
+            const float z = static_cast<float>(_rChunk.coordinate.z * c_chunkSize) + offset(_rRandomGenerator);
+            clearing.center = { x, _rChunk.height + GetTerrainSurfaceHeight(x, z), z };
+            if (IsInsideForestSpawnClearance(clearing.center, 24.0f)
+                || DistanceToPath(clearing.center, _rLayout) < 26.0f
+                || GetSlope(x, z) > 0.48f)
+                return clearing;
+
+            clearing.variant = variant(_rRandomGenerator);
+            clearing.radius = 18.0f + static_cast<float>(clearing.variant);
+            return clearing;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool IsEnemyPositionFree(const Math::cVec3f& _rPosition, const std::vector<Physics::sAABBCollider>& _rColliders)
+        {
+            if (GetSlope(_rPosition.x(), _rPosition.z()) > 0.75f)
+                return false;
+
+            for (const auto& collider : _rColliders)
+            {
+                if (!collider.isGround
+                    && std::abs(_rPosition.x() - collider.center.x()) < collider.halfExtents.x() + 1.5f
+                    && std::abs(_rPosition.z() - collider.center.z()) < collider.halfExtents.z() + 1.5f)
+                    return false;
+            }
+            return true;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
         bool IsTreePositionValid(const Math::cVec3f& _rPosition, const std::vector<Math::cVec3f>& _rTreePositions, float _minDistance)
         {
             const float minDistanceSquared = _minDistance * _minDistance;
@@ -247,18 +316,19 @@ namespace World
             const sChunk& _rChunk,
             std::mt19937& _rRandomGenerator,
             const sWorldLayout& _rWorldLayout,
+            const sForestClearing& _rClearing,
             std::vector<Physics::sAABBCollider>& _rColliders
         )
         {
-            constexpr uint32_t c_minTreeCount           = 20;
-            constexpr uint32_t c_maxTreeCount           = 40;
+            constexpr uint32_t c_minTreeCount           = 10;
+            constexpr uint32_t c_maxTreeCount           = 28;
             constexpr uint32_t c_minStoneCount          = 3;
             constexpr uint32_t c_maxStoneCount          = 8;
             constexpr uint32_t c_maxPlacementAttempts   = 500;
 
             constexpr float c_treeScaleMultiplier   = 3.0f;
-            constexpr float c_minTreeScale          = 0.85f;
-            constexpr float c_maxTreeScale          = 1.15f;
+            constexpr float c_minTreeScale          = 0.65f;
+            constexpr float c_maxTreeScale          = 1.25f;
             constexpr float c_treeModelMaxRadius    = 1.5f;
             constexpr float c_treeMaxRadius         = c_treeModelMaxRadius * c_maxTreeScale * c_treeScaleMultiplier;
             constexpr float c_treeBorder            = c_treeMaxRadius;
@@ -286,7 +356,8 @@ namespace World
             std::uniform_int_distribution<uint32_t> treeModelDistribution(0, 1);
             std::uniform_int_distribution<uint32_t> stoneModelDistribution(0, 2);
 
-            const uint32_t targetTreeCount = treeCountDistribution(_rRandomGenerator);
+            const float groveDensity = 0.55f + 0.45f * std::sin(worldX * 0.021f + std::cos(worldZ * 0.017f) * 2.0f);
+            const uint32_t targetTreeCount = static_cast<uint32_t>(treeCountDistribution(_rRandomGenerator) * (0.45f + groveDensity));
 
             std::vector<Math::cVec3f> treePositions;
             treePositions.reserve(targetTreeCount);
@@ -307,7 +378,9 @@ namespace World
                 );
 
                 // Keep the entire canopy outside the spawn clearing.
-                if (IsInsideForestSpawnClearance(treeCandidatePosition, c_treeMaxRadius))
+                if (IsInsideForestSpawnClearance(treeCandidatePosition, c_treeMaxRadius)
+                    || IsInsideClearing(treeCandidatePosition, _rClearing, c_treeMaxRadius)
+                    || GetSlope(treeX, treeZ) > 0.70f)
                     continue;
 
                 if (DistanceToPath(treeCandidatePosition, _rWorldLayout) < c_pathClearance + c_treeMaxRadius)
@@ -328,7 +401,8 @@ namespace World
                 GFX::sShapeInstance treeInstance{};
 
                 treeInstance.modelHandle =
-                    treeModelDistribution(_rRandomGenerator) == 0
+                    treeCandidatePosition.y() > 40.0f ? WorldModels::Get("mountain_fir")
+                    : treeModelDistribution(_rRandomGenerator) == 0
                     ? WorldModels::Get("tree_01")
                     : WorldModels::Get("tree_02");
 
@@ -365,7 +439,8 @@ namespace World
 
                 const Math::cVec3f stonePosition(stoneX, worldY + GetTerrainSurfaceHeight(stoneX, stoneZ), stoneZ);
 
-                if (IsInsideForestSpawnClearance(stonePosition, c_maxStoneScale * 1.5f))
+                if (IsInsideForestSpawnClearance(stonePosition, c_maxStoneScale * 1.5f)
+                    || IsInsideClearing(stonePosition, _rClearing, 2.0f))
                     continue;
 
                 if (DistanceToPath(stonePosition, _rWorldLayout) < c_pathClearance)
@@ -417,18 +492,118 @@ namespace World
 
         // -------------------------------------------------------------------------------------------------------------------------
 
+        void GenerateMountainDetails(
+            GFX::cScene& _rScene,
+            const sChunk& _rChunk,
+            std::mt19937& _rRandomGenerator,
+            const sWorldLayout& _rLayout,
+            const sForestClearing& _rClearing,
+            std::vector<Physics::sAABBCollider>& _rColliders,
+            std::vector<sEnemySpawn>& _rSpawns
+        )
+        {
+            const float worldX = static_cast<float>(_rChunk.coordinate.x * c_chunkSize);
+            const float worldZ = static_cast<float>(_rChunk.coordinate.z * c_chunkSize);
+            std::uniform_real_distribution<float> offset(-25.0f, 25.0f);
+            std::uniform_real_distribution<float> rotation(0.0f, 6.2831853f);
+            std::uniform_real_distribution<float> scale(0.7f, 1.5f);
+
+            const auto addDetail = [&](const char* _pModel, float _x, float _z, float _scale, float _rotation, bool _solid)
+            {
+                GFX::sShapeInstance instance{};
+                instance.modelHandle = WorldModels::Get(_pModel);
+                instance.transform.position = { _x, _rChunk.height + GetTerrainSurfaceHeight(_x, _z) - 0.15f, _z };
+                instance.transform.rotation = { 0.0f, _rotation, 0.0f };
+                instance.transform.scale = { _scale, _scale, _scale };
+                // Small foliage and crystals need neither triangle colliders nor individual lights.
+                instance.collisionMode = GFX::eShapeCollisionMode::Disabled;
+                instance.generateLights = false;
+                _rScene.AddShapeInstance(instance);
+                if (_solid)
+                {
+                    AddAABBCollider(_rColliders, instance.transform.position,
+                        { 0.0f, 1.5f, 0.0f }, { 1.25f, 1.5f, 1.25f }, _scale);
+                }
+            };
+
+            // Clumps of low foliage alternate with exposed outcrops and luminous crystal seams.
+            for (uint32_t i = 0; i < 30; ++i)
+            {
+                const float x = worldX + offset(_rRandomGenerator);
+                const float z = worldZ + offset(_rRandomGenerator);
+                const Math::cVec3f position(x, _rChunk.height + GetTerrainSurfaceHeight(x, z), z);
+                if (IsInsideForestSpawnClearance(position, 5.0f)
+                    || IsInsideClearing(position, _rClearing, 3.0f)
+                    || DistanceToPath(position, _rLayout) < 7.0f
+                    || !IsEnemyPositionFree(position, _rColliders))
+                    continue;
+
+                const float detailScale = scale(_rRandomGenerator);
+                const float detailRotation = rotation(_rRandomGenerator);
+                if (i < 4)
+                {
+                    addDetail("mountain_outcrop", x, z, detailScale * 1.7f, detailRotation, true);
+                }
+                else
+                {
+                    const bool crystal = i % 7 == 0;
+                    const char* model = crystal ? "moon_crystals" : "moon_undergrowth";
+                    addDetail(model, x, z, detailScale, detailRotation, false);
+                }
+            }
+
+            if (_rClearing.radius <= 0.0f)
+                return;
+
+            // Three open encounter layouts: a broken shrine, a crescent of ruins, or a crystal grove.
+            const float angle = rotation(_rRandomGenerator);
+            const uint32_t structureCount = 3 + _rClearing.variant;
+            for (uint32_t i = 0; i < structureCount; ++i)
+            {
+                const float theta = angle + static_cast<float>(i) * 0.8f;
+                const float x = _rClearing.center.x() + std::cos(theta) * 11.0f;
+                const float z = _rClearing.center.z() + std::sin(theta) * 11.0f;
+                addDetail(_rClearing.variant == 2 ? "moon_crystals" : "ruin_waystone",
+                    x, z, scale(_rRandomGenerator) * 1.3f, theta, true);
+            }
+            if (_rClearing.variant == 0)
+            {
+                addDetail("moon_crystals", _rClearing.center.x(), _rClearing.center.z(), 1.7f, angle, true);
+            }
+
+            constexpr sEnemyType::Enum c_guardTypes[] =
+            {
+                sEnemyType::ForestBrute, sEnemyType::ForestThornwolf, sEnemyType::ForestSporecap
+            };
+            for (uint32_t i = 0; i < 3 + _rClearing.variant; ++i)
+            {
+                const float theta = angle + static_cast<float>(i) * 1.256637f;
+                const float x = _rClearing.center.x() + std::cos(theta) * 6.0f;
+                const float z = _rClearing.center.z() + std::sin(theta) * 6.0f;
+                const Math::cVec3f position(x, _rChunk.height + GetTerrainSurfaceHeight(x, z), z);
+                if (IsEnemyPositionFree(position, _rColliders))
+                {
+                    _rSpawns.push_back({ c_guardTypes[_rClearing.variant], position, theta });
+                }
+            }
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
         void GenerateEnemyPacks(
             const sChunk& _rChunk,
             std::mt19937& _rRandomGenerator,
             const sWorldLayout& _rWorldLayout,
+            const sForestClearing& _rClearing,
+            const std::vector<Physics::sAABBCollider>& _rColliders,
             std::vector<sEnemySpawn>& _rEnemySpawns
         )
         {
             constexpr uint32_t c_minPackCount = 0;
             constexpr uint32_t c_maxPackCount = 2;
 
-            constexpr uint32_t c_minEnemiesPerPack = 3;
-            constexpr uint32_t c_maxEnemiesPerPack = 6;
+            constexpr uint32_t c_minEnemiesPerPack = 1;
+            constexpr uint32_t c_maxEnemiesPerPack = 4;
 
             constexpr float c_packBorder = 5.0f;
             constexpr float c_packRadius = 3.0f;
@@ -480,6 +655,8 @@ namespace World
                     spawn.rotation = rotationDistribution(_rRandomGenerator);
 
                     if (!IsInsideForestSpawnClearance(spawn.position)
+                        && !IsInsideClearing(spawn.position, _rClearing, 2.0f)
+                        && IsEnemyPositionFree(spawn.position, _rColliders)
                         && DistanceToPath(spawn.position, _rWorldLayout) >= c_pathClearance)
                         _rEnemySpawns.push_back(spawn);
 
@@ -551,6 +728,9 @@ namespace World
                     GFX::sShapeInstance marker{};
                     marker.modelHandle          = WorldModels::Get("stone_02");
                     marker.transform.position   = start + delta * (distance / length);
+                    marker.transform.position = Math::cVec3f(marker.transform.position.x(),
+                        GetTerrainSurfaceHeight(marker.transform.position.x(), marker.transform.position.z()) + 0.04f,
+                        marker.transform.position.z());
                     marker.transform.scale      = Math::cVec3f(0.35f, 0.08f, 0.35f);
 
                     if (belongsToChunk(marker.transform.position)
@@ -610,8 +790,10 @@ namespace World
         {
             GenerateGround(_rScene, _rChunk, _rColliders);
             GenerateForestSpawn(_rScene, _rChunk);
-            GenerateTrees(_rScene, _rChunk, _rRandomGenerator, _rWorldLayout, _rColliders);
-            GenerateEnemyPacks(_rChunk, _rRandomGenerator, _rWorldLayout, _rEnemySpawns);
+            const sForestClearing clearing = ChooseClearing(_rChunk, _rRandomGenerator, _rWorldLayout);
+            GenerateTrees(_rScene, _rChunk, _rRandomGenerator, _rWorldLayout, clearing, _rColliders);
+            GenerateMountainDetails(_rScene, _rChunk, _rRandomGenerator, _rWorldLayout, clearing, _rColliders, _rEnemySpawns);
+            GenerateEnemyPacks(_rChunk, _rRandomGenerator, _rWorldLayout, clearing, _rColliders, _rEnemySpawns);
             GenerateDungeons(_rScene, _rWorldLayout, _rEnemySpawns, _rChunk, _rColliders);
         }
 

@@ -1,0 +1,161 @@
+{
+    "name": "mountain_fir",
+    "materials": [
+        {
+            "albedo": [
+                0.12,
+                0.075,
+                0.055
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        },
+        {
+            "albedo": [
+                0.07,
+                0.24,
+                0.23
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        },
+        {
+            "albedo": [
+                0.12,
+                0.32,
+                0.29
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "Cylinder",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.65,
+                2,
+                0.65
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Cone",
+            "position": [
+                0,
+                1.4,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                2.8,
+                2.7,
+                2.8
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cone",
+            "position": [
+                0,
+                2.5,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                2.1,
+                2.6,
+                2.1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Cone",
+            "position": [
+                0,
+                3.6,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.35,
+                2.2,
+                1.35
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        }
+    ]
+}

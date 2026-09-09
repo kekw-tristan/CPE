@@ -1,0 +1,161 @@
+{
+    "name": "moon_crystals",
+    "materials": [
+        {
+            "albedo": [
+                0.24,
+                0.29,
+                0.31
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        },
+        {
+            "albedo": [
+                0.19,
+                0.68,
+                0.78
+            ],
+            "roughness": 0.28,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0.1,
+                0.62,
+                0.85
+            ],
+            "emissiveStrength": 0.65
+        },
+        {
+            "albedo": [
+                0.47,
+                0.32,
+                0.65
+            ],
+            "roughness": 0.28,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0.37,
+                0.18,
+                0.68
+            ],
+            "emissiveStrength": 0.65
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "Rock",
+            "position": [
+                0,
+                0.25,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.8,
+                0.6,
+                1.6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Crystal",
+            "position": [
+                0,
+                1.2,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0.1
+            ],
+            "scale": [
+                0.7,
+                2.5,
+                0.7
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Crystal",
+            "position": [
+                0.6,
+                0.7,
+                0.2
+            ],
+            "rotation": [
+                0.15,
+                0,
+                -0.3
+            ],
+            "scale": [
+                0.5,
+                1.6,
+                0.5
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Crystal",
+            "position": [
+                -0.6,
+                0.55,
+                -0.25
+            ],
+            "rotation": [
+                -0.2,
+                0,
+                0.3
+            ],
+            "scale": [
+                0.4,
+                1.4,
+                0.5
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        }
+    ]
+}

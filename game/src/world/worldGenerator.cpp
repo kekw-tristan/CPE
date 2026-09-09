@@ -2,6 +2,7 @@
 #include "chunk.h"
 #include "worldConfig.h"
 #include "worldModels.h"
+#include "terrainHeight.h"
 #include "biome/forestGenerator.h"
 #include "graphics/scene/scene.h"
 #include "graphics/shapeModel/shapeMeshLibrary.h"
@@ -115,13 +116,15 @@ namespace World
             const float worldX = static_cast<float>(_rChunkData.coordinate.x * c_chunkSize);
             const float worldZ = static_cast<float>(_rChunkData.coordinate.z * c_chunkSize);
 
+            const float terrainHeight = _rChunkData.height + GetTerrainSurfaceHeight(worldX, worldZ);
+
             sReflectionProbeDesc probe{};
             probe.blendDistance = 10.0f;
             // Overlap neighboring influence volumes throughout the edge fade.
             const float probeHalfExtent = c_halfChunkSize + probe.blendDistance;
-            probe.position = { worldX, _rChunkData.height + c_probeHeight, worldZ };
-            probe.boxMin = { worldX - probeHalfExtent, _rChunkData.height - 12.0f, worldZ - probeHalfExtent };
-            probe.boxMax = { worldX + probeHalfExtent, _rChunkData.height + 32.0f, worldZ + probeHalfExtent };
+            probe.position = { worldX, terrainHeight + c_probeHeight, worldZ };
+            probe.boxMin = { worldX - probeHalfExtent, terrainHeight - 48.0f, worldZ - probeHalfExtent };
+            probe.boxMax = { worldX + probeHalfExtent, terrainHeight + 64.0f, worldZ + probeHalfExtent };
             probe.resolution = 64;
 
             _rChunk.reflectionProbes.push_back(probe);
