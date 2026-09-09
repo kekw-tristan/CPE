@@ -11,6 +11,7 @@
 #include "graphics/shapeModel/assetManager.h"
 #include "graphics/scene/scene.h"
 #include "graphics/shapeModel/shapeModelDesc.h"
+#include "graphics/shapeModel/shapeModelManager.h"
 
 #include "physics/collider.h"
 
@@ -142,6 +143,8 @@ namespace World
             Math::cVec3f center;
             float radius = 0.0f;
             uint32_t variant = 0;
+            uint32_t landmarkVariant = 0;
+            bool landmark = false;
         };
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -170,7 +173,7 @@ namespace World
             sForestClearing clearing{};
             std::uniform_int_distribution<uint32_t> chance(0, 4);
             std::uniform_real_distribution<float> offset(-3.0f, 3.0f);
-            std::uniform_int_distribution<uint32_t> variant(0, 2);
+            std::uniform_int_distribution<uint32_t> variant(0, 7);
             if (chance(_rRandomGenerator) != 0)
                 return clearing;
 
@@ -182,8 +185,21 @@ namespace World
                 || GetSlope(x, z) > 0.48f)
                 return clearing;
 
-            clearing.variant = variant(_rRandomGenerator);
-            clearing.radius = 18.0f + static_cast<float>(clearing.variant);
+            const uint32_t choice = variant(_rRandomGenerator);
+            clearing.variant = choice % 3;
+            clearing.landmarkVariant = choice % 4;
+            clearing.landmark = choice >= 4
+                && !IsInsideForestSpawnClearance(clearing.center, 46.0f)
+                && DistanceToPath(clearing.center, _rLayout) >= 48.0f;
+            if (clearing.landmark)
+            {
+                // Large footprints stay inside their owning chunk even after cardinal rotation.
+                clearing.center = { static_cast<float>(_rChunk.coordinate.x * c_chunkSize),
+                    _rChunk.height, static_cast<float>(_rChunk.coordinate.z * c_chunkSize) };
+                clearing.center = Math::cVec3f(clearing.center.x(),
+                    _rChunk.height + GetTerrainSurfaceHeight(clearing.center.x(), clearing.center.z()), clearing.center.z());
+            }
+            clearing.radius = clearing.landmark ? 43.0f : 18.0f + static_cast<float>(clearing.variant);
             return clearing;
         }
 
@@ -492,6 +508,134 @@ namespace World
 
         // -------------------------------------------------------------------------------------------------------------------------
 
+        bool GenerateLandmark(
+            GFX::cScene& _rScene,
+            const sChunk& _rChunk,
+            const sForestClearing& _rClearing,
+            std::vector<sEnemySpawn>& _rSpawns
+        )
+        {
+            if (!_rClearing.landmark)
+                return false;
+
+            const uint32_t variant = _rClearing.landmarkVariant;
+            constexpr int c_halfWidths[] = { 25, 27, 27, 25 };
+            constexpr int c_halfDepths[] = { 27, 26, 25, 27 };
+            constexpr float c_entranceZ[] = { -27.0f, -26.0f, -24.0f, -27.0f };
+            constexpr float c_entranceHeight[] = { -0.12f, 0.0f, -0.12f, 0.0f };
+            constexpr float c_stairStart = -31.0f;
+
+            // Face the entrance toward the uphill approach, keeping the staircase short and walkable.
+            float angle = 0.0f;
+            float entryHeight = -std::numeric_limits<float>::max();
+            for (int direction = 0; direction < 4; ++direction)
+            {
+                const float candidateAngle = static_cast<float>(direction) * 1.5707963f;
+                const float height = GetTerrainSurfaceHeight(
+                    _rClearing.center.x() - std::sin(candidateAngle) * 31.0f,
+                    _rClearing.center.z() - std::cos(candidateAngle) * 31.0f);
+                if (height > entryHeight)
+                {
+                    angle = candidateAngle;
+                    entryHeight = height;
+                }
+            }
+
+            const float cosine = std::cos(angle);
+            const float sine = std::sin(angle);
+            const auto terrainAt = [&](float _x, float _z)
+            {
+                return GetTerrainSurfaceHeight(_rClearing.center.x() + _x * cosine + _z * sine,
+                    _rClearing.center.z() - _x * sine + _z * cosine);
+            };
+
+            float floorHeight = entryHeight;
+            float foundationHeight = entryHeight;
+            for (int z = -c_halfDepths[variant]; z <= c_halfDepths[variant]; z += 2)
+            {
+                for (int x = -c_halfWidths[variant]; x <= c_halfWidths[variant]; x += 2)
+                {
+                    const float height = terrainAt(static_cast<float>(x), static_cast<float>(z));
+                    floorHeight = std::max(floorHeight, height);
+                    foundationHeight = std::min(foundationHeight, height);
+                }
+            }
+            // Include the entire stair approach in the clearance calculation.
+            for (int z = -31; z < static_cast<int>(c_entranceZ[variant]); ++z)
+                floorHeight = std::max(floorHeight, terrainAt(0.0f, static_cast<float>(z)));
+            floorHeight += 0.7f;
+            const float stairRun = c_entranceZ[variant] - c_stairStart;
+            if (floorHeight - entryHeight > stairRun * 0.8f || floorHeight - foundationHeight > 27.0f)
+                return false;
+
+            static const char* c_prefabPaths[] =
+            {
+                "./assets/prefabs/astral_observatory.prefab.json",
+                "./assets/prefabs/hollow_cathedral.prefab.json",
+                "./assets/prefabs/thorn_sanctum.prefab.json",
+                "./assets/prefabs/moon_belfry.prefab.json"
+            };
+            static GFX::sAssetHandle s_assets[4]{};
+            static bool s_attempted[4]{};
+            if (!s_attempted[variant])
+            {
+                s_attempted[variant] = true;
+                try
+                {
+                    s_assets[variant] = GFX::AssetManager::Load(c_prefabPaths[variant]);
+                }
+                catch (const std::exception& exception)
+                {
+                    std::cerr << "Failed to load dungeon landmark: " << exception.what() << '\n';
+                }
+            }
+            if (!s_assets[variant].IsValid() || s_assets[variant].type != GFX::sAssetType::Prefab)
+                return false;
+
+            GFX::sTransform transform{};
+            transform.position = { _rClearing.center.x(), _rChunk.height + floorHeight, _rClearing.center.z() };
+            transform.rotation = { 0.0f, angle, 0.0f };
+            transform.scale = { 1.0f, 1.0f, 1.0f };
+            InstantiatePrefab(_rScene, static_cast<GFX::PrefabHandle>(s_assets[variant].handle), transform);
+
+            // Treads meet at their edges; overlapping side faces would flicker.
+            constexpr int c_stepCount = 32;
+            const float treadLength = stairRun / c_stepCount;
+            for (int step = 0; step < c_stepCount; ++step)
+            {
+                const float z = c_stairStart + (static_cast<float>(step) + 0.5f) * treadLength;
+                const float top = entryHeight + (floorHeight + c_entranceHeight[variant] - entryHeight) * static_cast<float>(step + 1) / c_stepCount;
+                const float depth = std::max(1.0f, top - std::min({ terrainAt(-3.5f, z), terrainAt(0.0f, z), terrainAt(3.5f, z) }) + 1.0f);
+                GFX::sShapeInstance stair{};
+                stair.modelHandle = WorldModels::Get("dungeon_step");
+                stair.transform.position = { _rClearing.center.x() + z * sine, _rChunk.height + top,
+                    _rClearing.center.z() + z * cosine };
+                stair.transform.rotation = transform.rotation;
+                stair.transform.scale = { 7.0f, depth, treadLength };
+                stair.collisionMode = GFX::eShapeCollisionMode::Mesh;
+                stair.generateLights = false;
+                _rScene.AddShapeInstance(stair);
+            }
+
+            constexpr sEnemyType::Enum c_champions[] =
+            {
+                sEnemyType::ForestCrawler, sEnemyType::ForestBrute, sEnemyType::ForestSporecap, sEnemyType::ForestThornwolf
+            };
+            // Undefined progression ID denotes a local miniboss, not one of the four forest guardians.
+            _rSpawns.push_back({ c_champions[variant], transform.position, angle + 3.1415926f, true });
+            for (int guard = 0; guard < 4; ++guard)
+            {
+                const float x = guard % 2 == 0 ? -6.0f : 6.0f;
+                const float z = guard < 2 ? -7.0f : 5.0f;
+                const Math::cVec3f position = transform.position + Math::cVec3f(x * cosine + z * sine, 0.0f, -x * sine + z * cosine);
+                _rSpawns.push_back({ variant == 2 ? sEnemyType::ForestSporecap : sEnemyType::ForestThornwolf,
+                    position, angle + 3.1415926f });
+            }
+            return true;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
         void GenerateMountainDetails(
             GFX::cScene& _rScene,
             const sChunk& _rChunk,
@@ -555,20 +699,86 @@ namespace World
             if (_rClearing.radius <= 0.0f)
                 return;
 
-            // Three open encounter layouts: a broken shrine, a crescent of ruins, or a crystal grove.
+            if (GenerateLandmark(_rScene, _rChunk, _rClearing, _rSpawns))
+                return;
+
             const float angle = rotation(_rRandomGenerator);
-            const uint32_t structureCount = 3 + _rClearing.variant;
-            for (uint32_t i = 0; i < structureCount; ++i)
+            const float cosine = std::cos(angle);
+            const float sine = std::sin(angle);
+            std::vector<Physics::sAABBCollider> ruinSpawnClearances;
+            ruinSpawnClearances.reserve(12);
+
+            const auto addRuin = [&](const char* _pModel, float _x, float _z, float _rotation)
             {
-                const float theta = angle + static_cast<float>(i) * 0.8f;
-                const float x = _rClearing.center.x() + std::cos(theta) * 11.0f;
-                const float z = _rClearing.center.z() + std::sin(theta) * 11.0f;
-                addDetail(_rClearing.variant == 2 ? "moon_crystals" : "ruin_waystone",
-                    x, z, scale(_rRandomGenerator) * 1.3f, theta, true);
+                GFX::sShapeInstance instance{};
+                instance.modelHandle = WorldModels::Get(_pModel);
+                if (instance.modelHandle < 0)
+                    return;
+
+                const float x = _rClearing.center.x() + _x * cosine + _z * sine;
+                const float z = _rClearing.center.z() - _x * sine + _z * cosine;
+                const float yaw = angle + _rotation;
+                const float localCosine = std::cos(yaw);
+                const float localSine = std::sin(yaw);
+                const auto& bounds = GFX::ShapeModelManager::GetShapeModel(instance.modelHandle).bounds;
+
+                // Seat each masonry section independently; buried footings bridge the slope.
+                float groundHeight = GetTerrainSurfaceHeight(x, z);
+                for (int corner = 0; corner < 4; ++corner)
+                {
+                    const float localX = (corner & 1) ? bounds.max.x() : bounds.min.x();
+                    const float localZ = (corner & 2) ? bounds.max.z() : bounds.min.z();
+                    groundHeight = std::min(groundHeight, GetTerrainSurfaceHeight(
+                        x + localX * localCosine + localZ * localSine,
+                        z - localX * localSine + localZ * localCosine));
+                }
+
+                instance.transform.position = { x, _rChunk.height + groundHeight, z };
+                instance.transform.rotation = { 0.0f, yaw, 0.0f };
+                instance.transform.scale = { 1.0f, 1.0f, 1.0f };
+                instance.generateLights = false;
+                // Mesh collision preserves doorways and the spaces beneath the broken arches.
+                instance.collisionMode = GFX::eShapeCollisionMode::Mesh;
+                _rScene.AddShapeInstance(instance);
+
+                // Conservative bounds reserve enemy spawn space only, never block the doorway.
+                Physics::sAABBCollider clearance{};
+                clearance.center = instance.transform.position + Math::cVec3f(
+                    bounds.center.x() * localCosine + bounds.center.z() * localSine,
+                    bounds.center.y(),
+                    -bounds.center.x() * localSine + bounds.center.z() * localCosine);
+                clearance.halfExtents = {
+                    (bounds.size.x() * std::abs(localCosine) + bounds.size.z() * std::abs(localSine)) * 0.5f,
+                    bounds.size.y() * 0.5f,
+                    (bounds.size.x() * std::abs(localSine) + bounds.size.z() * std::abs(localCosine)) * 0.5f
+                };
+                ruinSpawnClearances.push_back(clearance);
+            };
+
+            constexpr float c_halfPi = 1.5707963f;
+            constexpr float c_pi = 3.1415926f;
+
+            // Roofless chapel, collapsed courtyard, and a crystal-overgrown gatehouse.
+            // Broken side walls leave several routes into the central encounter space.
+            addRuin(_rClearing.variant == 1 ? "ruin_broken_arch" : "ruin_arch", 0.0f, -10.0f, 0.0f);
+            addRuin("ruin_corner", -7.0f, 9.0f, 0.0f);
+            addRuin("ruin_corner", 7.0f, 9.0f, -c_halfPi);
+            addRuin("ruin_wall", -9.0f, 2.0f, c_halfPi);
+            addRuin("ruin_wall", 9.0f, -3.0f, -c_halfPi);
+            addRuin("ruin_broken_arch", _rClearing.variant == 0 ? 0.0f : 8.0f,
+                _rClearing.variant == 0 ? 9.0f : 4.0f, _rClearing.variant == 0 ? c_pi : -c_halfPi);
+            addRuin("ruin_rubble", -10.0f, -6.0f, angle * 0.3f);
+            addRuin("ruin_rubble", 5.0f, 11.0f, c_halfPi);
+
+            if (_rClearing.variant == 1)
+            {
+                addRuin("ruin_wall", -5.0f, -10.0f, c_pi);
+                addRuin("ruin_rubble", 10.0f, 8.0f, 0.0f);
             }
-            if (_rClearing.variant == 0)
+            else
             {
-                addDetail("moon_crystals", _rClearing.center.x(), _rClearing.center.z(), 1.7f, angle, true);
+                addDetail("moon_crystals", _rClearing.center.x(), _rClearing.center.z(),
+                    _rClearing.variant == 2 ? 2.0f : 1.3f, angle, true);
             }
 
             constexpr sEnemyType::Enum c_guardTypes[] =
@@ -581,7 +791,8 @@ namespace World
                 const float x = _rClearing.center.x() + std::cos(theta) * 6.0f;
                 const float z = _rClearing.center.z() + std::sin(theta) * 6.0f;
                 const Math::cVec3f position(x, _rChunk.height + GetTerrainSurfaceHeight(x, z), z);
-                if (IsEnemyPositionFree(position, _rColliders))
+                if (IsEnemyPositionFree(position, _rColliders)
+                    && IsEnemyPositionFree(position, ruinSpawnClearances))
                 {
                     _rSpawns.push_back({ c_guardTypes[_rClearing.variant], position, theta });
                 }

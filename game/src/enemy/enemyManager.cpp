@@ -210,17 +210,18 @@ namespace Gameplay
         slot.enemy.rotation = _rotation;
         slot.enemy.isBoss = _isBoss;
         slot.enemy.bossId = _isBoss ? _bossId : World::sBossId::Undefined;
-        slot.enemy.scale = _isBoss ? 2.5f : 1.0f;
+        const bool miniboss = _isBoss && _bossId == World::sBossId::Undefined;
+        slot.enemy.scale = _isBoss ? (miniboss ? 1.8f : 2.5f) : 1.0f;
         slot.enemy.homePosition = _rPosition;
         slot.enemy.definition = definition;
         if (_isBoss)
         {
-            slot.enemy.definition.maxHealth *= 6.0f;
-            slot.enemy.definition.attackDamage *= 1.5f;
+            slot.enemy.definition.maxHealth *= miniboss ? 3.5f : 6.0f;
+            slot.enemy.definition.attackDamage *= miniboss ? 1.25f : 1.5f;
             slot.enemy.definition.aggroRange = 24.0f;
             slot.enemy.definition.attackWindup *= 1.4f;
             if (definition.attackType == eEnemyAttackType::Melee)
-                slot.enemy.definition.attackRange *= 2.5f;
+                slot.enemy.definition.attackRange *= slot.enemy.scale;
         }
         slot.enemy.health = slot.enemy.definition.maxHealth;
 

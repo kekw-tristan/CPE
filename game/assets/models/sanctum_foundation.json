@@ -1,0 +1,172 @@
+{
+    "name": "rock_sanctum_foundation",
+    "materials": [
+        {
+            "albedo": [
+                0.24,
+                0.29,
+                0.31
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        },
+        {
+            "albedo": [
+                0.12,
+                0.25,
+                0.19
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        },
+        {
+            "albedo": [
+                0.19,
+                0.68,
+                0.78
+            ],
+            "roughness": 0.28,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0.1,
+                0.62,
+                0.85
+            ],
+            "emissiveStrength": 0.65
+        },
+        {
+            "albedo": [
+                0.4,
+                0.43,
+                0.42
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        },
+        {
+            "albedo": [
+                0.62,
+                0.38,
+                0.8
+            ],
+            "roughness": 0.28,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0.4,
+                0.16,
+                0.72
+            ],
+            "emissiveStrength": 0.8
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "Cylinder",
+            "position": [
+                0,
+                -14,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                54,
+                28,
+                44
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cylinder",
+            "position": [
+                0,
+                -12.6,
+                16
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                18,
+                28,
+                18
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                0,
+                -14.12,
+                -21.5
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                8,
+                28,
+                5
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        }
+    ]
+}

@@ -625,7 +625,7 @@ void cGame::SpawnEnemies(const std::vector<World::sEnemySpawn>& _rSpawns, const 
         if (inserted)
         {
             entry->second = m_enemyManager.Spawn(spawn.type, spawn.position, spawn.rotation, spawn.isBoss, spawn.bossId);
-            if (spawn.isBoss)
+            if (spawn.isBoss && spawn.bossId != World::sBossId::Undefined)
                 m_bossHandles.push_back(entry->second);
         }
 

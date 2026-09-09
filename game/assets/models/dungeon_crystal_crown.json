@@ -1,0 +1,216 @@
+{
+    "name": "rock_dungeon_crystal_crown",
+    "materials": [
+        {
+            "albedo": [
+                0.24,
+                0.29,
+                0.31
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        },
+        {
+            "albedo": [
+                0.12,
+                0.25,
+                0.19
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        },
+        {
+            "albedo": [
+                0.19,
+                0.68,
+                0.78
+            ],
+            "roughness": 0.28,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0.1,
+                0.62,
+                0.85
+            ],
+            "emissiveStrength": 0.65
+        },
+        {
+            "albedo": [
+                0.4,
+                0.43,
+                0.42
+            ],
+            "roughness": 0.86,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0,
+                0,
+                0
+            ],
+            "emissiveStrength": 0.0
+        },
+        {
+            "albedo": [
+                0.62,
+                0.38,
+                0.8
+            ],
+            "roughness": 0.28,
+            "metallic": 0.0,
+            "lightWrap": 0.24,
+            "shapeContrast": 1.15,
+            "ambientStrength": 1.25,
+            "emissiveColor": [
+                0.4,
+                0.16,
+                0.72
+            ],
+            "emissiveStrength": 0.8
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "Crystal",
+            "position": [
+                0,
+                7.5,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                3.8,
+                15,
+                3.8
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 4
+        },
+        {
+            "meshType": "Crystal",
+            "position": [
+                -3,
+                4.0,
+                0.4
+            ],
+            "rotation": [
+                0,
+                0,
+                0.25
+            ],
+            "scale": [
+                2,
+                8,
+                2
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Crystal",
+            "position": [
+                3,
+                3.3,
+                -0.4
+            ],
+            "rotation": [
+                0,
+                0,
+                -0.32
+            ],
+            "scale": [
+                2,
+                7,
+                2
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                0,
+                0.4,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                8,
+                0.8,
+                5
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        }
+    ],
+    "lights": [
+        {
+            "name": "crown_glow",
+            "type": "Point",
+            "position": [
+                0,
+                6,
+                -3
+            ],
+            "color": [
+                0.25,
+                0.65,
+                0.85
+            ],
+            "intensity": 4,
+            "radius": 13,
+            "castsShadow": false
+        }
+    ]
+}

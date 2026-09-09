@@ -1,0 +1,326 @@
+{
+    "assetType": "Prefab",
+    "name": "astral_observatory",
+    "objects": [
+        {
+            "asset": "../models/observatory_foundation.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_floor_inlay.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_astral_ring.json",
+            "position": [
+                0,
+                0,
+                15
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.4,
+                1.4,
+                1.15
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/ruin_arch.json",
+            "position": [
+                0,
+                0,
+                -22
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.8,
+                1.8,
+                1.5
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_pillar.json",
+            "position": [
+                20.473486155818296,
+                0,
+                4.227897745169973
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.1,
+                0.8,
+                1.1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_pillar.json",
+            "position": [
+                16.418461131828625,
+                0,
+                11.846306235315936
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.1,
+                1.15,
+                1.1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_pillar.json",
+            "position": [
+                9.111558521468721,
+                0,
+                17.118408490145963
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.1,
+                0.8,
+                1.1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_pillar.json",
+            "position": [
+                1.2858791391047208e-15,
+                0,
+                19.0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.1,
+                1.15,
+                1.1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_pillar.json",
+            "position": [
+                -9.11155852146872,
+                0,
+                17.118408490145963
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.1,
+                0.8,
+                1.1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_pillar.json",
+            "position": [
+                -16.418461131828618,
+                0,
+                11.846306235315945
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.1,
+                1.15,
+                1.1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_pillar.json",
+            "position": [
+                -20.4734861558183,
+                0,
+                4.227897745169968
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.1,
+                0.8,
+                1.1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/ruin_broken_arch.json",
+            "position": [
+                -20,
+                0,
+                -6
+            ],
+            "rotation": [
+                0,
+                1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.3,
+                1.5,
+                1.2
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/ruin_rubble.json",
+            "position": [
+                18,
+                0,
+                -10
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.8,
+                1.8,
+                1.8
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/moon_crystals.json",
+            "position": [
+                -17,
+                0,
+                9
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                2,
+                3,
+                2
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_brazier.json",
+            "position": [
+                -7,
+                0,
+                -20
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/dungeon_brazier.json",
+            "position": [
+                7,
+                0,
+                -20
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        }
+    ]
+}

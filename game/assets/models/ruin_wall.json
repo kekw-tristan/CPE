@@ -1,0 +1,28 @@
+{
+    "name": "rock_ruin_wall",
+    "materials": [
+        {"albedo":[0.24,0.29,0.31],"roughness":0.86,"metallic":0.0,"lightWrap":0.24,"shapeContrast":1.15,"ambientStrength":1.25,"emissiveColor":[0,0,0],"emissiveStrength":0.0},
+        {"albedo":[0.12,0.25,0.19],"roughness":0.86,"metallic":0.0,"lightWrap":0.24,"shapeContrast":1.15,"ambientStrength":1.25,"emissiveColor":[0,0,0],"emissiveStrength":0.0},
+        {"albedo":[0.19,0.68,0.78],"roughness":0.28,"metallic":0.0,"lightWrap":0.24,"shapeContrast":1.15,"ambientStrength":1.25,"emissiveColor":[0.1,0.62,0.85],"emissiveStrength":0.65},
+        {"albedo":[0.34,0.37,0.34],"roughness":0.86,"metallic":0.0,"lightWrap":0.24,"shapeContrast":1.15,"ambientStrength":1.25,"emissiveColor":[0,0,0],"emissiveStrength":0.0}
+    ],
+    "shapes": [
+        {"meshType":"Cube","position":[0,-0.45,0],"rotation":[0,0,0],"scale":[6.4,1.5,1.25],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[-2.35,0.5,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":3},
+        {"meshType":"Cube","position":[-0.8,0.5,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[0.75,0.5,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[2.3000000000000003,0.5,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":3},
+        {"meshType":"Cube","position":[-2.0500000000000003,1.28,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[-0.5,1.28,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[1.05,1.28,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":3},
+        {"meshType":"Cube","position":[2.6,1.28,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[-2.35,2.06,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[-0.8,2.06,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":3},
+        {"meshType":"Cube","position":[0.75,2.06,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[-2.0500000000000003,2.84,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":3},
+        {"meshType":"Cube","position":[-0.5,2.84,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[-2.35,3.62,0],"rotation":[0,0,0],"scale":[1.55,0.78,1.05],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[-2.1,4.03,0],"rotation":[0,0,0.08],"scale":[1.5,0.27,1.35],"color":[1,1,1,1],"materialIndex":3},
+        {"meshType":"Cube","position":[1.55,0.95,0.58],"rotation":[0,0,0],"scale":[1.2,0.18,0.3],"color":[1,1,1,1],"materialIndex":1}
+    ]
+}

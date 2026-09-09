@@ -1,0 +1,326 @@
+{
+    "assetType": "Prefab",
+    "name": "moon_belfry",
+    "objects": [
+        {
+            "asset": "../models/belfry_foundation.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_floor_inlay.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_bell_tower.json",
+            "position": [
+                -18,
+                0,
+                18
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.35,
+                1.45,
+                1.35
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_bell_tower.json",
+            "position": [
+                18,
+                0,
+                18
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.35,
+                1.45,
+                1.35
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_moon_bell.json",
+            "position": [
+                0,
+                0,
+                18
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.6,
+                1.45,
+                1.25
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/ruin_arch.json",
+            "position": [
+                0,
+                0,
+                -24
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.65,
+                1.9,
+                1.4
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/ruin_wall.json",
+            "position": [
+                -10.5,
+                0,
+                -18
+            ],
+            "rotation": [
+                0,
+                1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.3,
+                1.8,
+                1.15
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/ruin_wall.json",
+            "position": [
+                -10.5,
+                0,
+                -9
+            ],
+            "rotation": [
+                0,
+                1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.3,
+                1.8,
+                1.15
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_brazier.json",
+            "position": [
+                -7.35,
+                0,
+                -22
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/ruin_wall.json",
+            "position": [
+                10.5,
+                0,
+                -18
+            ],
+            "rotation": [
+                0,
+                1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.3,
+                1.8,
+                1.15
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/ruin_wall.json",
+            "position": [
+                10.5,
+                0,
+                -9
+            ],
+            "rotation": [
+                0,
+                1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.3,
+                1.8,
+                1.15
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/dungeon_brazier.json",
+            "position": [
+                7.35,
+                0,
+                -22
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/ruin_corner.json",
+            "position": [
+                -23,
+                0,
+                5
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.15,
+                2,
+                1.15
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/ruin_corner.json",
+            "position": [
+                23,
+                0,
+                5
+            ],
+            "rotation": [
+                0,
+                1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.15,
+                2,
+                1.15
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/ruin_rubble.json",
+            "position": [
+                -18,
+                0,
+                7
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                2,
+                2,
+                2
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/ruin_broken_arch.json",
+            "position": [
+                18,
+                0,
+                4
+            ],
+            "rotation": [
+                0,
+                0.3,
+                0
+            ],
+            "scale": [
+                1.4,
+                1.5,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        }
+    ]
+}
