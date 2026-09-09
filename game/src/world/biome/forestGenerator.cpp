@@ -32,20 +32,15 @@ namespace World
 
     namespace
     {
-        constexpr float c_forestSpawnTreeClearMinX = -80.0f;
-        constexpr float c_forestSpawnTreeClearMaxX = 80.0f;
-
-        constexpr float c_forestSpawnTreeClearMinZ = -80.0f;
-        constexpr float c_forestSpawnTreeClearMaxZ = 100.0f;
+        constexpr float c_forestSpawnCenterZ = 34.0f;
+        constexpr float c_forestSpawnClearHalfExtent = 90.0f;
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        bool IsInsideForestSpawnTreeClearance(const Math::cVec3f& _rPosition)
+        bool IsInsideForestSpawnClearance(const Math::cVec3f& _rPosition, float _padding = 0.0f)
         {
-            return _rPosition.x() >= c_forestSpawnTreeClearMinX
-                && _rPosition.x() <= c_forestSpawnTreeClearMaxX
-                && _rPosition.z() >= c_forestSpawnTreeClearMinZ
-                && _rPosition.z() <= c_forestSpawnTreeClearMaxZ;
+            return std::abs(_rPosition.x()) <= c_forestSpawnClearHalfExtent + _padding
+                && std::abs(_rPosition.z() - c_forestSpawnCenterZ) <= c_forestSpawnClearHalfExtent + _padding;
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -221,8 +216,8 @@ namespace World
 
             transform.position = Math::cVec3f(
                 0.0f,
-                _rChunk.height + GetTerrainSurfaceHeight(0.0f, 34.0f),
-                34.0f
+                _rChunk.height + GetTerrainSurfaceHeight(0.0f, c_forestSpawnCenterZ),
+                c_forestSpawnCenterZ
             );
 
             transform.rotation = Math::cVec3f(
@@ -311,9 +306,8 @@ namespace World
                     treeZ
                 );
 
-                // The forest spawn contains its own deliberately placed trees and scenery.
-                // Do not allow procedurally generated trees to overlap or visually crowd it.
-                if (IsInsideForestSpawnTreeClearance(treeCandidatePosition))
+                // Keep the entire canopy outside the spawn clearing.
+                if (IsInsideForestSpawnClearance(treeCandidatePosition, c_treeMaxRadius))
                     continue;
 
                 if (DistanceToPath(treeCandidatePosition, _rWorldLayout) < c_pathClearance + c_treeMaxRadius)
@@ -370,6 +364,9 @@ namespace World
                 const float stoneZ = worldZ + positionDistribution(_rRandomGenerator);
 
                 const Math::cVec3f stonePosition(stoneX, worldY + GetTerrainSurfaceHeight(stoneX, stoneZ), stoneZ);
+
+                if (IsInsideForestSpawnClearance(stonePosition, c_maxStoneScale * 1.5f))
+                    continue;
 
                 if (DistanceToPath(stonePosition, _rWorldLayout) < c_pathClearance)
                     continue;
@@ -482,7 +479,8 @@ namespace World
                         spawn.position.z());
                     spawn.rotation = rotationDistribution(_rRandomGenerator);
 
-                    if (DistanceToPath(spawn.position, _rWorldLayout) >= c_pathClearance)
+                    if (!IsInsideForestSpawnClearance(spawn.position)
+                        && DistanceToPath(spawn.position, _rWorldLayout) >= c_pathClearance)
                         _rEnemySpawns.push_back(spawn);
 
                 }
@@ -517,7 +515,7 @@ namespace World
 
             const auto addSpawn = [&](const sEnemySpawn& _rSpawn)
             {
-                if (belongsToChunk(_rSpawn.position))
+                if (belongsToChunk(_rSpawn.position) && !IsInsideForestSpawnClearance(_rSpawn.position))
                     _rSpawns.push_back(_rSpawn);
             };
 
@@ -555,7 +553,8 @@ namespace World
                     marker.transform.position   = start + delta * (distance / length);
                     marker.transform.scale      = Math::cVec3f(0.35f, 0.08f, 0.35f);
 
-                    if (belongsToChunk(marker.transform.position))
+                    if (belongsToChunk(marker.transform.position)
+                        && !IsInsideForestSpawnClearance(marker.transform.position, 0.5f))
                         _rScene.AddShapeInstance(marker);
                 }
             }
