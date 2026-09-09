@@ -1,10 +1,10 @@
 #include "worldModels.h"
 
-#include "graphics/shapeModel/shapeModelDesc.h"
-#include "graphics/shapeModel/shapeModelLoader.h"
-#include "graphics/shapeModel/shapeModelManager.h"
+#include "graphics/shapeModel/assetManager.h"
 
+#include <filesystem>
 #include <iostream>
+#include <string>
 #include <unordered_map>
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -12,193 +12,233 @@
 namespace World
 {
 
-	// -------------------------------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------------------------
 
-	using namespace Engine;
+    using namespace Engine;
 
-	// -------------------------------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------------------------
 
-	namespace
-	{
+    namespace
+    {
 
-		// -------------------------------------------------------------------------------------------------------------------------
+        // -------------------------------------------------------------------------------------------------------------------------
 
-		class cWorldModels
-		{
+        class cWorldModels
+        {
 
-			public:
+        public:
 
-				static cWorldModels& GetInstance();
+            static cWorldModels& GetInstance();
 
-			public:
 
-				bool Load(const std::filesystem::path& _rDirectory);
+        public:
 
-				GFX::ShapeModelHandle Get(const std::string& _rName) const;
-				bool Contains(const std::string& _rName) const;
+            bool Load(const std::filesystem::path& _rDirectory);
 
-			private:
+            GFX::ShapeModelHandle Get(const std::string& _rName) const;
 
-				cWorldModels(); 
-			   ~cWorldModels();
+            bool Contains(const std::string& _rName) const;
 
-				cWorldModels(const cWorldModels&)				= delete; 
-				cWorldModels& operator=(const cWorldModels&)	= delete;
 
-				cWorldModels(const cWorldModels&&)				= delete;
-				cWorldModels& operator=(const cWorldModels&&)	= delete;
+        private:
 
-			private:
+            cWorldModels();
+            ~cWorldModels();
 
-				std::unordered_map<std::string, GFX::ShapeModelHandle> m_models;
-		};
+            cWorldModels(const cWorldModels&) = delete;
+            cWorldModels& operator=(const cWorldModels&) = delete;
 
-		// -------------------------------------------------------------------------------------------------------------------------
-	}
+            cWorldModels(cWorldModels&&) = delete;
+            cWorldModels& operator=(cWorldModels&&) = delete;
 
-	// -------------------------------------------------------------------------------------------------------------------------
 
-	namespace
-	{
+        private:
 
-		// -------------------------------------------------------------------------------------------------------------------------
+            std::unordered_map<std::string, GFX::ShapeModelHandle> m_models;
 
-		cWorldModels& cWorldModels::GetInstance()
-		{
-			static cWorldModels s_instance;
-			return s_instance;
-		}
+        };
 
-		// -------------------------------------------------------------------------------------------------------------------------
+        // -------------------------------------------------------------------------------------------------------------------------
 
-		bool cWorldModels::Load(const std::filesystem::path& _rDirectory)
-		{
-			m_models.clear();
+        cWorldModels& cWorldModels::GetInstance()
+        {
+            static cWorldModels s_instance;
 
-			if (!std::filesystem::exists(_rDirectory))
-			{
-				std::cerr << "World model directory does not exist: " << _rDirectory << '\n';
-				return false;
-			}
+            return s_instance;
+        }
 
-			if (!std::filesystem::is_directory(_rDirectory))
-			{
-				std::cerr << "World model path is not a directory: " << _rDirectory << '\n';
-				return false;
-			}
+        // -------------------------------------------------------------------------------------------------------------------------
 
-			bool success = true;
+        bool cWorldModels::Load(const std::filesystem::path& _rDirectory)
+        {
+            m_models.clear();
 
-			for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(_rDirectory))
-			{
-				if (!entry.is_regular_file())
-					continue;
 
-				if (entry.path().extension() != ".json")
-					continue;
+            if (!std::filesystem::exists(_rDirectory))
+            {
+                std::cerr << "World model directory does not exist: " << _rDirectory << '\n';
 
-				GFX::sShapeModelDesc model{};
-				std::string errorMessage;
+                return false;
+            }
 
-				if (!GFX::ShapeModelLoader::LoadFromFile(entry.path(), model, errorMessage))
-				{
-					std::cerr << "Failed to load world model '" << entry.path() << "': " << errorMessage << '\n';
-					success = false;
-					continue;
-				}
 
-				std::filesystem::path relativePath = std::filesystem::relative(entry.path(), _rDirectory);
-				relativePath.replace_extension();
+            if (!std::filesystem::is_directory(_rDirectory))
+            {
+                std::cerr << "World model path is not a directory: " << _rDirectory << '\n';
 
-				const std::string modelName = relativePath.generic_string();
+                return false;
+            }
 
-				if (m_models.contains(modelName))
-				{
-					std::cerr << "Duplicate world model name: " << modelName << '\n';
-					success = false;
-					continue;
-				}
 
-				GFX::ShapeModelHandle modelHandle = GFX::ShapeModelManager::CreateShapeModel(model);
+            bool success = true;
 
-				m_models.emplace(modelName, modelHandle);
 
-				std::cout << "Loaded world model: " << modelName << '\n';
-			}
+            for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(_rDirectory))
+            {
+                if (!entry.is_regular_file())
+                    continue;
 
-			return success;
-		}
 
-		// -------------------------------------------------------------------------------------------------------------------------
+                if (entry.path().extension() != ".json")
+                    continue;
 
-		GFX::ShapeModelHandle cWorldModels::Get(const std::string& _rName) const
-		{
-			const auto iterator = m_models.find(_rName);
 
-			if (iterator == m_models.end())
-			{
-				std::cerr << "World model not found: " << _rName << '\n';
-				return -1;
-			}
+                std::filesystem::path relativePath = std::filesystem::relative(entry.path(), _rDirectory);
 
-			return iterator->second;
-		}
+                relativePath.replace_extension();
 
-		// -------------------------------------------------------------------------------------------------------------------------
 
-		bool cWorldModels::Contains(const std::string& _rName) const
-		{
-			return m_models.contains(_rName);;
-		}
+                const std::string modelName = relativePath.generic_string();
 
-		// -------------------------------------------------------------------------------------------------------------------------
 
-		cWorldModels::cWorldModels()
-			: m_models()
-		{
-		}
+                if (m_models.contains(modelName))
+                {
+                    std::cerr << "Duplicate world model name: " << modelName << '\n';
 
-		// -------------------------------------------------------------------------------------------------------------------------
+                    success = false;
 
-		cWorldModels::~cWorldModels()
-		{
-		}
+                    continue;
+                }
 
-		// -------------------------------------------------------------------------------------------------------------------------
 
-	}
+                try
+                {
+                    const GFX::sAssetHandle assetHandle = GFX::AssetManager::Load(entry.path());
 
-	// -------------------------------------------------------------------------------------------------------------------------
 
-	namespace WorldModels
-	{
+                    if (!assetHandle.IsValid())
+                    {
+                        std::cerr << "Failed to load world model '" << entry.path() << "': Invalid asset handle.\n";
 
-		// -------------------------------------------------------------------------------------------------------------------------
+                        success = false;
 
-		bool Load(const std::filesystem::path& _rDirectory)
-		{
-			return cWorldModels::GetInstance().Load(_rDirectory);
-		}
+                        continue;
+                    }
 
-		// -------------------------------------------------------------------------------------------------------------------------
 
-		GFX::ShapeModelHandle Get(const std::string& _rName)
-		{
-			return cWorldModels::GetInstance().Get(_rName);
-		}
+                    if (assetHandle.type != GFX::sAssetType::ShapeModel)
+                    {
+                        std::cerr << "World model asset is not a ShapeModel: " << entry.path() << '\n';
 
-		// -------------------------------------------------------------------------------------------------------------------------
+                        success = false;
 
-		bool Contains(const std::string& _rName)
-		{
-			return cWorldModels::GetInstance().Contains(_rName);
-		}
+                        continue;
+                    }
 
-		// -------------------------------------------------------------------------------------------------------------------------
 
-	}
+                    const GFX::ShapeModelHandle modelHandle = static_cast<GFX::ShapeModelHandle>(assetHandle.handle);
 
-	// -------------------------------------------------------------------------------------------------------------------------
+
+                    m_models.emplace(modelName, modelHandle);
+
+
+                    std::cout << "Loaded world model: " << modelName << '\n';
+                }
+                catch (const std::exception& exception)
+                {
+                    std::cerr << "Failed to load world model '" << entry.path() << "': " << exception.what() << '\n';
+
+                    success = false;
+                }
+            }
+
+
+            return success;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        GFX::ShapeModelHandle cWorldModels::Get(const std::string& _rName) const
+        {
+            const auto iterator = m_models.find(_rName);
+
+
+            if (iterator == m_models.end())
+            {
+                std::cerr << "World model not found: " << _rName << '\n';
+
+                return -1;
+            }
+
+
+            return iterator->second;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool cWorldModels::Contains(const std::string& _rName) const
+        {
+            return m_models.contains(_rName);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        cWorldModels::cWorldModels()
+            : m_models()
+        {
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        cWorldModels::~cWorldModels()
+        {
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    namespace WorldModels
+    {
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool Load(const std::filesystem::path& _rDirectory)
+        {
+            return cWorldModels::GetInstance().Load(_rDirectory);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        GFX::ShapeModelHandle Get(const std::string& _rName)
+        {
+            return cWorldModels::GetInstance().Get(_rName);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        bool Contains(const std::string& _rName)
+        {
+            return cWorldModels::GetInstance().Contains(_rName);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
 
 }
 

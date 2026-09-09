@@ -1,0 +1,266 @@
+{
+  "name": "flame_pedestal_outer",
+  "lights": [
+    {
+      "name": "torch_025",
+      "type": "Point",
+      "position": [
+        0.0,
+        3.171,
+        0.0
+      ],
+      "color": [
+        1,
+        0.32,
+        0.04
+      ],
+      "intensity": 18,
+      "radius": 9,
+      "castsShadow": false
+    }
+  ],
+  "materials": [
+    {
+      "albedo": [
+        0.13,
+        0.145,
+        0.125
+      ],
+      "ambientStrength": 1.28,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.24,
+      "metallic": 0.0,
+      "roughness": 0.94,
+      "shapeContrast": 1.34
+    },
+    {
+      "albedo": [
+        0.39,
+        0.37,
+        0.29
+      ],
+      "ambientStrength": 1.38,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.3,
+      "metallic": 0.0,
+      "roughness": 0.88,
+      "shapeContrast": 1.28
+    },
+    {
+      "albedo": [
+        0.66,
+        0.43,
+        0.085
+      ],
+      "ambientStrength": 1.34,
+      "emissiveColor": [
+        0.1,
+        0.045,
+        0.0
+      ],
+      "emissiveStrength": 0.18,
+      "lightWrap": 0.22,
+      "metallic": 0.35,
+      "roughness": 0.44,
+      "shapeContrast": 1.34
+    },
+    {
+      "albedo": [
+        0.92,
+        0.12,
+        0.02
+      ],
+      "ambientStrength": 1.0,
+      "emissiveColor": [
+        1.0,
+        0.07,
+        0.005
+      ],
+      "emissiveStrength": 7.0,
+      "lightWrap": 0.18,
+      "metallic": 0.0,
+      "roughness": 0.38,
+      "shapeContrast": 1.3
+    },
+    {
+      "albedo": [
+        1.0,
+        0.62,
+        0.1
+      ],
+      "ambientStrength": 1.0,
+      "emissiveColor": [
+        1.0,
+        0.55,
+        0.04
+      ],
+      "emissiveStrength": 10.0,
+      "lightWrap": 0.18,
+      "metallic": 0.0,
+      "roughness": 0.32,
+      "shapeContrast": 1.3
+    }
+  ],
+  "shapes": [
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        0.0,
+        0.2475,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.575,
+        0.495,
+        1.575
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Frustum",
+      "position": [
+        0.0,
+        0.739,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.215,
+        0.558,
+        1.215
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 1
+    },
+    {
+      "meshType": "Cylinder",
+      "position": [
+        0.0,
+        1.5005,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.468,
+        1.035,
+        0.468
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 2
+    },
+    {
+      "meshType": "Frustum",
+      "position": [
+        0.0,
+        2.19,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.215,
+        0.414,
+        1.215
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 2
+    },
+    {
+      "meshType": "Cone",
+      "position": [
+        0.0,
+        2.955,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.792,
+        1.305,
+        0.792
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 3
+    },
+    {
+      "meshType": "Cone",
+      "position": [
+        0.0,
+        3.171,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.495,
+        0.945,
+        0.495
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 4
+    }
+  ]
+}

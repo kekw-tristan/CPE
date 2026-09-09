@@ -1,0 +1,137 @@
+{
+  "name": "round_dais",
+  "lights": [],
+  "materials": [
+    {
+      "albedo": [
+        0.13,
+        0.145,
+        0.125
+      ],
+      "ambientStrength": 1.28,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.24,
+      "metallic": 0.0,
+      "roughness": 0.94,
+      "shapeContrast": 1.34
+    },
+    {
+      "albedo": [
+        0.025,
+        0.085,
+        0.052
+      ],
+      "ambientStrength": 1.24,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.24,
+      "metallic": 0.0,
+      "roughness": 0.9,
+      "shapeContrast": 1.28
+    },
+    {
+      "albedo": [
+        0.66,
+        0.43,
+        0.085
+      ],
+      "ambientStrength": 1.34,
+      "emissiveColor": [
+        0.1,
+        0.045,
+        0.0
+      ],
+      "emissiveStrength": 0.18,
+      "lightWrap": 0.22,
+      "metallic": 0.35,
+      "roughness": 0.44,
+      "shapeContrast": 1.34
+    }
+  ],
+  "shapes": [
+    {
+      "meshType": "Cylinder",
+      "position": [
+        0.0,
+        0.09,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        11.0,
+        0.18,
+        11.0
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Cylinder",
+      "position": [
+        0.0,
+        0.225,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        8.58,
+        0.16,
+        8.58
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 2
+    },
+    {
+      "meshType": "Cylinder",
+      "position": [
+        0.0,
+        0.345,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        6.38,
+        0.15,
+        6.38
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 1
+    }
+  ]
+}

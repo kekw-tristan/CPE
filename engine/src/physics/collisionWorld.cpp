@@ -262,13 +262,21 @@ namespace Engine::Physics
 
                             const auto& triangle = *m_triangles[colliderIndex];
                             const Math::cVec3f normal = (triangle.b - triangle.a).cross(triangle.c - triangle.a).normalized();
+                            const float feet = movedCapsule.center.y() - movedCapsule.halfHeight - movedCapsule.radius;
+                            // Let ground snapping lift the capsule over reachable stair risers.
+                            // Vertical movement still collides with these surfaces from below.
+                            if (_maximumStepHeight > 0.0f && _rMovement.y() == 0.0f
+                                && collider.center.y() + collider.halfExtents.y() <= feet + _maximumStepHeight)
+                            {
+                                continue;
+                            }
+
                             // Ground snapping handles reachable slopes and low ledges during horizontal movement.
                             if (_maximumStepHeight > 0.0f && _rMovement.y() == 0.0f && normal.y() >= 0.5f)
                             {
                                 const float planeHeight = triangle.a.y()
                                     - (normal.x() * (movedCapsule.center.x() - triangle.a.x())
                                     + normal.z() * (movedCapsule.center.z() - triangle.a.z())) / normal.y();
-                                const float feet = movedCapsule.center.y() - movedCapsule.halfHeight - movedCapsule.radius;
                                 if (planeHeight <= feet + _maximumStepHeight && normal.dot(movedCapsule.center - triangle.a) > 0.0f)
                                 {
                                     continue;

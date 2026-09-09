@@ -1,0 +1,15 @@
+{
+    "name": "stone_bench",
+    "lights": [],
+    "materials": [
+        {"albedo":[0.39,0.37,0.29],"ambientStrength":1.38,"emissiveColor":[0,0,0],"emissiveStrength":0,"lightWrap":0.3,"metallic":0,"roughness":0.88,"shapeContrast":1.28},
+        {"albedo":[0.69,0.63,0.46],"ambientStrength":1.42,"emissiveColor":[0,0,0],"emissiveStrength":0,"lightWrap":0.34,"metallic":0,"roughness":0.82,"shapeContrast":1.22},
+        {"albedo":[0.025,0.085,0.052],"ambientStrength":1.24,"emissiveColor":[0,0,0],"emissiveStrength":0,"lightWrap":0.24,"metallic":0,"roughness":0.9,"shapeContrast":1.28}
+    ],
+    "shapes": [
+        {"meshType":"Cube","position":[-1.45,0.4,0],"rotation":[0,0,0],"scale":[0.55,0.8,0.55],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[1.45,0.4,0],"rotation":[0,0,0],"scale":[0.55,0.8,0.55],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[0,0.92,0],"rotation":[0,0,0],"scale":[4.2,0.24,1],"color":[1,1,1,1],"materialIndex":1},
+        {"meshType":"BeveledCube","position":[0,1.075,0],"rotation":[0,0,0],"scale":[3.696,0.07,0.88],"color":[1,1,1,1],"materialIndex":2}
+    ]
+}

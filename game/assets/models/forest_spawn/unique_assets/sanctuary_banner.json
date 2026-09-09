@@ -1,0 +1,21 @@
+{
+    "name": "sanctuary_banner",
+    "lights": [],
+    "materials": [
+        {"albedo":[0.17,0.22,0.21],"roughness":0.72,"metallic":0,"lightWrap":0.26,"shapeContrast":1.25,"ambientStrength":1.2,"emissiveColor":[0,0,0],"emissiveStrength":0},
+        {"albedo":[0.58,0.52,0.36],"roughness":0.72,"metallic":0.35,"lightWrap":0.26,"shapeContrast":1.25,"ambientStrength":1.2,"emissiveColor":[0,0,0],"emissiveStrength":0},
+        {"albedo":[0.08,0.46,0.68],"roughness":0.72,"metallic":0.2,"lightWrap":0.26,"shapeContrast":1.25,"ambientStrength":1.2,"emissiveColor":[0.02,0.48,1],"emissiveStrength":2.2},
+        {"albedo":[0.08,0.19,0.23],"roughness":0.72,"metallic":0,"lightWrap":0.26,"shapeContrast":1.25,"ambientStrength":1.2,"emissiveColor":[0,0,0],"emissiveStrength":0},
+        {"albedo":[0.65,0.47,0.18],"roughness":0.72,"metallic":0.4,"lightWrap":0.26,"shapeContrast":1.25,"ambientStrength":1.2,"emissiveColor":[0.7,0.24,0.02],"emissiveStrength":0.45}
+    ],
+    "shapes": [
+        {"meshType":"Cube","position":[-2,0.25,0],"rotation":[0,0,0],"scale":[1.2,0.5,1.2],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[-2,5,0],"rotation":[0,0,0],"scale":[0.26,9,0.26],"color":[1,1,1,1],"materialIndex":1},
+        {"meshType":"Cube","position":[-0.5,9.7,0],"rotation":[0,0,0],"scale":[3.4,0.4,0.4],"color":[1,1,1,1],"materialIndex":1},
+        {"meshType":"Cube","position":[-0.3,6.3,0],"rotation":[0,0,0],"scale":[2.6,6.4,0.12],"color":[1,1,1,1],"materialIndex":3},
+        {"meshType":"Cube","position":[-1.5,6.3,-0.095],"rotation":[0,0,0],"scale":[0.12,6,0.04],"color":[1,1,1,1],"materialIndex":1},
+        {"meshType":"Cube","position":[0.9,6.3,-0.095],"rotation":[0,0,0],"scale":[0.12,6,0.04],"color":[1,1,1,1],"materialIndex":1},
+        {"meshType":"BeveledCube","position":[-0.3,7,-0.12],"rotation":[0,0,0.4],"scale":[0.9,1.5,0.08],"color":[1,1,1,1],"materialIndex":4},
+        {"meshType":"Crystal","position":[-2,10.8,0],"rotation":[0,0,0],"scale":[0.5,1.4,0.5],"color":[1,1,1,1],"materialIndex":2}
+    ]
+}

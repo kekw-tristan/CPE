@@ -1,0 +1,198 @@
+{
+  "name": "torch_upper",
+  "lights": [
+    {
+      "name": "torch_017",
+      "type": "Point",
+      "position": [
+        0.0,
+        1.9109,
+        0.0
+      ],
+      "color": [
+        1,
+        0.32,
+        0.04
+      ],
+      "intensity": 18,
+      "radius": 9,
+      "castsShadow": false
+    }
+  ],
+  "materials": [
+    {
+      "albedo": [
+        0.39,
+        0.37,
+        0.29
+      ],
+      "ambientStrength": 1.38,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.3,
+      "metallic": 0.0,
+      "roughness": 0.88,
+      "shapeContrast": 1.28
+    },
+    {
+      "albedo": [
+        0.92,
+        0.12,
+        0.02
+      ],
+      "ambientStrength": 1.0,
+      "emissiveColor": [
+        1.0,
+        0.07,
+        0.005
+      ],
+      "emissiveStrength": 7.0,
+      "lightWrap": 0.18,
+      "metallic": 0.0,
+      "roughness": 0.38,
+      "shapeContrast": 1.3
+    },
+    {
+      "albedo": [
+        1.0,
+        0.62,
+        0.1
+      ],
+      "ambientStrength": 1.0,
+      "emissiveColor": [
+        1.0,
+        0.55,
+        0.04
+      ],
+      "emissiveStrength": 10.0,
+      "lightWrap": 0.18,
+      "metallic": 0.0,
+      "roughness": 0.32,
+      "shapeContrast": 1.3
+    },
+    {
+      "albedo": [
+        0.075,
+        0.09,
+        0.08
+      ],
+      "ambientStrength": 1.2,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.2,
+      "metallic": 0.0,
+      "roughness": 0.97,
+      "shapeContrast": 1.34
+    }
+  ],
+  "shapes": [
+    {
+      "meshType": "Frustum",
+      "position": [
+        0.0,
+        0.3341,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.9029,
+        0.6682,
+        0.9029
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Cylinder",
+      "position": [
+        0.0,
+        0.9087,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.4942,
+        0.5613,
+        0.4942
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 3
+    },
+    {
+      "meshType": "Cone",
+      "position": [
+        0.0,
+        1.5368,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.6843,
+        1.4967,
+        0.6843
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 1
+    },
+    {
+      "meshType": "Cone",
+      "position": [
+        0.0,
+        1.9109,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.3992,
+        1.1359,
+        0.3992
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 2
+    }
+  ]
+}

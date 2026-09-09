@@ -1,0 +1,18 @@
+{
+    "name": "moonwell",
+    "lights": [{"name":"moonwell_light","type":"Point","position":[0,3.1,0],"color":[0.18,0.68,1],"intensity":10,"radius":13,"castsShadow":false}],
+    "materials": [
+        {"albedo":[0.12,0.16,0.15],"ambientStrength":1.15,"emissiveColor":[0,0,0],"emissiveStrength":0,"lightWrap":0.22,"metallic":0,"roughness":0.9,"shapeContrast":1.3},
+        {"albedo":[0.32,0.42,0.38],"ambientStrength":1.2,"emissiveColor":[0,0.02,0.01],"emissiveStrength":0.1,"lightWrap":0.24,"metallic":0.15,"roughness":0.63,"shapeContrast":1.25},
+        {"albedo":[0.08,0.48,0.82],"ambientStrength":0.8,"emissiveColor":[0.03,0.38,1],"emissiveStrength":1.4,"lightWrap":0.12,"metallic":0.3,"roughness":0.18,"shapeContrast":1.5}
+    ],
+    "shapes": [
+        {"meshType":"Cube","position":[0,0.28,0],"rotation":[0,0,0],"scale":[9.6,0.56,9.6],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cylinder","position":[0,0.87,0],"rotation":[0,0,0],"scale":[7.8,0.62,7.8],"color":[1,1,1,1],"materialIndex":1},
+        {"meshType":"Disc","position":[0,1.19,0],"rotation":[0,0,0],"scale":[3.25,1,3.25],"color":[1,1,1,1],"materialIndex":2},
+        {"meshType":"Torus","position":[0,1.27,0],"rotation":[0,0,0],"scale":[6.7,0.72,6.7],"color":[1,1,1,1],"materialIndex":1},
+        {"meshType":"Crystal","position":[0,3.35,0],"rotation":[0,0.35,0],"scale":[1.15,3.45,1.15],"color":[1,1,1,1],"materialIndex":2},
+        {"meshType":"Crystal","position":[2.35,2.3,0],"rotation":[0,0.9,0.24],"scale":[0.48,1.35,0.48],"color":[1,1,1,1],"materialIndex":2},
+        {"meshType":"Crystal","position":[-2.35,2.3,0],"rotation":[0,-0.9,-0.24],"scale":[0.48,1.35,0.48],"color":[1,1,1,1],"materialIndex":2}
+    ]
+}

@@ -1,0 +1,405 @@
+{
+  "name": "central_table",
+  "lights": [],
+  "materials": [
+    {
+      "albedo": [
+        0.39,
+        0.37,
+        0.29
+      ],
+      "ambientStrength": 1.38,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.3,
+      "metallic": 0.0,
+      "roughness": 0.88,
+      "shapeContrast": 1.28
+    },
+    {
+      "albedo": [
+        0.69,
+        0.63,
+        0.46
+      ],
+      "ambientStrength": 1.42,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.34,
+      "metallic": 0.0,
+      "roughness": 0.82,
+      "shapeContrast": 1.22
+    },
+    {
+      "albedo": [
+        0.025,
+        0.085,
+        0.052
+      ],
+      "ambientStrength": 1.24,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.24,
+      "metallic": 0.0,
+      "roughness": 0.9,
+      "shapeContrast": 1.28
+    },
+    {
+      "albedo": [
+        0.66,
+        0.43,
+        0.085
+      ],
+      "ambientStrength": 1.34,
+      "emissiveColor": [
+        0.1,
+        0.045,
+        0.0
+      ],
+      "emissiveStrength": 0.18,
+      "lightWrap": 0.22,
+      "metallic": 0.35,
+      "roughness": 0.44,
+      "shapeContrast": 1.34
+    }
+  ],
+  "shapes": [
+    {
+      "meshType": "Cube",
+      "position": [
+        -1.857692,
+        0.8,
+        -0.961538
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.5,
+        1.6,
+        0.5
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Cube",
+      "position": [
+        -1.857692,
+        0.8,
+        1.238462
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.5,
+        1.6,
+        0.5
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Cube",
+      "position": [
+        1.442308,
+        0.8,
+        -0.961538
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.5,
+        1.6,
+        0.5
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Cube",
+      "position": [
+        1.442308,
+        0.8,
+        1.238462
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.5,
+        1.6,
+        0.5
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Cube",
+      "position": [
+        -0.207692,
+        1.7,
+        0.138462
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        4.8,
+        0.3,
+        3.4
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 1
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        -0.207692,
+        1.87,
+        0.138462
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        4.3,
+        0.05,
+        2.9
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 3
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        -0.207692,
+        1.91,
+        0.138462
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        3.2,
+        0.04,
+        2.1
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 2
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        -1.107692,
+        2.02,
+        -0.311538
+      ],
+      "rotation": [
+        0,
+        0.18,
+        0
+      ],
+      "scale": [
+        0.65,
+        0.18,
+        0.85
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 1
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        -1.107692,
+        2.12,
+        -0.311538
+      ],
+      "rotation": [
+        0,
+        0.18,
+        0
+      ],
+      "scale": [
+        0.7,
+        0.04,
+        0.9
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 2
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        0.542308,
+        2.02,
+        0.488462
+      ],
+      "rotation": [
+        0,
+        0.18,
+        0
+      ],
+      "scale": [
+        0.65,
+        0.18,
+        0.85
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 1
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        0.542308,
+        2.12,
+        0.488462
+      ],
+      "rotation": [
+        0,
+        0.18,
+        0
+      ],
+      "scale": [
+        0.7,
+        0.04,
+        0.9
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 2
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        1.292308,
+        2.02,
+        -0.661538
+      ],
+      "rotation": [
+        0,
+        0.18,
+        0
+      ],
+      "scale": [
+        0.65,
+        0.18,
+        0.85
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 1
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        1.292308,
+        2.12,
+        -0.661538
+      ],
+      "rotation": [
+        0,
+        0.18,
+        0
+      ],
+      "scale": [
+        0.7,
+        0.04,
+        0.9
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 2
+    }
+  ]
+}

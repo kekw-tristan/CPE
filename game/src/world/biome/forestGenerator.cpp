@@ -4,9 +4,11 @@
 #include "../worldConfig.h"
 #include "../terrainHeight.h"
 #include "../worldModels.h"
+#include "../prefab.h"
 
 #include "../enemy/enemySpawn.h"
 
+#include "graphics/shapeModel/assetManager.h"
 #include "graphics/scene/scene.h"
 #include "graphics/shapeModel/shapeModelDesc.h"
 
@@ -14,7 +16,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <exception>
+#include <iostream>
 #include <limits>
+#include <random>
 
 // -------------------------------------------------------------------------------------------------------------------------
 
@@ -174,55 +179,70 @@ namespace World
 
         // -------------------------------------------------------------------------------------------------------------------------
 
-        void GeneratePlayerSpawn(
+        void GenerateForestSpawn(
             GFX::cScene& _rScene,
-            const sChunk& _rChunk,
-            std::vector<Physics::sAABBCollider>& _rColliders
+            const sChunk& _rChunk
         )
         {
-            // The player starts at the origin, inside the cleared forest glade.
             if (_rChunk.coordinate.x != 0 || _rChunk.coordinate.z != 0)
                 return;
 
-            const auto modelHandle = WorldModels::Get("forest_spawn");
-            if (modelHandle < 0)
-                return;
 
-            const Math::cVec3f position(0.0f, _rChunk.height + GetTerrainSurfaceHeight(0.0f, 34.0f), 34.0f);
+            static GFX::sAssetHandle s_forestSpawnAsset{};
+            static bool s_forestSpawnAssetLoaded = false;
 
-            GFX::sShapeInstance spawnInstance{};
-            spawnInstance.modelHandle        = modelHandle;
-            spawnInstance.transform.position = position;
-            spawnInstance.transform.rotation = Math::cVec3f(0.0f, 0.0f, 0.0f);
-            spawnInstance.transform.scale    = Math::cVec3f(1.0f, 1.0f, 1.0f);
-            _rScene.AddShapeInstance(spawnInstance);
-
-            // This asset uses unrotated cubes for its walls, floors and 0.25-unit stair treads.
-            // Derive collision from the loaded model so geometry and walkable openings agree.
-            const auto& model = GFX::ShapeModelManager::GetShapeModel(modelHandle);
-            for (const auto& shape : model.shapes)
+            if (!s_forestSpawnAssetLoaded)
             {
-                if (shape.meshType != GFX::sMeshTypes::Cube)
-                    continue;
-
-                Physics::sAABBCollider surface{};
-                surface.center      = position + shape.transform.position;
-                surface.halfExtents = shape.transform.scale * 0.5f;
-                surface.isGround    = true;
-                _rColliders.push_back(surface);
-
-                // Horizontal capsule movement precedes ground snapping. Recess the solid top
-                // by one maximum step so the next riser does not block the player's feet.
-                constexpr float c_stepClearance = 0.5f;
-                if (shape.transform.scale.y() > c_stepClearance)
+                try
                 {
-                    Physics::sAABBCollider solid = surface;
-                    solid.center      -= Math::cVec3f(0.0f, c_stepClearance * 0.5f, 0.0f);
-                    solid.halfExtents -= Math::cVec3f(0.0f, c_stepClearance * 0.5f, 0.0f);
-                    solid.isGround     = false;
-                    _rColliders.push_back(solid);
+                    s_forestSpawnAsset = GFX::AssetManager::Load(
+                        "./assets/prefabs/forest_spawn.prefab.json"
+                    );
+
+                    s_forestSpawnAssetLoaded = true;
+                }
+                catch (const std::exception& exception)
+                {
+                    std::cerr << "Failed to load forest spawn prefab: " << exception.what() << '\n';
+                    return;
                 }
             }
+
+
+            if (!s_forestSpawnAsset.IsValid())
+                return;
+
+
+            if (s_forestSpawnAsset.type != GFX::sAssetType::Prefab)
+                return;
+
+
+            GFX::sTransform transform{};
+
+            transform.position = Math::cVec3f(
+                0.0f,
+                _rChunk.height + GetTerrainSurfaceHeight(0.0f, 34.0f),
+                34.0f
+            );
+
+            transform.rotation = Math::cVec3f(
+                0.0f,
+                0.0f,
+                0.0f
+            );
+
+            transform.scale = Math::cVec3f(
+                1.0f,
+                1.0f,
+                1.0f
+            );
+
+
+            InstantiatePrefab(
+                _rScene,
+                static_cast<GFX::PrefabHandle>(s_forestSpawnAsset.handle),
+                transform
+            );
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -590,7 +610,7 @@ namespace World
         )
         {
             GenerateGround(_rScene, _rChunk, _rColliders);
-            GeneratePlayerSpawn(_rScene, _rChunk, _rColliders);
+            GenerateForestSpawn(_rScene, _rChunk);
             GenerateTrees(_rScene, _rChunk, _rRandomGenerator, _rWorldLayout, _rColliders);
             GenerateEnemyPacks(_rChunk, _rRandomGenerator, _rWorldLayout, _rEnemySpawns);
             GenerateDungeons(_rScene, _rWorldLayout, _rEnemySpawns, _rChunk, _rColliders);

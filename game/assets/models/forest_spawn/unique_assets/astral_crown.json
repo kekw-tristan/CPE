@@ -1,0 +1,21 @@
+{
+    "name": "astral_crown",
+    "lights": [{"name":"astral_heart","type":"Point","position":[0,12,0],"color":[0.08,0.55,1],"intensity":14,"radius":22,"castsShadow":false}],
+    "materials": [
+        {"albedo":[0.17,0.22,0.21],"roughness":0.72,"metallic":0,"lightWrap":0.26,"shapeContrast":1.25,"ambientStrength":1.2,"emissiveColor":[0,0,0],"emissiveStrength":0},
+        {"albedo":[0.58,0.52,0.36],"roughness":0.72,"metallic":0.35,"lightWrap":0.26,"shapeContrast":1.25,"ambientStrength":1.2,"emissiveColor":[0,0,0],"emissiveStrength":0},
+        {"albedo":[0.08,0.46,0.68],"roughness":0.72,"metallic":0.2,"lightWrap":0.26,"shapeContrast":1.25,"ambientStrength":1.2,"emissiveColor":[0.02,0.48,1],"emissiveStrength":2.2},
+        {"albedo":[0.08,0.19,0.23],"roughness":0.72,"metallic":0,"lightWrap":0.26,"shapeContrast":1.25,"ambientStrength":1.2,"emissiveColor":[0,0,0],"emissiveStrength":0},
+        {"albedo":[0.65,0.47,0.18],"roughness":0.72,"metallic":0.4,"lightWrap":0.26,"shapeContrast":1.25,"ambientStrength":1.2,"emissiveColor":[0.7,0.24,0.02],"emissiveStrength":0.45}
+    ],
+    "shapes": [
+        {"meshType":"Crystal","position":[0,12,0],"rotation":[0,0.4,0],"scale":[3.2,10,3.2],"color":[1,1,1,1],"materialIndex":2},
+        {"meshType":"Torus","position":[0,18,0],"rotation":[0,0,0],"scale":[12,1.6,12],"color":[1,1,1,1],"materialIndex":1},
+        {"meshType":"Torus","position":[0,19,0],"rotation":[0,0,0],"scale":[9,0.8,9],"color":[1,1,1,1],"materialIndex":2},
+        {"meshType":"Crystal","position":[4,10,0],"rotation":[0,0,0],"scale":[0.75,3,0.75],"color":[1,1,1,1],"materialIndex":2},
+        {"meshType":"Crystal","position":[-4,10,0],"rotation":[0,0,0],"scale":[0.75,3,0.75],"color":[1,1,1,1],"materialIndex":2},
+        {"meshType":"Crystal","position":[0,10,4],"rotation":[0,0,0],"scale":[0.75,3,0.75],"color":[1,1,1,1],"materialIndex":2},
+        {"meshType":"Crystal","position":[0,10,-4],"rotation":[0,0,0],"scale":[0.75,3,0.75],"color":[1,1,1,1],"materialIndex":2},
+        {"meshType":"Crystal","position":[0,21.2,0],"rotation":[0,0,0],"scale":[1.2,3,1.2],"color":[1,1,1,1],"materialIndex":2}
+    ]
+}

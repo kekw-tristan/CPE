@@ -865,9 +865,12 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, sWo
         _rInstances.renderInstances.push_back(pInstance);
     }
 
-    std::vector<LightHandle> lightHandles;
-    ShapeModelLights::Create(model, _rShapeInstance.transform, lightHandles);
-    _rInstances.lightHandles.insert(_rInstances.lightHandles.end(), lightHandles.begin(), lightHandles.end());
+    if (_rShapeInstance.generateLights)
+    {
+        std::vector<LightHandle> lightHandles;
+        ShapeModelLights::Create(model, _rShapeInstance.transform, lightHandles);
+        _rInstances.lightHandles.insert(_rInstances.lightHandles.end(), lightHandles.begin(), lightHandles.end());
+    }
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

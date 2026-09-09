@@ -1,0 +1,119 @@
+{
+  "name": "stone_column_middle",
+  "lights": [],
+  "materials": [
+    {
+      "albedo": [
+        0.39,
+        0.37,
+        0.29
+      ],
+      "ambientStrength": 1.38,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.3,
+      "metallic": 0.0,
+      "roughness": 0.88,
+      "shapeContrast": 1.28
+    },
+    {
+      "albedo": [
+        0.69,
+        0.63,
+        0.46
+      ],
+      "ambientStrength": 1.42,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.34,
+      "metallic": 0.0,
+      "roughness": 0.82,
+      "shapeContrast": 1.22
+    }
+  ],
+  "shapes": [
+    {
+      "meshType": "Frustum",
+      "position": [
+        0.0,
+        0.5104,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.7952,
+        1.0208,
+        1.7952
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 1
+    },
+    {
+      "meshType": "Cylinder",
+      "position": [
+        0.0,
+        3.1553,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.122,
+        4.4173,
+        1.122
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Frustum",
+      "position": [
+        0.0,
+        5.8002,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.6606,
+        1.0208,
+        1.6606
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 1
+    }
+  ]
+}

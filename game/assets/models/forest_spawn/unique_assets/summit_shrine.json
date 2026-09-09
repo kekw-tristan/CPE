@@ -1,0 +1,684 @@
+{
+  "name": "summit_shrine",
+  "lights": [
+    {
+      "name": "crystal_001",
+      "type": "Point",
+      "position": [
+        0.0,
+        11.0896,
+        0.0
+      ],
+      "color": [
+        1,
+        0.45,
+        0.08
+      ],
+      "intensity": 5,
+      "radius": 24,
+      "castsShadow": false
+    },
+    {
+      "name": "crystal_002",
+      "type": "Point",
+      "position": [
+        -18.48,
+        4.7792,
+        -18.48
+      ],
+      "color": [
+        1,
+        0.45,
+        0.08
+      ],
+      "intensity": 5,
+      "radius": 6.366,
+      "castsShadow": false
+    },
+    {
+      "name": "crystal_003",
+      "type": "Point",
+      "position": [
+        18.48,
+        4.7792,
+        -18.48
+      ],
+      "color": [
+        1,
+        0.45,
+        0.08
+      ],
+      "intensity": 5,
+      "radius": 6.366,
+      "castsShadow": false
+    },
+    {
+      "name": "crystal_004",
+      "type": "Point",
+      "position": [
+        -18.48,
+        4.7792,
+        18.48
+      ],
+      "color": [
+        1,
+        0.45,
+        0.08
+      ],
+      "intensity": 5,
+      "radius": 6.366,
+      "castsShadow": false
+    },
+    {
+      "name": "crystal_005",
+      "type": "Point",
+      "position": [
+        18.48,
+        4.7792,
+        18.48
+      ],
+      "color": [
+        1,
+        0.45,
+        0.08
+      ],
+      "intensity": 5,
+      "radius": 6.366,
+      "castsShadow": false
+    }
+  ],
+  "materials": [
+    {
+      "albedo": [
+        0.39,
+        0.37,
+        0.29
+      ],
+      "ambientStrength": 1.38,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.3,
+      "metallic": 0.0,
+      "roughness": 0.88,
+      "shapeContrast": 1.28
+    },
+    {
+      "albedo": [
+        0.69,
+        0.63,
+        0.46
+      ],
+      "ambientStrength": 1.42,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.34,
+      "metallic": 0.0,
+      "roughness": 0.82,
+      "shapeContrast": 1.22
+    },
+    {
+      "albedo": [
+        0.12,
+        0.24,
+        0.1
+      ],
+      "ambientStrength": 1.34,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.31,
+      "metallic": 0.0,
+      "roughness": 0.95,
+      "shapeContrast": 1.26
+    },
+    {
+      "albedo": [
+        0.66,
+        0.43,
+        0.085
+      ],
+      "ambientStrength": 1.34,
+      "emissiveColor": [
+        0.1,
+        0.045,
+        0.0
+      ],
+      "emissiveStrength": 0.18,
+      "lightWrap": 0.22,
+      "metallic": 0.35,
+      "roughness": 0.44,
+      "shapeContrast": 1.34
+    },
+    {
+      "albedo": [
+        0.075,
+        0.09,
+        0.08
+      ],
+      "ambientStrength": 1.2,
+      "emissiveColor": [
+        0,
+        0,
+        0
+      ],
+      "emissiveStrength": 0.0,
+      "lightWrap": 0.2,
+      "metallic": 0.0,
+      "roughness": 0.97,
+      "shapeContrast": 1.34
+    }
+  ],
+  "shapes": [
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        0.0,
+        2.8304,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        34.32,
+        1.2064,
+        13.2
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 4
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        0.0,
+        2.8304,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        13.2,
+        1.2064,
+        34.32
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 4
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        0.0,
+        3.5171,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        29.7,
+        0.4826,
+        10.824
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 2
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        0.0,
+        3.5171,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        10.824,
+        0.4826,
+        29.7
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 2
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        0.0,
+        4.1296,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        15.84,
+        0.8352,
+        15.84
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        0.0,
+        4.8349,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        11.88,
+        0.6496,
+        11.88
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 1
+    },
+    {
+      "meshType": "Pyramid",
+      "position": [
+        0.0,
+        8.0272,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        11.088,
+        5.9392,
+        11.088
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 4
+    },
+    {
+      "meshType": "Crystal",
+      "position": [
+        0.0,
+        11.0896,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.056,
+        2.784,
+        1.056
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 3
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        -18.48,
+        0.6032,
+        -18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        2.64,
+        1.2064,
+        2.64
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Pyramid",
+      "position": [
+        -18.48,
+        2.8304,
+        -18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        2.376,
+        3.3408,
+        2.376
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 4
+    },
+    {
+      "meshType": "Crystal",
+      "position": [
+        -18.48,
+        4.7792,
+        -18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.5544,
+        1.5776,
+        0.5544
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 3
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        18.48,
+        0.6032,
+        -18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        2.64,
+        1.2064,
+        2.64
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Pyramid",
+      "position": [
+        18.48,
+        2.8304,
+        -18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        2.376,
+        3.3408,
+        2.376
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 4
+    },
+    {
+      "meshType": "Crystal",
+      "position": [
+        18.48,
+        4.7792,
+        -18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.5544,
+        1.5776,
+        0.5544
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 3
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        -18.48,
+        0.6032,
+        18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        2.64,
+        1.2064,
+        2.64
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Pyramid",
+      "position": [
+        -18.48,
+        2.8304,
+        18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        2.376,
+        3.3408,
+        2.376
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 4
+    },
+    {
+      "meshType": "Crystal",
+      "position": [
+        -18.48,
+        4.7792,
+        18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.5544,
+        1.5776,
+        0.5544
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 3
+    },
+    {
+      "meshType": "BeveledCube",
+      "position": [
+        18.48,
+        0.6032,
+        18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        2.64,
+        1.2064,
+        2.64
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 0
+    },
+    {
+      "meshType": "Pyramid",
+      "position": [
+        18.48,
+        2.8304,
+        18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        2.376,
+        3.3408,
+        2.376
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 4
+    },
+    {
+      "meshType": "Crystal",
+      "position": [
+        18.48,
+        4.7792,
+        18.48
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.5544,
+        1.5776,
+        0.5544
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materialIndex": 3
+    }
+  ]
+}

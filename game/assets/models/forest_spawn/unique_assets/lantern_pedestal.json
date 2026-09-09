@@ -1,0 +1,14 @@
+{
+    "name": "lantern_pedestal",
+    "lights": [{"name":"lantern_glow","type":"Point","position":[0,3.285,0],"color":[0.16,0.78,1],"intensity":6.5,"radius":7.5,"castsShadow":false}],
+    "materials": [
+        {"albedo":[0.19,0.23,0.21],"ambientStrength":1.12,"emissiveColor":[0,0,0],"emissiveStrength":0,"lightWrap":0.24,"metallic":0,"roughness":0.9,"shapeContrast":1.28},
+        {"albedo":[0.1,0.65,0.95],"ambientStrength":0.9,"emissiveColor":[0.02,0.4,1],"emissiveStrength":4,"lightWrap":0.15,"metallic":0.25,"roughness":0.2,"shapeContrast":1.45}
+    ],
+    "shapes": [
+        {"meshType":"Cube","position":[0,0.25,0],"rotation":[0,0,0],"scale":[1.8,0.5,1.8],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Frustum","position":[0,0.89,0],"rotation":[0,0,0],"scale":[1.28,0.78,1.28],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cylinder","position":[0,1.92,0],"rotation":[0,0,0],"scale":[0.48,1.28,0.48],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Crystal","position":[0,3.285,0],"rotation":[0,0.3,0],"scale":[0.48,1.45,0.48],"color":[1,1,1,1],"materialIndex":1}
+    ]
+}

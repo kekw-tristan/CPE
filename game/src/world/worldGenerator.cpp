@@ -38,6 +38,9 @@ namespace World
         {
             for (const auto& instance : _rChunk.scene.GetShapeInstances())
             {
+                if (instance.collisionMode == GFX::eShapeCollisionMode::Disabled)
+                    continue;
+
                 const auto& model = GFX::ShapeModelManager::GetShapeModel(instance.modelHandle);
                 const Math::cMatrix4x4f instanceMatrix = CreateCollisionTransform(instance.transform);
                 for (const auto& part : model.shapes)
@@ -45,6 +48,17 @@ namespace World
                     // Existing biome collision proxies remain responsible for the original primitives.
                     switch (part.meshType)
                     {
+                        case GFX::sMeshTypes::Cube:
+                        case GFX::sMeshTypes::Pyramid:
+                        case GFX::sMeshTypes::Sphere:
+                        case GFX::sMeshTypes::Cylinder:
+                        case GFX::sMeshTypes::Cone:
+                        case GFX::sMeshTypes::Torus:
+                        case GFX::sMeshTypes::Crystal:
+                            if (instance.collisionMode != GFX::eShapeCollisionMode::Mesh)
+                                continue;
+                            break;
+
                         case GFX::sMeshTypes::BeveledCube:
                         case GFX::sMeshTypes::Frustum:
                         case GFX::sMeshTypes::Wedge:
