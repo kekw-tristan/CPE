@@ -33,6 +33,18 @@ namespace Gameplay
         };
     };
 
+    struct sItemRarity
+    {
+        enum Enum
+        {
+            Common,
+            Rare,
+            Legendary,
+
+            Undefined = -1
+        };
+    };
+
     struct sItemId
     {
         enum Enum 
@@ -46,6 +58,7 @@ namespace Gameplay
             ForestLegs,
             ForestBoots,
 
+            ArcaneOrb,
             Fireball,
             StoneShard,
             ThornBurst,
@@ -79,12 +92,15 @@ namespace Gameplay
         sItemType::Enum     type        = sItemType::Undefined;
         sArmorSlot::Enum    armorSlot   = sArmorSlot::Undefined;
         uint32_t            maxStack    = 1;
+        uint32_t            baseArmor   = 0;
     };
 
     struct sItemStack
     {
-        sItemId::Enum   item    = sItemId::Undefined;
-        uint32_t        amount  = 0;
+        sItemId::Enum       item    = sItemId::Undefined;
+        uint32_t            amount  = 0;
+        sItemRarity::Enum   rarity  = sItemRarity::Undefined;
+        uint32_t            armor   = 0;
 
         bool IsEmpty() const
         {

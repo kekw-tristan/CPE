@@ -6,6 +6,7 @@ namespace Gameplay
     {
         enum Enum
         {
+            ArcaneOrb,
             Fireball,
             StoneShard,
             ThornBurst,

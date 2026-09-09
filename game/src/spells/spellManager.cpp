@@ -17,7 +17,8 @@ namespace Gameplay
 
         const std::array<sSpellDefinition, sSpellId::NumberOfElements> c_spells =
         {
-            sSpellDefinition{ sSpellId::Fireball,       World::sBossId::ForestCrawler,   sItemId::Fireball,       sSpellCastType::Projectile,       10.0f, "Fireball",        { 25.0f, 1.00f, 13.0f, 2.5f, 0.8f, 1 } },
+            sSpellDefinition{ sSpellId::ArcaneOrb,      World::sBossId::Undefined,       sItemId::ArcaneOrb,      sSpellCastType::Projectile,       0.0f, "Arcane Orb",      { 12.0f, 0.45f, 13.0f, 2.5f, 0.8f, 1 } },
+            sSpellDefinition{ sSpellId::Fireball,       World::sBossId::ForestCrawler,   sItemId::Fireball,       sSpellCastType::Projectile,       0.0f, "Fireball",        { 25.0f, 1.00f, 13.0f, 2.5f, 0.8f, 1 } },
             sSpellDefinition{ sSpellId::StoneShard,     World::sBossId::ForestBrute,     sItemId::StoneShard,     sSpellCastType::ConeProjectile,   15.0f, "Stone Cone",      { 32.0f, 1.20f, 10.0f, 2.2f, 0.6f, 1 } },
             sSpellDefinition{ sSpellId::ThornBurst,     World::sBossId::ForestThornwolf, sItemId::ThornBurst,     sSpellCastType::Projectile,       14.0f, "Thorn Burst",     { 18.0f, 0.85f, 15.0f, 1.8f, 0.6f, 3 } },
             sSpellDefinition{ sSpellId::SporeOrb,       World::sBossId::ForestSporecap,  sItemId::SporeOrb,       sSpellCastType::SporeProjectile,  18.0f, "Spore Orb",       { 20.0f, 1.10f, 8.0f, 3.5f, 2.0f, 1 } },

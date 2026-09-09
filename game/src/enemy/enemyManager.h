@@ -76,6 +76,7 @@ namespace Gameplay
     struct sEnemyDeathEvent
     {
         sEnemyHandle handle;
+        Engine::Math::cVec3f position;
         bool isBoss = false;
         World::sBossId::Enum bossId = World::sBossId::Undefined;
     };
@@ -90,12 +91,7 @@ namespace Gameplay
     {
         public:
 
-            sEnemyHandle Spawn(
-                World::sEnemyType::Enum _type,
-                const Engine::Math::cVec3f& _rPosition,
-                float _rotation,
-                bool _isBoss = false,
-                World::sBossId::Enum _bossId = World::sBossId::Undefined);
+            sEnemyHandle Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation, bool _isBoss = false, World::sBossId::Enum _bossId = World::sBossId::Undefined);
             void Update(const sEnemyUpdateContext& _rContext, cProjectileManager& _rProjectileManager);
             void Clear();
             void SetActive(sEnemyHandle _handle, bool _active);

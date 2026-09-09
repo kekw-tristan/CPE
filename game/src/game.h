@@ -23,6 +23,7 @@
 #include "physics/characterController.h"
 
 #include "item/inventory.h"
+#include "item/lootManager.h"
 
 #include "spells/runState.h"
 
@@ -112,6 +113,12 @@ class cGame : public cApplication
             GFX::LightHandle    light     = GFX::c_invalidLightHandle;
         };
 
+        struct sLootVisual
+        {
+            GFX::sInstanceData* pInstance = nullptr;
+            GFX::MeshHandle mesh = nullptr;
+        };
+
     
     private:
     
@@ -145,6 +152,7 @@ class cGame : public cApplication
 
         void PrepareEnemyHealthBars(const GFX::cCamera& _rCamera);
         void SyncProjectileRenderInstances();
+        void SyncLootRenderInstances();
         void UpdateThirdPersonCamera(float _deltaTime); 
     
         GFX::MeshHandle GetMesh(GFX::sMeshTypes::Enum _type);
@@ -216,6 +224,8 @@ class cGame : public cApplication
 
         std::vector<GFX::sHealthBarData> m_healthBars;
         std::vector<sProjectileVisual> m_projectileVisuals;
+        std::vector<sLootVisual> m_lootVisuals;
+        uint64_t m_lootRevision = 0;
 
         static constexpr float c_playerBaseMaxHealth     = 100.0f;
         static constexpr float c_playerBaseMaxMana       = 100.0f;
@@ -247,6 +257,7 @@ class cGame : public cApplication
         GFX::sShapeModelDesc m_sporecapAttackModel;
 
         Gameplay::cInventory m_inventory;
+        Gameplay::cLootManager m_lootManager;
         Gameplay::cRunState m_runState;
 
         bool m_inventoryOpen        = false;

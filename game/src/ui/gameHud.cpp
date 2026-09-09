@@ -472,6 +472,29 @@ namespace UI
             }
         }
 
+        // -----------------------------------------------------------------------------------------------------------------
+
+        ImU32 GetInventoryItemColor(const sInventorySlotHudState& _rSlot, Gameplay::sItemType::Enum _type)
+        {
+            if (_type != Gameplay::sItemType::Armor)
+                return GetInventoryItemColor(_type);
+
+            switch (_rSlot.rarity)
+            {
+                case Gameplay::sItemRarity::Common:
+                    return IM_COL32(220, 225, 234, 255);
+
+                case Gameplay::sItemRarity::Rare:
+                    return IM_COL32(90, 155, 255, 255);
+
+                case Gameplay::sItemRarity::Legendary:
+                    return IM_COL32(235, 185, 65, 255);
+
+                default:
+                    return GetInventoryItemColor(_type);
+            }
+        }
+
         // -------------------------------------------------------------------------------------------------------------------------
 
         void DrawCenteredInventoryText(
@@ -654,11 +677,9 @@ namespace UI
 
             if (_rSlot.item != Gameplay::sItemId::Undefined)
             {
-                const Gameplay::sItemDefinition& definition =
-                    Gameplay::GetItemDefinition(_rSlot.item);
+                const Gameplay::sItemDefinition& definition = Gameplay::GetItemDefinition(_rSlot.item);
 
-                const ImU32 itemColor =
-                    GetInventoryItemColor(definition.type);
+                const ImU32 itemColor = GetInventoryItemColor(_rSlot, definition.type);
 
                 const ImVec2 iconCenter(
                     slotMin.x + _rSize.x * 0.5f,
@@ -734,6 +755,9 @@ namespace UI
 
                     if (definition.maxStack > 1)
                         ImGui::Text("Amount: %u / %u", _rSlot.amount, definition.maxStack);
+
+                    if (_rSlot.armor > 0)
+                        ImGui::Text("Armor: %u", _rSlot.armor);
 
                     ImGui::EndTooltip();
                 }
@@ -1126,7 +1150,7 @@ namespace UI
                     ImVec2(iconMin.x + iconSize * 0.5f, iconMin.y + iconSize * 0.5f),
                     7.5f * scale,
                     definition.type,
-                    GetInventoryItemColor(definition.type)
+                    GetInventoryItemColor(slot, definition.type)
                 );
             }
 
@@ -1152,6 +1176,8 @@ namespace UI
             {
                 ImGui::BeginTooltip();
                 ImGui::TextUnformatted(Gameplay::GetItemDefinition(slot.item).pName);
+                if (slot.armor > 0)
+                    ImGui::Text("Armor: %u", slot.armor);
                 ImGui::EndTooltip();
             }
 

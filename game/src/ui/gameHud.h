@@ -36,6 +36,8 @@ namespace UI
     {
         Gameplay::sItemId::Enum item = Gameplay::sItemId::Undefined;
         uint32_t amount = 0;
+        Gameplay::sItemRarity::Enum rarity = Gameplay::sItemRarity::Undefined;
+        uint32_t armor = 0;
     };
 
     struct sInventoryHudState

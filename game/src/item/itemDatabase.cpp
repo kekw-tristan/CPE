@@ -49,7 +49,8 @@ namespace Gameplay
                 "Forest Helmet",
                 sItemType::Armor,
                 sArmorSlot::Head,
-                1
+                1,
+                2
             },
 
             // ---------------------------------------------------------------------------------------------------------------------
@@ -60,7 +61,8 @@ namespace Gameplay
                 "Forest Chest",
                 sItemType::Armor,
                 sArmorSlot::Chest,
-                1
+                1,
+                4
             },
 
             // ---------------------------------------------------------------------------------------------------------------------
@@ -71,6 +73,7 @@ namespace Gameplay
                 "Forest Ring",
                 sItemType::Armor,
                 sArmorSlot::Ring,
+                1,
                 1
             },
 
@@ -82,7 +85,8 @@ namespace Gameplay
                 "Forest Legs",
                 sItemType::Armor,
                 sArmorSlot::Legs,
-                1
+                1,
+                3
             },
 
             // ---------------------------------------------------------------------------------------------------------------------
@@ -93,11 +97,13 @@ namespace Gameplay
                 "Forest Boots",
                 sItemType::Armor,
                 sArmorSlot::Boots,
-                1
+                1,
+                2
             },
 
             // ---------------------------------------------------------------------------------------------------------------------
 
+            sItemDefinition{ sItemId::ArcaneOrb,      "Arcane Orb",      sItemType::Spell, sArmorSlot::Undefined, 1 },
             sItemDefinition{ sItemId::Fireball,       "Fireball",        sItemType::Spell, sArmorSlot::Undefined, 1 },
             sItemDefinition{ sItemId::StoneShard,     "Stone Cone",      sItemType::Spell, sArmorSlot::Undefined, 1 },
             sItemDefinition{ sItemId::ThornBurst,     "Thorn Burst",     sItemType::Spell, sArmorSlot::Undefined, 1 },

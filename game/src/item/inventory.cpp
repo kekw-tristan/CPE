@@ -8,9 +8,16 @@ namespace Gameplay
 {
     namespace
     {
+        bool AreStacksCompatible(const sItemStack& _rLeft, const sItemStack& _rRight)
+        {
+            return _rLeft.item == _rRight.item
+                && _rLeft.rarity == _rRight.rarity
+                && _rLeft.armor == _rRight.armor;
+        }
+
         bool CanStoreItem(
             const cInventory::InventorySlots& _rSlots,
-            sItemId::Enum _item,
+            const sItemStack& _rItem,
             uint32_t _maxStack,
             uint32_t _amount)
         {
@@ -18,7 +25,7 @@ namespace Gameplay
 
             for (const sItemStack& slot : _rSlots)
             {
-                if (slot.item == _item && slot.amount < _maxStack)
+                if (AreStacksCompatible(slot, _rItem) && slot.amount < _maxStack)
                     availableCapacity += _maxStack - slot.amount;
                 else if (slot.IsEmpty())
                     availableCapacity += _maxStack;
@@ -35,28 +42,36 @@ namespace Gameplay
 
     bool cInventory::AddItem(sItemId::Enum _item, uint32_t _amount)
     {
-        if (_item == sItemId::Undefined || _amount == 0)
+        return AddItem({ _item, _amount });
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    bool cInventory::AddItem(const sItemStack& _rItem)
+    {
+        if (_rItem.item == sItemId::Undefined || _rItem.amount == 0)
             return false;
 
-        const sItemDefinition& definition = GetItemDefinition(_item);
+        const sItemDefinition& definition = GetItemDefinition(_rItem.item);
         const uint32_t maxStack = std::max(1u, definition.maxStack);
+        uint32_t amount = _rItem.amount;
 
-        if (!CanStoreItem(m_inventorySlots, _item, maxStack, _amount))
+        if (!CanStoreItem(m_inventorySlots, _rItem, maxStack, amount))
             return false;
 
         // Fill existing stacks first.
         for (sItemStack& slot : m_inventorySlots)
         {
-            if (slot.item != _item || slot.amount >= maxStack)
+            if (!AreStacksCompatible(slot, _rItem) || slot.amount >= maxStack)
                 continue;
 
             const uint32_t available = maxStack - slot.amount;
-            const uint32_t amountToAdd = std::min(available, _amount);
+            const uint32_t amountToAdd = std::min(available, amount);
 
             slot.amount += amountToAdd;
-            _amount -= amountToAdd;
+            amount -= amountToAdd;
 
-            if (_amount == 0)
+            if (amount == 0)
                 return true;
         }
 
@@ -66,14 +81,14 @@ namespace Gameplay
             if (!slot.IsEmpty())
                 continue;
 
-            const uint32_t amountToAdd = std::min(maxStack, _amount);
+            const uint32_t amountToAdd = std::min(maxStack, amount);
 
-            slot.item = _item;
+            slot = _rItem;
             slot.amount = amountToAdd;
 
-            _amount -= amountToAdd;
+            amount -= amountToAdd;
 
-            if (_amount == 0)
+            if (amount == 0)
                 return true;
         }
 
@@ -148,7 +163,7 @@ namespace Gameplay
             return true;
         }
 
-        if (source.item == destination.item)
+        if (AreStacksCompatible(source, destination))
         {
             const sItemDefinition& definition = GetItemDefinition(source.item);
             const uint32_t maxStack = std::max(1u, definition.maxStack);
@@ -267,7 +282,7 @@ namespace Gameplay
             return true;
         }
 
-        if (usableSlot.item == inventorySlot.item)
+        if (AreStacksCompatible(usableSlot, inventorySlot))
         {
             const uint32_t maxStack = std::max(1u, definition.maxStack);
 
@@ -316,7 +331,7 @@ namespace Gameplay
             return true;
         }
 
-        if (inventorySlot.item != usableSlot.item || inventorySlot.amount >= maxStack)
+        if (!AreStacksCompatible(inventorySlot, usableSlot) || inventorySlot.amount >= maxStack)
             return false;
 
         const uint32_t available = maxStack - inventorySlot.amount;
@@ -378,7 +393,7 @@ namespace Gameplay
             return true;
         }
 
-        if (spellSlot.item == inventorySlot.item)
+        if (AreStacksCompatible(spellSlot, inventorySlot))
         {
             const uint32_t maxStack = std::max(1u, definition.maxStack);
 
@@ -427,7 +442,7 @@ namespace Gameplay
             return true;
         }
 
-        if (inventorySlot.item != spellSlot.item || inventorySlot.amount >= maxStack)
+        if (!AreStacksCompatible(inventorySlot, spellSlot) || inventorySlot.amount >= maxStack)
             return false;
 
         const uint32_t available = maxStack - inventorySlot.amount;
@@ -548,5 +563,17 @@ namespace Gameplay
         }
 
         return count;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    uint32_t cInventory::GetArmor() const
+    {
+        uint32_t armor = 0;
+
+        for (const sItemStack& slot : m_armorSlots)
+            armor += slot.armor;
+
+        return armor;
     }
 }

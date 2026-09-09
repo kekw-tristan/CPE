@@ -297,7 +297,7 @@ namespace Gameplay
             slot.enemy.state     = eEnemyState::Dead;
             slot.enemy.stateTime = 0.0f;
             ++slot.enemy.transformRevision;
-            m_deathEvents.push_back({ slot.enemy.handle, slot.enemy.isBoss, slot.enemy.bossId });
+            m_deathEvents.push_back({ slot.enemy.handle, slot.enemy.position, slot.enemy.isBoss, slot.enemy.bossId });
         }
     }
 

@@ -75,14 +75,6 @@ void cGame::OnInit()
 
     Platform::SetMouseCaptured(true);
 
-    // inventory test
-    m_inventory.AddItem(Gameplay::sItemId::HealthPotion, 5);
-    m_inventory.AddItem(Gameplay::sItemId::ManaPotion, 3);
-
-    m_inventory.AddItem(Gameplay::sItemId::ForestHelmet);
-    m_inventory.AddItem(Gameplay::sItemId::ForestChest);
-    m_inventory.AddItem(Gameplay::sItemId::ForestRing);
-
     BeginRun();
 }
 
@@ -137,25 +129,25 @@ void cGame::OnUpdate(float _deltaTime)
         {
             const uint32_t experience = deathEvent.isBoss ? c_bossExperience : c_regularEnemyExperience;
             ApplyLevelUpRewards(m_runState.GrantExperience(experience));
-
-            if (!deathEvent.isBoss || deathEvent.bossId == World::sBossId::Undefined)
-                continue;
-
-            const Gameplay::SpellManager::sBossDefinition& boss = Gameplay::SpellManager::GetBoss(deathEvent.bossId);
-
-            if (!m_runState.GrantSpell(boss.spellReward))
-                continue;
-
-            const Gameplay::sSpellDefinition& spell = Gameplay::SpellManager::GetSpell(boss.spellReward);
-            m_inventory.AddItem(spell.inventoryItem);
+            m_lootManager.DropEnemyLoot(deathEvent.position, deathEvent.isBoss, deathEvent.bossId);
         }
 
         m_enemyManager.ClearDeathEvents();
 
+        m_lootManager.CollectNearby(m_playerController.GetPosition(), m_inventory);
+        for (const Gameplay::sItemStack& item : m_lootManager.GetCollectedItems())
+        {
+            const Gameplay::sSpellId::Enum spellId = Gameplay::SpellManager::GetSpellId(item.item);
+            if (spellId != Gameplay::sSpellId::Undefined)
+                m_runState.GrantSpell(spellId);
+        }
+        m_lootManager.ClearCollectedItems();
+
         const float receivedDamage = m_enemyManager.ConsumePlayerDamage() + m_projectileManager.ConsumePlayerDamage();
         if (receivedDamage > 0.0f)
         {
-            m_playerHealth = std::max(0.0f, m_playerHealth - receivedDamage);
+            const float absorbedDamage = std::min(receivedDamage, static_cast<float>(m_inventory.GetArmor()));
+            m_playerHealth = std::max(0.0f, m_playerHealth - receivedDamage + absorbedDamage);
             std::cout << "Player health: " << m_playerHealth << '\n';
         }
 
@@ -166,6 +158,7 @@ void cGame::OnUpdate(float _deltaTime)
     UpdatePlayerRenderInstances();
     UpdateEnemyRenderInstances(_deltaTime);
     SyncProjectileRenderInstances();
+    SyncLootRenderInstances();
 
 }
 
@@ -261,6 +254,8 @@ void cGame::OnDrawUI()
     {
         hudState.inventory.inventorySlots[i].item = inventorySlots[i].item;
         hudState.inventory.inventorySlots[i].amount = inventorySlots[i].amount;
+        hudState.inventory.inventorySlots[i].rarity = inventorySlots[i].rarity;
+        hudState.inventory.inventorySlots[i].armor = inventorySlots[i].armor;
     }
 
     const auto& usableSlots = m_inventory.GetUsableSlots();
@@ -269,6 +264,8 @@ void cGame::OnDrawUI()
     {
         hudState.inventory.usableSlots[i].item = usableSlots[i].item;
         hudState.inventory.usableSlots[i].amount = usableSlots[i].amount;
+        hudState.inventory.usableSlots[i].rarity = usableSlots[i].rarity;
+        hudState.inventory.usableSlots[i].armor = usableSlots[i].armor;
     }
 
     const auto& spellSlots = m_inventory.GetSpellSlots();
@@ -277,6 +274,8 @@ void cGame::OnDrawUI()
     {
         hudState.inventory.spellSlots[i].item = spellSlots[i].item;
         hudState.inventory.spellSlots[i].amount = spellSlots[i].amount;
+        hudState.inventory.spellSlots[i].rarity = spellSlots[i].rarity;
+        hudState.inventory.spellSlots[i].armor = spellSlots[i].armor;
     }
 
     const auto& armorSlots = m_inventory.GetArmorSlots();
@@ -285,6 +284,8 @@ void cGame::OnDrawUI()
     {
         hudState.inventory.armorSlots[i].item = armorSlots[i].item;
         hudState.inventory.armorSlots[i].amount = armorSlots[i].amount;
+        hudState.inventory.armorSlots[i].rarity = armorSlots[i].rarity;
+        hudState.inventory.armorSlots[i].armor = armorSlots[i].armor;
     }
 
     m_hud.Draw(hudState);
@@ -1137,42 +1138,27 @@ void cGame::BeginRun()
 {
     m_runState.Begin();
     m_inventory.ClearSpells();
+    m_lootManager.Clear();
     m_playerMaxHealth = c_playerBaseMaxHealth;
     m_playerHealth = m_playerMaxHealth;
     m_playerMaxMana = c_playerBaseMaxMana;
     m_playerMana = m_playerMaxMana;
 
-    if (!m_runState.GrantSpell(Gameplay::sSpellId::Fireball))
+    if (!m_runState.GrantSpell(Gameplay::sSpellId::ArcaneOrb))
         return;
 
-    m_runState.SetSpellSlot(0, Gameplay::sSpellId::Fireball);
-
-    const Gameplay::sSpellDefinition& fireball = Gameplay::SpellManager::GetSpell(Gameplay::sSpellId::Fireball);
-    if (!m_inventory.AddItem(fireball.inventoryItem))
+    const Gameplay::sSpellDefinition& starterSpell = Gameplay::SpellManager::GetSpell(Gameplay::sSpellId::ArcaneOrb);
+    if (!m_inventory.AddItem(starterSpell.inventoryItem))
         return;
 
     const auto& inventorySlots = m_inventory.GetInventorySlots();
     for (size_t inventorySlot = 0; inventorySlot < inventorySlots.size(); ++inventorySlot)
     {
-        if (inventorySlots[inventorySlot].item != fireball.inventoryItem)
+        if (inventorySlots[inventorySlot].item != starterSpell.inventoryItem)
             continue;
 
         m_inventory.EquipSpell(inventorySlot, 0);
         break;
-    }
-
-    constexpr std::array<Gameplay::sSpellId::Enum, 2> c_additionalStarterSpells =
-    {
-        Gameplay::sSpellId::StoneShard,
-        Gameplay::sSpellId::SporeOrb
-    };
-
-    for (Gameplay::sSpellId::Enum spellId : c_additionalStarterSpells)
-    {
-        if (!m_runState.GrantSpell(spellId))
-            continue;
-
-        m_inventory.AddItem(Gameplay::SpellManager::GetSpell(spellId).inventoryItem);
     }
 
     SyncSpellLoadoutFromInventory();
@@ -1536,7 +1522,7 @@ void cGame::SyncProjectileRenderInstances()
                 : isPlayerSpell
                     ? projectile.type == Gameplay::eProjectileType::PlayerCone
                         ? std::array<float, 4>{ 0.95f, 0.52f, 0.12f, 1.0f }
-                        : std::array<float, 4>{ 0.5f, 0.15f, 1.0f, 1.0f }
+                        : std::array<float, 4>{ 0.20f, 0.55f, 1.0f, 1.0f }
                     : isSpore ? std::array<float, 4>{ 0.48f, 0.16f, 0.22f, 1.0f }
                     : std::array<float, 4>{ 0.35f, 1.0f, 0.18f, 1.0f };
 
@@ -1571,7 +1557,7 @@ void cGame::SyncProjectileRenderInstances()
                     ? Math::cVec3f(0.35f, 0.95f, 0.25f)
                     : projectile.type == Gameplay::eProjectileType::PlayerCone
                         ? Math::cVec3f(0.95f, 0.52f, 0.12f)
-                        : Math::cVec3f(0.5f, 0.15f, 1.0f);
+                        : Math::cVec3f(0.20f, 0.55f, 1.0f);
                 light.intensity = 10.0f;
                 light.position  = projectile.position;
                 light.radius    = 4.0f;
@@ -1643,6 +1629,46 @@ void cGame::SyncProjectileRenderInstances()
 
     if (instanceListChanged)
         RebuildInstanceList();
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::SyncLootRenderInstances()
+{
+    using namespace Engine::GFX;
+
+    if (m_lootRevision == m_lootManager.GetRevision())
+        return;
+
+    for (const sLootVisual& visual : m_lootVisuals)
+    {
+        std::vector<sInstanceData*>& meshInstances = m_meshInstances[visual.mesh];
+        std::erase(meshInstances, visual.pInstance);
+        m_pool.Destroy(visual.pInstance);
+    }
+    m_lootVisuals.clear();
+
+    for (const Gameplay::sLootDrop& drop : m_lootManager.GetDrops())
+    {
+        sInstanceData* pInstance = m_pool.Create();
+        pInstance->color = drop.item.rarity == Gameplay::sItemRarity::Rare
+            ? std::array<float, 4>{ 0.32f, 0.62f, 1.0f, 1.0f }
+            : drop.item.rarity == Gameplay::sItemRarity::Legendary
+                ? std::array<float, 4>{ 1.0f, 0.70f, 0.12f, 1.0f }
+                : std::array<float, 4>{ 0.9f, 0.94f, 1.0f, 1.0f };
+        pInstance->materialIndex = m_playerSphereMaterial;
+
+        GFX::sTransform transform{};
+        transform.position = drop.position + Math::cVec3f(0.0f, 0.35f, 0.0f);
+        transform.scale = { 0.18f, 0.18f, 0.18f };
+        pInstance->worldMatrix = CreateTransformMatrix(transform);
+
+        m_meshInstances[m_sphereMesh].push_back(pInstance);
+        m_lootVisuals.push_back({ pInstance, m_sphereMesh });
+    }
+
+    m_lootRevision = m_lootManager.GetRevision();
+    RebuildInstanceList();
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
