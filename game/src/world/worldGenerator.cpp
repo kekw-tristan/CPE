@@ -4,6 +4,7 @@
 #include "worldModels.h"
 #include "terrainHeight.h"
 #include "biome/forestGenerator.h"
+#include "../spells/spellManager.h"
 #include "graphics/scene/scene.h"
 #include "graphics/shapeModel/shapeMeshLibrary.h"
 #include "graphics/shapeModel/shapeModelDesc.h"
@@ -158,8 +159,8 @@ namespace World
                         const float angle   = 0.785398f + static_cast<float>(i) * 1.570796f + angleOffset(randomGenerator);
                         auto& dungeon       = m_layout.dungeons[i];
                         dungeon.center      = Math::cVec3f(std::cos(angle) * c_dungeonRadius, 0.0f, std::sin(angle) * c_dungeonRadius);
-                        dungeon.type        = static_cast<sEnemyType::Enum>(i);
                         dungeon.bossId      = static_cast<sBossId::Enum>(i);
+                        dungeon.type        = Gameplay::SpellManager::GetBoss(dungeon.bossId).enemyType;
 
                         m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
                         m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - 30.0f) });

@@ -1,0 +1,468 @@
+{
+    "name": "forest_rootcharger_attack",
+    "materials": [
+        {
+            "albedo": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "ambientStrength": 1.2,
+            "emissiveColor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "emissiveStrength": 0.0,
+            "lightWrap": 0.0,
+            "metallic": 0.0,
+            "roughness": 0.93,
+            "shapeContrast": 1.3
+        },
+        {
+            "albedo": [
+                0.38,
+                1,
+                0.15
+            ],
+            "roughness": 0.3,
+            "metallic": 0,
+            "lightWrap": 0.12,
+            "shapeContrast": 1.25,
+            "ambientStrength": 1.2,
+            "emissiveColor": [
+                0.38,
+                1,
+                0.15
+            ],
+            "emissiveStrength": 1.3
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.0,
+                0.86388,
+                0.210105
+            ],
+            "rotation": [
+                0.4,
+                0,
+                0
+            ],
+            "scale": [
+                1.334,
+                1.633,
+                1.173
+            ],
+            "color": [
+                0.68,
+                0.46,
+                0.23,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.0,
+                0.60076,
+                0.625715
+            ],
+            "rotation": [
+                0.4,
+                0,
+                0
+            ],
+            "scale": [
+                0.828,
+                1.0465,
+                0.2185
+            ],
+            "color": [
+                0.78,
+                0.61,
+                0.37,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.0,
+                1.5157,
+                0.41078
+            ],
+            "rotation": [
+                0.4,
+                0,
+                0
+            ],
+            "scale": [
+                1.656,
+                0.759,
+                1.426
+            ],
+            "color": [
+                0.3,
+                0.19,
+                0.1,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.0,
+                1.37517,
+                0.388815
+            ],
+            "rotation": [
+                0.4,
+                0,
+                0
+            ],
+            "scale": [
+                1.702,
+                0.2415,
+                1.472
+            ],
+            "color": [
+                0.48,
+                0.29,
+                0.14,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -0.483,
+                1.520645,
+                0.81236
+            ],
+            "rotation": [
+                0.4,
+                0,
+                0
+            ],
+            "scale": [
+                0.391,
+                0.138,
+                0.345
+            ],
+            "color": [
+                0.48,
+                0.29,
+                0.14,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.0,
+                1.61483,
+                0.914595
+            ],
+            "rotation": [
+                0.4,
+                0,
+                0
+            ],
+            "scale": [
+                0.391,
+                0.138,
+                0.345
+            ],
+            "color": [
+                0.48,
+                0.29,
+                0.14,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.483,
+                1.520645,
+                0.81236
+            ],
+            "rotation": [
+                0.4,
+                0,
+                0
+            ],
+            "scale": [
+                0.391,
+                0.138,
+                0.345
+            ],
+            "color": [
+                0.48,
+                0.29,
+                0.14,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -0.345,
+                1.886345,
+                0.24288
+            ],
+            "rotation": [
+                0.4,
+                0,
+                0
+            ],
+            "scale": [
+                0.391,
+                0.138,
+                0.345
+            ],
+            "color": [
+                0.48,
+                0.29,
+                0.14,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.345,
+                1.886345,
+                0.24288
+            ],
+            "rotation": [
+                0.4,
+                0,
+                0
+            ],
+            "scale": [
+                0.391,
+                0.138,
+                0.345
+            ],
+            "color": [
+                0.48,
+                0.29,
+                0.14,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.069,
+                1.98007,
+                0.58213
+            ],
+            "rotation": [
+                0.5,
+                0,
+                -0.35
+            ],
+            "scale": [
+                0.207,
+                0.4255,
+                0.207
+            ],
+            "color": [
+                0.3,
+                0.19,
+                0.1,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.3105,
+                2.06034,
+                0.62859
+            ],
+            "rotation": [
+                0.4,
+                0.2,
+                0.27
+            ],
+            "scale": [
+                0.529,
+                0.138,
+                0.2645
+            ],
+            "color": [
+                0.25,
+                0.38,
+                0.12,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -0.2415,
+                0.870435,
+                0.81466
+            ],
+            "rotation": [
+                0.4,
+                0,
+                0
+            ],
+            "scale": [
+                0.138,
+                0.161,
+                0.092
+            ],
+            "color": [
+                0.65,
+                1.0,
+                0.2,
+                1.0
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.2415,
+                0.870435,
+                0.81466
+            ],
+            "rotation": [
+                0.4,
+                0,
+                0
+            ],
+            "scale": [
+                0.138,
+                0.161,
+                0.092
+            ],
+            "color": [
+                0.65,
+                1.0,
+                0.2,
+                1.0
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -0.736,
+                0.687125,
+                0.001265
+            ],
+            "rotation": [
+                0.8500000000000001,
+                0,
+                -0.18
+            ],
+            "scale": [
+                0.368,
+                0.644,
+                0.4025
+            ],
+            "color": [
+                0.25,
+                0.38,
+                0.12,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.736,
+                0.687125,
+                0.001265
+            ],
+            "rotation": [
+                0.8500000000000001,
+                0,
+                0.18
+            ],
+            "scale": [
+                0.368,
+                0.644,
+                0.4025
+            ],
+            "color": [
+                0.25,
+                0.38,
+                0.12,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -0.368,
+                0.184,
+                0.437
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.4945,
+                0.368,
+                0.6785
+            ],
+            "color": [
+                0.3,
+                0.19,
+                0.1,
+                1.0
+            ],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.368,
+                0.184,
+                -0.069
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.4945,
+                0.368,
+                0.6785
+            ],
+            "color": [
+                0.3,
+                0.19,
+                0.1,
+                1.0
+            ],
+            "materialIndex": 0
+        }
+    ]
+}

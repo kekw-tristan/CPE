@@ -55,10 +55,10 @@ namespace Gameplay
 
         constexpr std::array<SpellManager::sBossDefinition, World::sBossId::NumberOfElements> c_bosses =
         {
-            SpellManager::sBossDefinition{ World::sBossId::ForestCrawler,   World::sBiomeType::Forest,  World::sEnemyType::ForestCrawler,   sSpellId::Fireball },
-            SpellManager::sBossDefinition{ World::sBossId::ForestBrute,     World::sBiomeType::Forest,  World::sEnemyType::ForestBrute,     sSpellId::StoneShard },
-            SpellManager::sBossDefinition{ World::sBossId::ForestThornwolf, World::sBiomeType::Forest,  World::sEnemyType::ForestThornwolf, sSpellId::ThornBurst },
-            SpellManager::sBossDefinition{ World::sBossId::ForestSporecap,  World::sBiomeType::Forest,  World::sEnemyType::ForestSporecap,  sSpellId::SporeOrb },
+            SpellManager::sBossDefinition{ World::sBossId::ForestCrawler,   World::sBiomeType::Forest,  World::sEnemyType::ForestThornshooter, sSpellId::Fireball },
+            SpellManager::sBossDefinition{ World::sBossId::ForestBrute,     World::sBiomeType::Forest,  World::sEnemyType::ForestBarkguard,    sSpellId::StoneShard },
+            SpellManager::sBossDefinition{ World::sBossId::ForestThornwolf, World::sBiomeType::Forest,  World::sEnemyType::ForestRootcharger,  sSpellId::ThornBurst },
+            SpellManager::sBossDefinition{ World::sBossId::ForestSporecap,  World::sBiomeType::Forest,  World::sEnemyType::ForestSporecap,     sSpellId::SporeOrb },
 
             SpellManager::sBossDefinition{ World::sBossId::DesertLancer,    World::sBiomeType::Desert,  World::sEnemyType::Undefined, sSpellId::SandLance },
             SpellManager::sBossDefinition{ World::sBossId::DesertSentinel,  World::sBiomeType::Desert,  World::sEnemyType::Undefined, sSpellId::SunDisk },

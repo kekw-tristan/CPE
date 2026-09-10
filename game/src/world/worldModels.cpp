@@ -99,7 +99,9 @@ namespace World
                     continue;
 
 
-                if (entry.path().extension() != ".json")
+                // Export metadata and prefab compositions are not standalone shape models.
+                if (entry.path().extension() != ".json" || entry.path().filename() == "manifest.json"
+                    || entry.path().stem().extension() == ".prefab")
                     continue;
 
 

@@ -619,7 +619,7 @@ namespace World
 
             constexpr sEnemyType::Enum c_champions[] =
             {
-                sEnemyType::ForestCrawler, sEnemyType::ForestBrute, sEnemyType::ForestSporecap, sEnemyType::ForestThornwolf
+                sEnemyType::ForestThornshooter, sEnemyType::ForestBarkguard, sEnemyType::ForestSporecap, sEnemyType::ForestRootcharger
             };
             // Undefined progression ID denotes a local miniboss, not one of the four forest guardians.
             _rSpawns.push_back({ c_champions[variant], transform.position, angle + 3.1415926f, true });
@@ -628,7 +628,7 @@ namespace World
                 const float x = guard % 2 == 0 ? -6.0f : 6.0f;
                 const float z = guard < 2 ? -7.0f : 5.0f;
                 const Math::cVec3f position = transform.position + Math::cVec3f(x * cosine + z * sine, 0.0f, -x * sine + z * cosine);
-                _rSpawns.push_back({ variant == 2 ? sEnemyType::ForestSporecap : sEnemyType::ForestThornwolf,
+                _rSpawns.push_back({ variant == 2 ? sEnemyType::ForestSporecap : sEnemyType::ForestRootcharger,
                     position, angle + 3.1415926f });
             }
             return true;
@@ -783,7 +783,7 @@ namespace World
 
             constexpr sEnemyType::Enum c_guardTypes[] =
             {
-                sEnemyType::ForestBrute, sEnemyType::ForestThornwolf, sEnemyType::ForestSporecap
+                sEnemyType::ForestBarkguard, sEnemyType::ForestRootcharger, sEnemyType::ForestSporecap
             };
             for (uint32_t i = 0; i < 3 + _rClearing.variant; ++i)
             {
@@ -835,12 +835,13 @@ namespace World
             std::uniform_real_distribution<float> rotationDistribution(0.0f, c_twoPi);
             constexpr sEnemyType::Enum c_forestEnemyTypes[] =
             {
-                sEnemyType::ForestCrawler,
-                sEnemyType::ForestBrute,
-                sEnemyType::ForestThornwolf,
-                sEnemyType::ForestSporecap
+                sEnemyType::ForestSporecap,
+                sEnemyType::ForestThornshooter,
+                sEnemyType::ForestRootcharger,
+                sEnemyType::ForestBarkguard
             };
-            std::uniform_int_distribution<uint32_t> enemyTypeDistribution(0, 3);
+            std::uniform_int_distribution<uint32_t> enemyTypeDistribution(0,
+                static_cast<uint32_t>(sizeof(c_forestEnemyTypes) / sizeof(c_forestEnemyTypes[0])) - 1);
 
             const uint32_t packCount = packCountDistribution(_rRandomGenerator);
 

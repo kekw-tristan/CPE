@@ -255,6 +255,12 @@ class cGame : public cApplication
         GFX::sShapeModelDesc m_thornwolfAttackModel;
         GFX::sShapeModelDesc m_sporecapModel;
         GFX::sShapeModelDesc m_sporecapAttackModel;
+        GFX::sShapeModelDesc m_thornshooterModel;
+        GFX::sShapeModelDesc m_thornshooterAttackModel;
+        GFX::sShapeModelDesc m_rootchargerModel;
+        GFX::sShapeModelDesc m_rootchargerAttackModel;
+        GFX::sShapeModelDesc m_barkguardModel;
+        GFX::sShapeModelDesc m_barkguardAttackModel;
 
         Gameplay::cInventory m_inventory;
         Gameplay::cLootManager m_lootManager;

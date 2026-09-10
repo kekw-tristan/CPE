@@ -44,6 +44,9 @@ namespace World
             ForestBrute,
             ForestThornwolf,
             ForestSporecap,
+            ForestThornshooter,
+            ForestRootcharger,
+            ForestBarkguard,
 
             NumberOfElements,
             Undefined = -1

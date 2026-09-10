@@ -51,6 +51,29 @@ namespace Gameplay
 
         // -------------------------------------------------------------------------------------------------------------------------
 
+        constexpr sEnemyDefinition c_thornshooterDefinition
+        {
+            55.0f, 2.6f, 18.0f, 15.0f, 10.0f,
+            14.0f, 1.7f, 0.6f, 0.4f,
+            eEnemyAttackType::ConeProjectile
+        };
+
+        constexpr sEnemyDefinition c_rootchargerDefinition
+        {
+            90.0f, 3.0f, 17.0f, 8.0f, 1.2f,
+            24.0f, 3.2f, 0.85f, 0.9f,
+            eEnemyAttackType::Dash, 1.0f, 16.0f, 0.55f
+        };
+
+        constexpr sEnemyDefinition c_barkguardDefinition
+        {
+            200.0f, 1.5f, 13.0f, 1.9f, 1.5f,
+            26.0f, 2.0f, 0.8f, 1.0f,
+            eEnemyAttackType::Melee, 0.3f
+        };
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
         float HorizontalDistance(const Engine::Math::cVec3f& _rFirst, const Engine::Math::cVec3f& _rSecond)
         {
             const float x = _rSecond.x() - _rFirst.x();
@@ -291,7 +314,9 @@ namespace Gameplay
         if (!slot.occupied || slot.generation != _handle.generation || slot.enemy.state == eEnemyState::Dead)
             return;
 
-        slot.enemy.health = std::max(0.0f, slot.enemy.health - _damage);
+        const bool isGuarding = slot.enemy.state == eEnemyState::Idle || slot.enemy.state == eEnemyState::Chase;
+        const float damage = _damage * (isGuarding ? slot.enemy.definition.guardedDamageMultiplier : 1.0f);
+        slot.enemy.health = std::max(0.0f, slot.enemy.health - damage);
         if (slot.enemy.health == 0.0f)
         {
             slot.enemy.state     = eEnemyState::Dead;
@@ -430,6 +455,12 @@ namespace Gameplay
                 return c_thornwolfDefinition;
             case World::sEnemyType::ForestSporecap:
                 return c_sporecapDefinition;
+            case World::sEnemyType::ForestThornshooter:
+                return c_thornshooterDefinition;
+            case World::sEnemyType::ForestRootcharger:
+                return c_rootchargerDefinition;
+            case World::sEnemyType::ForestBarkguard:
+                return c_barkguardDefinition;
             default:
                 throw std::invalid_argument("No definition exists for this enemy type.");
         }
@@ -459,6 +490,9 @@ namespace Gameplay
         else if (_rEnemy.state == eEnemyState::AttackRecovery)
             _rEnemy.attackPoseWeight = 1.0f - std::clamp(_rEnemy.stateTime / _rDefinition.attackRecovery, 0.0f, 1.0f);
 
+        else if (_rEnemy.state == eEnemyState::Dash)
+            _rEnemy.attackPoseWeight = 1.0f;
+
         else
             _rEnemy.attackPoseWeight = 0.0f;
 
@@ -483,13 +517,58 @@ namespace Gameplay
             return;
         }
 
-        if (!toPlayer.isZero())
+        if (_rEnemy.state == eEnemyState::Dash)
+        {
+            // Short collision steps also prevent a fast charge from skipping the player.
+            float remainingTime = std::min(_rContext.deltaTime,
+                std::max(0.0f, _rDefinition.dashDuration - (_rEnemy.stateTime - _rContext.deltaTime)));
+            while (remainingTime > 0.000001f)
+            {
+                const float stepTime = std::min(remainingTime, 0.2f / _rDefinition.dashSpeed);
+                const Engine::Math::cVec3f previousPosition = _rEnemy.position;
+                MoveEnemy(_rEnemy, _rEnemy.attackDirection * (_rDefinition.dashSpeed * stepTime));
+                remainingTime -= stepTime;
+
+                if (!_rEnemy.dashHitPlayer
+                    && HorizontalDistance(_rEnemy.position, _rContext.playerPosition) <= 0.45f * _rEnemy.scale + 0.5f
+                    && std::abs(_rEnemy.position.y() - _rContext.playerPosition.y()) <= 1.5f)
+                {
+                    m_pendingPlayerDamage += _rDefinition.attackDamage;
+                    _rEnemy.dashHitPlayer = true;
+                }
+
+                if (HorizontalDistance(previousPosition, _rEnemy.position) < _rDefinition.dashSpeed * stepTime * 0.5f)
+                {
+                    _rEnemy.stateTime = _rDefinition.dashDuration;
+                    break;
+                }
+            }
+
+            if (_rEnemy.stateTime >= _rDefinition.dashDuration)
+            {
+                _rEnemy.state = eEnemyState::AttackRecovery;
+                _rEnemy.stateTime = 0.0f;
+                _rEnemy.attackCooldown = _rDefinition.attackCooldown;
+            }
+            return;
+        }
+
+        if (!toPlayer.isZero() && !(_rDefinition.attackType == eEnemyAttackType::Dash
+            && _rEnemy.state == eEnemyState::AttackWindup))
             _rEnemy.rotation = std::atan2(toPlayer.x(), toPlayer.z());
 
         if (_rEnemy.state == eEnemyState::AttackWindup)
         {
             if (_rEnemy.stateTime >= _rDefinition.attackWindup)
             {
+                if (_rDefinition.attackType == eEnemyAttackType::Dash)
+                {
+                    _rEnemy.state = eEnemyState::Dash;
+                    _rEnemy.stateTime = 0.0f;
+                    _rEnemy.dashHitPlayer = false;
+                    return;
+                }
+
                 ExecuteAttack(_rEnemy, _rDefinition, _rContext, _rProjectileManager);
                 _rEnemy.state          = eEnemyState::AttackRecovery;
                 _rEnemy.stateTime      = 0.0f;
@@ -515,7 +594,7 @@ namespace Gameplay
             return;
         }
 
-        const bool hasUsefulAttackDistance = _rDefinition.attackType == eEnemyAttackType::Melee || distance >= _rDefinition.preferredRange - 1.0f;
+        const bool hasUsefulAttackDistance = _rDefinition.attackType != eEnemyAttackType::ConeProjectile || distance >= _rDefinition.preferredRange - 1.0f;
 
         if (distance <= _rDefinition.attackRange && hasUsefulAttackDistance && _rEnemy.attackCooldown <= 0.0f)
         {
@@ -524,7 +603,7 @@ namespace Gameplay
         }
 
         Engine::Math::cVec3f movementDirection;
-        if (_rDefinition.attackType == eEnemyAttackType::Melee || distance > _rDefinition.preferredRange + 1.0f)
+        if (_rDefinition.attackType != eEnemyAttackType::ConeProjectile || distance > _rDefinition.preferredRange + 1.0f)
             movementDirection = toPlayer;
         else if (distance < _rDefinition.preferredRange - 1.0f)
             movementDirection = -toPlayer;
@@ -532,6 +611,13 @@ namespace Gameplay
         if (movementDirection.isZero())
             return;
 
+        MoveEnemy(_rEnemy, movementDirection * (_rDefinition.movementSpeed * _rContext.deltaTime));
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cEnemyManager::MoveEnemy(sEnemy& _rEnemy, const Engine::Math::cVec3f& _rMovement)
+    {
         const float c_radius     = 0.45f * _rEnemy.scale;
         const float c_halfHeight = 0.75f * _rEnemy.scale;
 
@@ -540,8 +626,7 @@ namespace Gameplay
         collider.radius     = c_radius;
         collider.halfHeight = c_halfHeight;
 
-        const Engine::Math::cVec3f movement = movementDirection * (_rDefinition.movementSpeed * _rContext.deltaTime);
-        const Engine::Math::cVec3f center   = Engine::Physics::CollisionWorld::MoveCapsule(collider, movement);
+        const Engine::Math::cVec3f center = Engine::Physics::CollisionWorld::MoveCapsule(collider, _rMovement);
         _rEnemy.position = {center.x(), _rEnemy.position.y(), center.z()};
 
         float groundHeight = _rEnemy.position.y();
@@ -585,9 +670,10 @@ namespace Gameplay
 
         projectile.position  = _rEnemy.position + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f) + _rEnemy.attackDirection * 0.7f;
         projectile.direction = _rEnemy.attackDirection;
-        projectile.speed     = 9.0f;
+        projectile.speed     = _rEnemy.type == World::sEnemyType::ForestThornshooter ? 13.0f : 9.0f;
         projectile.damage    = _rDefinition.attackDamage;
         projectile.lifetime  = 2.5f;
+        projectile.radius    = _rEnemy.type == World::sEnemyType::ForestThornshooter ? 0.3f : 0.8f;
 
         if (_rEnemy.type == World::sEnemyType::ForestSporecap)
             _rProjectileManager.SpawnSpore(projectile);

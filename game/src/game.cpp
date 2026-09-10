@@ -226,7 +226,7 @@ void cGame::OnDrawUI()
     // Navigation uses immutable layout data even before an arena's chunk is loaded.
     for (const auto& definition : World::WorldGenerator::GetLayout().dungeons)
     {
-        auto& dungeon = hudState.dungeons[static_cast<size_t>(definition.type)];
+        auto& dungeon = hudState.dungeons[static_cast<size_t>(definition.bossId)];
         const auto offset = definition.center - m_playerController.GetPosition();
 
         dungeon.offsetX  = offset.x();
@@ -242,7 +242,7 @@ void cGame::OnDrawUI()
         if (pEnemy == nullptr || !pEnemy->isBoss)
             continue;
 
-        auto& dungeon = hudState.dungeons[static_cast<size_t>(pEnemy->type)];
+        auto& dungeon = hudState.dungeons[static_cast<size_t>(pEnemy->bossId)];
         dungeon.defeated       = pEnemy->state == Gameplay::eEnemyState::Dead;
         dungeon.healthFraction = pEnemy->health / pEnemy->definition.maxHealth;
     }
@@ -533,6 +533,30 @@ bool cGame::LoadEnemyModels()
 
     LoadPoseModel("./assets/models/forest_sporecap_attack.json", m_sporecapModel, m_sporecapAttackModel);
 
+    if (!GFX::ShapeModelLoader::LoadFromFile("./assets/models/forest_thornshooter.json", m_thornshooterModel, errorMessage))
+    {
+        std::cerr << "Failed to load forest_thornshooter: " << errorMessage << '\n';
+        return false;
+    }
+
+    LoadPoseModel("./assets/models/forest_thornshooter_attack.json", m_thornshooterModel, m_thornshooterAttackModel);
+
+    if (!GFX::ShapeModelLoader::LoadFromFile("./assets/models/forest_rootcharger.json", m_rootchargerModel, errorMessage))
+    {
+        std::cerr << "Failed to load forest_rootcharger: " << errorMessage << '\n';
+        return false;
+    }
+
+    LoadPoseModel("./assets/models/forest_rootcharger_attack.json", m_rootchargerModel, m_rootchargerAttackModel);
+
+    if (!GFX::ShapeModelLoader::LoadFromFile("./assets/models/forest_barkguard.json", m_barkguardModel, errorMessage))
+    {
+        std::cerr << "Failed to load forest_barkguard: " << errorMessage << '\n';
+        return false;
+    }
+
+    LoadPoseModel("./assets/models/forest_barkguard_attack.json", m_barkguardModel, m_barkguardAttackModel);
+
     LoadPoseModel("./assets/models/enemy_03_attack.json", m_enemy03Model, m_enemy03AttackModel);
     LoadPoseModel("./assets/models/enemy_04_attack.json", m_enemy04Model, m_enemy04AttackModel);
     return true;
@@ -610,6 +634,18 @@ void cGame::SpawnEnemies(const std::vector<World::sEnemySpawn>& _rSpawns, const 
 
         case World::sEnemyType::ForestSporecap:
             pModel = &m_sporecapModel;
+            break;
+
+        case World::sEnemyType::ForestThornshooter:
+            pModel = &m_thornshooterModel;
+            break;
+
+        case World::sEnemyType::ForestRootcharger:
+            pModel = &m_rootchargerModel;
+            break;
+
+        case World::sEnemyType::ForestBarkguard:
+            pModel = &m_barkguardModel;
             break;
         }
 
@@ -1331,6 +1367,9 @@ void cGame::PrepareEnemyHealthBars(const GFX::cCamera& _rCamera)
             ? c_crawlerHealthBarOffset
             : pEnemy->type == World::sEnemyType::ForestThornwolf ? 2.2f
             : pEnemy->type == World::sEnemyType::ForestSporecap ? 2.7f
+            : pEnemy->type == World::sEnemyType::ForestThornshooter ? 2.8f
+            : pEnemy->type == World::sEnemyType::ForestRootcharger ? 2.4f
+            : pEnemy->type == World::sEnemyType::ForestBarkguard ? 3.0f
             : c_bruteHealthBarOffset;
 
         const cVec3f anchor = pEnemy->position + cVec3f(0.0f, heightOffset * pEnemy->scale, 0.0f);
@@ -1384,10 +1423,14 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
         if (pEnemy == nullptr)
             continue;
 
-        const bool isAttacking = pEnemy->state == Gameplay::eEnemyState::AttackWindup || pEnemy->state == Gameplay::eEnemyState::AttackRecovery;
+        const bool isAttacking = pEnemy->state == Gameplay::eEnemyState::AttackWindup || pEnemy->state == Gameplay::eEnemyState::AttackRecovery
+            || pEnemy->state == Gameplay::eEnemyState::Dash;
 
         const bool isThornwolf      = pEnemy->type == World::sEnemyType::ForestThornwolf;
-        const bool hasWalkAnimation = isThornwolf || pEnemy->type == World::sEnemyType::ForestSporecap;
+        const bool hasWalkAnimation = isThornwolf || pEnemy->type == World::sEnemyType::ForestSporecap
+            || pEnemy->type == World::sEnemyType::ForestThornshooter
+            || pEnemy->type == World::sEnemyType::ForestRootcharger
+            || pEnemy->type == World::sEnemyType::ForestBarkguard;
         const cVec3f displacement   = pEnemy->position - visual.previousPosition;
 
         visual.previousPosition = pEnemy->position;
@@ -1427,6 +1470,9 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
         const sShapeModelDesc& attackModel = pEnemy->type == World::sEnemyType::ForestCrawler ? m_enemy03AttackModel
             : pEnemy->type == World::sEnemyType::ForestThornwolf ? m_thornwolfAttackModel
             : pEnemy->type == World::sEnemyType::ForestSporecap ? m_sporecapAttackModel
+            : pEnemy->type == World::sEnemyType::ForestThornshooter ? m_thornshooterAttackModel
+            : pEnemy->type == World::sEnemyType::ForestRootcharger ? m_rootchargerAttackModel
+            : pEnemy->type == World::sEnemyType::ForestBarkguard ? m_barkguardAttackModel
             : m_enemy04AttackModel;
 
         for (size_t partIndex = 0; partIndex < visual.renderParts.size(); ++partIndex)
@@ -1437,7 +1483,7 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
             const float walkWeight = visual.walkWeight * (1.0f - pEnemy->attackPoseWeight);
             if (hasWalkAnimation && walkWeight > 0.0f)
             {
-                // Both forest models keep their feet below y=0.5; use the rest pose to identify legs.
+                // Forest models keep their feet below y=0.5; use the rest pose to identify legs.
                 const cVec3f& restPosition = renderPart.transform.position;
                 const bool isLeg = restPosition.y() < 0.5f;
                 const float bounce = (1.0f - std::cos(2.0f * visual.walkPhase)) * 0.025f * walkWeight;

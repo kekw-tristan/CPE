@@ -30,13 +30,15 @@ namespace Gameplay
         Chase,
         AttackWindup,
         AttackRecovery,
+        Dash,
         Dead
     };
 
     enum class eEnemyAttackType
     {
         Melee,
-        ConeProjectile
+        ConeProjectile,
+        Dash
     };
 
     struct sEnemyDefinition
@@ -51,6 +53,9 @@ namespace Gameplay
         float attackWindup;
         float attackRecovery;
         eEnemyAttackType attackType;
+        float guardedDamageMultiplier = 1.0f;
+        float dashSpeed = 0.0f;
+        float dashDuration = 0.0f;
     };
 
     struct sEnemy
@@ -69,6 +74,7 @@ namespace Gameplay
         float stateTime            = 0.0f;
         float attackCooldown       = 0.0f;
         float attackPoseWeight     = 0.0f;
+        bool dashHitPlayer         = false;
         eEnemyState state          = eEnemyState::Idle;
         uint64_t transformRevision = 1;
     };
@@ -121,6 +127,7 @@ namespace Gameplay
 
             const sEnemyDefinition& GetDefinition(World::sEnemyType::Enum _type) const;
             void UpdateEnemy(sEnemy& _rEnemy, const sEnemyDefinition& _rDefinition, const sEnemyUpdateContext& _rContext, cProjectileManager& _rProjectileManager);
+            void MoveEnemy(sEnemy& _rEnemy, const Engine::Math::cVec3f& _rMovement);
             void BeginAttack(sEnemy& _rEnemy, const Engine::Math::cVec3f& _rDirection);
             void ExecuteAttack(sEnemy& _rEnemy, const sEnemyDefinition& _rDefinition, const sEnemyUpdateContext& _rContext, cProjectileManager& _rProjectileManager);
 
