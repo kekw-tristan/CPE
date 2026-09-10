@@ -95,16 +95,18 @@ namespace Gameplay
         float RaySphereDistance(const Engine::Math::cVec3f& _rOrigin, const Engine::Math::cVec3f& _rDirection, const Engine::Math::cVec3f& _rCenter, float _radius, float _maximumDistance)
         {
             const Engine::Math::cVec3f offset = _rOrigin - _rCenter;
+            
             const float b = offset.dot(_rDirection);
             const float c = offset.dot(offset) - _radius * _radius;
+
             const float discriminant = b * b - c;
         
             if (discriminant < 0.0f)
                 return _maximumDistance;
         
-            const float root = std::sqrt(discriminant);
-            const float nearDistance = -b - root;
-            const float farDistance = -b + root;
+            const float root            = std::sqrt(discriminant);
+            const float nearDistance    = -b - root;
+            const float farDistance     = -b + root;
         
             if (nearDistance >= 0.0f && nearDistance < _maximumDistance)
                 return nearDistance;
@@ -119,19 +121,20 @@ namespace Gameplay
 
         float RayEnemyCapsuleDistance(const Engine::Math::cVec3f& _rOrigin, const Engine::Math::cVec3f& _rDirection, const sEnemy& _rEnemy, float _maximumDistance)
         {
-            const float radius = 0.45f * _rEnemy.scale;
-            const float halfHeight = 0.75f * _rEnemy.scale;
+            const float radius      = 0.45f * _rEnemy.scale;
+            const float halfHeight  = 0.75f * _rEnemy.scale;
         
             const Engine::Math::cVec3f center = _rEnemy.position + Engine::Math::cVec3f(0.0f, radius + halfHeight, 0.0f);
+
             const float bottomY = center.y() - halfHeight;
-            const float topY = center.y() + halfHeight;
+            const float topY    = center.y() + halfHeight;
         
             float nearestDistance = _maximumDistance;
         
-            const float originX = _rOrigin.x() - center.x();
-            const float originZ = _rOrigin.z() - center.z();
-            const float directionX = _rDirection.x();
-            const float directionZ = _rDirection.z();
+            const float originX     = _rOrigin.x() - center.x();
+            const float originZ     = _rOrigin.z() - center.z();
+            const float directionX  = _rDirection.x();
+            const float directionZ  = _rDirection.z();
         
             const float a = directionX * directionX + directionZ * directionZ;
         
@@ -170,16 +173,19 @@ namespace Gameplay
 
         bool SphereIntersectsEnemyCapsule(const Engine::Math::cVec3f& _rPosition, float _radius, const sEnemy& _rEnemy)
         {
-            const float capsuleRadius = 0.45f * _rEnemy.scale;
-            const float capsuleHalfHeight = 0.75f * _rEnemy.scale;
+            const float capsuleRadius       = 0.45f * _rEnemy.scale;
+            const float capsuleHalfHeight   = 0.75f * _rEnemy.scale;
         
             const Engine::Math::cVec3f capsuleCenter = _rEnemy.position + Engine::Math::cVec3f(0.0f, capsuleRadius + capsuleHalfHeight, 0.0f);
             const Engine::Math::cVec3f capsuleBottom = capsuleCenter - Engine::Math::cVec3f(0.0f, capsuleHalfHeight, 0.0f);
-            const Engine::Math::cVec3f capsuleTop = capsuleCenter + Engine::Math::cVec3f(0.0f, capsuleHalfHeight, 0.0f);
+            const Engine::Math::cVec3f capsuleTop    = capsuleCenter + Engine::Math::cVec3f(0.0f, capsuleHalfHeight, 0.0f);
         
             const Engine::Math::cVec3f capsuleSegment = capsuleTop - capsuleBottom;
+
             const float segmentLengthSquared = capsuleSegment.lengthSquared();
+            
             const float t = segmentLengthSquared > 0.000001f ? std::clamp((_rPosition - capsuleBottom).dot(capsuleSegment) / segmentLengthSquared, 0.0f, 1.0f) : 0.0f;
+            
             const Engine::Math::cVec3f closestPoint = capsuleBottom + capsuleSegment * t;
         
             const float combinedRadius = capsuleRadius + _radius;
@@ -200,12 +206,7 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    sEnemyHandle cEnemyManager::Spawn(
-        World::sEnemyType::Enum _type,
-        const Engine::Math::cVec3f& _rPosition,
-        float _rotation,
-        bool _isBoss,
-        World::sBossId::Enum _bossId)
+    sEnemyHandle cEnemyManager::Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation, bool _isBoss, World::sBossId::Enum _bossId)
     {
         const sEnemyDefinition& definition = GetDefinition(_type);
         uint32_t slotIndex;
@@ -231,18 +232,21 @@ namespace Gameplay
         slot.enemy.type     = _type;
         slot.enemy.position = _rPosition;
         slot.enemy.rotation = _rotation;
-        slot.enemy.isBoss = _isBoss;
-        slot.enemy.bossId = _isBoss ? _bossId : World::sBossId::Undefined;
+        slot.enemy.isBoss   = _isBoss;
+        slot.enemy.bossId   = _isBoss ? _bossId : World::sBossId::Undefined;
+        
         const bool miniboss = _isBoss && _bossId == World::sBossId::Undefined;
-        slot.enemy.scale = _isBoss ? (miniboss ? 1.8f : 2.5f) : 1.0f;
+
+        slot.enemy.scale        = _isBoss ? (miniboss ? 1.8f : 2.5f) : 1.0f;
         slot.enemy.homePosition = _rPosition;
-        slot.enemy.definition = definition;
+        slot.enemy.definition   = definition;
         if (_isBoss)
         {
-            slot.enemy.definition.maxHealth *= miniboss ? 3.5f : 6.0f;
-            slot.enemy.definition.attackDamage *= miniboss ? 1.25f : 1.5f;
-            slot.enemy.definition.aggroRange = 24.0f;
-            slot.enemy.definition.attackWindup *= 1.4f;
+            slot.enemy.definition.maxHealth     *= miniboss ? 3.5f : 6.0f;
+            slot.enemy.definition.attackDamage  *= miniboss ? 1.25f : 1.5f;
+            slot.enemy.definition.aggroRange    = 24.0f;
+            slot.enemy.definition.attackWindup  *= 1.4f;
+
             if (definition.attackType == eEnemyAttackType::Melee)
                 slot.enemy.definition.attackRange *= slot.enemy.scale;
         }
@@ -314,9 +318,11 @@ namespace Gameplay
         if (!slot.occupied || slot.generation != _handle.generation || slot.enemy.state == eEnemyState::Dead)
             return;
 
-        const bool isGuarding = slot.enemy.state == eEnemyState::Idle || slot.enemy.state == eEnemyState::Chase;
-        const float damage = _damage * (isGuarding ? slot.enemy.definition.guardedDamageMultiplier : 1.0f);
+        const bool  isGuarding  = slot.enemy.state == eEnemyState::Idle || slot.enemy.state == eEnemyState::Chase;
+        const float damage      = _damage * (isGuarding ? slot.enemy.definition.guardedDamageMultiplier : 1.0f);
+
         slot.enemy.health = std::max(0.0f, slot.enemy.health - damage);
+
         if (slot.enemy.health == 0.0f)
         {
             slot.enemy.state     = eEnemyState::Dead;
@@ -647,6 +653,7 @@ namespace Gameplay
         _rEnemy.position = {center.x(), _rEnemy.position.y(), center.z()};
 
         float groundHeight = _rEnemy.position.y();
+
         if (Engine::Physics::CollisionWorld::FindGroundHeight(_rEnemy.position,
             _rEnemy.position.y() + 1.0f, groundHeight))
         {
@@ -687,12 +694,12 @@ namespace Gameplay
 
         if (_rDefinition.attackType == eEnemyAttackType::Shockwave)
         {
-            projectile.position = _rEnemy.position + Engine::Math::cVec3f(0.0f, 0.2f, 0.0f);
-            projectile.damage = _rDefinition.attackDamage;
-            projectile.isAreaOfEffect = true;
-            projectile.areaRadius = _rDefinition.attackRange + 0.5f;
-            projectile.areaDuration = 0.8f;
-            projectile.areaGrowthTime = 0.8f;
+            projectile.position         = _rEnemy.position + Engine::Math::cVec3f(0.0f, 0.2f, 0.0f);
+            projectile.damage           = _rDefinition.attackDamage;
+            projectile.isAreaOfEffect   = true;
+            projectile.areaRadius       = _rDefinition.attackRange + 0.5f;
+            projectile.areaDuration     = 0.8f;
+            projectile.areaGrowthTime   = 0.8f;
             _rProjectileManager.SpawnShockwave(projectile);
             return;
         }
@@ -706,15 +713,19 @@ namespace Gameplay
 
         if (_rEnemy.type == World::sEnemyType::ForestSporecap)
         {
-            // Aim at the ground so a missed spore still leaves a hazard near its target.
-            const Engine::Math::cVec3f target = _rContext.playerPosition + Engine::Math::cVec3f(0.0f, 0.1f, 0.0f);
-            projectile.direction = (target - projectile.position).normalized();
-            projectile.speed = 6.5f;
-            projectile.isAreaOfEffect = true;
-            projectile.areaRadius = _rEnemy.isBoss ? 5.0f : 4.0f;
-            projectile.areaDuration = 4.5f;
-            projectile.areaGrowthTime = 0.9f;
-            projectile.damage = _rDefinition.attackDamage * 2.0f;
+            const Engine::Math::cVec3f target = _rContext.playerPosition + Engine::Math::cVec3f(0.0f, 0.2f, 0.0f);
+            
+            projectile.position = _rEnemy.position + Engine::Math::cVec3f(0.0f, 1.5f * _rEnemy.scale, 0.0f) + _rEnemy.attackDirection * (0.6f * _rEnemy.scale);
+            projectile.speed    = 10.5f;
+            
+            AimMushroomThrow(projectile, target);
+            
+            projectile.isAreaOfEffect   = true;
+            projectile.areaRadius       = _rEnemy.isBoss ? 5.0f : 4.0f;
+            projectile.areaDuration     = 4.5f;
+            projectile.areaGrowthTime   = 0.9f;
+            projectile.damage           = _rDefinition.attackDamage * 2.0f;
+
             _rProjectileManager.SpawnSpore(projectile);
         }
         else if (_rEnemy.type == World::sEnemyType::ForestCrawler)

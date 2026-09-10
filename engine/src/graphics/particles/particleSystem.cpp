@@ -221,13 +221,18 @@ namespace Engine::GFX
 
     void cParticleSystem::AddSurface(const sParticleSurface& _rSurface, const std::array<float, 4>& _rColor, float _age)
     {
-        if (_rSurface.radius <= 0.0f || m_surfaces.size() == c_maxParticleSurfaces)
+        if ((_rSurface.radius <= 0.0f && _rSurface.tileHalfExtent <= 0.0f) || m_surfaces.size() == c_maxParticleSurfaces)
             return;
 
         sParticleData data{};
         data.positionSize = { _rSurface.position.x(), _rSurface.position.y() + 0.04f, _rSurface.position.z(), _rSurface.radius };
+        if (_rSurface.tileHalfExtent > 0.0f)
+        {
+            data.positionSize[3] = _rSurface.tileHalfExtent;
+            data.surfaceClip = { _rSurface.areaClip[0], _rSurface.areaClip[1], _rSurface.areaClip[2], 0.0f };
+        }
         data.color = _rColor;
-        data.normalMode = { _rSurface.normal.x(), _rSurface.normal.y(), _rSurface.normal.z(), 1.0f };
+        data.normalMode = { _rSurface.normal.x(), _rSurface.normal.y(), _rSurface.normal.z(), _rSurface.tileHalfExtent > 0.0f ? 2.0f : 1.0f };
         data.rotationAge = { 0.0f, _age, 0.0f, 0.0f };
         m_surfaces.push_back(data);
     }
@@ -247,6 +252,7 @@ namespace Engine::GFX
             for (size_t index = 0; index < 4; ++index)
                 data.color[index] = particle.definition.startColor[index] * (1.0f - t) + particle.definition.endColor[index] * t;
             data.color[3] *= std::min(particle.age * 15.0f, 1.0f);
+            data.normalMode[3] = -static_cast<float>(particle.definition.appearance);
             data.rotationAge = { particle.rotation + particle.age * 0.3f, particle.age, 0.0f, 0.0f };
             m_renderData.push_back(data);
         }

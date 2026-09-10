@@ -18,6 +18,7 @@
 
 #include "world/worldGenerator.h"
 #include "world/worldConfig.h"
+#include "physics/collisionWorld.h"
 #include "world/chunk.h"
 #include "world/terrainHeight.h"
 
@@ -1165,7 +1166,13 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
         {
             projectile.areaRadius = spellStats.projectileRadius;
             projectile.areaDuration = spellStats.duration;
-            projectile.areaGrowthTime = 0.9f;
+            projectile.areaGrowthTime = 0.65f;
+            const float targetDistance = std::min(cVec3f::distance(castPosition, aimPosition), 18.0f);
+            cVec3f target = castPosition + projectile.direction * targetDistance;
+            float groundHeight = target.y();
+            if (Engine::Physics::CollisionWorld::FindGroundHeight(target, target.y() + 3.0f, groundHeight))
+                target = { target.x(), groundHeight + 0.2f, target.z() };
+            Gameplay::AimMushroomThrow(projectile, target);
         }
 
         switch (spellDefinition.castType)
@@ -1595,7 +1602,7 @@ void cGame::SyncProjectileRenderInstances()
                     : isSpore ? std::array<float, 4>{ 0.48f, 0.85f, 0.12f, 1.0f }
                     : std::array<float, 4>{ 0.35f, 1.0f, 0.18f, 1.0f };
 
-            if (isPlayerSpell)
+            if (isPlayerSpell && !isSpore)
             {
                 pInstance->materialIndex = m_playerSphereMaterial;
             }
@@ -1627,7 +1634,7 @@ void cGame::SyncProjectileRenderInstances()
                     : projectile.type == Gameplay::eProjectileType::PlayerCone
                         ? Math::cVec3f(0.95f, 0.52f, 0.12f)
                         : Math::cVec3f(0.20f, 0.55f, 1.0f);
-                light.intensity = 10.0f;
+                light.intensity = isPlayerSpore ? 2.0f : 10.0f;
                 light.position  = projectile.position;
                 light.radius    = 4.0f;
 
@@ -1674,8 +1681,11 @@ void cGame::SyncProjectileRenderInstances()
         else if (projectile.type == Gameplay::eProjectileType::PlayerSpore
             || projectile.type == Gameplay::eProjectileType::EnemySpore)
         {
-            transform.rotation = { 0.0f, projectile.lifetime * 2.0f, 0.0f };
-            transform.scale = { 0.45f, 0.22f, 0.45f };
+            const float horizontal = std::sqrt(projectile.direction.x() * projectile.direction.x()
+                + projectile.direction.z() * projectile.direction.z());
+            transform.rotation = { std::clamp(-std::atan2(projectile.direction.y(), horizontal) * 0.65f, -0.65f, 0.8f),
+                std::atan2(projectile.direction.x(), projectile.direction.z()), std::sin(projectile.flightAge * 7.0f) * 0.12f };
+            transform.scale = { 1.0f, 1.0f, 1.0f };
         }
         else
         {
@@ -1692,9 +1702,14 @@ void cGame::SyncProjectileRenderInstances()
         if (visual->pStem != nullptr)
         {
             sTransform stem{};
-            stem.position = projectile.position - cVec3f(0.0f, 0.28f, 0.0f);
-            stem.scale = projectile.areaActive ? cVec3f(0.0f, 0.0f, 0.0f) : cVec3f(0.12f, 0.3f, 0.12f);
-            visual->pStem->worldMatrix = CreateTransformMatrix(stem);
+            stem.position = { 0.0f, -0.11f, 0.0f };
+            stem.scale = { 0.18f, 0.38f, 0.18f };
+            sTransform cap{};
+            cap.position = { 0.0f, 0.15f, 0.0f };
+            cap.scale = { 0.7f, 0.34f, 0.7f };
+            const cMatrix4x4f mushroomMatrix = CreateTransformMatrix(transform);
+            visual->pStem->worldMatrix = mushroomMatrix * CreateTransformMatrix(stem);
+            visual->pInstance->worldMatrix = mushroomMatrix * CreateTransformMatrix(cap);
         }
 
         if (sLight* pLight = LightManager::TryGetLight(visual->light))
@@ -1719,6 +1734,7 @@ void cGame::SyncProjectileRenderInstances()
             m_pool.Destroy(visual->pStem);
         }
         m_particleSystem.StopEmitter(visual->sporeEmitter);
+        m_particleSystem.StopEmitter(visual->bubbleEmitter);
         m_pool.Destroy(visual->pInstance);
         visual = m_projectileVisuals.erase(visual);
         instanceListChanged = true;
@@ -1738,13 +1754,13 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
     const auto poisonDefinition = [](bool _player)
     {
         sParticleDefinition definition{};
-        definition.spawnRate    = 36.0f;
-        definition.lifetime     = 1.4f;
-        definition.startSize    = 0.06f;
-        definition.endSize      = 0.2f;
-        definition.speed        = 0.3f;
-        definition.spread       = 0.25f;
-        definition.startColor   = _player ? std::array<float, 4>{ 0.12f, 0.85f, 0.5f, 0.65f } : std::array<float, 4>{ 0.65f, 0.8f, 0.08f, 0.65f };
+        definition.spawnRate    = 45.0f;
+        definition.lifetime     = 0.55f;
+        definition.startSize    = 0.035f;
+        definition.endSize      = 0.11f;
+        definition.speed        = 0.08f;
+        definition.spread       = 0.15f;
+        definition.startColor   = _player ? std::array<float, 4>{ 0.12f, 0.85f, 0.38f, 0.65f } : std::array<float, 4>{ 0.4f, 0.9f, 0.015f, 0.65f };
         definition.endColor     = definition.startColor;
         definition.endColor[3]  = 0.0f;
 
@@ -1772,6 +1788,7 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
         if (!World::WorldGenerator::GetLoadedChunks().contains(chunk))
         {
             m_particleSystem.StopEmitter(visual->sporeEmitter, true);
+            m_particleSystem.StopEmitter(visual->bubbleEmitter, true);
             continue;
         }
 
@@ -1786,26 +1803,43 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
             sParticleDefinition definition = poisonDefinition(player);
             if (projectile.areaActive)
             {
-                definition.spawnRate = 65.0f;
-                definition.startSize = 0.12f;
-                definition.endSize   = 0.4f;
-                definition.lifetime  = 1.8f;
-                definition.speed     = 0.18f;
+                definition.appearance = eParticleAppearance::Vapor;
+                definition.spawnRate = 75.0f;
+                definition.startSize = 0.35f;
+                definition.endSize   = 0.85f;
+                definition.lifetime  = 2.0f;
+                definition.speed     = 0.13f;
+                definition.startColor[3] = 0.32f;
             }
             visual->sporeEmitter = m_particleSystem.CreateEmitter(definition, projectile.position);
         }
         m_particleSystem.SetPosition(visual->sporeEmitter, projectile.position);
         if (projectile.areaActive)
         {
+            if (!m_particleSystem.IsAlive(visual->bubbleEmitter))
+            {
+                sParticleDefinition bubbles = poisonDefinition(player);
+                bubbles.appearance = eParticleAppearance::Bubble;
+                bubbles.spawnRate = 14.0f;
+                bubbles.startSize = 0.045f;
+                bubbles.endSize = 0.13f;
+                bubbles.lifetime = 1.0f;
+                bubbles.speed = 0.11f;
+                bubbles.spread = 0.05f;
+                visual->bubbleEmitter = m_particleSystem.CreateEmitter(bubbles, projectile.position);
+            }
             std::array<sParticleSurface, Gameplay::sProjectile::c_maxGroundSamples> surfaces{};
             std::array<float, 4> color = poisonDefinition(player).startColor;
-            color[3] = 0.48f;
+            color[3] = 0.88f;
             for (size_t index = 0; index < projectile.groundSampleCount; ++index)
             {
                 surfaces[index] = { projectile.groundSamples[index], projectile.groundNormals[index], projectile.GetGroundSampleRadius(index) };
+                surfaces[index].tileHalfExtent = projectile.areaRadius / 13.0f;
+                surfaces[index].areaClip = { projectile.position.x(), projectile.position.z(), projectile.radius };
                 m_particleSystem.AddSurface(surfaces[index], color, projectile.areaAge);
             }
             m_particleSystem.SetSurfaces(visual->sporeEmitter, { surfaces.data(), projectile.groundSampleCount });
+            m_particleSystem.SetSurfaces(visual->bubbleEmitter, { surfaces.data(), projectile.groundSampleCount });
         }
     }
 
@@ -1828,6 +1862,13 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
         definition.lifetime     = 0.85f;
 
         m_particleSystem.Burst(definition, impact.position, 36);
+        definition.appearance = eParticleAppearance::Vapor;
+        definition.startSize = 0.3f;
+        definition.endSize = 1.0f;
+        definition.speed = 0.35f;
+        definition.spread = 1.1f;
+        definition.startColor[3] = 0.45f;
+        m_particleSystem.Burst(definition, impact.position, 12);
     }
     m_projectileManager.ClearImpactEvents();
 }

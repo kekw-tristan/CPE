@@ -115,7 +115,11 @@ int main()
     std::array<sParticleSurface, sProjectile::c_maxGroundSamples> surfaces{};
     const size_t sampleCount = area.groundSampleCount;
     for (size_t index = 0; index < sampleCount; ++index)
+    {
         surfaces[index] = { area.groundSamples[index], area.groundNormals[index], area.GetGroundSampleRadius(index) };
+        surfaces[index].tileHalfExtent = area.areaRadius / 13.0f;
+        surfaces[index].areaClip = { area.position.x(), area.position.z(), area.radius };
+    }
     definition.spawnRate = 65.0f;
     definition.lifetime = 1.8f;
     definition.speed = 0.18f;
@@ -159,5 +163,23 @@ int main()
     assert(enemies.TryGetEnemy(elevated)->health == health);
     assert(shots.ConsumePlayerDamage() == 0.0f);
     assert(SpellManager::GetBoss(World::sBossId::ForestSporecap).spellReward == sSpellId::SporeOrb);
+    shots.Clear();
+    desc.position = { -8.0f, 5.0f, 8.0f };
+    desc.speed = 12.0f;
+    AimMushroomThrow(desc, { 4.0f, 2.2f, 8.0f });
+    assert(desc.gravity > 0.0f && desc.direction.y() > 0.0f);
+    shots.SpawnPlayerSpore(desc);
+    shots.Update(0.2f, { 20.0f, 0.0f, 20.0f }, enemies);
+    assert(!shots.GetProjectiles().front().areaActive);
+    assert(shots.GetProjectiles().front().position.y() > 5.0f);
+    shots.Update(1.0f, { 20.0f, 0.0f, 20.0f }, enemies);
+    const auto landing = shots.GetProjectiles().front().position;
+    assert(shots.GetProjectiles().front().areaActive && std::abs(landing.x() - 4.0f) < 0.5f);
+    cProjectileManager fineSteps;
+    fineSteps.SpawnPlayerSpore(desc);
+    for (int frame = 0; frame < 60; ++frame)
+        fineSteps.Update(0.02f, { 20.0f, 0.0f, 20.0f }, enemies);
+    assert(Engine::Math::cVec3f::distance(landing, fineSteps.GetProjectiles().front().position) < 0.15f);
+    std::cout << "PASS: ballistic rise/landing and frame partitions.\n";
     std::cout << "PASS: handles, capacity, pause, cleanup, frame partitions, slopes, steps, teams, long-frame impact, boss reward.\n";
 }

@@ -306,12 +306,13 @@ namespace Engine::GFX
         shaderStages[1].module = fragShaderModule;
 
         VkVertexInputBindingDescription particleBinding{ 0, sizeof(sParticleData), VK_VERTEX_INPUT_RATE_INSTANCE };
-        const std::array<VkVertexInputAttributeDescription, 4> particleAttributes =
+        const std::array<VkVertexInputAttributeDescription, 5> particleAttributes =
         {{
             { 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sParticleData, positionSize) },
             { 1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sParticleData, color) },
             { 2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sParticleData, normalMode) },
-            { 3, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sParticleData, rotationAge) }
+            { 3, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sParticleData, rotationAge) },
+            { 4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sParticleData, surfaceClip) }
         }};
         vertexInputInfo.pVertexBindingDescriptions      = &particleBinding;
         vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(particleAttributes.size());

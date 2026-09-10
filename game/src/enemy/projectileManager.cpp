@@ -38,9 +38,6 @@ namespace Gameplay
             {
                 for (int x = -6; x <= 6; ++x)
                 {
-                    if (x * x + z * z > 36)
-                        continue;
-
                     const Engine::Math::cVec3f sample = _rProjectile.position + Engine::Math::cVec3f(x * spacing, 0.0f, z * spacing);
 
                     if (Engine::Physics::CollisionWorld::FindGroundHeight(sample, _rProjectile.position.y() + _rProjectile.areaRadius, groundHeight))
@@ -68,7 +65,14 @@ namespace Gameplay
         // Use the same world geometry as characters, with short steps to stop at the first contact.
         bool MoveProjectile(sProjectile& _rProjectile, float _deltaTime)
         {
-            const Engine::Math::cVec3f movement = _rProjectile.direction * (_rProjectile.speed * _deltaTime);
+            const Engine::Math::cVec3f velocity = _rProjectile.direction * _rProjectile.speed;
+            const Engine::Math::cVec3f acceleration(0.0f, -_rProjectile.gravity, 0.0f);
+            const Engine::Math::cVec3f movement = velocity * _deltaTime + acceleration * (0.5f * _deltaTime * _deltaTime);
+            const Engine::Math::cVec3f nextVelocity = velocity + acceleration * _deltaTime;
+
+            _rProjectile.speed = nextVelocity.length();
+            _rProjectile.direction = nextVelocity.normalized();
+            _rProjectile.flightAge += _deltaTime;
             
             Engine::Physics::sCapsuleCollider sphere{};
             sphere.center       = _rProjectile.position;
@@ -94,6 +98,21 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void AimMushroomThrow(sProjectileSpawnDesc& _rDesc, const Engine::Math::cVec3f& _rTarget)
+    {
+        const Engine::Math::cVec3f offset = _rTarget - _rDesc.position;
+        const float distance = std::sqrt(offset.x() * offset.x() + offset.z() * offset.z());
+        const float flightTime = std::clamp(distance / std::max(_rDesc.speed, 1.0f), 0.25f, 1.8f);
+        _rDesc.gravity = 12.0f;
+        const Engine::Math::cVec3f velocity = offset / flightTime
+            + Engine::Math::cVec3f(0.0f, 0.5f * _rDesc.gravity * flightTime, 0.0f);
+        _rDesc.speed = velocity.length();
+        _rDesc.direction = velocity.normalized();
+        _rDesc.lifetime = flightTime + 0.75f;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     float sProjectile::GetGroundSampleRadius(size_t _index) const
     {
         const Engine::Math::cVec3f offset = groundSamples[_index] - position;
@@ -114,10 +133,10 @@ namespace Gameplay
         {
             const Engine::Math::cVec3f local = _rPosition - groundSamples[index];
 
-            const float sampleRadius        = GetGroundSampleRadius(index);
+            const float halfExtent          = areaRadius / 13.0f;
             const float heightAboveGround   = local.dot(groundNormals[index]) / groundNormals[index].y();
 
-            if (sampleRadius > 0.0f && local.x() * local.x() + local.z() * local.z() <= sampleRadius * sampleRadius
+            if (std::abs(local.x()) <= halfExtent && std::abs(local.z()) <= halfExtent
                 && heightAboveGround >= -0.15f && heightAboveGround <= 0.65f)
             {
                 return true;
@@ -180,6 +199,7 @@ namespace Gameplay
         projectile.position         = _rDesc.position;
         projectile.direction        = _rDesc.direction.normalized();
         projectile.speed            = _rDesc.speed;
+        projectile.gravity          = std::max(0.0f, _rDesc.gravity);
         projectile.damage           = _rDesc.damage;
         projectile.lifetime         = _rDesc.lifetime;
         projectile.radius           = _rDesc.radius;

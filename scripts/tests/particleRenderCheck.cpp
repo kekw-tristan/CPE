@@ -97,22 +97,25 @@ namespace
                     {
                         for (int x = -6; x <= 6; ++x)
                         {
-                            if (x * x + z * z > 36)
-                                continue;
                             const float worldX = centerX + x * 4.0f / 6.5f;
                             const float worldZ = centerZ + z * 4.0f / 6.5f;
-                            surfaces[count++] = { { worldX, Height(worldX, worldZ), worldZ },
-                                Engine::Math::cVec3f(-0.25f, 1.0f, 0.0f).normalized(), 0.45f };
+                            surfaces[count] = { { worldX, Height(worldX, worldZ), worldZ },
+                                Engine::Math::cVec3f(-0.25f, 1.0f, 0.0f).normalized(),
+                                std::min(0.46f, std::max(0.0f, 4.0f - std::sqrt(float(x * x + z * z)) * 4.0f / 6.5f)) };
+                            surfaces[count].tileHalfExtent = 4.0f / 13.0f;
+                            surfaces[count].areaClip = { centerX, centerZ, 4.0f };
+                            ++count;
                         }
                     }
                     sParticleDefinition definition{};
-                    definition.spawnRate = 65.0f;
-                    definition.lifetime = 1.8f;
-                    definition.speed = 0.18f;
-                    definition.startSize = 0.12f;
-                    definition.endSize = 0.4f;
-                    definition.startColor = field % 2 ? std::array<float, 4>{ 0.12f, 0.85f, 0.5f, 0.65f }
-                        : std::array<float, 4>{ 0.65f, 0.8f, 0.08f, 0.65f };
+                    definition.appearance = eParticleAppearance::Vapor;
+                    definition.spawnRate = 75.0f;
+                    definition.lifetime = 2.0f;
+                    definition.speed = 0.13f;
+                    definition.startSize = 0.35f;
+                    definition.endSize = 0.85f;
+                    definition.startColor = field % 2 ? std::array<float, 4>{ 0.12f, 0.85f, 0.38f, 0.32f }
+                        : std::array<float, 4>{ 0.4f, 0.9f, 0.015f, 0.32f };
                     definition.endColor = definition.startColor;
                     definition.endColor[3] = 0.0f;
                     const auto emitter = m_particles.CreateEmitter(definition, { centerX, Height(centerX, centerZ), centerZ });
@@ -132,6 +135,7 @@ namespace
             {
                 using namespace Engine::GFX;
                 ++m_frame;
+                if (m_frame == 45) Capture("particle-single.bmp");
                 if (m_frame == 90) Capture("particle-overview.bmp");
                 if (m_frame == 180) Capture("particle-slope.bmp");
                 if (m_frame == 270) Capture("particle-near.bmp");
@@ -154,9 +158,13 @@ namespace
                 const auto start = std::chrono::steady_clock::now();
                 m_particles.BeginSurfaces();
                 for (size_t index = 0; index < m_surfaces.size(); ++index)
-                    m_particles.AddSurface(m_surfaces[index], index / 113 % 2
-                        ? std::array<float, 4>{ 0.12f, 0.85f, 0.5f, 0.48f }
-                        : std::array<float, 4>{ 0.65f, 0.8f, 0.08f, 0.48f }, m_frame / 60.0f);
+                {
+                    if (m_frame < 50 && index / 169 != 7)
+                        continue;
+                    m_particles.AddSurface(m_surfaces[index], index / 169 % 2
+                        ? std::array<float, 4>{ 0.12f, 0.85f, 0.38f, 0.88f }
+                        : std::array<float, 4>{ 0.4f, 0.9f, 0.015f, 0.88f }, m_frame / 60.0f);
+                }
                 m_particles.Update(1.0f / 60.0f);
                 m_cpuSum += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
                 const double gpu = GetParticleGpuMilliseconds();

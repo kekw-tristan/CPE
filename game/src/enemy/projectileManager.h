@@ -39,6 +39,8 @@ namespace Gameplay
         Engine::Math::cVec3f position;
         Engine::Math::cVec3f direction;
 
+        float gravity           = 0.0f;
+        float flightAge         = 0.0f;
         float speed             = 0.0f;
         float damage            = 0.0f;
         float lifetime          = 0.0f;
@@ -72,6 +74,7 @@ namespace Gameplay
         Engine::Math::cVec3f position{};
         Engine::Math::cVec3f direction{};
 
+        float gravity   = 0.0f;
         float speed     = 0.0f;
         float damage    = 0.0f;
         float lifetime  = 0.0f;
@@ -85,6 +88,8 @@ namespace Gameplay
         
         int pierces = 0;
     };
+
+    void AimMushroomThrow(sProjectileSpawnDesc& _rDesc, const Engine::Math::cVec3f& _rTarget);
 
     class cProjectileManager
     {

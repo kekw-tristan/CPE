@@ -109,6 +109,7 @@ class cGame : public cApplication
         struct sProjectileVisual
         {
             GFX::sParticleEmitterHandle sporeEmitter;
+            GFX::sParticleEmitterHandle bubbleEmitter;
             bool emittingArea = false;
             GFX::sInstanceData* pStem = nullptr;
             uint64_t            id        = 0;

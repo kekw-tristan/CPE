@@ -13,16 +13,17 @@ namespace Engine::GFX
     inline constexpr size_t c_maxParticleSurfaces = 32768;
     inline constexpr size_t c_maxParticleDraws = c_maxParticles + c_maxParticleSurfaces;
 
-    // Four float4 attributes shared with particles.hlsl. Normal.w selects surface rendering.
+    // Five float4 attributes shared with particles.hlsl. Normal.w selects the visual shape.
     struct sParticleData
     {
         std::array<float, 4> positionSize{};
         std::array<float, 4> color{};
         std::array<float, 4> normalMode{};
         std::array<float, 4> rotationAge{};
+        std::array<float, 4> surfaceClip{};
     };
 
-    static_assert(sizeof(sParticleData) == 64);
+    static_assert(sizeof(sParticleData) == 80);
 
     struct sParticleEmitterHandle
     {
@@ -37,10 +38,21 @@ namespace Engine::GFX
         Math::cVec3f position{};
         Math::cVec3f normal = { 0.0f, 1.0f, 0.0f };
         float radius = 0.0f;
+        float tileHalfExtent = 0.0f;
+        // X/Z center and radius of the entire area; tiles share one continuous mask.
+        std::array<float, 3> areaClip{};
+    };
+
+    enum class eParticleAppearance
+    {
+        Soft,
+        Vapor,
+        Bubble
     };
 
     struct sParticleDefinition
     {
+        eParticleAppearance appearance = eParticleAppearance::Soft;
         float spawnRate = 20.0f;
         float lifetime = 1.0f;
         float startSize = 0.1f;
