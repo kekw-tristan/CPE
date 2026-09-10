@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/healthBarData.h"
+#include "graphics/particles/particleData.h"
 #include "graphics/gfxConfig.h"
 
 #include <span>
@@ -79,7 +80,9 @@ namespace Engine::GFX
     void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
 
     void UpdateHealthBars(std::span<const sHealthBarData> _healthBars);
+    void UpdateParticles(std::span<const sParticleData> _particles);
 
+    double GetParticleGpuMilliseconds();
     cCamera& GetCamera();
 
     cModelEditorWindow& GetModelEitorWindow();

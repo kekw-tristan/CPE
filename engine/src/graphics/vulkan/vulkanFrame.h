@@ -18,6 +18,9 @@ namespace Engine::GFX
         cVulkanBuffer frameUniformedBuffer;
         VkDescriptorSet frameDescriptorSet = VK_NULL_HANDLE;
 
+        cVulkanBuffer particleBuffer;
+        uint32_t particleCount = 0;
+
         cVulkanBuffer healthBarBuffer;
         uint32_t healthBarCount = 0;
 

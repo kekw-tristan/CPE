@@ -1,13 +1,131 @@
 #include "projectileManager.h"
 
 #include "enemyManager.h"
+#include "physics/collider.h"
+#include "physics/collisionWorld.h"
 
 #include <algorithm>
+#include <cmath>
 
 // -------------------------------------------------------------------------------------------------------------------------
 
 namespace Gameplay
 {
+    namespace
+    {
+        void ActivateArea(sProjectile& _rProjectile)
+        {
+            _rProjectile.areaActive = true;
+            _rProjectile.speed      = 0.0f;
+            _rProjectile.areaAge    = 0.0f;
+            _rProjectile.radius     = 0.2f;
+            _rProjectile.lifetime   = _rProjectile.areaDuration;
+
+            float groundHeight = 0.0f;
+            if (Engine::Physics::CollisionWorld::FindGroundHeight(_rProjectile.position, _rProjectile.position.y(), groundHeight))
+            {
+                _rProjectile.position = { _rProjectile.position.x(), groundHeight + 0.2f, _rProjectile.position.z() };
+            }
+
+            if (_rProjectile.type != eProjectileType::EnemySpore && _rProjectile.type != eProjectileType::PlayerSpore)
+                return;
+
+            // Cache terrain/steps once at impact; visuals and damage share this footprint.
+            const float spacing = _rProjectile.areaRadius / 6.5f;
+            _rProjectile.groundSampleRadius = spacing * 0.75f;
+
+            for (int z = -6; z <= 6; ++z)
+            {
+                for (int x = -6; x <= 6; ++x)
+                {
+                    if (x * x + z * z > 36)
+                        continue;
+
+                    const Engine::Math::cVec3f sample = _rProjectile.position + Engine::Math::cVec3f(x * spacing, 0.0f, z * spacing);
+
+                    if (Engine::Physics::CollisionWorld::FindGroundHeight(sample, _rProjectile.position.y() + _rProjectile.areaRadius, groundHeight))
+                    {
+                        const size_t index = _rProjectile.groundSampleCount++;
+
+                        _rProjectile.groundSamples[index] = { sample.x(), groundHeight, sample.z() };
+                        
+                        float heightX = groundHeight;
+                        float heightZ = groundHeight;
+                        
+                        Engine::Physics::CollisionWorld::FindGroundHeight(sample + Engine::Math::cVec3f(0.1f, 0.0f, 0.0f), groundHeight + 0.3f, heightX);
+                        Engine::Physics::CollisionWorld::FindGroundHeight(sample + Engine::Math::cVec3f(0.0f, 0.0f, 0.1f), groundHeight + 0.3f, heightZ);
+
+                        // Tilt with slopes, but keep patches flat at abrupt step edges.
+                        const float slopeX = std::abs(heightX - groundHeight) < 0.25f ? (heightX - groundHeight) * 10.0f : 0.0f;
+                        const float slopeZ = std::abs(heightZ - groundHeight) < 0.25f ? (heightZ - groundHeight) * 10.0f : 0.0f;
+
+                        _rProjectile.groundNormals[index] = Engine::Math::cVec3f(-slopeX, 1.0f, -slopeZ).normalized();
+                    }
+                }
+            }
+        }
+
+        // Use the same world geometry as characters, with short steps to stop at the first contact.
+        bool MoveProjectile(sProjectile& _rProjectile, float _deltaTime)
+        {
+            const Engine::Math::cVec3f movement = _rProjectile.direction * (_rProjectile.speed * _deltaTime);
+            
+            Engine::Physics::sCapsuleCollider sphere{};
+            sphere.center       = _rProjectile.position;
+            sphere.radius       = 0.2f;
+            sphere.halfHeight   = 0.0f;
+
+            const Engine::Math::cVec3f expectedPosition = sphere.center + movement;
+
+            _rProjectile.position = Engine::Physics::CollisionWorld::MoveCapsule(sphere, movement);
+            bool hitWorld = Engine::Math::cVec3f::distanceSquared(expectedPosition, _rProjectile.position) > 0.00000001f;
+
+            float groundHeight = 0.0f;
+            if (Engine::Physics::CollisionWorld::FindGroundHeight(_rProjectile.position, std::max(sphere.center.y(), _rProjectile.position.y()) + sphere.radius, groundHeight)
+                && _rProjectile.position.y() - sphere.radius <= groundHeight)
+            {
+                _rProjectile.position = { _rProjectile.position.x(), groundHeight + sphere.radius, _rProjectile.position.z() };
+                hitWorld = true;
+            }
+
+            return hitWorld;
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    float sProjectile::GetGroundSampleRadius(size_t _index) const
+    {
+        const Engine::Math::cVec3f offset = groundSamples[_index] - position;
+        const float distance = std::sqrt(offset.x() * offset.x() + offset.z() * offset.z());
+        return std::min(groundSampleRadius, std::max(0.0f, radius - distance));
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool sProjectile::ContainsGroundPoint(const Engine::Math::cVec3f& _rPosition) const
+    {
+        const Engine::Math::cVec3f offset = _rPosition - position;
+
+        if (offset.x() * offset.x() + offset.z() * offset.z() > radius * radius)
+            return false;
+
+        for (size_t index = 0; index < groundSampleCount; ++index)
+        {
+            const Engine::Math::cVec3f local = _rPosition - groundSamples[index];
+
+            const float sampleRadius        = GetGroundSampleRadius(index);
+            const float heightAboveGround   = local.dot(groundNormals[index]) / groundNormals[index].y();
+
+            if (sampleRadius > 0.0f && local.x() * local.x() + local.z() * local.z() <= sampleRadius * sampleRadius
+                && heightAboveGround >= -0.15f && heightAboveGround <= 0.65f)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // -------------------------------------------------------------------------------------------------------------------------
 
     uint64_t cProjectileManager::SpawnCone(const sProjectileSpawnDesc& _rDesc)
@@ -20,6 +138,15 @@ namespace Gameplay
     uint64_t cProjectileManager::SpawnSpore(const sProjectileSpawnDesc& _rDesc)
     {
         return Spawn(_rDesc, eProjectileType::EnemySpore);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    uint64_t cProjectileManager::SpawnShockwave(const sProjectileSpawnDesc& _rDesc)
+    {
+        const uint64_t id = Spawn(_rDesc, eProjectileType::EnemyShockwave);
+        ActivateArea(m_projectiles.back());
+        return id;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -49,16 +176,19 @@ namespace Gameplay
     {
         sProjectile projectile{};
 
-        projectile.id        = m_nextId++;
-        projectile.position  = _rDesc.position;
-        projectile.direction = _rDesc.direction.normalized();
-        projectile.speed     = _rDesc.speed;
-        projectile.damage    = _rDesc.damage;
-        projectile.lifetime  = _rDesc.lifetime;
-        projectile.radius    = _rDesc.radius;
-        projectile.isAreaOfEffect = _rDesc.isAreaOfEffect;
+        projectile.id               = m_nextId++;
+        projectile.position         = _rDesc.position;
+        projectile.direction        = _rDesc.direction.normalized();
+        projectile.speed            = _rDesc.speed;
+        projectile.damage           = _rDesc.damage;
+        projectile.lifetime         = _rDesc.lifetime;
+        projectile.radius           = _rDesc.radius;
+        projectile.isAreaOfEffect   = _rDesc.isAreaOfEffect;
+        projectile.areaRadius       = std::max(0.2f, _rDesc.areaRadius > 0.0f ? _rDesc.areaRadius : _rDesc.radius);
+        projectile.areaDuration     = std::max(0.01f, _rDesc.areaDuration);
+        projectile.areaGrowthTime   = std::max(0.01f, _rDesc.areaGrowthTime);
         projectile.piercesRemaining = std::max(0, _rDesc.pierces);
-        projectile.type      = _type;
+        projectile.type             = _type;
 
         m_projectiles.push_back(projectile);
 
@@ -69,49 +199,124 @@ namespace Gameplay
 
     void cProjectileManager::Update(float _deltaTime, const Engine::Math::cVec3f& _rPlayerPosition, cEnemyManager& _rEnemyManager)
     {
-        constexpr float c_hitRadius  = 0.6f;
-        const float hitRadiusSquared = c_hitRadius * c_hitRadius;
+        m_impactEvents.clear();
+
+        const auto activateArea = [&](sProjectile& _rProjectile)
+        {
+            ActivateArea(_rProjectile);
+            if (_rProjectile.type == eProjectileType::EnemySpore || _rProjectile.type == eProjectileType::PlayerSpore)
+                m_impactEvents.push_back({ _rProjectile.id, _rProjectile.position, _rProjectile.type });
+        };
+
+        const Engine::Math::cVec3f playerCenter = _rPlayerPosition + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f);
 
         for (sProjectile& projectile : m_projectiles)
         {
-            projectile.position += projectile.direction * (projectile.speed * _deltaTime);
-            projectile.lifetime -= _deltaTime;
-
             const bool isPlayerProjectile = projectile.type == eProjectileType::PlayerSphere
                 || projectile.type == eProjectileType::PlayerCone
                 || projectile.type == eProjectileType::PlayerSpore;
 
-            if (isPlayerProjectile)
+            float remainingTime = std::max(0.0f, _deltaTime);
+            while (remainingTime > 0.000001f && projectile.lifetime > 0.0f)
             {
-                if (projectile.isAreaOfEffect)
+                // Bound both travel distance and area growth, including during long frames.
+                const float stepTime = std::min({ remainingTime, projectile.lifetime,
+                    1.0f / 60.0f, 0.1f / std::max(projectile.speed, 0.1f) });
+                remainingTime -= stepTime;
+                projectile.lifetime = std::max(0.0f, projectile.lifetime - stepTime);
+
+                if (projectile.areaActive)
                 {
-                    if (_rEnemyManager.ApplyDamageInRadius(projectile.position, projectile.radius, projectile.damage))
-                        projectile.lifetime = 0.0f;
+                    projectile.areaAge      += stepTime;
+                    projectile.areaTickTime += stepTime;
+
+                    const bool  damageTick = projectile.areaTickTime >= 1.0f || projectile.lifetime <= 0.0f;
+                    const float tickDamage = projectile.damage * projectile.areaTickTime / projectile.areaDuration;
+
+                    projectile.radius = projectile.areaRadius * std::clamp(projectile.areaAge / projectile.areaGrowthTime, 0.0f, 1.0f);
+
+                    if (isPlayerProjectile && damageTick)
+                    {
+                        // The listed damage is the total exposure damage over the area's lifetime.
+                        _rEnemyManager.ApplyPoisonDamage(projectile, tickDamage);
+                    }
+
+                    else if (!isPlayerProjectile)
+                    {
+                        const Engine::Math::cVec3f offset = _rPlayerPosition - projectile.position;
+
+                        const float hitRadius   = projectile.radius + 0.4f;
+                        const bool  insideArea  = projectile.type == eProjectileType::EnemySpore
+                            ? projectile.ContainsGroundPoint(_rPlayerPosition)
+                            : offset.x() * offset.x() + offset.z() * offset.z() <= hitRadius * hitRadius && offset.y() <= 0.6f && offset.y() >= -1.8f;
+
+                        if (insideArea)
+                        {
+                            if (projectile.type == eProjectileType::EnemyShockwave)
+                            {
+                                if (!projectile.hitPlayer)
+                                {
+                                    m_pendingPlayerDamage += projectile.damage;
+                                    projectile.hitPlayer = true;
+                                }
+                            }
+                            else if (damageTick)
+                            {
+                                m_pendingPlayerDamage += tickDamage;
+                            }
+                        }
+                    }
+                    if (damageTick)
+                        projectile.areaTickTime = 0.0f;
+                    continue;
                 }
-                else
+
+                if (MoveProjectile(projectile, stepTime))
                 {
+                    if (projectile.isAreaOfEffect)
+                        activateArea(projectile);
+                    else
+                        projectile.lifetime = 0.0f;
+                    continue;
+                }
+
+                if (isPlayerProjectile)
+                {
+                    // Area shots detonate on contact; their damage comes from the expanding area.
+                    const float hitRadius = projectile.isAreaOfEffect ? 0.25f : projectile.radius;
                     const std::span<const sEnemyHandle> hitEnemies(projectile.hitEnemies.data(), projectile.hitEnemyCount);
-                    const sEnemyHandle hitEnemy = _rEnemyManager.ApplyDamageAtIgnoring(projectile.position, projectile.radius, projectile.damage, hitEnemies);
+                    const sEnemyHandle hitEnemy = _rEnemyManager.ApplyDamageAtIgnoring(projectile.position, hitRadius,
+                        projectile.isAreaOfEffect ? 0.0f : projectile.damage, hitEnemies);
 
                     if (hitEnemy.IsValid())
                     {
-                        projectile.hitEnemies[projectile.hitEnemyCount++] = hitEnemy;
-
-                        if (projectile.piercesRemaining == 0)
-                            projectile.lifetime = 0.0f;
+                        if (projectile.isAreaOfEffect)
+                        {
+                            activateArea(projectile);
+                        }
                         else
-                            --projectile.piercesRemaining;
+                        {
+                            projectile.hitEnemies[projectile.hitEnemyCount++] = hitEnemy;
+                            if (projectile.piercesRemaining == 0 || projectile.hitEnemyCount == sProjectile::c_maxHitEnemies)
+                                projectile.lifetime = 0.0f;
+                            else
+                                --projectile.piercesRemaining;
+                        }
                     }
                 }
-            }
-            else
-            {
-                const Engine::Math::cVec3f playerCenter = _rPlayerPosition + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f);
-                if (Engine::Math::cVec3f::distanceSquared(projectile.position, playerCenter) <= hitRadiusSquared)
+                else if (Engine::Math::cVec3f::distanceSquared(projectile.position, playerCenter) <= 0.6f * 0.6f)
                 {
-                    m_pendingPlayerDamage += projectile.damage;
-                    projectile.lifetime = 0.0f;
+                    if (projectile.isAreaOfEffect)
+                        activateArea(projectile);
+                    else
+                    {
+                        m_pendingPlayerDamage += projectile.damage;
+                        projectile.lifetime = 0.0f;
+                    }
                 }
+
+                if (projectile.isAreaOfEffect && !projectile.areaActive && projectile.lifetime <= 0.0f)
+                    activateArea(projectile);
             }
         }
 
@@ -127,6 +332,7 @@ namespace Gameplay
     void cProjectileManager::Clear()
     {
         m_projectiles.clear();
+        m_impactEvents.clear();
         m_pendingPlayerDamage = 0.0f;
         m_nextId              = 1;
     }

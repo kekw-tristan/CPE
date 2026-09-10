@@ -26,6 +26,7 @@ namespace Engine::GFX
 
         public:
 
+            VkPipeline              GetParticlePipeline() const { return m_pParticlePipeline; }
             VkPipeline              GetHealthBarPipeline()      const;
             VkPipeline              GetNormalDepthPipeline()    const { return m_pNormalDepthPipeline; }
             VkPipeline              GetOcclusionPipeline()      const { return m_pOcclusionPipeline; }
@@ -63,6 +64,7 @@ namespace Engine::GFX
 
         private:
 
+            VkPipeline m_pParticlePipeline = VK_NULL_HANDLE;
             VkPipeline m_pHealthBarPipeline     = VK_NULL_HANDLE;
             VkPipeline m_pNormalDepthPipeline   = VK_NULL_HANDLE;
             VkPipeline m_pOcclusionPipeline     = VK_NULL_HANDLE;

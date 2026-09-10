@@ -16,7 +16,7 @@ POST_PROCESS_SHADER_SOURCE="$SHADER_DIR/postProcess.hlsl"
 
 if ! command -v dxc >/dev/null 2>&1; then
     echo "Error: dxc wurde nicht gefunden."
-    echo "Stelle sicher, dass DXC installiert und im PATH verfügbar ist."
+    echo "Stelle sicher, dass DXC installiert und im PATH verfÃƒÂ¼gbar ist."
     exit 1
 fi
 
@@ -206,6 +206,24 @@ dxc \
     "$SHADER_DIR/healthBar.hlsl" \
     -Fo "$OUTPUT_DIR/healthBar.frag.spv"
 
+echo "Compiling particle vertex shader..."
+
+dxc \
+    -spirv \
+    -T vs_6_0 \
+    -E VSMain \
+    "$SHADER_DIR/particles.hlsl" \
+    -Fo "$OUTPUT_DIR/particles.vert.spv"
+
+echo "Compiling particle fragment shader..."
+
+dxc \
+    -spirv \
+    -T ps_6_0 \
+    -E PSMain \
+    "$SHADER_DIR/particles.hlsl" \
+    -Fo "$OUTPUT_DIR/particles.frag.spv"
+
 echo
 echo "HLSL shaders compiled successfully."
 echo
@@ -227,3 +245,5 @@ echo "$OUTPUT_DIR/reflectionProbePrefilter.vert.spv"
 echo "$OUTPUT_DIR/reflectionProbePrefilter.frag.spv"
 echo "$OUTPUT_DIR/healthBar.vert.spv"
 echo "$OUTPUT_DIR/healthBar.frag.spv"
+echo "$OUTPUT_DIR/particles.vert.spv"
+echo "$OUTPUT_DIR/particles.frag.spv"

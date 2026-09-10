@@ -30,23 +30,23 @@ namespace Gameplay
 
         constexpr sEnemyDefinition c_thornwolfDefinition
         {
-            65.0f, 4.2f, 16.0f, 1.6f, 1.2f,
-            12.0f, 0.9f, 0.25f, 0.25f,
-            eEnemyAttackType::Melee
+            65.0f, 4.2f, 16.0f, 6.5f, 1.2f,
+            16.0f, 2.2f, 0.65f, 0.65f,
+            eEnemyAttackType::Dash, 1.0f, 14.0f, 0.45f
         };
 
         constexpr sEnemyDefinition c_sporecapDefinition
         {
             80.0f, 1.5f, 15.0f, 12.0f, 9.0f,
             16.0f, 2.4f, 0.65f, 0.5f,
-            eEnemyAttackType::ConeProjectile
+            eEnemyAttackType::SporeProjectile
         };
 
         constexpr sEnemyDefinition c_bruteDefinition
         {
-            120.0f, 2.2f, 11.0f, 1.7f, 1.4f,
-            22.0f, 1.4f, 0.45f, 0.45f,
-            eEnemyAttackType::Melee
+            120.0f, 2.2f, 11.0f, 4.5f, 1.4f,
+            22.0f, 2.6f, 0.9f, 0.8f,
+            eEnemyAttackType::Shockwave
         };
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -387,6 +387,21 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cEnemyManager::ApplyPoisonDamage(const sProjectile& _rArea, float _damage)
+    {
+        for (uint32_t slotIndex : m_activeSlots)
+        {
+            sEnemySlot& slot = m_slots[slotIndex];
+            if (slot.occupied && slot.active && slot.enemy.state != eEnemyState::Dead
+                && _rArea.ContainsGroundPoint(slot.enemy.position))
+            {
+                ApplyDamage(slot.enemy.handle, _damage);
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     float cEnemyManager::FindAimDistance(const Engine::Math::cVec3f& _rOrigin, const Engine::Math::cVec3f& _rDirection, float _maximumDistance) const
     {
         float nearestDistance = _maximumDistance;
@@ -594,7 +609,9 @@ namespace Gameplay
             return;
         }
 
-        const bool hasUsefulAttackDistance = _rDefinition.attackType != eEnemyAttackType::ConeProjectile || distance >= _rDefinition.preferredRange - 1.0f;
+        const bool isRanged = _rDefinition.attackType == eEnemyAttackType::ConeProjectile
+            || _rDefinition.attackType == eEnemyAttackType::SporeProjectile;
+        const bool hasUsefulAttackDistance = !isRanged || distance >= _rDefinition.preferredRange - 1.0f;
 
         if (distance <= _rDefinition.attackRange && hasUsefulAttackDistance && _rEnemy.attackCooldown <= 0.0f)
         {
@@ -603,7 +620,7 @@ namespace Gameplay
         }
 
         Engine::Math::cVec3f movementDirection;
-        if (_rDefinition.attackType != eEnemyAttackType::ConeProjectile || distance > _rDefinition.preferredRange + 1.0f)
+        if (!isRanged || distance > _rDefinition.preferredRange + 1.0f)
             movementDirection = toPlayer;
         else if (distance < _rDefinition.preferredRange - 1.0f)
             movementDirection = -toPlayer;
@@ -668,6 +685,18 @@ namespace Gameplay
 
         sProjectileSpawnDesc projectile{};
 
+        if (_rDefinition.attackType == eEnemyAttackType::Shockwave)
+        {
+            projectile.position = _rEnemy.position + Engine::Math::cVec3f(0.0f, 0.2f, 0.0f);
+            projectile.damage = _rDefinition.attackDamage;
+            projectile.isAreaOfEffect = true;
+            projectile.areaRadius = _rDefinition.attackRange + 0.5f;
+            projectile.areaDuration = 0.8f;
+            projectile.areaGrowthTime = 0.8f;
+            _rProjectileManager.SpawnShockwave(projectile);
+            return;
+        }
+
         projectile.position  = _rEnemy.position + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f) + _rEnemy.attackDirection * 0.7f;
         projectile.direction = _rEnemy.attackDirection;
         projectile.speed     = _rEnemy.type == World::sEnemyType::ForestThornshooter ? 13.0f : 9.0f;
@@ -676,7 +705,34 @@ namespace Gameplay
         projectile.radius    = _rEnemy.type == World::sEnemyType::ForestThornshooter ? 0.3f : 0.8f;
 
         if (_rEnemy.type == World::sEnemyType::ForestSporecap)
+        {
+            // Aim at the ground so a missed spore still leaves a hazard near its target.
+            const Engine::Math::cVec3f target = _rContext.playerPosition + Engine::Math::cVec3f(0.0f, 0.1f, 0.0f);
+            projectile.direction = (target - projectile.position).normalized();
+            projectile.speed = 6.5f;
+            projectile.isAreaOfEffect = true;
+            projectile.areaRadius = _rEnemy.isBoss ? 5.0f : 4.0f;
+            projectile.areaDuration = 4.5f;
+            projectile.areaGrowthTime = 0.9f;
+            projectile.damage = _rDefinition.attackDamage * 2.0f;
             _rProjectileManager.SpawnSpore(projectile);
+        }
+        else if (_rEnemy.type == World::sEnemyType::ForestCrawler)
+        {
+            // Three discrete thorns leave gaps to dodge through.
+            projectile.damage = _rDefinition.attackDamage * 0.7f;
+            projectile.radius = 0.25f;
+            for (int thorn = -1; thorn <= 1; ++thorn)
+            {
+                const float angle = static_cast<float>(thorn) * 0.24f;
+                projectile.direction = {
+                    _rEnemy.attackDirection.x() * std::cos(angle) + _rEnemy.attackDirection.z() * std::sin(angle),
+                    0.0f,
+                    _rEnemy.attackDirection.z() * std::cos(angle) - _rEnemy.attackDirection.x() * std::sin(angle)
+                };
+                _rProjectileManager.SpawnCone(projectile);
+            }
+        }
         else
             _rProjectileManager.SpawnCone(projectile);
     }

@@ -122,6 +122,7 @@ namespace Engine
 
                 OnDraw();
 
+                m_pAppIntern->DrawParticles();
                 m_pAppIntern->DrawHealthBars();
 
                 OnDrawUI();
@@ -201,6 +202,25 @@ namespace Engine::GFX
         }
 
         s_pApplicationIntern->UpdateHealthBars(_healthBars);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void UpdateParticles(std::span<const sParticleData> _particles)
+    {
+        if (s_pApplicationIntern == nullptr)
+        {
+            throw std::runtime_error("Application does not exist yet!");
+        }
+
+        s_pApplicationIntern->UpdateParticles(_particles);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    double GetParticleGpuMilliseconds()
+    {
+        return s_pApplicationIntern == nullptr ? -1.0 : s_pApplicationIntern->GetParticleGpuMilliseconds();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

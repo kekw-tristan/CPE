@@ -2,6 +2,7 @@
 
 #include "graphics/gfxConfig.h"
 #include "graphics/healthBarData.h"
+#include "graphics/particles/particleData.h"
 
 #include <span>
 
@@ -80,6 +81,8 @@ namespace Engine::GFX
             void UpdateInstanceBuffer(std::vector<sInstanceData*>& _rInstances); 
             void UpdateHealthBars(std::span<const sHealthBarData> _healthBars);
             void DrawHealthBars();
+            void UpdateParticles(std::span<const sParticleData> _particles);
+            void DrawParticles();
 
             void BeginDraw(); 
             void BeginAmbientOcclusionDraw();
@@ -102,6 +105,7 @@ namespace Engine::GFX
 
             // Negative values mean no completed GPU measurement is available.
             const std::array<double, 2>& GetGpuPassMilliseconds() const { return m_gpuPassMilliseconds; }
+            double GetParticleGpuMilliseconds() const { return m_particleGpuMilliseconds; }
             uint32_t GetShadowCount() const;
             uint32_t GetShadowMatrixCount(uint32_t _shadowIndex) const;
 
@@ -169,6 +173,7 @@ namespace Engine::GFX
 
         private:
 
+            double m_particleGpuMilliseconds = -1.0;
             std::array<sVulkanFrame, c_maxNumberOfFrames> m_frames;
             std::array<float, 4> m_backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f };
             int m_currentFrame; 

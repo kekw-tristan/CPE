@@ -2,6 +2,7 @@
 
 #include "graphics/gfxConfig.h"
 #include "graphics/healthBarData.h"
+#include "graphics/particles/particleData.h"
 
 #include <cstddef>
 
@@ -214,15 +215,20 @@ namespace Engine::GFX
 
         vertShaderModule = CreateShaderModule(_rDevice, ReadFile("./assets/shaders/bin/occlusion.vert.spv"));
         fragShaderModule = CreateShaderModule(_rDevice, ReadFile("./assets/shaders/bin/occlusion.frag.spv"));
-        shaderStages[0].module = vertShaderModule;
-        shaderStages[0].pName = "VSOcclusion";
-        shaderStages[1].module = fragShaderModule;
-        shaderStages[1].pName = "PSOcclusion";
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
+
+        shaderStages[0].module  = vertShaderModule;
+        shaderStages[0].pName   = "VSOcclusion";
+        shaderStages[1].module  = fragShaderModule;
+        shaderStages[1].pName   = "PSOcclusion";
+
+        vertexInputInfo.vertexBindingDescriptionCount   = 0;
         vertexInputInfo.vertexAttributeDescriptionCount = 0;
+
         rasterizer.cullMode = VK_CULL_MODE_NONE;
-        depthStencil.depthTestEnable = VK_FALSE;
-        depthStencil.depthWriteEnable = VK_FALSE;
+        
+        depthStencil.depthTestEnable    = VK_FALSE;
+        depthStencil.depthWriteEnable   = VK_FALSE;
+
         pipelineRenderingInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
 
         if (vkCreateGraphicsPipelines(_rDevice.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pOcclusionPipeline) != VK_SUCCESS)
@@ -231,9 +237,11 @@ namespace Engine::GFX
         }
 
         vkDestroyShaderModule(_rDevice.GetDevice(), fragShaderModule, nullptr);
+
         fragShaderModule = CreateShaderModule(_rDevice, ReadFile("./assets/shaders/bin/occlusionBlur.frag.spv"));
-        shaderStages[1].module = fragShaderModule;
-        shaderStages[1].pName = "PSOcclusionBlur";
+
+        shaderStages[1].module  = fragShaderModule;
+        shaderStages[1].pName   = "PSOcclusionBlur";
 
         if (vkCreateGraphicsPipelines(_rDevice.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pOcclusionBlurPipeline) != VK_SUCCESS)
         {
@@ -244,9 +252,13 @@ namespace Engine::GFX
         vkDestroyShaderModule(_rDevice.GetDevice(), vertShaderModule, nullptr);
 
         multisampling.rasterizationSamples = _rDevice.GetMSAASamples();
+
         pipelineRenderingInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
+
         depthStencil.depthTestEnable = VK_TRUE;
+
         vertexInputInfo.vertexBindingDescriptionCount = 1;
+
         shaderStages[0].pName = "VSMain";
         shaderStages[1].pName = "PSMain";
 
@@ -286,6 +298,41 @@ namespace Engine::GFX
         {
             throw std::runtime_error("Failed to create health bar pipeline!");
         }
+
+        vertShaderModule = CreateShaderModule(_rDevice, ReadFile("./assets/shaders/bin/particles.vert.spv"));
+        fragShaderModule = CreateShaderModule(_rDevice, ReadFile("./assets/shaders/bin/particles.frag.spv"));
+
+        shaderStages[0].module = vertShaderModule;
+        shaderStages[1].module = fragShaderModule;
+
+        VkVertexInputBindingDescription particleBinding{ 0, sizeof(sParticleData), VK_VERTEX_INPUT_RATE_INSTANCE };
+        const std::array<VkVertexInputAttributeDescription, 4> particleAttributes =
+        {{
+            { 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sParticleData, positionSize) },
+            { 1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sParticleData, color) },
+            { 2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sParticleData, normalMode) },
+            { 3, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(sParticleData, rotationAge) }
+        }};
+        vertexInputInfo.pVertexBindingDescriptions      = &particleBinding;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(particleAttributes.size());
+        vertexInputInfo.pVertexAttributeDescriptions    = particleAttributes.data();
+
+        colorBlendAttachment.blendEnable            = VK_TRUE;
+        colorBlendAttachment.srcColorBlendFactor    = VK_BLEND_FACTOR_ONE;
+        colorBlendAttachment.dstColorBlendFactor    = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        colorBlendAttachment.colorBlendOp           = VK_BLEND_OP_ADD;
+        colorBlendAttachment.srcAlphaBlendFactor    = VK_BLEND_FACTOR_ONE;
+        colorBlendAttachment.dstAlphaBlendFactor    = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        colorBlendAttachment.alphaBlendOp           = VK_BLEND_OP_ADD;
+
+        const VkResult particleResult = vkCreateGraphicsPipelines(
+            _rDevice.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pParticlePipeline);
+
+        vkDestroyShaderModule(_rDevice.GetDevice(), fragShaderModule, nullptr);
+        vkDestroyShaderModule(_rDevice.GetDevice(), vertShaderModule, nullptr);
+
+        if (particleResult != VK_SUCCESS)
+            throw std::runtime_error("Failed to create particle pipeline!");
 
         CreateShadowPipeline(_rDevice);
         CreateReflectionProbePipeline(_rDevice);
@@ -476,6 +523,12 @@ namespace Engine::GFX
         {
             vkDestroyDescriptorSetLayout(device, m_pPostProcessDescriptorSetLayout, nullptr);
             m_pPostProcessDescriptorSetLayout = VK_NULL_HANDLE;
+        }
+
+        if (m_pParticlePipeline != VK_NULL_HANDLE)
+        {
+            vkDestroyPipeline(device, m_pParticlePipeline, nullptr);
+            m_pParticlePipeline = VK_NULL_HANDLE;
         }
 
         if (m_pHealthBarPipeline != VK_NULL_HANDLE)

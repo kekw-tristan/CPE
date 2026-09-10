@@ -63,7 +63,10 @@ namespace Engine::Logic
             void DrawMeshIntances(GFX::MeshHandle _pHandle, uint32_t _instanceCount, uint32_t _firstInstance = 0);
             void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
             void UpdateHealthBars(std::span<const GFX::sHealthBarData> _healthBars);
+            void UpdateParticles(std::span<const GFX::sParticleData> _particles);
             void DrawHealthBars();
+            void DrawParticles();
+            double GetParticleGpuMilliseconds() const { return m_vulkanRenderer.GetParticleGpuMilliseconds(); }
 
             void BeginDraw(); 
             void BeginAmbientOcclusionDraw() { m_vulkanRenderer.BeginAmbientOcclusionDraw(); }

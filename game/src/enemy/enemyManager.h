@@ -11,6 +11,7 @@
 namespace Gameplay
 {
     class cProjectileManager;
+    struct sProjectile;
 
     struct sEnemyHandle
     {
@@ -38,6 +39,8 @@ namespace Gameplay
     {
         Melee,
         ConeProjectile,
+        SporeProjectile,
+        Shockwave,
         Dash
     };
 
@@ -108,6 +111,7 @@ namespace Gameplay
             bool ApplyDamageInRadius(const Engine::Math::cVec3f& _rPosition, float _radius, float _damage);
             const sEnemy* TryGetEnemy(sEnemyHandle _handle) const;
             float FindAimDistance(const Engine::Math::cVec3f& _rOrigin, const Engine::Math::cVec3f& _rDirection, float _maximumDistance) const;
+            void ApplyPoisonDamage(const sProjectile& _rArea, float _damage);
             float ConsumePlayerDamage();
             const std::vector<sEnemyDeathEvent>& GetDeathEvents() const;
             void ClearDeathEvents();

@@ -199,9 +199,23 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cApplicationIntern::UpdateParticles(std::span<const GFX::sParticleData> _particles)
+    {
+        m_vulkanRenderer.UpdateParticles(_particles);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cApplicationIntern::DrawHealthBars()
     {
         m_vulkanRenderer.DrawHealthBars();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::DrawParticles()
+    {
+        m_vulkanRenderer.DrawParticles();
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

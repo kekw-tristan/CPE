@@ -6,6 +6,7 @@
 
 #include "graphics/camera.h"
 #include "graphics/instanceData.h"
+#include "graphics/particles/particleSystem.h"
 #include "graphics/transform.h"
 
 #include "graphics/light/lightManager.h"
@@ -107,6 +108,9 @@ class cGame : public cApplication
 
         struct sProjectileVisual
         {
+            GFX::sParticleEmitterHandle sporeEmitter;
+            bool emittingArea = false;
+            GFX::sInstanceData* pStem = nullptr;
             uint64_t            id        = 0;
             GFX::sInstanceData* pInstance = nullptr;
             GFX::MeshHandle     mesh      = nullptr;
@@ -152,6 +156,7 @@ class cGame : public cApplication
 
         void PrepareEnemyHealthBars(const GFX::cCamera& _rCamera);
         void SyncProjectileRenderInstances();
+        void UpdateProjectileEffects(float _deltaTime);
         void SyncLootRenderInstances();
         void UpdateThirdPersonCamera(float _deltaTime); 
     
@@ -213,6 +218,7 @@ class cGame : public cApplication
 
         Gameplay::cEnemyManager        m_enemyManager;
         Gameplay::cProjectileManager   m_projectileManager;
+        GFX::cParticleSystem m_particleSystem;
 
         std::vector<sEnemyVisual>      m_enemyVisuals;
 

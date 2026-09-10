@@ -281,6 +281,8 @@ namespace Engine::GFX
                 rFrame.frameUniformedBuffer.Shutdown(*m_pDevice);
             }
 
+            rFrame.particleBuffer.Shutdown(*m_pDevice);
+            rFrame.particleCount = 0;
             rFrame.healthBarBuffer.Shutdown(*m_pDevice);
             rFrame.healthBarCount = 0;
 
@@ -742,7 +744,7 @@ namespace Engine::GFX
 
         if (frame.timestampQueryPool != VK_NULL_HANDLE && frame.timestampsSubmitted)
         {
-            std::array<uint64_t, 4> timestamps{};
+            std::array<uint64_t, 6> timestamps{};
             const VkResult result = vkGetQueryPoolResults(
                 device,
                 frame.timestampQueryPool,
@@ -755,6 +757,8 @@ namespace Engine::GFX
 
             if (result == VK_SUCCESS)
             {
+                m_particleGpuMilliseconds = static_cast<double>((timestamps[5] - timestamps[4]) & m_timestampMask)
+                    * m_timestampPeriod / 1000000.0;
                 for (size_t pass = 0; pass < m_gpuPassMilliseconds.size(); ++pass)
                 {
                     const uint64_t ticks = (timestamps[pass * 2 + 1] - timestamps[pass * 2]) & m_timestampMask;
@@ -764,6 +768,7 @@ namespace Engine::GFX
             else
             {
                 m_gpuPassMilliseconds = { -1.0, -1.0 };
+                m_particleGpuMilliseconds = -1.0;
             }
         }
         
@@ -796,6 +801,7 @@ namespace Engine::GFX
         m_imagesInFlight[m_imageIndex] = frame.inFlightFence;
 
         frame.healthBarCount = 0;
+        frame.particleCount = 0;
 
         EnsureReflectionProbeResources();
 
@@ -816,7 +822,7 @@ namespace Engine::GFX
 
         if (frame.timestampQueryPool != VK_NULL_HANDLE)
         {
-            vkCmdResetQueryPool(commandBuffer, frame.timestampQueryPool, 0, 4);
+            vkCmdResetQueryPool(commandBuffer, frame.timestampQueryPool, 0, 6);
             frame.timestampsSubmitted = false;
         }
 
@@ -2485,6 +2491,54 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void cVulkanRenderer::UpdateParticles(std::span<const sParticleData> _particles)
+    {
+        if (!m_hasFrameStarted || m_renderPassType != sRenderPassType::None)
+            throw std::runtime_error("Particles must be uploaded before rendering begins!");
+        if (_particles.size() > c_maxParticleDraws)
+            throw std::length_error("Particle count exceeds the GPU buffer capacity!");
+
+        sVulkanFrame& frame = m_frames[m_currentFrame];
+        frame.particleCount = static_cast<uint32_t>(_particles.size());
+        if (!_particles.empty())
+            frame.particleBuffer.Write(_particles.data(), _particles.size_bytes());
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::DrawParticles()
+    {
+        if (!m_hasFrameStarted || m_renderPassType != sRenderPassType::Main)
+            throw std::runtime_error("Particles can only be drawn in the main pass!");
+
+        const sVulkanFrame& frame = m_frames[m_currentFrame];
+
+        if (frame.timestampQueryPool != VK_NULL_HANDLE)
+            vkCmdWriteTimestamp(frame.pCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, frame.timestampQueryPool, 4);
+
+        if (frame.particleCount == 0)
+        {
+            if (frame.timestampQueryPool != VK_NULL_HANDLE)
+                vkCmdWriteTimestamp(frame.pCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, frame.timestampQueryPool, 5);
+            return;
+        }
+
+        const VkBuffer     buffer = frame.particleBuffer.GetBuffer();
+        const VkDeviceSize offset = 0;
+
+        vkCmdBindPipeline(frame.pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetParticlePipeline());
+
+        vkCmdBindDescriptorSets(frame.pCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
+            m_pPipeline->GetPipelineLayout(), 0, 1, &frame.frameDescriptorSet, 0, nullptr);
+        
+        vkCmdBindVertexBuffers(frame.pCommandBuffer, 0, 1, &buffer, &offset);
+        vkCmdDraw(frame.pCommandBuffer, 6, frame.particleCount, 0, 0);
+        if (frame.timestampQueryPool != VK_NULL_HANDLE)
+            vkCmdWriteTimestamp(frame.pCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, frame.timestampQueryPool, 5);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cVulkanRenderer::DrawHealthBars()
     {
         if (!m_hasFrameStarted || m_renderPassType != sRenderPassType::Main)
@@ -2499,9 +2553,9 @@ namespace Engine::GFX
             return;
         }
 
-        const VkCommandBuffer commandBuffer = rFrame.pCommandBuffer;
-        const VkBuffer buffer = rFrame.healthBarBuffer.GetBuffer();
-        const VkDeviceSize offset = 0;
+        const VkCommandBuffer   commandBuffer = rFrame.pCommandBuffer;
+        const VkBuffer          buffer        = rFrame.healthBarBuffer.GetBuffer();
+        const VkDeviceSize      offset        = 0;
 
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetHealthBarPipeline());
         vkCmdBindDescriptorSets(
@@ -3168,7 +3222,7 @@ namespace Engine::GFX
                 VkQueryPoolCreateInfo queryInfo{};
                 queryInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
                 queryInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
-                queryInfo.queryCount = 4;
+                queryInfo.queryCount = 6;
 
                 if (vkCreateQueryPool(device, &queryInfo, nullptr, &rFrame.timestampQueryPool) != VK_SUCCESS)
                 {
@@ -3207,6 +3261,10 @@ namespace Engine::GFX
             const VkDeviceSize healthBarBufferSize = sizeof(sHealthBarData) * c_maxNumberOfHealthBars;
             rFrame.healthBarBuffer.Create(*m_pDevice, healthBarBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             rFrame.healthBarBuffer.Map(*m_pDevice);
+
+            const VkDeviceSize particleBufferSize = sizeof(sParticleData) * c_maxParticleDraws;
+            rFrame.particleBuffer.Create(*m_pDevice, particleBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            rFrame.particleBuffer.Map(*m_pDevice);
 
             rFrame.instanceBuffer.Create(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
             rFrame.instanceBufferStaging.Create(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);

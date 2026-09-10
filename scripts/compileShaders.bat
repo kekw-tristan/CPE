@@ -305,6 +305,34 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo Compiling particle vertex shader...
+
+"%DXC%" ^
+    -spirv ^
+    -T vs_6_0 ^
+    -E VSMain ^
+    "%SHADER_DIR%\particles.hlsl" ^
+    -Fo "%OUTPUT_DIR%\particles.vert.spv"
+
+if errorlevel 1 (
+    echo Error: Particle vertex shader compilation failed.
+    exit /b 1
+)
+
+echo Compiling particle fragment shader...
+
+"%DXC%" ^
+    -spirv ^
+    -T ps_6_0 ^
+    -E PSMain ^
+    "%SHADER_DIR%\particles.hlsl" ^
+    -Fo "%OUTPUT_DIR%\particles.frag.spv"
+
+if errorlevel 1 (
+    echo Error: Particle fragment shader compilation failed.
+    exit /b 1
+)
+
 echo.
 echo HLSL shaders compiled successfully.
 echo.
@@ -326,6 +354,8 @@ echo %OUTPUT_DIR%\reflectionProbePrefilter.vert.spv
 echo %OUTPUT_DIR%\reflectionProbePrefilter.frag.spv
 echo %OUTPUT_DIR%\healthBar.vert.spv
 echo %OUTPUT_DIR%\healthBar.frag.spv
+echo %OUTPUT_DIR%\particles.vert.spv
+echo %OUTPUT_DIR%\particles.frag.spv
 
 endlocal
 exit /b 0
