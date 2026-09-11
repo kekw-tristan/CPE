@@ -27,6 +27,11 @@ namespace Engine::GFX
         cVulkanBuffer instanceBuffer;
         cVulkanBuffer instanceBufferStaging;
 
+        uint64_t staticInstanceRevision = 0;
+        uint32_t staticInstanceCount    = 0;
+        
+        bool staticInstancesUploaded = false;
+
         cVulkanBuffer lightBuffer; 
         cVulkanBuffer lightStagingBuffer;
 

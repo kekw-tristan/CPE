@@ -62,6 +62,9 @@ namespace Engine::Logic
             void SubmitMesh(GFX::MeshHandle _pHandle);
             void DrawMeshIntances(GFX::MeshHandle _pHandle, uint32_t _instanceCount, uint32_t _firstInstance = 0);
             void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
+            void UpdateInstanceBuffer(std::span<const GFX::sInstanceData> _staticInstances, uint64_t _staticRevision,
+                std::span<GFX::sInstanceData* const> _dynamicInstances);
+            bool IsBoundsVisible(const GFX::sBounds& _rBounds) const;
             void UpdateHealthBars(std::span<const GFX::sHealthBarData> _healthBars);
             void UpdateParticles(std::span<const GFX::sParticleData> _particles);
             void DrawHealthBars();

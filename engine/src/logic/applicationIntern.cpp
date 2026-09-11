@@ -185,6 +185,21 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    bool cApplicationIntern::IsBoundsVisible(const GFX::sBounds& _rBounds) const
+    {
+        return m_vulkanRenderer.IsBoundsVisible(_rBounds);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cApplicationIntern::UpdateInstanceBuffer(std::span<const GFX::sInstanceData> _staticInstances, uint64_t _staticRevision,
+        std::span<GFX::sInstanceData* const> _dynamicInstances)
+    {
+        m_vulkanRenderer.UpdateInstanceBuffer(_staticInstances, _staticRevision, _dynamicInstances);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cApplicationIntern::UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances)
     {
         m_vulkanRenderer.UpdateInstanceBuffer(_rInstances);

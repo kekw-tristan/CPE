@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <unordered_set>
@@ -44,13 +45,13 @@ cGame::cGame(Engine::sAppConfig& _rAppConfig)
     , m_torusMesh()
     , m_crystalMesh()
     , m_pool()
-    , m_instances()
+    , m_dynamicInstances()
     , m_playerModel()
     , m_playerRenderParts()
     , m_playerController()
     , m_playerYaw(0.f)
     , m_cameraPitch(-10.f)
-    , m_meshInstances()
+    , m_dynamicMeshInstances()
     , m_inventory()
 {
 }
@@ -74,7 +75,7 @@ void cGame::OnInit()
 
     UpdateEnemyRenderInstances(0.0f);
 
-    RebuildInstanceList();
+    RebuildDynamicInstanceList();
 
     Platform::SetMouseCaptured(true);
 
@@ -164,15 +165,15 @@ void cGame::OnUpdate(float _deltaTime)
     UpdateProjectileEffects(augmentSelectionPending ? 0.0f : _deltaTime);
     SyncLootRenderInstances();
 
-    if (m_instanceListDirty)
-        RebuildInstanceList();
+    if (m_dynamicInstanceListDirty)
+        RebuildDynamicInstanceList();
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
 
 void cGame::OnPrepareRender()
 {
-    Engine::GFX::UpdateInstanceBuffer(m_instances);
+    Engine::GFX::UpdateInstanceBuffer(m_staticInstances, m_staticInstanceRevision, m_dynamicInstances);
 
     PrepareEnemyHealthBars(Engine::GFX::GetCamera());
     Engine::GFX::UpdateHealthBars(m_healthBars);
@@ -188,10 +189,44 @@ void cGame::OnPrepareRender()
 
 void cGame::OnDraw()
 {
-    uint32_t firstInstance = 0;
-
-    for (auto& [mesh, instances] : m_meshInstances)
+    for (auto& [coordinate, chunk] : m_worldRenderInstances)
     {
+        chunk.visible = GFX::IsBoundsVisible(chunk.bounds);
+    }
+
+    GFX::MeshHandle mesh = nullptr;
+    uint32_t firstInstance = 0;
+    uint32_t instanceCount = 0;
+
+    for (const sWorldDrawBatch& batch : m_worldDrawBatches)
+    {
+        if (!batch.pChunk->visible)
+            continue;
+
+        if (instanceCount != 0 && (mesh != batch.mesh || firstInstance + instanceCount != batch.firstInstance))
+        {
+            GFX::DrawMeshIntances(mesh, instanceCount, firstInstance);
+            instanceCount = 0;
+        }
+
+        if (instanceCount == 0)
+        {
+            mesh = batch.mesh;
+            firstInstance = batch.firstInstance;
+        }
+        instanceCount += batch.instanceCount;
+    }
+
+    if (instanceCount != 0)
+        GFX::DrawMeshIntances(mesh, instanceCount, firstInstance);
+
+    firstInstance = static_cast<uint32_t>(m_staticInstances.size());
+
+    for (auto& [mesh, instances] : m_dynamicMeshInstances)
+    {
+        if (instances.empty())
+            continue;
+
         Engine::GFX::DrawMeshIntances(mesh, static_cast<uint32_t>(instances.size()), firstInstance);
 
         firstInstance += static_cast<uint32_t>(instances.size());
@@ -255,6 +290,7 @@ void cGame::OnDrawUI()
             continue;
 
         auto& dungeon = hudState.dungeons[static_cast<size_t>(pEnemy->bossId)];
+
         dungeon.defeated       = pEnemy->state == Gameplay::eEnemyState::Dead;
         dungeon.healthFraction = pEnemy->health / pEnemy->definition.maxHealth;
     }
@@ -264,40 +300,40 @@ void cGame::OnDrawUI()
     // inventory
     for (size_t i = 0; i < inventorySlots.size(); ++i)
     {
-        hudState.inventory.inventorySlots[i].item = inventorySlots[i].item;
+        hudState.inventory.inventorySlots[i].item   = inventorySlots[i].item;
         hudState.inventory.inventorySlots[i].amount = inventorySlots[i].amount;
         hudState.inventory.inventorySlots[i].rarity = inventorySlots[i].rarity;
-        hudState.inventory.inventorySlots[i].armor = inventorySlots[i].armor;
+        hudState.inventory.inventorySlots[i].armor  = inventorySlots[i].armor;
     }
 
     const auto& usableSlots = m_inventory.GetUsableSlots();
 
     for (size_t i = 0; i < usableSlots.size(); ++i)
     {
-        hudState.inventory.usableSlots[i].item = usableSlots[i].item;
+        hudState.inventory.usableSlots[i].item   = usableSlots[i].item;
         hudState.inventory.usableSlots[i].amount = usableSlots[i].amount;
         hudState.inventory.usableSlots[i].rarity = usableSlots[i].rarity;
-        hudState.inventory.usableSlots[i].armor = usableSlots[i].armor;
+        hudState.inventory.usableSlots[i].armor  = usableSlots[i].armor;
     }
 
     const auto& spellSlots = m_inventory.GetSpellSlots();
 
     for (size_t i = 0; i < spellSlots.size(); ++i)
     {
-        hudState.inventory.spellSlots[i].item = spellSlots[i].item;
+        hudState.inventory.spellSlots[i].item   = spellSlots[i].item;
         hudState.inventory.spellSlots[i].amount = spellSlots[i].amount;
         hudState.inventory.spellSlots[i].rarity = spellSlots[i].rarity;
-        hudState.inventory.spellSlots[i].armor = spellSlots[i].armor;
+        hudState.inventory.spellSlots[i].armor  = spellSlots[i].armor;
     }
 
     const auto& armorSlots = m_inventory.GetArmorSlots();
 
     for (size_t i = 0; i < armorSlots.size(); ++i)
     {
-        hudState.inventory.armorSlots[i].item = armorSlots[i].item;
+        hudState.inventory.armorSlots[i].item   = armorSlots[i].item;
         hudState.inventory.armorSlots[i].amount = armorSlots[i].amount;
         hudState.inventory.armorSlots[i].rarity = armorSlots[i].rarity;
-        hudState.inventory.armorSlots[i].armor = armorSlots[i].armor;
+        hudState.inventory.armorSlots[i].armor  = armorSlots[i].armor;
     }
 
     m_hud.Draw(hudState);
@@ -493,7 +529,8 @@ void cGame::InitNightSky()
     pInstance->color = { 1.0f, 1.0f, 1.0f, 1.0f };
     pInstance->materialIndex = -1;
     pInstance->instanceFlags = sInstanceFlags::InstanceFlagSky;
-    m_meshInstances[mesh].push_back(pInstance);
+
+    m_dynamicMeshInstances[mesh].push_back(pInstance);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -666,7 +703,7 @@ void cGame::SpawnEnemies(const std::vector<World::sEnemySpawn>& _rSpawns, const 
             continue;
 
         sEnemyVisual visual{};
-        visual.chunk = _rChunk;
+        visual.chunk  = _rChunk;
         visual.pModel = pModel;
 
         const auto key = std::make_tuple(spawn.position.x(), spawn.position.y(), spawn.position.z());
@@ -703,7 +740,7 @@ void cGame::SpawnEnemies(const std::vector<World::sEnemySpawn>& _rSpawns, const 
 
             GFX::MeshHandle mesh = GetMesh(part.meshType);
 
-            m_meshInstances[mesh].push_back(pInstance);
+            m_dynamicMeshInstances[mesh].push_back(pInstance);
 
             sEnemyRenderPart renderPart{};
 
@@ -808,13 +845,17 @@ void cGame::RefreshWorldRenderInstances()
 
         const float minimumX = (_rEntry.first.first - 0.5f) * World::c_chunkSize;
         const float minimumZ = (_rEntry.first.second - 0.5f) * World::c_chunkSize;
+
         const float heightLimit = std::numeric_limits<float>::max();
+        
         m_particleSystem.RemoveInBounds({ minimumX, -heightLimit, minimumZ },
             { minimumX + World::c_chunkSize, heightLimit, minimumZ + World::c_chunkSize });
-        removed.insert(_rEntry.second.renderInstances.begin(), _rEntry.second.renderInstances.end());
+
         GFX::ShapeModelLights::Destroy(_rEntry.second.lightHandles);
+
         for (GFX::ReflectionProbeHandle probeHandle : _rEntry.second.reflectionProbeHandles)
             GFX::ReflectionProbeManager::RemoveProbe(probeHandle);
+        
         return true;
     });
 
@@ -834,7 +875,7 @@ void cGame::RefreshWorldRenderInstances()
 
     if (!removed.empty())
     {
-        for (auto& [mesh, instances] : m_meshInstances)
+        for (auto& [mesh, instances] : m_dynamicMeshInstances)
             std::erase_if(instances, [&](auto* _pInstance) { return removed.contains(_pInstance); });
 
         for (auto* pInstance : removed)
@@ -847,17 +888,33 @@ void cGame::RefreshWorldRenderInstances()
         if (!inserted)
             continue;
 
+        const float limit = std::numeric_limits<float>::max();
+
+        entry->second.bounds.min = { limit, limit, limit };
+        entry->second.bounds.max = { -limit, -limit, -limit };
+
         for (const auto& shape : chunk.scene.GetShapeInstances())
             BuildRenderInstances(shape, entry->second);
+
+        if (entry->second.meshInstances.empty())
+        {
+            entry->second.bounds = {};
+        }
+        else
+        {
+            entry->second.bounds.center = (entry->second.bounds.min + entry->second.bounds.max) * 0.5f;
+            entry->second.bounds.size   = entry->second.bounds.max  - entry->second.bounds.min;
+            entry->second.bounds.radius = entry->second.bounds.size.length() * 0.5f;
+        }
 
         for (const World::sReflectionProbeDesc& description : chunk.reflectionProbes)
         {
             GFX::sReflectionProbe probe{};
-            probe.position = description.position;
-            probe.boxMin = description.boxMin;
-            probe.boxMax = description.boxMax;
-            probe.blendDistance = description.blendDistance;
-            probe.resolution = description.resolution;
+            probe.position       = description.position;
+            probe.boxMin         = description.boxMin;
+            probe.boxMax         = description.boxMax;
+            probe.blendDistance  = description.blendDistance;
+            probe.resolution     = description.resolution;
             probe.projectionType = GFX::sReflectionProbeProjectionType::Box;
 
             entry->second.reflectionProbeHandles.push_back(GFX::ReflectionProbeManager::AddProbe(probe));
@@ -867,7 +924,8 @@ void cGame::RefreshWorldRenderInstances()
             SpawnEnemies(chunk.spawns, coordinate);
     }
 
-    m_instanceListDirty = true;
+    RebuildWorldInstanceList();
+    m_dynamicInstanceListDirty = true;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -883,13 +941,13 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, sWo
 
     for (const sShapePartDesc& part : model.shapes)
     {
-        sInstanceData* pInstance = m_pool.Create();
+        sInstanceData instance{};
 
         cMatrix4x4f partMatrix = CreateTransformMatrix(part.transform);
 
-        pInstance->worldMatrix = partMatrix * instanceMatrix;
+        instance.worldMatrix = partMatrix * instanceMatrix;
 
-        pInstance->color =
+        instance.color =
         {
             part.color[0],
             part.color[1],
@@ -897,28 +955,67 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, sWo
             part.color[3]
         };
 
-        pInstance->materialIndex = part.materialIndex;
-        pInstance->instanceFlags |= sInstanceFlags::InstanceFlagPreserveAtDistance;
+        instance.materialIndex = part.materialIndex;
+        instance.instanceFlags |= sInstanceFlags::InstanceFlagPreserveAtDistance;
 
         if (model.pDebugName == "rock" || model.pDebugName.starts_with("rock_"))
         {
-            pInstance->instanceFlags |= sInstanceFlags::InstanceFlagWeathered;
+            instance.instanceFlags |= sInstanceFlags::InstanceFlagWeathered;
         }
 
         MeshHandle mesh = GetMesh(part.meshType);
 
         if (part.meshType == sMeshTypes::ChunkPlane)
         {
-            pInstance->instanceFlags |= sInstanceFlags::InstanceFlagTerrain;
+            instance.instanceFlags |= sInstanceFlags::InstanceFlagTerrain;
         }
 
         if (part.meshType == sMeshTypes::Crystal)
         {
-            pInstance->instanceFlags |= sInstanceFlags::InstanceFlagCrystal;
+            instance.instanceFlags |= sInstanceFlags::InstanceFlagCrystal;
         }
 
-        m_meshInstances[mesh].push_back(pInstance);
-        _rInstances.renderInstances.push_back(pInstance);
+        const auto extendBounds = [&](const cVec3f& _rPoint)
+        {
+            _rInstances.bounds.min =
+            {
+                std::min(_rInstances.bounds.min.x(), _rPoint.x()),
+                std::min(_rInstances.bounds.min.y(), _rPoint.y()),
+                std::min(_rInstances.bounds.min.z(), _rPoint.z())
+            };
+            _rInstances.bounds.max =
+            {
+                std::max(_rInstances.bounds.max.x(), _rPoint.x()),
+                std::max(_rInstances.bounds.max.y(), _rPoint.y()),
+                std::max(_rInstances.bounds.max.z(), _rPoint.z())
+            };
+        };
+
+        if (part.meshType == sMeshTypes::ChunkPlane)
+        {
+            // Terrain is displaced after the world transform in every vertex pass.
+            for (const auto& vertex : ShapeMeshLibrary::GetMeshData(part.meshType).vertices)
+            {
+                cVec3f position = instance.worldMatrix.transformPoint(vertex.position);
+                position += cVec3f(0.0f, World::GetTerrainHeight(position.x(), position.z()), 0.0f);
+                extendBounds(position);
+            }
+        }
+        else
+        {
+            const sBounds& bounds = ShapeMeshLibrary::GetBounds(part.meshType);
+            for (uint32_t corner = 0; corner < 8; ++corner)
+            {
+                extendBounds(instance.worldMatrix.transformPoint(
+                {
+                    (corner & 1) != 0 ? bounds.max.x() : bounds.min.x(),
+                    (corner & 2) != 0 ? bounds.max.y() : bounds.min.y(),
+                    (corner & 4) != 0 ? bounds.max.z() : bounds.min.z()
+                }));
+            }
+        }
+
+        _rInstances.meshInstances[mesh].push_back(instance);
     }
 
     if (_rShapeInstance.generateLights)
@@ -955,7 +1052,7 @@ void cGame::BuildPlayerRenderInstances()
 
         MeshHandle mesh = GetMesh(rPart.meshType);
 
-        m_meshInstances[mesh].push_back(pInstance);
+        m_dynamicMeshInstances[mesh].push_back(pInstance);
 
         sPlayerRenderPart renderPart{};
 
@@ -975,28 +1072,72 @@ void cGame::BuildPlayerRenderInstances()
 
 // -------------------------------------------------------------------------------------------------------------------------
 
-void cGame::RebuildInstanceList()
+void cGame::RebuildDynamicInstanceList()
 {
-    m_instances.clear();
+    m_dynamicInstances.clear();
 
-    for (auto& [mesh, instances] : m_meshInstances)
+    for (auto& [mesh, instances] : m_dynamicMeshInstances)
     {
         for (Engine::GFX::sInstanceData* pInstance : instances)
-            m_instances.push_back(pInstance);
+            m_dynamicInstances.push_back(pInstance);
     }
 
-    m_instanceListDirty = false;
+    m_dynamicInstanceListDirty = false;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::RebuildWorldInstanceList()
+{
+    m_worldDrawBatches.clear();
+    size_t instanceCount = 0;
+
+    for (const auto& [coordinate, chunk] : m_worldRenderInstances)
+    {
+        for (const auto& [mesh, instances] : chunk.meshInstances)
+        {
+            if (instances.empty())
+                continue;
+
+            m_worldDrawBatches.push_back({ mesh, &chunk, 0, static_cast<uint32_t>(instances.size()) });
+            instanceCount += instances.size();
+        }
+    }
+
+    // Adjacent visible chunks sharing a mesh can still use a single instanced draw.
+    std::stable_sort(m_worldDrawBatches.begin(), m_worldDrawBatches.end(), [](const auto& _rLeft, const auto& _rRight)
+    {
+        return std::less<GFX::MeshHandle>{}(_rLeft.mesh, _rRight.mesh);
+    });
+
+    m_staticInstances.clear();
+    m_staticInstances.reserve(instanceCount);
+
+    for (sWorldDrawBatch& batch : m_worldDrawBatches)
+    {
+        batch.firstInstance = static_cast<uint32_t>(m_staticInstances.size());
+        const auto& instances = batch.pChunk->meshInstances.at(batch.mesh);
+        m_staticInstances.insert(m_staticInstances.end(), instances.begin(), instances.end());
+    }
+
+    ++m_staticInstanceRevision;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
 
 void cGame::ClearRenderInstances()
 {
-    for (Engine::GFX::sInstanceData* pInstance : m_instances)
-        m_pool.Destroy(pInstance);
+    for (const auto& [mesh, instances] : m_dynamicMeshInstances)
+    {
+        for (GFX::sInstanceData* pInstance : instances)
+            m_pool.Destroy(pInstance);
+    }
 
-    m_instances.clear();
-    m_meshInstances.clear();
+    m_dynamicInstances.clear();
+    m_dynamicMeshInstances.clear();
+    m_staticInstances.clear();
+    m_worldDrawBatches.clear();
+    ++m_staticInstanceRevision;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -1206,10 +1347,11 @@ void cGame::BeginRun()
     m_runState.Begin();
     m_inventory.ClearSpells();
     m_lootManager.Clear();
-    m_playerMaxHealth = c_playerBaseMaxHealth;
-    m_playerHealth = m_playerMaxHealth;
-    m_playerMaxMana = c_playerBaseMaxMana;
-    m_playerMana = m_playerMaxMana;
+
+    m_playerMaxHealth   = c_playerBaseMaxHealth;
+    m_playerHealth      = m_playerMaxHealth;
+    m_playerMaxMana     = c_playerBaseMaxMana;
+    m_playerMana        = m_playerMaxMana;
 
     if (!m_runState.GrantSpell(Gameplay::sSpellId::ArcaneOrb))
         return;
@@ -1621,7 +1763,7 @@ void cGame::SyncProjectileRenderInstances()
                 ? m_coneMesh
                 : m_sphereMesh;
 
-            m_meshInstances[mesh].push_back(pInstance);
+            m_dynamicMeshInstances[mesh].push_back(pInstance);
 
             sProjectileVisual projectileVisual{};
             projectileVisual.id        = projectile.id;
@@ -1657,7 +1799,7 @@ void cGame::SyncProjectileRenderInstances()
             visual->pStem = m_pool.Create();
             visual->pStem->materialIndex = visual->pInstance->materialIndex;
             visual->pStem->color = { 0.8f, 0.85f, 0.5f, 1.0f };
-            m_meshInstances[m_cylinderMesh].push_back(visual->pStem);
+            m_dynamicMeshInstances[m_cylinderMesh].push_back(visual->pStem);
             instanceListChanged = true;
         }
         sTransform transform{};
@@ -1728,12 +1870,12 @@ void cGame::SyncProjectileRenderInstances()
             continue;
         }
 
-        std::vector<sInstanceData*>& meshInstances = m_meshInstances[visual->mesh];
+        std::vector<sInstanceData*>& meshInstances = m_dynamicMeshInstances[visual->mesh];
         std::erase(meshInstances, visual->pInstance);
         LightManager::DestroyLight(visual->light);
         if (visual->pStem != nullptr)
         {
-            std::erase(m_meshInstances[m_cylinderMesh], visual->pStem);
+            std::erase(m_dynamicMeshInstances[m_cylinderMesh], visual->pStem);
             m_pool.Destroy(visual->pStem);
         }
         m_particleSystem.StopEmitter(visual->sporeEmitter);
@@ -1744,7 +1886,7 @@ void cGame::SyncProjectileRenderInstances()
     }
 
     if (instanceListChanged)
-        m_instanceListDirty = true;
+        m_dynamicInstanceListDirty = true;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -1887,7 +2029,7 @@ void cGame::SyncLootRenderInstances()
 
     for (const sLootVisual& visual : m_lootVisuals)
     {
-        std::vector<sInstanceData*>& meshInstances = m_meshInstances[visual.mesh];
+        std::vector<sInstanceData*>& meshInstances = m_dynamicMeshInstances[visual.mesh];
         std::erase(meshInstances, visual.pInstance);
         m_pool.Destroy(visual.pInstance);
     }
@@ -1911,12 +2053,12 @@ void cGame::SyncLootRenderInstances()
 
         pInstance->worldMatrix = CreateTransformMatrix(transform);
 
-        m_meshInstances[m_sphereMesh].push_back(pInstance);
+        m_dynamicMeshInstances[m_sphereMesh].push_back(pInstance);
         m_lootVisuals.push_back({ pInstance, m_sphereMesh });
     }
 
     m_lootRevision = m_lootManager.GetRevision();
-    m_instanceListDirty = true;
+    m_dynamicInstanceListDirty = true;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -1940,8 +2082,8 @@ void cGame::UpdateThirdPersonCamera(float _deltaTime)
 
     GFX::cCamera& rCamera = GFX::GetCamera();
 
-    const float mouseDeltaX = m_mouseReleased ? 0.0f : Platform::GetMouseDeltaX();
-    const float mouseDeltaY = m_mouseReleased ? 0.0f : Platform::GetMouseDeltaY();
+    const float mouseDeltaX     = m_mouseReleased ? 0.0f : Platform::GetMouseDeltaX();
+    const float mouseDeltaY     = m_mouseReleased ? 0.0f : Platform::GetMouseDeltaY();
     const float mouseWheelDelta = m_mouseReleased ? 0.0f : Platform::GetMouseWheelDelta();
 
     m_cameraDistance = std::clamp(m_cameraDistance - mouseWheelDelta * c_zoomStep,

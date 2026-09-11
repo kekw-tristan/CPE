@@ -1,6 +1,8 @@
 #pragma once
 
 #include "graphics/gfxConfig.h"
+#include "graphics/bounds.h"
+#include "graphics/instanceData.h"
 #include "graphics/healthBarData.h"
 #include "graphics/particles/particleData.h"
 
@@ -79,6 +81,8 @@ namespace Engine::GFX
             bool EndFrame();
             void DrawMeshIntances(cVulkanMesh* _pMesh, uint32_t _instanceCount, uint32_t _firstInstance = 0);
             void UpdateInstanceBuffer(std::vector<sInstanceData*>& _rInstances); 
+            void UpdateInstanceBuffer(std::span<const sInstanceData> _staticInstances, uint64_t _staticRevision, std::span<sInstanceData* const> _dynamicInstances);
+            bool IsBoundsVisible(const sBounds& _rBounds) const;
             void UpdateHealthBars(std::span<const sHealthBarData> _healthBars);
             void DrawHealthBars();
             void UpdateParticles(std::span<const sParticleData> _particles);
@@ -174,7 +178,13 @@ namespace Engine::GFX
         private:
 
             double m_particleGpuMilliseconds = -1.0;
+
             std::array<sVulkanFrame, c_maxNumberOfFrames> m_frames;
+            std::vector<sInstanceData> m_instanceUploadData;
+
+            sFrustum m_cameraFrustum;
+            sFrustum m_passFrustum;
+            
             std::array<float, 4> m_backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f };
             int m_currentFrame; 
 

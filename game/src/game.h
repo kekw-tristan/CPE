@@ -5,6 +5,7 @@
 #include "container/pool.h"
 
 #include "graphics/camera.h"
+#include "graphics/bounds.h"
 #include "graphics/instanceData.h"
 #include "graphics/particles/particleSystem.h"
 #include "graphics/transform.h"
@@ -101,9 +102,19 @@ class cGame : public cApplication
 
         struct sWorldRenderInstances
         {
-            std::vector<GFX::sInstanceData*> renderInstances;
+            std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData>> meshInstances;
+            GFX::sBounds bounds;
+            bool visible = true;
             std::vector<GFX::LightHandle> lightHandles;
             std::vector<GFX::ReflectionProbeHandle> reflectionProbeHandles;
+        };
+
+        struct sWorldDrawBatch
+        {
+            GFX::MeshHandle mesh = nullptr;
+            const sWorldRenderInstances* pChunk = nullptr;
+            uint32_t firstInstance = 0;
+            uint32_t instanceCount = 0;
         };
 
         struct sProjectileVisual
@@ -142,7 +153,8 @@ class cGame : public cApplication
         void BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, sWorldRenderInstances& _rInstances);
         void BuildPlayerRenderInstances();
     
-        void RebuildInstanceList();
+        void RebuildDynamicInstanceList();
+        void RebuildWorldInstanceList();
         void ClearRenderInstances();
 
         void UpdatePlayer();
@@ -194,8 +206,12 @@ class cGame : public cApplication
     
         Container::cPool<GFX::sInstanceData, c_instancesPerPage> m_pool;
     
-        std::vector<GFX::sInstanceData*> m_instances;
-        bool m_instanceListDirty = false;
+        std::vector<GFX::sInstanceData*> m_dynamicInstances;
+        bool m_dynamicInstanceListDirty = false;
+
+        std::vector<GFX::sInstanceData> m_staticInstances;
+        std::vector<sWorldDrawBatch> m_worldDrawBatches;
+        uint64_t m_staticInstanceRevision = 0;
 
         GFX::sShapeModelDesc m_playerModel;
         GFX::sShapeModelDesc m_playerAttackModel;
@@ -210,7 +226,7 @@ class cGame : public cApplication
         float m_cameraPitch;
         float m_cameraDistance = 6.0f;
     
-        std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData*>> m_meshInstances;
+        std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData*>> m_dynamicMeshInstances;
     
         std::map<std::pair<int, int>, sWorldRenderInstances> m_worldRenderInstances;
         std::map<std::tuple<float, float, float>, Gameplay::sEnemyHandle> m_worldEnemies;

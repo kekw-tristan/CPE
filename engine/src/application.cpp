@@ -187,6 +187,21 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    bool IsBoundsVisible(const sBounds& _rBounds)
+    {
+        return s_pApplicationIntern->IsBoundsVisible(_rBounds);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void UpdateInstanceBuffer(std::span<const sInstanceData> _staticInstances, uint64_t _staticRevision,
+        std::span<sInstanceData* const> _dynamicInstances)
+    {
+        s_pApplicationIntern->UpdateInstanceBuffer(_staticInstances, _staticRevision, _dynamicInstances);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances)
     {
         s_pApplicationIntern->UpdateInstanceBuffer(_rInstances);

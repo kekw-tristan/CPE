@@ -488,12 +488,15 @@ namespace Engine::GFX
 
         VkViewport viewport = { 0.0f, 0.0f, static_cast<float>(rendering.renderArea.extent.width),
             static_cast<float>(rendering.renderArea.extent.height), 0.0f, 1.0f };
+
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
         vkCmdSetScissor(commandBuffer, 0, 1, &rendering.renderArea);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetNormalDepthPipeline());
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipeline->GetPipelineLayout(),
             0, 1, &rFrame.frameDescriptorSet, 0, nullptr);
+
         m_renderPassType = sRenderPassType::AmbientOcclusion;
+        m_passFrustum    = m_cameraFrustum;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -672,21 +675,22 @@ namespace Engine::GFX
         const auto updateSet = [&](VkDescriptorSet _set, VkImageView _source, VkImageView _bloom)
         {
             VkDescriptorImageInfo sceneImageInfo{};
-            sceneImageInfo.imageView = _source;
-            sceneImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            sceneImageInfo.imageView    = _source;
+            sceneImageInfo.imageLayout  = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             VkDescriptorImageInfo samplerInfo{};
             samplerInfo.sampler = m_postProcessSampler;
 
             VkDescriptorImageInfo bloomImageInfo{};
-            bloomImageInfo.imageView = _bloom;
-            bloomImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            bloomImageInfo.imageView    = _bloom;
+            bloomImageInfo.imageLayout  = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             std::array<VkWriteDescriptorSet, 4> writes{};
             writes[0] = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, _set, 0, 0, 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, &sceneImageInfo, nullptr, nullptr };
             writes[1] = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, _set, 1, 0, 1, VK_DESCRIPTOR_TYPE_SAMPLER, &samplerInfo, nullptr, nullptr };
             writes[2] = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, _set, 2, 0, 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, &bloomImageInfo, nullptr, nullptr };
             writes[3] = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, _set, 3, 0, 1, VK_DESCRIPTOR_TYPE_SAMPLER, &samplerInfo, nullptr, nullptr };
+
             vkUpdateDescriptorSets(m_pDevice->GetDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
         };
 
@@ -941,50 +945,82 @@ namespace Engine::GFX
 
     void cVulkanRenderer::UpdateInstanceBuffer(std::vector<sInstanceData*>& _rInstances)
     {
-        if (_rInstances.size() > c_maxNumberOfInstances)
+        UpdateInstanceBuffer({}, 0, _rInstances);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool cVulkanRenderer::IsBoundsVisible(const sBounds& _rBounds) const
+    {
+        return m_renderPassType == sRenderPassType::None || m_passFrustum.Intersects(_rBounds);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    void cVulkanRenderer::UpdateInstanceBuffer(std::span<const sInstanceData> _staticInstances, uint64_t _staticRevision,
+        std::span<sInstanceData* const> _dynamicInstances)
+    {
+        if (!m_hasFrameStarted || m_renderPassType != sRenderPassType::None)
         {
-            throw std::length_error("Instance count exceeds the configured GPU instance buffer capacity!");
+            throw std::runtime_error("Instance uploads require an active frame outside render passes!");
         }
 
-        if (_rInstances.empty())
+        if (_staticInstances.size() > c_maxNumberOfInstances
+            || _dynamicInstances.size() > c_maxNumberOfInstances - _staticInstances.size())
         {
-            return;
+            throw std::length_error("Instance count exceeds the configured GPU instance buffer capacity!");
         }
 
         sVulkanFrame& rFrame            = m_frames[m_currentFrame];
         VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
 
-        // upload instances 
+        // Each in-flight buffer retains its own version of the static prefix.
+        const bool uploadStatic = !rFrame.staticInstancesUploaded
+            || rFrame.staticInstanceRevision != _staticRevision
+            || rFrame.staticInstanceCount != _staticInstances.size();
 
-        std::vector<sInstanceData> uploadData;
-        uploadData.reserve(_rInstances.size());
+        const VkDeviceSize staticSize = sizeof(sInstanceData) * _staticInstances.size();
+        const VkDeviceSize dynamicSize = sizeof(sInstanceData) * _dynamicInstances.size();
 
-        for (sInstanceData* instance : _rInstances)
+        m_instanceUploadData.clear();
+        for (const sInstanceData* pInstance : _dynamicInstances)
         {
-            uploadData.push_back(*instance);
+            if (pInstance == nullptr)
+                throw std::invalid_argument("Cannot upload a null render instance!");
+
+            m_instanceUploadData.push_back(*pInstance);
         }
 
-        VkDeviceSize instancesSize = sizeof(sInstanceData) * _rInstances.size(); 
+        if (uploadStatic && staticSize != 0)
+            rFrame.instanceBufferStaging.Write(_staticInstances.data(), staticSize);
 
-        rFrame.instanceBufferStaging.Write(uploadData.data(), instancesSize);
-        
+        if (dynamicSize != 0)
+            rFrame.instanceBufferStaging.Write(m_instanceUploadData.data(), dynamicSize, staticSize);
+
+        rFrame.staticInstanceRevision = _staticRevision;
+        rFrame.staticInstanceCount = static_cast<uint32_t>(_staticInstances.size());
+        rFrame.staticInstancesUploaded = true;
+
         VkBufferCopy copyRegion{};
-        copyRegion.srcOffset = 0;
-        copyRegion.dstOffset = 0;
-        copyRegion.size      = instancesSize;
+        copyRegion.srcOffset = uploadStatic ? 0 : staticSize;
+        copyRegion.dstOffset = copyRegion.srcOffset;
+        copyRegion.size = (uploadStatic ? staticSize : 0) + dynamicSize;
+
+        if (copyRegion.size == 0)
+            return;
 
         vkCmdCopyBuffer(pCommandBuffer, rFrame.instanceBufferStaging.GetBuffer(), rFrame.instanceBuffer.GetBuffer(), 1, &copyRegion);
 
         VkBufferMemoryBarrier barrier{};
 
-        barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier.sType               = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        barrier.srcAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask       = VK_ACCESS_SHADER_READ_BIT;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.buffer = rFrame.instanceBuffer.GetBuffer();
-        barrier.offset = 0;
-        barrier.size = instancesSize;
+        barrier.buffer              = rFrame.instanceBuffer.GetBuffer();
+        barrier.offset              = copyRegion.dstOffset;
+        barrier.size                = copyRegion.size;
 
         vkCmdPipelineBarrier(
             pCommandBuffer,
@@ -1143,10 +1179,10 @@ namespace Engine::GFX
 
         const Math::cVec3f cameraUp = cameraRight.cross(cameraForward).normalized();
 
-        const float xScale                  = std::abs(projectionData[0]);
-        const float yScale                  = std::abs(projectionData[5]);
-        const float tanHalfHorizontalFov     = xScale > 0.000001f ? 1.0f / xScale : 1.0f;
-        const float tanHalfVerticalFov       = yScale > 0.000001f ? 1.0f / yScale : 1.0f;
+        const float xScale                = std::abs(projectionData[0]);
+        const float yScale                = std::abs(projectionData[5]);
+        const float tanHalfHorizontalFov  = xScale > 0.000001f ? 1.0f / xScale : 1.0f;
+        const float tanHalfVerticalFov    = yScale > 0.000001f ? 1.0f / yScale : 1.0f;
         const float horizontalRadiusScale = std::sqrt(1.0f + tanHalfHorizontalFov * tanHalfHorizontalFov);
         const float verticalRadiusScale   = std::sqrt(1.0f + tanHalfVerticalFov * tanHalfVerticalFov);
 
@@ -1760,6 +1796,7 @@ namespace Engine::GFX
         VkCommandBuffer pCommandBuffer  = rFrame.pCommandBuffer;
 
         m_renderPassType = sRenderPassType::Shadow;
+        m_passFrustum.Set(std::span<const float, 16>(shadow.viewProjection[_matrixIndex].data(), 16));
 
         VkRenderingAttachmentInfo depthAttachment{};
 
@@ -2578,6 +2615,7 @@ namespace Engine::GFX
         }
 
         m_renderPassType = sRenderPassType::Main;
+        m_passFrustum = m_cameraFrustum;
 
         VkExtent2D  extent             = m_pSwapchain->GetExtent();
 
@@ -2901,6 +2939,7 @@ namespace Engine::GFX
         sReflectionProbePushConstants pushConstants{};
 
         pushConstants.viewProjection = view * projection;
+        m_passFrustum.Set(std::span<const float, 16>(pushConstants.viewProjection.data(), 16));
 
         pushConstants.cameraPosition[0] = rProbe.position.x();
         pushConstants.cameraPosition[1] = rProbe.position.y();
@@ -3270,6 +3309,7 @@ namespace Engine::GFX
             rFrame.instanceBuffer.Create(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
             rFrame.instanceBufferStaging.Create(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             rFrame.instanceBufferStaging.Map(*m_pDevice, sizeof(sInstanceData) * c_maxNumberOfInstances, 0);
+            rFrame.staticInstancesUploaded = false;
 
             // light
             rFrame.lightBuffer.Create(*m_pDevice, sizeof(sLightGPU) * c_maxNumberOfLights, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -3636,6 +3676,7 @@ namespace Engine::GFX
         _rCamera.GetViewMatrix(frameData.viewMatrix);
         _rCamera.GetProjectionMatrix(aspectRatio, frameData.projMatrix);
         _rCamera.GetViewProjectionMatrix(aspectRatio, frameData.viewProj);
+        m_cameraFrustum.Set(frameData.viewProj);
 
         _rCamera.GetPosition(frameData.cameraPosition);
 

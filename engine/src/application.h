@@ -21,6 +21,7 @@ namespace Engine
     {
         class cCamera; 
         struct sInstanceData;
+        struct sBounds;
     }
 
     struct sAppConfig
@@ -78,6 +79,11 @@ namespace Engine::GFX
     void DrawMeshIntances(MeshHandle _pHandle, uint32_t _instanceCount, uint32_t _firstInstances = 0);
 
     void UpdateInstanceBuffer(std::vector<GFX::sInstanceData*>& _rInstances);
+    // Static instances occupy the prefix; increment the revision whenever their data or order changes.
+    void UpdateInstanceBuffer(std::span<const sInstanceData> _staticInstances, uint64_t _staticRevision,
+        std::span<sInstanceData* const> _dynamicInstances);
+    // Tests the active camera, shadow cascade/light face, or reflection-probe face.
+    bool IsBoundsVisible(const sBounds& _rBounds);
 
     void UpdateHealthBars(std::span<const sHealthBarData> _healthBars);
     void UpdateParticles(std::span<const sParticleData> _particles);
