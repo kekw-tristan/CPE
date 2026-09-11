@@ -19,7 +19,7 @@ namespace Engine::GFX
 
     static constexpr uint32_t c_maxNumberOfInstances    = 100000; 
     static constexpr uint32_t c_maxNumberOfLights       = 1000;
-    static constexpr uint32_t c_maxNumberOfActiveLights = 48;
+    static constexpr uint32_t c_maxNumberOfActiveLights = 24;
     static constexpr uint32_t c_maxNumberOfMaterials    = 10000;
 
     static constexpr uint32_t c_maxShadowLayers = 16;
@@ -34,6 +34,6 @@ namespace Engine::GFX
 
     static constexpr uint32_t c_shadowMapResolution = 4096;
 
-    constexpr int c_maxNumberOfActiveReflectionProbes = 8;
+    constexpr int c_maxNumberOfActiveReflectionProbes = 4;
     constexpr int c_maxNumberOfReflectionProbes       = 96;
 }

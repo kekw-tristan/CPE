@@ -23,7 +23,7 @@ namespace Gameplay
     {
         static constexpr size_t c_maxHitEnemies = 5;
 
-        static constexpr size_t c_maxGroundSamples = 169;
+        static constexpr size_t c_maxGroundSamples = 81;
 
         float GetGroundSampleRadius(size_t _index) const;
         bool ContainsGroundPoint(const Engine::Math::cVec3f& _rPosition) const;

@@ -164,6 +164,8 @@ void cGame::OnUpdate(float _deltaTime)
     UpdateProjectileEffects(augmentSelectionPending ? 0.0f : _deltaTime);
     SyncLootRenderInstances();
 
+    if (m_instanceListDirty)
+        RebuildInstanceList();
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -865,7 +867,7 @@ void cGame::RefreshWorldRenderInstances()
             SpawnEnemies(chunk.spawns, coordinate);
     }
 
-    RebuildInstanceList();
+    m_instanceListDirty = true;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -983,6 +985,7 @@ void cGame::RebuildInstanceList()
             m_instances.push_back(pInstance);
     }
 
+    m_instanceListDirty = false;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -1741,7 +1744,7 @@ void cGame::SyncProjectileRenderInstances()
     }
 
     if (instanceListChanged)
-        RebuildInstanceList();
+        m_instanceListDirty = true;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -1804,7 +1807,7 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
             if (projectile.areaActive)
             {
                 definition.appearance = eParticleAppearance::Vapor;
-                definition.spawnRate = 75.0f;
+                definition.spawnRate = 40.0f;
                 definition.startSize = 0.35f;
                 definition.endSize   = 0.85f;
                 definition.lifetime  = 2.0f;
@@ -1820,7 +1823,7 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
             {
                 sParticleDefinition bubbles = poisonDefinition(player);
                 bubbles.appearance = eParticleAppearance::Bubble;
-                bubbles.spawnRate = 14.0f;
+                bubbles.spawnRate = 8.0f;
                 bubbles.startSize = 0.045f;
                 bubbles.endSize = 0.13f;
                 bubbles.lifetime = 1.0f;
@@ -1834,7 +1837,7 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
             for (size_t index = 0; index < projectile.groundSampleCount; ++index)
             {
                 surfaces[index] = { projectile.groundSamples[index], projectile.groundNormals[index], projectile.GetGroundSampleRadius(index) };
-                surfaces[index].tileHalfExtent = projectile.areaRadius / 13.0f;
+                surfaces[index].tileHalfExtent = projectile.areaRadius / 9.0f;
                 surfaces[index].areaClip = { projectile.position.x(), projectile.position.z(), projectile.radius };
                 m_particleSystem.AddSurface(surfaces[index], color, projectile.areaAge);
             }
@@ -1913,7 +1916,7 @@ void cGame::SyncLootRenderInstances()
     }
 
     m_lootRevision = m_lootManager.GetRevision();
-    RebuildInstanceList();
+    m_instanceListDirty = true;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------

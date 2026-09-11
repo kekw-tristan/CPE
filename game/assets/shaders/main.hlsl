@@ -1,4 +1,4 @@
-static const uint MAX_REFLECTION_PROBES = 8;
+static const uint MAX_REFLECTION_PROBES = 4;
 [[vk::binding(14, 0)]] Texture2D<float4> occlusionGeometry;
 [[vk::binding(15, 0)]] Texture2D<float4> occlusionRaw;
 [[vk::binding(16, 0)]] Texture2D<float4> occlusionFiltered;
@@ -1184,6 +1184,12 @@ float4 PSMain(VSOutput input) : SV_Target
         }
         else if (lightType == LIGHT_TYPE_POINT)
         {
+            float3 lightOffset = light.positionRadius.xyz - input.worldPosition;
+            if (dot(lightOffset, lightOffset) >= light.positionRadius.w * light.positionRadius.w)
+            {
+                continue;
+            }
+
             float3 contribution = EvaluatePointLight(input.worldPosition, normal, albedo, light, roughness, metallic, lightWrap, shapeContrast);
 
             if (light.shadowIndex >= 0)
@@ -1201,6 +1207,12 @@ float4 PSMain(VSOutput input) : SV_Target
         }
         else if (lightType == LIGHT_TYPE_SPOT)
         {
+            float3 lightOffset = light.positionRadius.xyz - input.worldPosition;
+            if (dot(lightOffset, lightOffset) >= light.positionRadius.w * light.positionRadius.w)
+            {
+                continue;
+            }
+
             float3 contribution = EvaluateSpotLight(input.worldPosition, normal, albedo, light, roughness, metallic, lightWrap, shapeContrast);
 
             if (light.shadowIndex >= 0)

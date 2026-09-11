@@ -1433,7 +1433,7 @@ namespace Engine::GFX
 
         uint32_t nextLayer = 0;
 
-        for (uint32_t lightIndex = 0; lightIndex < static_cast<uint32_t>(lightCount); ++lightIndex)
+        for (uint32_t lightIndex : m_activeLightIndices)
         {
             const sLight& rLight        = rLights[lightIndex];
             uint32_t requiredLayers     = 0;
@@ -2403,7 +2403,7 @@ namespace Engine::GFX
 
                 pushConstants.faceIndex         = faceIndex;
                 pushConstants.roughness         = roughness;
-                pushConstants.sampleCount       = mipLevel == 0 ? 1u : std::min(1024u, 64u << std::min(mipLevel, 4u));
+                pushConstants.sampleCount       = mipLevel == 0 ? 1u : 64u; //mipLevel == 0 ? 1u : std::min(1024u, 64u << std::min(mipLevel, 4u));
                 pushConstants.captureResolution = static_cast<float>(rVulkanProbe.GetResolution());
 
                 vkCmdPushConstants(
@@ -2676,17 +2676,18 @@ namespace Engine::GFX
 
     bool cVulkanRenderer::NeedsReflectionProbeUpdate(uint32_t _probeIndex) const
     {
-        if (_probeIndex >= ReflectionProbeManager::GetProbeCount()
-            || _probeIndex >= m_vulkanReflectionProbes.size())
-        {
-            return false;
-        }
-
-        const sReflectionProbe& rProbe = ReflectionProbeManager::GetProbe(_probeIndex);
-
-        return rProbe.active
-            && rProbe.dirty
-            && std::find(m_activeReflectionProbeHandles.begin(), m_activeReflectionProbeHandles.end(), _probeIndex) != m_activeReflectionProbeHandles.end();
+        //if (_probeIndex >= ReflectionProbeManager::GetProbeCount()
+        //    || _probeIndex >= m_vulkanReflectionProbes.size())
+        //{
+        //    return false;
+        //}
+        //
+        //const sReflectionProbe& rProbe = ReflectionProbeManager::GetProbe(_probeIndex);
+        //
+        //return rProbe.active
+        //    && rProbe.dirty
+        //    && std::find(m_activeReflectionProbeHandles.begin(), m_activeReflectionProbeHandles.end(), _probeIndex) != m_activeReflectionProbeHandles.end();
+        return false;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

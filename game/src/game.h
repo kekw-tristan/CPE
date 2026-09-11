@@ -195,6 +195,7 @@ class cGame : public cApplication
         Container::cPool<GFX::sInstanceData, c_instancesPerPage> m_pool;
     
         std::vector<GFX::sInstanceData*> m_instances;
+        bool m_instanceListDirty = false;
 
         GFX::sShapeModelDesc m_playerModel;
         GFX::sShapeModelDesc m_playerAttackModel;

@@ -13,6 +13,9 @@ namespace Gameplay
 {
     namespace
     {
+        constexpr int c_sporeGroundSampleHalfExtent = 4;
+        constexpr float c_sporeGroundSampleDivisor = 4.5f;
+
         void ActivateArea(sProjectile& _rProjectile)
         {
             _rProjectile.areaActive = true;
@@ -31,12 +34,12 @@ namespace Gameplay
                 return;
 
             // Cache terrain/steps once at impact; visuals and damage share this footprint.
-            const float spacing = _rProjectile.areaRadius / 6.5f;
+            const float spacing = _rProjectile.areaRadius / c_sporeGroundSampleDivisor;
             _rProjectile.groundSampleRadius = spacing * 0.75f;
 
-            for (int z = -6; z <= 6; ++z)
+            for (int z = -c_sporeGroundSampleHalfExtent; z <= c_sporeGroundSampleHalfExtent; ++z)
             {
-                for (int x = -6; x <= 6; ++x)
+                for (int x = -c_sporeGroundSampleHalfExtent; x <= c_sporeGroundSampleHalfExtent; ++x)
                 {
                     const Engine::Math::cVec3f sample = _rProjectile.position + Engine::Math::cVec3f(x * spacing, 0.0f, z * spacing);
 
@@ -133,7 +136,7 @@ namespace Gameplay
         {
             const Engine::Math::cVec3f local = _rPosition - groundSamples[index];
 
-            const float halfExtent          = areaRadius / 13.0f;
+            const float halfExtent          = areaRadius / (2.0f * c_sporeGroundSampleDivisor);
             const float heightAboveGround   = local.dot(groundNormals[index]) / groundNormals[index].y();
 
             if (std::abs(local.x()) <= halfExtent && std::abs(local.z()) <= halfExtent

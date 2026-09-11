@@ -8,7 +8,7 @@ namespace World
     constexpr int c_worldChunkCountX = 192;
     constexpr int c_worldChunkCountZ = 192;
 
-    constexpr int c_chunkLoadRadius  = 4;
+    constexpr int c_chunkLoadRadius  = 3;
 
     constexpr float c_forestRadius  = 2800.0f;
     // Keep all four ruins and their guarded approaches outside the spawn clearing.

@@ -337,10 +337,10 @@ namespace World
         )
         {
             constexpr uint32_t c_minTreeCount           = 10;
-            constexpr uint32_t c_maxTreeCount           = 28;
+            constexpr uint32_t c_maxTreeCount           = 22;
             constexpr uint32_t c_minStoneCount          = 3;
             constexpr uint32_t c_maxStoneCount          = 8;
-            constexpr uint32_t c_maxPlacementAttempts   = 500;
+            constexpr uint32_t c_maxPlacementAttempts   = 200;
 
             constexpr float c_treeScaleMultiplier   = 3.0f;
             constexpr float c_minTreeScale          = 0.65f;
@@ -671,7 +671,7 @@ namespace World
             };
 
             // Clumps of low foliage alternate with exposed outcrops and luminous crystal seams.
-            for (uint32_t i = 0; i < 30; ++i)
+            for (uint32_t i = 0; i < 20; ++i)
             {
                 const float x = worldX + offset(_rRandomGenerator);
                 const float z = worldZ + offset(_rRandomGenerator);
@@ -896,10 +896,24 @@ namespace World
             std::vector<Physics::sAABBCollider>& _rColliders
         )
         {
+            constexpr float c_halfChunkSize = static_cast<float>(c_chunkSize) * 0.5f;
+            constexpr float c_wallChunkMargin = 8.0f;
+
+            const float chunkCenterX = static_cast<float>(_rChunk.coordinate.x * c_chunkSize);
+            const float chunkCenterZ = static_cast<float>(_rChunk.coordinate.z * c_chunkSize);
+
             const auto belongsToChunk = [&](const Math::cVec3f& _rPosition)
             {
                 return static_cast<int>(std::floor(_rPosition.x() / c_chunkSize + 0.5f)) == _rChunk.coordinate.x
                     && static_cast<int>(std::floor(_rPosition.z() / c_chunkSize + 0.5f)) == _rChunk.coordinate.z;
+            };
+
+            const auto intersectsChunk = [&](float _minimumX, float _maximumX, float _minimumZ, float _maximumZ, float _padding = 0.0f)
+            {
+                return _maximumX + _padding >= chunkCenterX - c_halfChunkSize
+                    && _minimumX - _padding <= chunkCenterX + c_halfChunkSize
+                    && _maximumZ + _padding >= chunkCenterZ - c_halfChunkSize
+                    && _minimumZ - _padding <= chunkCenterZ + c_halfChunkSize;
             };
 
             const auto addSpawn = [&](const sEnemySpawn& _rSpawn)
@@ -935,6 +949,11 @@ namespace World
                 const auto delta    = _rLayout.mainPath[i + 1].position - start;
                 const float length  = std::sqrt(delta.x() * delta.x() + delta.z() * delta.z());
 
+                if (!intersectsChunk(
+                    std::min(start.x(), start.x() + delta.x()), std::max(start.x(), start.x() + delta.x()),
+                    std::min(start.z(), start.z() + delta.z()), std::max(start.z(), start.z() + delta.z()), 0.5f))
+                    continue;
+
                 for (float distance = 1.0f; distance < length; distance += 3.0f)
                 {
                     GFX::sShapeInstance marker{};
@@ -951,15 +970,30 @@ namespace World
                 }
             }
 
+            const float nearestX = std::max(std::abs(chunkCenterX) - c_halfChunkSize, 0.0f);
+            const float nearestZ = std::max(std::abs(chunkCenterZ) - c_halfChunkSize, 0.0f);
+            const float farthestX = std::abs(chunkCenterX) + c_halfChunkSize;
+            const float farthestZ = std::abs(chunkCenterZ) + c_halfChunkSize;
+            const float nearestRadius = std::sqrt(nearestX * nearestX + nearestZ * nearestZ);
+            const float farthestRadius = std::sqrt(farthestX * farthestX + farthestZ * farthestZ);
+
             // Continuous cliff ring closes the currently playable forest section.
-            for (int i = 0; i < c_forestWallCount; ++i)
+            if (c_forestRadius >= nearestRadius - c_wallChunkMargin
+                && c_forestRadius <= farthestRadius + c_wallChunkMargin)
             {
-                const float angle = static_cast<float>(i) * 6.2831853f / static_cast<float>(c_forestWallCount);
-                addWall(Math::cVec3f(std::cos(angle) * c_forestRadius, 0.0f, std::sin(angle) * c_forestRadius), 2.5f);
+                for (int i = 0; i < c_forestWallCount; ++i)
+                {
+                    const float angle = static_cast<float>(i) * 6.2831853f / static_cast<float>(c_forestWallCount);
+                    addWall(Math::cVec3f(std::cos(angle) * c_forestRadius, 0.0f, std::sin(angle) * c_forestRadius), 2.5f);
+                }
             }
 
             for (const auto& dungeon : _rLayout.dungeons)
             {
+                if (!intersectsChunk(dungeon.center.x() - 16.0f, dungeon.center.x() + 16.0f,
+                    dungeon.center.z() - 28.0f, dungeon.center.z() + 16.0f))
+                    continue;
+
                 // Roofless ruins: boss chamber, a southern doorway and a guarded approach.
                 for (int offset = -14; offset <= 14; offset += 2)
                 {
