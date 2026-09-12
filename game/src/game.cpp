@@ -238,6 +238,22 @@ void cGame::OnDrawUI()
         hudState.spellCooldownDurations[slotIndex]  = pSpell->GetSpellStats().cooldown;
         hudState.spellManaCosts[slotIndex]          = Gameplay::SpellManager::GetSpell(pSpell->GetSpellId()).manaCost;
         hudState.anySpellOnCooldown                 = hudState.anySpellOnCooldown || pSpell->IsOnCooldown();
+
+        if (m_playerChannelProjectileId != 0 && slotIndex == m_playerChannelSlot)
+        {
+            hudState.channelSlot = slotIndex;
+            const float duration = Gameplay::SpellManager::GetSpell(pSpell->GetSpellId()).channelDuration;
+            hudState.channelFraction = std::clamp(m_playerChannelTime / std::max(duration, 0.01f), 0.0f, 1.0f);
+            hudState.spellActiveFractions[slotIndex] = hudState.channelFraction;
+        }
+        else if (pSpell->GetSpellId() == Gameplay::sSpellId::StoneShard)
+        {
+            hudState.spellActiveFractions[slotIndex] = m_playerReflectionAuraTime / std::max(m_playerReflectionAuraDuration, 0.01f);
+        }
+        else if (pSpell->GetSpellId() == Gameplay::sSpellId::Dash)
+        {
+            hudState.spellActiveFractions[slotIndex] = m_playerDashTime / std::max(m_playerDashDuration, 0.01f);
+        }
     }
 
     // Navigation uses immutable layout data even before an arena's chunk is loaded.

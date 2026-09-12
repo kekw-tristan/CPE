@@ -69,6 +69,27 @@ void cGame::InitMeshes()
 
     m_playerSphereMaterial = MaterialManager::CreateMaterial(playerSphereMaterial);
 
+    sMaterial arcaneMaterial{};
+    arcaneMaterial.roughness        = 0.28f;
+    arcaneMaterial.emissiveColor    = { 0.12f, 0.65f, 0.9f };
+    arcaneMaterial.emissiveStrength = 1.4f;
+    m_arcaneSpellMaterial           = MaterialManager::CreateMaterial(arcaneMaterial);
+
+    sMaterial barkMaterial{};
+    barkMaterial.roughness      = 0.86f;
+    barkMaterial.lightWrap      = 0.18f;
+    barkMaterial.shapeContrast  = 1.25f;
+    m_barkSpellMaterial         = MaterialManager::CreateMaterial(barkMaterial);
+
+    sMaterial sapMaterial           = barkMaterial;
+    sapMaterial.roughness           = 0.38f;
+    sapMaterial.emissiveColor       = { 0.48f, 0.62f, 0.16f };
+    sapMaterial.emissiveStrength    = 0.65f;
+    m_sapSpellMaterial              = MaterialManager::CreateMaterial(sapMaterial);
+
+    sapMaterial.emissiveColor   = { 0.82f, 0.38f, 0.08f };
+    m_hostileSpellMaterial      = MaterialManager::CreateMaterial(sapMaterial);
+
     sLight directionalLight0{};
 
     directionalLight0.type          = sLightType::Directional;
@@ -443,6 +464,7 @@ void cGame::RefreshWorldRenderInstances()
 
         GFX::ShapeModelLights::Destroy(_rVisual.lightHandles);
         GFX::LightManager::DestroyLight(_rVisual.auraLight);
+        m_particleSystem.StopEmitter(_rVisual.spellEmitter, true);
 
         for (GFX::sInstanceData* pShield : _rVisual.auraShields)
         {

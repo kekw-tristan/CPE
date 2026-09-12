@@ -11,17 +11,20 @@ void cGame::UpdatePlayer(float _deltaTime)
     constexpr float c_jumpVelocity      = 6.0f;
     constexpr float c_sprintMultiplier  = 1.5f;
 
-    m_playerSpeedPotionTime = std::max(0.0f, m_playerSpeedPotionTime - _deltaTime);
-    m_playerReflectionAuraTime = std::max(0.0f, m_playerReflectionAuraTime - _deltaTime);
+    m_playerSpeedPotionTime     = std::max(0.0f, m_playerSpeedPotionTime - _deltaTime);
+    m_playerDashVisualTime      = std::max(0.0f, m_playerDashVisualTime - _deltaTime);
+    m_playerReflectionAuraTime  = std::max(0.0f, m_playerReflectionAuraTime - _deltaTime);
 
     if (m_playerReflectionAuraTime > 0.0f)
     {
-        m_playerReflectionAuraPhase = std::fmod(m_playerReflectionAuraPhase + _deltaTime * 2.4f, 6.28318530718f);
+        m_playerReflectionAuraPhase = std::fmod(m_playerReflectionAuraPhase + _deltaTime * 1.2f, 6.28318530718f);
+        const float growth      = std::clamp((m_playerReflectionAuraDuration - m_playerReflectionAuraTime) / 0.22f, 0.0f, 1.0f);
+        const float wardWeight  = growth * std::clamp(m_playerReflectionAuraTime / 0.35f, 0.0f, 1.0f);
 
         GFX::sLight auraLight{};
         auraLight.type      = GFX::sLightType::Point;
-        auraLight.color     = { 0.32f, 0.72f, 1.0f };
-        auraLight.intensity = 3.0f;
+        auraLight.color     = { 0.64f, 0.78f, 0.28f };
+        auraLight.intensity = 1.8f * wardWeight;
         auraLight.position  = m_playerController.GetPosition() + Math::cVec3f(0.0f, 1.0f, 0.0f);
         auraLight.radius    = m_playerReflectionAuraRadius + 2.0f;
 
@@ -32,24 +35,37 @@ void cGame::UpdatePlayer(float _deltaTime)
 
         for (size_t shieldIndex = 0; shieldIndex < m_playerReflectionAuraShields.size(); ++shieldIndex)
         {
+            const bool isInlay      = shieldIndex >= 4;
+            const float shieldPhase = static_cast<float>(shieldIndex % 4);
+            
             GFX::sInstanceData*& rpShield = m_playerReflectionAuraShields[shieldIndex];
             if (rpShield == nullptr)
             {
                 rpShield = m_pool.Create();
-                rpShield->color = { 0.32f, 0.72f, 1.0f, 1.0f };
-                rpShield->materialIndex = m_playerSphereMaterial;
+                rpShield->color = isInlay ? std::array<float, 4>{ 0.56f, 0.66f, 0.22f, 1.0f }
+                    : std::array<float, 4>{ 0.30f, 0.22f, 0.09f, 1.0f };
+                rpShield->materialIndex = isInlay ? m_sapSpellMaterial : m_barkSpellMaterial;
                 m_dynamicMeshInstances[m_beveledCubeMesh].push_back(rpShield);
                 m_dynamicInstanceListDirty = true;
             }
 
-            const float angle = m_playerReflectionAuraPhase + static_cast<float>(shieldIndex) * 1.57079632679f;
+            const float angle  = m_playerReflectionAuraPhase + shieldPhase * 1.57079632679f;
+            const float radius = m_playerReflectionAuraRadius * (0.65f + 0.35f * growth) + (isInlay ? 0.09f : 0.0f);
+
             GFX::sTransform shieldTransform{};
             shieldTransform.position = m_playerController.GetPosition() + Math::cVec3f(
-                std::cos(angle) * m_playerReflectionAuraRadius,
-                1.1f + std::sin(m_playerReflectionAuraPhase * 2.0f + static_cast<float>(shieldIndex)) * 0.12f,
-                std::sin(angle) * m_playerReflectionAuraRadius);
-            shieldTransform.rotation = { 0.0f, angle, 0.0f };
-            shieldTransform.scale    = { 0.38f, 0.55f, 0.08f };
+                std::cos(angle) * radius,
+                1.1f + std::sin(m_playerReflectionAuraPhase * 2.0f + shieldPhase) * 0.12f,
+                std::sin(angle) * radius);
+            shieldTransform.rotation = { 0.12f * std::sin(angle), 1.57079632679f - angle, 0.12f * std::cos(angle) };
+            shieldTransform.scale    = { 0.58f * wardWeight, 1.05f * wardWeight, 0.16f * wardWeight };
+
+            if (isInlay)
+            {
+                shieldTransform.position += Math::cVec3f(0.0f, shieldIndex >= 8 ? 0.2f : -0.2f, 0.0f);
+                shieldTransform.rotation += Math::cVec3f(0.0f, 0.0f, shieldIndex >= 8 ? 0.5f : -0.5f);
+                shieldTransform.scale = { 0.055f * wardWeight, 0.48f * wardWeight, 0.035f * wardWeight };
+            }
             rpShield->worldMatrix = CreateTransformMatrix(shieldTransform);
         }
     }
@@ -76,7 +92,11 @@ void cGame::UpdatePlayer(float _deltaTime)
     if (m_playerDashTime > 0.0f)
     {
         const float dashFrameTime = std::min(_deltaTime, m_playerDashTime);
-        const float dashSpeed = _deltaTime > 0.0f ? m_playerDashSpeed * dashFrameTime / _deltaTime : 0.0f;
+        // Integrate the speed envelope: a decisive start and soft landing retain the same total distance.
+        const float duration  = std::max(m_playerDashDuration, 0.001f);
+        const float progress  = 1.0f - m_playerDashTime / duration;
+        const float meanSpeed = 1.35f - 0.7f * (progress + 0.5f * dashFrameTime / duration);
+        const float dashSpeed = _deltaTime > 0.0f ? m_playerDashSpeed * meanSpeed * dashFrameTime / _deltaTime : 0.0f;
 
         m_playerController.Move(m_playerDashDirection, dashSpeed);
         m_playerDashTime = std::max(0.0f, m_playerDashTime - _deltaTime);
@@ -149,6 +169,8 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     }
 
     m_playerAttackTime = std::max(0.0f, m_playerAttackTime - _deltaTime);
+    const float channelTarget = m_playerChannelProjectileId != 0 ? 1.0f : 0.0f;
+    m_playerChannelPoseWeight += (channelTarget - m_playerChannelPoseWeight) * (1.0f - std::exp(-14.0f * _deltaTime));
 
     const auto isSpellSlotHeld = [&](size_t _slot)
     {
@@ -189,6 +211,8 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
 
         const float chargeFraction  = m_playerChannelTime / channelDuration;
         const float chargedRadius   = channelStats.projectileRadius * (0.5f + chargeFraction);
+
+        m_playerYaw = std::atan2(direction.x(), direction.z());
         
         const Engine::Math::cVec3f castPosition = m_playerController.GetPosition() + Engine::Math::cVec3f(0.0f, 1.25f, 0.0f);
 
@@ -301,6 +325,7 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     if (spellDefinition.castType == Gameplay::sSpellCastType::ReflectionAura)
     {
         m_playerReflectionAuraTime          = spellStats.duration;
+        m_playerReflectionAuraDuration      = spellStats.duration;
         m_playerReflectionAuraRadius        = spellStats.projectileRadius;
         m_playerReflectionDamageMultiplier  = 1.0f + spellStats.damage * 0.01f;
 
@@ -345,9 +370,12 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
         if (dashDirection.isZero())
             return;
 
-        m_playerDashDirection = dashDirection.normalized();
-        m_playerDashSpeed     = spellStats.projectileSpeed;
-        m_playerDashTime      = spellStats.duration;
+        m_playerDashDirection  = dashDirection.normalized();
+        m_playerDashSpeed      = spellStats.projectileSpeed;
+        m_playerDashTime       = spellStats.duration;
+        m_playerDashDuration   = spellStats.duration;
+        m_playerDashVisualTime = spellStats.duration + 0.18f;
+        m_playerYaw = std::atan2(m_playerDashDirection.x(), m_playerDashDirection.z());
 
         m_playerMana = std::max(0.0f, m_playerMana - spellDefinition.manaCost);
         m_runState.StartSpellCooldown(spellSlot);
@@ -455,21 +483,27 @@ void cGame::BeginRun()
     m_inventory.ClearSpells();
     m_lootManager.Clear();
 
-    m_playerMaxHealth   = c_playerBaseMaxHealth;
-    m_playerHealth      = m_playerMaxHealth;
-    m_playerMaxMana     = c_playerBaseMaxMana;
-    m_playerMana        = m_playerMaxMana;
-    m_playerSpeedPotionTime = 0.0f;
-    m_playerDashTime    = 0.0f;
-    m_playerDashSpeed   = 0.0f;
-    m_playerChannelTime = 0.0f;
-    m_playerReflectionAuraTime = 0.0f;
-    m_playerReflectionAuraRadius = 0.0f;
-    m_playerReflectionDamageMultiplier = 1.0f;
-    m_playerReflectionAuraPhase = 0.0f;
-    m_playerChannelSlot = Gameplay::cRunState::c_numberOfSpellSlots;
-    m_playerChannelProjectileId = 0;
-    m_playerDashDirection = {};
+    m_playerMaxHealth           = c_playerBaseMaxHealth;
+    m_playerHealth              = m_playerMaxHealth;
+    m_playerMaxMana             = c_playerBaseMaxMana;
+    m_playerMana                = m_playerMaxMana;
+    m_playerSpeedPotionTime     = 0.0f;
+    m_playerDashTime            = 0.0f;
+    m_playerDashSpeed           = 0.0f;
+    m_playerDashDuration        = 0.0f;
+    m_playerDashVisualTime      = 0.0f;
+    m_playerChannelPoseWeight   = 0.0f;
+
+    m_particleSystem.StopEmitter(m_playerDashEmitter, true);
+
+    m_playerChannelTime                 = 0.0f;
+    m_playerReflectionAuraTime          = 0.0f;
+    m_playerReflectionAuraRadius        = 0.0f;
+    m_playerReflectionDamageMultiplier  = 1.0f;
+    m_playerReflectionAuraPhase         = 0.0f;
+    m_playerChannelSlot                 = Gameplay::cRunState::c_numberOfSpellSlots;
+    m_playerChannelProjectileId         = 0;
+    m_playerDashDirection               = {};
 
     if (!m_runState.GrantSpell(Gameplay::sSpellId::ArcaneOrb))
         return;

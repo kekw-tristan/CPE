@@ -182,95 +182,117 @@ namespace UI
             Gameplay::sItemId::Enum _spell)
         {
             const ImVec2 center(_rPosition.x + 32.0f * _scale, _rPosition.y + 26.0f * _scale);
+            const auto point = [&](float _x, float _y)
+            {
+                return ImVec2(center.x + _x * _scale, center.y + _y * _scale);
+            };
+            const auto line = [&](float _x0, float _y0, float _x1, float _y1, ImU32 _color, float _width)
+            {
+                _rDrawList.AddLine(point(_x0, _y0), point(_x1, _y1), _color, _width * _scale);
+            };
+            const auto facet = [&](float _x0, float _y0, float _x1, float _y1, float _x2, float _y2, ImU32 _color)
+            {
+                _rDrawList.AddTriangleFilled(point(_x0, _y0), point(_x1, _y1), point(_x2, _y2), _color);
+            };
+
+            const ImU32 moss = IM_COL32(118, 150, 73, 255);
+            const ImU32 sap = IM_COL32(215, 224, 147, 255);
+            const ImU32 bark = IM_COL32(112, 78, 43, 255);
+            _rDrawList.AddCircleFilled(center, 22.0f * _scale, IM_COL32(12, 21, 25, 235), 32);
+            _rDrawList.AddCircle(center, 22.0f * _scale, IM_COL32(164, 151, 109, 65), 32, _scale);
 
             switch (_spell)
             {
                 case Gameplay::sItemId::ThornLance:
                 {
-                    const ImU32 stemColor = IM_COL32(86, 116, 44, 255);
-                    const ImU32 thornColor = IM_COL32(190, 219, 103, 255);
-                    const ImU32 highlightColor = IM_COL32(235, 255, 174, 255);
-
-                    _rDrawList.AddLine(
-                        ImVec2(center.x - 17.0f * _scale, center.y + 15.0f * _scale),
-                        ImVec2(center.x + 9.0f * _scale, center.y - 11.0f * _scale),
-                        stemColor,
-                        5.0f * _scale);
-                    _rDrawList.AddTriangleFilled(
-                        ImVec2(center.x + 5.0f * _scale, center.y - 16.0f * _scale),
-                        ImVec2(center.x + 23.0f * _scale, center.y - 23.0f * _scale),
-                        ImVec2(center.x + 16.0f * _scale, center.y - 5.0f * _scale),
-                        thornColor);
-                    _rDrawList.AddTriangleFilled(
-                        ImVec2(center.x - 5.0f * _scale, center.y + 1.0f * _scale),
-                        ImVec2(center.x - 7.0f * _scale, center.y - 10.0f * _scale),
-                        ImVec2(center.x + 4.0f * _scale, center.y - 4.0f * _scale),
-                        thornColor);
-                    _rDrawList.AddTriangleFilled(
-                        ImVec2(center.x + 1.0f * _scale, center.y + 7.0f * _scale),
-                        ImVec2(center.x + 12.0f * _scale, center.y + 5.0f * _scale),
-                        ImVec2(center.x + 6.0f * _scale, center.y + 16.0f * _scale),
-                        thornColor);
-                    _rDrawList.AddLine(
-                        ImVec2(center.x + 10.0f * _scale, center.y - 15.0f * _scale),
-                        ImVec2(center.x + 19.0f * _scale, center.y - 19.0f * _scale),
-                        highlightColor,
-                        2.0f * _scale);
-                    break;
-                }
-
-                case Gameplay::sItemId::Dash:
-                {
-                    const ImVec2 start(center.x - 18.0f * _scale, center.y);
-                    const ImVec2 end(center.x + 18.0f * _scale, center.y);
-
-                    _rDrawList.AddLine(start, end, IM_COL32(97, 212, 166, 255), 5.0f * _scale);
-                    _rDrawList.AddTriangleFilled(
-                        ImVec2(end.x, end.y),
-                        ImVec2(end.x - 12.0f * _scale, end.y - 9.0f * _scale),
-                        ImVec2(end.x - 12.0f * _scale, end.y + 9.0f * _scale),
-                        IM_COL32(179, 255, 211, 255));
+                    line(-16, 16, 10, -10, bark, 5);
+                    facet(-10, 10, 18, -19, 7, -1, moss);
+                    facet(-10, 10, 18, -19, -1, -7, sap);
+                    facet(-8, 7, -13, -5, 0, -2, moss);
+                    facet(-2, 2, 11, 6, 5, -5, moss);
+                    facet(4, -7, 1, -17, 10, -13, sap);
+                    line(-15, 15, 13, -14, IM_COL32(240, 236, 181, 230), 1);
                     break;
                 }
 
                 case Gameplay::sItemId::StoneShard:
                 {
-                    const ImU32 auraColor = IM_COL32(69, 167, 235, 255);
-                    const ImU32 coreColor = IM_COL32(191, 231, 255, 255);
+                    const std::array<ImVec2, 5> shield = {
+                        point(-15, -13), point(0, -18), point(15, -13), point(12, 7), point(0, 19)
+                    };
+                    const std::array<ImVec2, 5> left = {
+                        point(-15, -13), point(0, -18), point(0, 19), point(-12, 7), point(-15, -3)
+                    };
+                    _rDrawList.AddConvexPolyFilled(shield.data(), static_cast<int>(shield.size()), bark);
+                    _rDrawList.AddConvexPolyFilled(left.data(), static_cast<int>(left.size()), IM_COL32(148, 111, 57, 255));
+                    line(-15, -13, 0, -18, sap, 1.5f);
+                    line(0, -18, 15, -13, moss, 1.5f);
+                    line(0, 13, 0, -12, sap, 2);
+                    line(0, 0, -8, -6, moss, 2);
+                    line(0, -5, 8, -11, sap, 2);
+                    line(0, 6, 7, 0, moss, 2);
+                    line(-11, -8, -9, 4, IM_COL32(58, 45, 28, 255), 1);
+                    line(11, -6, 8, 7, IM_COL32(58, 45, 28, 255), 1);
+                    break;
+                }
 
-                    _rDrawList.AddCircle(center, 18.0f * _scale, auraColor, 24, 3.0f * _scale);
-                    _rDrawList.AddCircle(center, 11.0f * _scale, IM_COL32(68, 109, 145, 255), 20, 2.0f * _scale);
-                    _rDrawList.AddCircleFilled(center, 5.0f * _scale, coreColor);
-                    _rDrawList.AddLine(
-                        ImVec2(center.x - 23.0f * _scale, center.y),
-                        ImVec2(center.x - 15.0f * _scale, center.y),
-                        coreColor,
-                        2.0f * _scale);
-                    _rDrawList.AddLine(
-                        ImVec2(center.x + 15.0f * _scale, center.y),
-                        ImVec2(center.x + 23.0f * _scale, center.y),
-                        coreColor,
-                        2.0f * _scale);
+                case Gameplay::sItemId::Dash:
+                {
+                    for (int slash = 0; slash < 3; ++slash)
+                    {
+                        const float offset = static_cast<float>(slash) * 8.0f;
+                        facet(-16 + offset, 13, -9 + offset, -7, 4 + offset, -15, moss);
+                        facet(-16 + offset, 13, 4 + offset, -15, -4 + offset, 5, sap);
+                        line(-21, 8 - offset, -12 + offset, 5 - offset, IM_COL32(139, 164, 100, 150), 1);
+                    }
                     break;
                 }
 
                 case Gameplay::sItemId::SporeOrb:
-                    _rDrawList.AddCircleFilled(ImVec2(center.x, center.y - 5.0f * _scale), 15.0f * _scale, IM_COL32(68, 166, 64, 255));
-                    _rDrawList.AddRectFilled(
-                        ImVec2(center.x - 5.0f * _scale, center.y + 3.0f * _scale),
-                        ImVec2(center.x + 5.0f * _scale, center.y + 16.0f * _scale),
-                        IM_COL32(220, 211, 166, 255),
-                        2.0f * _scale);
-                    _rDrawList.AddCircleFilled(ImVec2(center.x - 5.0f * _scale, center.y - 7.0f * _scale), 2.0f * _scale, IM_COL32(209, 241, 152, 255));
-                    _rDrawList.AddCircleFilled(ImVec2(center.x + 6.0f * _scale, center.y - 3.0f * _scale), 2.0f * _scale, IM_COL32(209, 241, 152, 255));
+                {
+                    facet(-5, 15, -3, -1, 5, 15, IM_COL32(204, 195, 141, 255));
+                    facet(-3, -1, 5, 15, 4, -1, IM_COL32(140, 142, 91, 255));
+                    const std::array<ImVec2, 6> cap = {
+                        point(-18, 0), point(-11, -13), point(-2, -18),
+                        point(10, -13), point(18, 0), point(0, 4)
+                    };
+                    _rDrawList.AddConvexPolyFilled(cap.data(), static_cast<int>(cap.size()), moss);
+                    facet(-18, 0, -2, -18, 0, -1, IM_COL32(155, 178, 95, 255));
+                    facet(0, -1, 10, -13, 18, 0, IM_COL32(73, 110, 55, 255));
+                    line(-16, 1, 0, 4, sap, 1.5f);
+                    line(0, 4, 16, 1, IM_COL32(108, 132, 72, 255), 1.5f);
+                    _rDrawList.AddCircleFilled(point(-7, -8), 2.4f * _scale, sap, 6);
+                    _rDrawList.AddCircleFilled(point(3, -12), 2.0f * _scale, sap, 6);
+                    _rDrawList.AddCircleFilled(point(9, -4), 1.8f * _scale, sap, 6);
+                    _rDrawList.AddCircleFilled(point(-12, 11), 1.6f * _scale, moss, 6);
+                    _rDrawList.AddCircleFilled(point(12, 14), 1.2f * _scale, sap, 6);
                     break;
+                }
+
+                case Gameplay::sItemId::ArcaneOrb:
+                {
+                    _rDrawList.AddCircleFilled(center, 14.0f * _scale, IM_COL32(51, 142, 186, 45), 24);
+                    std::array<ImVec2, 25> orbit{};
+                    for (size_t index = 0; index < orbit.size(); ++index)
+                    {
+                        const float angle = static_cast<float>(index) * 6.28318530718f / 24.0f;
+                        orbit[index] = point(std::cos(angle) * 19.0f, std::sin(angle) * 8.0f - std::cos(angle) * 7.0f);
+                    }
+                    _rDrawList.AddPolyline(orbit.data(), static_cast<int>(orbit.size()), IM_COL32(91, 178, 210, 210), 0, 1.4f * _scale);
+                    facet(0, -14, -9, 0, 0, 13, IM_COL32(73, 156, 192, 255));
+                    facet(0, -14, 9, 0, 0, 13, IM_COL32(134, 222, 237, 255));
+                    facet(0, -14, -9, 0, 1, -3, IM_COL32(210, 246, 247, 255));
+                    facet(0, 13, 9, 0, 1, -3, IM_COL32(57, 120, 168, 255));
+                    _rDrawList.AddCircleFilled(point(-18, 7), 2.0f * _scale, IM_COL32(190, 231, 242, 255), 6);
+                    _rDrawList.AddCircleFilled(point(18, -7), 1.6f * _scale, IM_COL32(190, 231, 242, 255), 6);
+                    break;
+                }
 
                 default:
                 {
-                    const ImVec2 highlight(center.x - 3.0f * _scale, center.y - 3.0f * _scale);
                     _rDrawList.AddCircleFilled(center, 18.0f * _scale, IM_COL32(67, 79, 155, 255));
                     _rDrawList.AddCircleFilled(center, 12.0f * _scale, IM_COL32(131, 160, 255, 255));
-                    _rDrawList.AddCircleFilled(highlight, 5.0f * _scale, IM_COL32(220, 233, 255, 255));
+                    _rDrawList.AddCircleFilled(point(-3, -3), 5.0f * _scale, IM_COL32(220, 233, 255, 255));
                     break;
                 }
             }
@@ -393,7 +415,8 @@ namespace UI
             Gameplay::sItemId::Enum _spell,
             float _cooldown,
             float _cooldownDuration,
-        float _manaCost)
+            float _manaCost,
+            float _activeFraction)
         {
             const ImVec2 slotEnd(_rPosition.x + c_slotSize * _scale, _rPosition.y + c_slotSize * _scale);
             _rDrawList.AddRectFilled(_rPosition, slotEnd, IM_COL32(24, 29, 37, 255), 8.0f * _scale);
@@ -412,6 +435,15 @@ namespace UI
                 DrawSpellCooldown(_rDrawList, _rPosition, _scale, _cooldown, cooldownFraction);
                 DrawSpellManaCost(_rDrawList, _rPosition, _scale, _manaCost);
                 borderColor = cooldownFraction > 0.0f ? IM_COL32(89, 98, 112, 255) : IM_COL32(112, 128, 154, 255);
+            }
+
+            if (_activeFraction > 0.0f)
+            {
+                borderColor = IM_COL32(182, 206, 117, 255);
+                _rDrawList.AddLine(
+                    ImVec2(_rPosition.x + 6.0f * _scale, _rPosition.y + 4.0f * _scale),
+                    ImVec2(_rPosition.x + (6.0f + 52.0f * std::clamp(_activeFraction, 0.0f, 1.0f)) * _scale, _rPosition.y + 4.0f * _scale),
+                    borderColor, 2.5f * _scale);
             }
 
             _rDrawList.AddRect(_rPosition, slotEnd, borderColor, 8.0f * _scale, 0, 1.5f * _scale);
@@ -850,6 +882,19 @@ namespace UI
 
         const float scale = c_hudScale * std::min(pViewport->Size.x / c_referenceWidth, pViewport->Size.y / c_referenceHeight);
         const ImVec2 center(pViewport->Pos.x + pViewport->Size.x * 0.5f, pViewport->Pos.y + pViewport->Size.y * 0.5f);
+        if (_rState.channelSlot < sInventoryHudState::c_numberOfSpellSlots)
+        {
+            const float charge = std::clamp(_rState.channelFraction, 0.0f, 1.0f);
+            pDrawList->AddCircle(center, 19.0f * scale, IM_COL32(14, 24, 18, 200), 40, 3.0f * scale);
+            if (charge > 0.0f)
+            {
+                pDrawList->PathArcTo(center, 19.0f * scale, -1.57079632679f, -1.57079632679f + charge * 6.28318530718f, 40);
+                pDrawList->PathStroke(IM_COL32(199, 222, 132, 240), 0, 2.0f * scale);
+            }
+            char chargeText[32];
+            std::snprintf(chargeText, sizeof(chargeText), "THORN LANCE  %.0f%%", charge * 100.0f);
+            DrawCenteredText(*pDrawList, ImVec2(center.x, center.y + 37.0f * scale), 10.0f * scale, chargeText);
+        }
         const ImU32 reticleColor = _rState.anySpellOnCooldown
             ? IM_COL32(135, 145, 170, 230) : IM_COL32(205, 224, 255, 255);
         const std::array<ImVec2, 4> corners = {
@@ -942,7 +987,8 @@ namespace UI
                 spell,
                 _rState.spellCooldowns[slotIndex],
                 _rState.spellCooldownDurations[slotIndex],
-                _rState.spellManaCosts[slotIndex]);
+                _rState.spellManaCosts[slotIndex],
+                _rState.spellActiveFractions[slotIndex]);
         }
 
         DrawExperienceBar(

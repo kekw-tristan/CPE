@@ -75,6 +75,9 @@ namespace UI
         std::array<float, sInventoryHudState::c_numberOfSpellSlots> spellCooldowns{};
         std::array<float, sInventoryHudState::c_numberOfSpellSlots> spellCooldownDurations{};
         std::array<float, sInventoryHudState::c_numberOfSpellSlots> spellManaCosts{};
+        std::array<float, sInventoryHudState::c_numberOfSpellSlots> spellActiveFractions{};
+        size_t channelSlot = sInventoryHudState::c_numberOfSpellSlots;
+        float channelFraction = 0.0f;
         bool anySpellOnCooldown = false;
 
         float mana      = 100.0f;

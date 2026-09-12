@@ -373,7 +373,10 @@ namespace Gameplay
                     if (projectile.isAreaOfEffect)
                         activateArea(projectile);
                     else
+                    {
+                        m_impactEvents.push_back({ projectile.id, projectile.position, projectile.type });
                         projectile.lifetime = 0.0f;
+                    }
                     continue;
                 }
 
@@ -393,6 +396,7 @@ namespace Gameplay
                         }
                         else
                         {
+                            m_impactEvents.push_back({ projectile.id, projectile.position, projectile.type });
                             projectile.hitEnemies[projectile.hitEnemyCount++] = hitEnemy;
                             if (projectile.piercesRemaining == 0 || projectile.hitEnemyCount == sProjectile::c_maxHitEnemies)
                                 projectile.lifetime = 0.0f;
@@ -414,6 +418,7 @@ namespace Gameplay
                         else
                         {
                             m_pendingPlayerDamage += projectile.damage;
+                            m_impactEvents.push_back({ projectile.id, projectile.position, projectile.type });
                             projectile.lifetime = 0.0f;
                         }
                     }

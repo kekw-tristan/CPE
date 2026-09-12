@@ -87,7 +87,10 @@ class cGame : public cApplication
             float                       walkWeight        = 0.0f;
             GFX::LightHandle            auraLight         = GFX::c_invalidLightHandle;
             float                       auraShieldPhase   = 0.0f;
-            std::array<GFX::sInstanceData*, 4> auraShields{};
+            float                       auraAge           = 0.0f;
+            bool                        emittingDash      = false;
+            GFX::sParticleEmitterHandle spellEmitter;
+            std::array<GFX::sInstanceData*, 12> auraShields{};
 
             std::vector<sEnemyRenderPart> renderParts;
             std::vector<GFX::LightHandle> lightHandles;
@@ -114,8 +117,13 @@ class cGame : public cApplication
         {
             GFX::sParticleEmitterHandle sporeEmitter;
             GFX::sParticleEmitterHandle bubbleEmitter;
+            GFX::sParticleEmitterHandle trailEmitter;
+            std::array<GFX::sInstanceData*, 6> details{};
+            GFX::MeshHandle detailMesh = nullptr;
 
             bool                emittingArea = false;
+            bool                wasChanneling = false;
+            bool                trailHostile = false;
             GFX::sInstanceData* pStem        = nullptr;
             uint64_t            id           = 0;
             GFX::sInstanceData* pInstance    = nullptr;
@@ -194,6 +202,10 @@ class cGame : public cApplication
         GFX::MeshHandle m_arcMesh{};
     
         GFX::MaterialHandle m_playerSphereMaterial = -1;
+        GFX::MaterialHandle m_arcaneSpellMaterial = -1;
+        GFX::MaterialHandle m_barkSpellMaterial = -1;
+        GFX::MaterialHandle m_sapSpellMaterial = -1;
+        GFX::MaterialHandle m_hostileSpellMaterial = -1;
     
         Container::cPool<GFX::sInstanceData, c_instancesPerPage> m_pool;
     
@@ -245,35 +257,43 @@ class cGame : public cApplication
 
         uint64_t m_lootRevision = 0;
     
-        static constexpr float c_playerBaseMaxHealth = 100.0f;
-        static constexpr float c_playerBaseMaxMana   = 100.0f;
-        static constexpr float c_levelUpHealthBonus  = 10.0f;
-        static constexpr float c_levelUpManaBonus    = 10.0f;
-        static constexpr float c_healthPotionRestore = 35.0f;
-        static constexpr float c_manaPotionRestore   = 35.0f;
-        static constexpr float c_speedPotionDuration = 5.0f;
-        static constexpr float c_speedPotionMultiplier = 1.5f;
+        static constexpr float c_playerBaseMaxHealth    = 100.0f;
+        static constexpr float c_playerBaseMaxMana      = 100.0f;
+        static constexpr float c_levelUpHealthBonus     = 10.0f;
+        static constexpr float c_levelUpManaBonus       = 10.0f;
+        static constexpr float c_healthPotionRestore    = 35.0f;
+        static constexpr float c_manaPotionRestore      = 35.0f;
+        static constexpr float c_speedPotionDuration    = 5.0f;
+        static constexpr float c_speedPotionMultiplier  = 1.5f;
     
         static constexpr uint32_t c_regularEnemyExperience  = 25;
         static constexpr uint32_t c_bossExperience          = 100;
     
         UI::cGameHud m_hud;
     
-        float m_playerMaxHealth  = c_playerBaseMaxHealth;
-        float m_playerHealth     = c_playerBaseMaxHealth;
-        float m_playerMaxMana    = c_playerBaseMaxMana;
-        float m_playerMana       = c_playerBaseMaxMana;
-        float m_playerAttackTime = 0.0f;
-        float m_playerSpeedPotionTime = 0.0f;
-        float m_playerDashTime   = 0.0f;
-        float m_playerDashSpeed  = 0.0f;
-        float m_playerChannelTime = 0.0f;
-        float m_playerReflectionAuraTime = 0.0f;
-        float m_playerReflectionAuraRadius = 0.0f;
+        float m_playerMaxHealth         = c_playerBaseMaxHealth;
+        float m_playerHealth            = c_playerBaseMaxHealth;
+        float m_playerMaxMana           = c_playerBaseMaxMana;
+        float m_playerMana              = c_playerBaseMaxMana;
+        float m_playerAttackTime        = 0.0f;
+        float m_playerSpeedPotionTime   = 0.0f;
+        float m_playerDashTime          = 0.0f;
+        float m_playerDashSpeed         = 0.0f;
+        float m_playerDashDuration      = 0.0f;
+        float m_playerDashVisualTime    = 0.0f;
+        float m_playerChannelPoseWeight = 0.0f;
+        float m_spellVisualTime         = 0.0f;
+
+        GFX::sParticleEmitterHandle m_playerDashEmitter;
+        float m_playerChannelTime                = 0.0f;
+        float m_playerReflectionAuraDuration     = 0.0f;
+        float m_playerReflectionAuraTime         = 0.0f;
+        float m_playerReflectionAuraRadius       = 0.0f;
         float m_playerReflectionDamageMultiplier = 1.0f;
-        float m_playerReflectionAuraPhase = 0.0f;
+        float m_playerReflectionAuraPhase        = 0.0f;
+
         GFX::LightHandle m_playerReflectionAuraLight = GFX::c_invalidLightHandle;
-        std::array<GFX::sInstanceData*, 4> m_playerReflectionAuraShields{};
+        std::array<GFX::sInstanceData*, 12> m_playerReflectionAuraShields{};
 
         size_t m_playerChannelSlot = Gameplay::cRunState::c_numberOfSpellSlots;
         uint64_t m_playerChannelProjectileId = 0;

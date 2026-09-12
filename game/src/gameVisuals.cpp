@@ -16,12 +16,21 @@ void cGame::UpdatePlayerRenderInstances()
     playerTransform.rotation = { 0.0f, m_playerYaw, 0.0f };
     playerTransform.scale    = { 1.0f, 1.0f, 1.0f };
 
+    const float dashWeight = std::clamp(m_playerDashVisualTime / 0.18f, 0.0f, 1.0f)
+        * std::clamp((m_playerDashDuration + 0.18f - m_playerDashVisualTime) / 0.06f, 0.0f, 1.0f);
+
+    playerTransform.rotation = { 0.30f * dashWeight - 0.045f * m_playerChannelPoseWeight, m_playerYaw, 0.0f };
+    playerTransform.scale = { 1.0f + 0.04f * dashWeight, 1.0f - 0.10f * dashWeight, 1.0f };
+
     const cMatrix4x4f playerMatrix = CreateTransformMatrix(playerTransform);
 
-    float attackWeight = 1.0f - std::abs(m_playerAttackTime - 0.2f) / 0.2f;
+    const float attackAge = 0.4f - m_playerAttackTime;
+    float attackWeight = attackAge < 0.06f ? attackAge / 0.06f : m_playerAttackTime / 0.34f;
 
     attackWeight = std::clamp(attackWeight, 0.0f, 1.0f);
     attackWeight = attackWeight * attackWeight * (3.0f - 2.0f * attackWeight);
+    attackWeight = std::max(attackWeight, m_playerChannelPoseWeight * (0.72f + 0.04f * std::sin(m_playerChannelTime * 8.0f)));
+    attackWeight *= 1.0f - 0.75f * dashWeight;
 
     for (size_t partIndex = 0; partIndex < m_playerRenderParts.size(); ++partIndex)
     {
@@ -129,15 +138,22 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
         const Gameplay::sEnemy* pEnemy = m_enemyManager.TryGetEnemy(visual.handle);
 
         if (pEnemy == nullptr)
+        {
+            m_particleSystem.StopEmitter(visual.spellEmitter);
             continue;
+        }
 
         const bool hasReflectionAura = pEnemy->state != Gameplay::eEnemyState::Dead && pEnemy->projectileReflectionAuraTime > 0.0f;
         if (hasReflectionAura)
         {
+            visual.auraAge += _deltaTime;
+            const float growth = std::clamp(visual.auraAge / 0.22f, 0.0f, 1.0f);
+            const float wardWeight = growth * std::clamp(pEnemy->projectileReflectionAuraTime / 0.35f, 0.0f, 1.0f);
+
             sLight auraLight{};
             auraLight.type      = sLightType::Point;
-            auraLight.color     = { 0.38f, 0.95f, 0.16f };
-            auraLight.intensity = 3.0f;
+            auraLight.color     = { 0.82f, 0.48f, 0.16f };
+            auraLight.intensity = 1.8f * wardWeight;
             auraLight.position  = pEnemy->position + cVec3f(0.0f, 1.4f * pEnemy->scale, 0.0f);
             auraLight.radius    = 4.0f * pEnemy->scale;
 
@@ -146,31 +162,39 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
             else
                 LightManager::UpdateLight(visual.auraLight, auraLight);
 
-            visual.auraShieldPhase = std::fmod(visual.auraShieldPhase + _deltaTime * 2.4f, 6.28318530718f);
+            visual.auraShieldPhase = std::fmod(visual.auraShieldPhase + _deltaTime * 1.2f, 6.28318530718f);
             for (size_t shieldIndex = 0; shieldIndex < visual.auraShields.size(); ++shieldIndex)
             {
+                const bool isInlay = shieldIndex >= 4;
+                const float shieldPhase = static_cast<float>(shieldIndex % 4);
                 sInstanceData*& rpShield = visual.auraShields[shieldIndex];
                 if (rpShield == nullptr)
                 {
                     rpShield = m_pool.Create();
-                    rpShield->color = { 0.38f, 0.95f, 0.16f, 1.0f };
-                    rpShield->materialIndex = m_playerSphereMaterial;
+                    rpShield->color = isInlay ? std::array<float, 4>{ 0.82f, 0.54f, 0.20f, 1.0f }
+                        : std::array<float, 4>{ 0.30f, 0.22f, 0.09f, 1.0f };
+                    rpShield->materialIndex = isInlay ? m_hostileSpellMaterial : m_barkSpellMaterial;
                     m_dynamicMeshInstances[m_beveledCubeMesh].push_back(rpShield);
                     m_dynamicInstanceListDirty = true;
                 }
 
-                const float angle = visual.auraShieldPhase + static_cast<float>(shieldIndex) * 1.57079632679f;
+                const float angle = visual.auraShieldPhase + shieldPhase * 1.57079632679f;
+                const float radius = (1.8f * (0.65f + 0.35f * growth) + (isInlay ? 0.09f : 0.0f)) * pEnemy->scale;
+
                 sTransform shieldTransform{};
                 shieldTransform.position = pEnemy->position + cVec3f(
-                    std::cos(angle) * 1.8f * pEnemy->scale,
-                    (1.4f + std::sin(visual.auraShieldPhase * 2.0f + static_cast<float>(shieldIndex)) * 0.12f) * pEnemy->scale,
-                    std::sin(angle) * 1.8f * pEnemy->scale);
+                    std::cos(angle) * radius,
+                    (1.4f + std::sin(visual.auraShieldPhase * 2.0f + shieldPhase) * 0.12f) * pEnemy->scale,
+                    std::sin(angle) * radius);
 
-                const cVec3f playerPosition = m_playerController.GetPosition();
-                const cVec3f toPlayer(playerPosition.x() - shieldTransform.position.x(), 0.0f,
-                    playerPosition.z() - shieldTransform.position.z());
-                shieldTransform.rotation = { 0.0f, std::atan2(toPlayer.x(), toPlayer.z()), 0.0f };
-                shieldTransform.scale    = { 0.38f * pEnemy->scale, 0.55f * pEnemy->scale, 0.08f * pEnemy->scale };
+                shieldTransform.rotation = { 0.12f * std::sin(angle), 1.57079632679f - angle, 0.12f * std::cos(angle) };
+                shieldTransform.scale = cVec3f(0.58f, 1.05f, 0.16f) * (wardWeight * pEnemy->scale);
+                if (isInlay)
+                {
+                    shieldTransform.position += cVec3f(0.0f, (shieldIndex >= 8 ? 0.2f : -0.2f) * pEnemy->scale, 0.0f);
+                    shieldTransform.rotation += cVec3f(0.0f, 0.0f, shieldIndex >= 8 ? 0.5f : -0.5f);
+                    shieldTransform.scale = cVec3f(0.055f, 0.48f, 0.035f) * (wardWeight * pEnemy->scale);
+                }
                 rpShield->worldMatrix = CreateTransformMatrix(shieldTransform);
             }
         }
@@ -182,6 +206,7 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
 
         if (!hasReflectionAura)
         {
+            visual.auraAge = 0.0f;
             for (sInstanceData*& rpShield : visual.auraShields)
             {
                 if (rpShield == nullptr)
@@ -196,6 +221,51 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
 
         const bool isAttacking = pEnemy->state == Gameplay::eEnemyState::AttackWindup || pEnemy->state == Gameplay::eEnemyState::AttackRecovery
             || pEnemy->state == Gameplay::eEnemyState::Dash;
+
+        const bool isDashing = pEnemy->state == Gameplay::eEnemyState::Dash;
+        const bool isChargingThorn = pEnemy->state == Gameplay::eEnemyState::AttackWindup
+            && pEnemy->definition.attackType == Gameplay::eEnemyAttackType::ConeProjectile;
+
+        sParticleDefinition spellMotes{};
+        spellMotes.spawnRate    = isDashing ? 110.0f : 42.0f;
+        spellMotes.lifetime     = 0.32f;
+        spellMotes.startSize    = (isDashing ? 0.12f : 0.065f) * pEnemy->scale;
+        spellMotes.endSize      = 0.015f;
+        spellMotes.speed        = 0.15f;
+        spellMotes.spread       = isDashing ? 0.8f : 0.12f;
+        spellMotes.acceleration = { 0.0f, -1.5f, 0.0f };
+        spellMotes.startColor   = { 0.88f, 0.48f, 0.15f, 0.7f };
+        spellMotes.endColor     = { 0.42f, 0.24f, 0.08f, 0.0f };
+
+        const cVec3f castPosition = pEnemy->position + cVec3f(0.0f, (isDashing ? 0.65f : 1.0f) * pEnemy->scale, 0.0f);
+        if (visual.emittingDash != isDashing)
+        {
+            if (visual.emittingDash && m_particleSystem.IsAlive(visual.spellEmitter) && pEnemy->state != Gameplay::eEnemyState::Dead)
+                m_particleSystem.Burst(spellMotes, castPosition, 12);
+            m_particleSystem.StopEmitter(visual.spellEmitter);
+        }
+
+        visual.emittingDash = isDashing;
+        if (isDashing || isChargingThorn)
+        {
+            if (!m_particleSystem.IsAlive(visual.spellEmitter))
+            {
+                visual.spellEmitter = m_particleSystem.CreateEmitter(spellMotes, castPosition);
+                if (isDashing)
+                    m_particleSystem.Burst(spellMotes, castPosition, 18);
+            }
+            const float phase = pEnemy->stateTime * 10.0f;
+            const cVec3f chargeOrbit = cVec3f(std::cos(phase) * 0.3f, std::sin(phase) * 0.3f, 0.7f) * pEnemy->scale;
+            const cVec3f offset = isChargingThorn ? cMatrix4x4f::rotationY(pEnemy->rotation).transformDirection(chargeOrbit) : cVec3f{};
+            m_particleSystem.SetPosition(visual.spellEmitter, castPosition + offset);
+        }
+
+        else if (m_particleSystem.IsAlive(visual.spellEmitter))
+        {
+            m_particleSystem.StopEmitter(visual.spellEmitter);
+            if (pEnemy->state != Gameplay::eEnemyState::Dead)
+                m_particleSystem.Burst(spellMotes, castPosition, 12);
+        }
 
         const bool isThornwolf      = pEnemy->type == World::sEnemyType::ForestThornwolf;
         const bool hasWalkAnimation = isThornwolf || pEnemy->type == World::sEnemyType::ForestSporecap
@@ -235,6 +305,14 @@ void cGame::UpdateEnemyRenderInstances(float _deltaTime)
         enemyTransform.scale    = pEnemy->state == Gameplay::eEnemyState::Dead
             ? Math::cVec3f(0.0f, 0.0f, 0.0f)
             : Math::cVec3f(pEnemy->scale, pEnemy->scale, pEnemy->scale);
+
+        if (pEnemy->definition.attackType == Gameplay::eEnemyAttackType::Dash && isAttacking)
+        {
+            const float dashWeight = isDashing ? std::clamp(pEnemy->stateTime / 0.06f, 0.0f, 1.0f)
+                : pEnemy->state == Gameplay::eEnemyState::AttackRecovery ? pEnemy->attackPoseWeight : 0.0f;
+            enemyTransform.rotation = { 0.20f * dashWeight, pEnemy->rotation, 0.0f };
+            enemyTransform.scale = cVec3f(1.0f + 0.04f * dashWeight, 1.0f - 0.10f * dashWeight, 1.0f) * pEnemy->scale;
+        }
 
         const cMatrix4x4f enemyMatrix = CreateTransformMatrix(enemyTransform);
 
@@ -320,6 +398,16 @@ void cGame::SyncProjectileRenderInstances()
     {
         activeIds.insert(projectile.id);
 
+        const bool isReflected = projectile.type == Gameplay::eProjectileType::EnemyReflected
+            || projectile.type == Gameplay::eProjectileType::PlayerReflected;
+
+        const bool isThorn = projectile.type == Gameplay::eProjectileType::PlayerCone
+            || projectile.type == Gameplay::eProjectileType::EnemyCone || (isReflected && projectile.reflectedCone);
+
+        const bool isArcane  = projectile.type == Gameplay::eProjectileType::PlayerSphere || (isReflected && !projectile.reflectedCone);
+        const bool isHostile = projectile.type == Gameplay::eProjectileType::EnemyCone
+            || projectile.type == Gameplay::eProjectileType::EnemySpore || projectile.type == Gameplay::eProjectileType::EnemyReflected;
+
         auto visual = std::find_if(m_projectileVisuals.begin(), m_projectileVisuals.end(), [&projectile](const sProjectileVisual& _rVisual)
         {
             return _rVisual.id == projectile.id;
@@ -328,33 +416,36 @@ void cGame::SyncProjectileRenderInstances()
         if (visual == m_projectileVisuals.end())
         {
             sInstanceData* pInstance = m_pool.Create();
-            const bool isEnemyReflected = projectile.type == Gameplay::eProjectileType::EnemyReflected;
+
+            const bool isEnemyReflected  = projectile.type == Gameplay::eProjectileType::EnemyReflected;
             const bool isPlayerReflected = projectile.type == Gameplay::eProjectileType::PlayerReflected;
-            const bool isPlayerSpell = projectile.type == Gameplay::eProjectileType::PlayerSphere
+            const bool isPlayerSpell     = projectile.type == Gameplay::eProjectileType::PlayerSphere
                 || projectile.type == Gameplay::eProjectileType::PlayerCone
                 || projectile.type == Gameplay::eProjectileType::PlayerSpore
                 || isPlayerReflected;
+
             const bool isPlayerSpore = projectile.type == Gameplay::eProjectileType::PlayerSpore;
-            const bool isSpore = isPlayerSpore || projectile.type == Gameplay::eProjectileType::EnemySpore;
+            const bool isSpore       = isPlayerSpore || projectile.type == Gameplay::eProjectileType::EnemySpore;
 
             pInstance->color = isEnemyReflected
                 ? std::array<float, 4>{ 1.0f, 0.42f, 0.08f, 1.0f }
                 : isPlayerReflected
                 ? std::array<float, 4>{ 0.32f, 0.72f, 1.0f, 1.0f }
                 : isPlayerSpore
-                ? std::array<float, 4>{ 0.35f, 0.95f, 0.25f, 1.0f }
+                ? std::array<float, 4>{ 0.27f, 0.43f, 0.12f, 1.0f }
                 : isPlayerSpell
                     ? projectile.type == Gameplay::eProjectileType::PlayerCone
-                        ? std::array<float, 4>{ 0.95f, 0.52f, 0.12f, 1.0f }
-                        : std::array<float, 4>{ 0.20f, 0.55f, 1.0f, 1.0f }
+                        ? std::array<float, 4>{ 0.40f, 0.32f, 0.10f, 1.0f }
+                        : std::array<float, 4>{ 0.28f, 0.70f, 0.92f, 1.0f }
                     : projectile.type == Gameplay::eProjectileType::EnemyShockwave
                         ? std::array<float, 4>{ 0.85f, 0.46f, 0.12f, 1.0f }
-                    : isSpore ? std::array<float, 4>{ 0.48f, 0.85f, 0.12f, 1.0f }
-                    : std::array<float, 4>{ 0.35f, 1.0f, 0.18f, 1.0f };
+                    : isSpore ? std::array<float, 4>{ 0.43f, 0.48f, 0.12f, 1.0f }
+                    : std::array<float, 4>{ 0.40f, 0.26f, 0.10f, 1.0f };
 
-            if (isPlayerSpell && !isSpore)
+            if (isThorn || isArcane)
             {
-                pInstance->materialIndex = m_playerSphereMaterial;
+                pInstance->materialIndex = isThorn ? m_barkSpellMaterial
+                    : isHostile ? m_hostileSpellMaterial : m_arcaneSpellMaterial;
             }
             else
             {
@@ -363,11 +454,7 @@ void cGame::SyncProjectileRenderInstances()
                 pInstance->materialIndex = materialModel.materialIndices.size() > materialSlot ? materialModel.materialIndices[materialSlot] : 0;
             }
 
-            const MeshHandle mesh = projectile.type == Gameplay::eProjectileType::PlayerCone
-                || projectile.type == Gameplay::eProjectileType::EnemyCone
-                || ((isEnemyReflected || isPlayerReflected) && projectile.reflectedCone)
-                ? m_coneMesh
-                : m_sphereMesh;
+            const MeshHandle mesh = isArcane ? m_icoSphereMesh : isThorn ? m_crystalMesh : m_sphereMesh;
 
             m_dynamicMeshInstances[mesh].push_back(pInstance);
 
@@ -376,16 +463,33 @@ void cGame::SyncProjectileRenderInstances()
             projectileVisual.pInstance = pInstance;
             projectileVisual.mesh      = mesh;
 
-            if (isPlayerSpell)
+            if (isArcane || isThorn || isSpore)
+            {
+                projectileVisual.detailMesh = isSpore ? m_icoSphereMesh : m_crystalMesh;
+                for (sInstanceData*& rpDetail : projectileVisual.details)
+                {
+                    rpDetail = m_pool.Create();
+                    rpDetail->materialIndex = isHostile ? m_hostileSpellMaterial
+                        : isArcane ? m_arcaneSpellMaterial : m_sapSpellMaterial;
+                    rpDetail->color = isHostile ? std::array<float, 4>{ 0.88f, 0.57f, 0.24f, 1.0f }
+                        : isArcane
+                        ? std::array<float, 4>{ 0.62f, 0.86f, 0.95f, 1.0f }
+                        : isPlayerSpore ? std::array<float, 4>{ 0.74f, 0.77f, 0.39f, 1.0f }
+                        : std::array<float, 4>{ 0.62f, 0.78f, 0.48f, 1.0f };
+                    m_dynamicMeshInstances[projectileVisual.detailMesh].push_back(rpDetail);
+                }
+            }
+
+            if (isPlayerSpell || isThorn || isSpore || isArcane)
             {
                 sLight light{};
                 light.type      = sLightType::Point;
-                light.color     = isPlayerSpore
-                    ? Math::cVec3f(0.35f, 0.95f, 0.25f)
+                light.color     = isHostile ? Math::cVec3f(0.88f, 0.48f, 0.15f) : isPlayerSpore
+                    ? Math::cVec3f(0.48f, 0.67f, 0.22f)
                     : projectile.type == Gameplay::eProjectileType::PlayerCone
-                        ? Math::cVec3f(0.95f, 0.52f, 0.12f)
-                        : Math::cVec3f(0.20f, 0.55f, 1.0f);
-                light.intensity = isPlayerSpore ? 2.0f : 10.0f;
+                        ? Math::cVec3f(0.58f, 0.76f, 0.22f)
+                        : Math::cVec3f(0.12f, 0.65f, 0.9f);
+                light.intensity = isSpore ? 1.2f : 3.0f;
                 light.position  = projectile.position;
                 light.radius    = 4.0f;
 
@@ -402,6 +506,21 @@ void cGame::SyncProjectileRenderInstances()
             visual->pInstance->color = { 1.0f, 0.42f, 0.08f, 1.0f };
         else if (projectile.type == Gameplay::eProjectileType::PlayerReflected)
             visual->pInstance->color = { 0.32f, 0.72f, 1.0f, 1.0f };
+
+        if (isReflected)
+        {
+            visual->pInstance->materialIndex = isThorn ? m_barkSpellMaterial
+                : isHostile ? m_hostileSpellMaterial : m_arcaneSpellMaterial;
+            for (sInstanceData* pDetail : visual->details)
+            {
+                if (pDetail == nullptr)
+                    continue;
+
+                pDetail->materialIndex = isHostile ? m_hostileSpellMaterial : isArcane ? m_arcaneSpellMaterial : m_sapSpellMaterial;
+                pDetail->color = isHostile ? std::array<float, 4>{ 0.88f, 0.57f, 0.24f, 1.0f }
+                    : std::array<float, 4>{ 0.62f, 0.86f, 0.72f, 1.0f };
+            }
+        }
 
         const bool isMushroom = projectile.type == Gameplay::eProjectileType::EnemySpore
             || projectile.type == Gameplay::eProjectileType::PlayerSpore;
@@ -429,10 +548,11 @@ void cGame::SyncProjectileRenderInstances()
                 ? std::array<float, 4>{ 0.85f, 0.46f, 0.12f, 1.0f }
                 : std::array<float, 4>{ 0.38f, 0.75f * pulse, 0.12f, 1.0f };
         }
-        else if (projectile.type == Gameplay::eProjectileType::PlayerSphere)
+        else if (visual->mesh == m_icoSphereMesh)
         {
-            transform.rotation = { 0.0f, 0.0f, 0.0f };
-            transform.scale = { 0.42f * projectile.visualScale, 0.42f * projectile.visualScale, 0.42f * projectile.visualScale };
+            const float pulse   = (1.0f + 0.06f * std::sin(m_spellVisualTime * 13.0f)) * projectile.visualScale;
+            transform.rotation  = { m_spellVisualTime * 1.7f, m_spellVisualTime * 2.3f, 0.0f };
+            transform.scale     = { 0.32f * pulse, 0.38f * pulse, 0.32f * pulse };
         }
         else if (projectile.type == Gameplay::eProjectileType::PlayerSpore
             || projectile.type == Gameplay::eProjectileType::EnemySpore)
@@ -447,22 +567,21 @@ void cGame::SyncProjectileRenderInstances()
         {
             const float horizontalLength = std::sqrt(projectile.direction.x() * projectile.direction.x()
                 + projectile.direction.z() * projectile.direction.z());
-            const float pitch = std::atan2(horizontalLength, projectile.direction.y());
-            const float yaw = std::atan2(projectile.direction.x(), projectile.direction.z());
+
+            const float pitch       = std::atan2(horizontalLength, projectile.direction.y());
+            const float yaw         = std::atan2(projectile.direction.x(), projectile.direction.z());
             const float radiusScale = projectile.type == Gameplay::eProjectileType::EnemyCone
-                ? projectile.radius / 0.3f
-                : projectile.type == Gameplay::eProjectileType::PlayerCone
-                ? projectile.visualScale
-                : 1.0f;
-            const float lengthScale = projectile.type == Gameplay::eProjectileType::PlayerCone
-                ? projectile.visualScale
-                : 1.0f;
+                || projectile.type == Gameplay::eProjectileType::PlayerReflected ? projectile.radius / 0.3f
+                : isThorn ? projectile.visualScale : 1.0f;
+
+            const float lengthScale = isThorn ? projectile.visualScale : 1.0f;
 
             transform.rotation = { pitch, yaw, 0.0f };
             transform.scale = { 0.14f * radiusScale, 0.65f * lengthScale, 0.14f * radiusScale };
         }
 
-        visual->pInstance->worldMatrix = CreateTransformMatrix(transform);
+        const cMatrix4x4f projectileMatrix = CreateTransformMatrix(transform);
+        visual->pInstance->worldMatrix = projectileMatrix;
         if (visual->pStem != nullptr)
         {
             sTransform stem{};
@@ -473,14 +592,48 @@ void cGame::SyncProjectileRenderInstances()
             cap.position = { 0.0f, 0.15f, 0.0f };
             cap.scale = { 0.7f, 0.34f, 0.7f };
             
-            const cMatrix4x4f mushroomMatrix = CreateTransformMatrix(transform);
+            visual->pStem->worldMatrix      = CreateTransformMatrix(stem) * projectileMatrix;
+            visual->pInstance->worldMatrix  = CreateTransformMatrix(cap)  * projectileMatrix;
+        }
 
-            visual->pStem->worldMatrix = mushroomMatrix * CreateTransformMatrix(stem);
-            visual->pInstance->worldMatrix = mushroomMatrix * CreateTransformMatrix(cap);
+        for (size_t detailIndex = 0; detailIndex < visual->details.size(); ++detailIndex)
+        {
+            sInstanceData* pDetail = visual->details[detailIndex];
+            if (pDetail == nullptr)
+                continue;
+
+            const float phase = static_cast<float>(detailIndex) * 1.0471975512f;
+            sTransform detail{};
+            if (isMushroom)
+            {
+                detail.position = { std::cos(phase) * 0.23f, 0.275f, std::sin(phase) * 0.23f };
+                detail.scale = { 0.105f, 0.05f, 0.09f };
+            }
+            else if (visual->mesh == m_icoSphereMesh)
+            {
+                const float orbit = phase + m_spellVisualTime * 3.0f;
+
+                detail.position = { std::cos(orbit) * 1.35f, std::sin(orbit * 2.0f) * 0.38f, std::sin(orbit) * 1.35f };
+                detail.rotation = { 0.45f, -orbit, 0.8f };
+                detail.scale    = { 0.20f, 0.60f, 0.20f };
+            }
+            else
+            {
+                detail.position = { std::cos(phase) * 0.65f, -0.25f + 0.1f * static_cast<float>(detailIndex % 3), std::sin(phase) * 0.65f };
+                detail.rotation = { 0.8f * std::sin(phase), 0.0f, -0.8f * std::cos(phase) };
+                detail.scale    = { 0.40f, 0.42f, 0.40f };
+            }
+            pDetail->worldMatrix = CreateTransformMatrix(detail) * projectileMatrix;
         }
 
         if (sLight* pLight = LightManager::TryGetLight(visual->light))
+        {
             pLight->position = projectile.position;
+            if (isReflected)
+                pLight->color = isHostile ? cVec3f(0.88f, 0.48f, 0.15f) : cVec3f(0.32f, 0.72f, 1.0f);
+            if (projectile.channeling)
+                pLight->intensity = 1.0f + projectile.visualScale * 0.6f + 0.2f * std::sin(m_playerChannelTime * 12.0f);
+        }
     }
 
     auto visual = m_projectileVisuals.begin();
@@ -503,6 +656,15 @@ void cGame::SyncProjectileRenderInstances()
 
         m_particleSystem.StopEmitter(visual->sporeEmitter);
         m_particleSystem.StopEmitter(visual->bubbleEmitter);
+        m_particleSystem.StopEmitter(visual->trailEmitter);
+        for (sInstanceData* pDetail : visual->details)
+        {
+            if (pDetail == nullptr)
+                continue;
+
+            std::erase(m_dynamicMeshInstances[visual->detailMesh], pDetail);
+            m_pool.Destroy(pDetail);
+        }
         
         m_pool.Destroy(visual->pInstance);
         
@@ -522,6 +684,36 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
     using namespace Engine::GFX;
     using Engine::Math::cVec3f;
 
+    m_spellVisualTime = std::fmod(m_spellVisualTime + _deltaTime, 628.318530718f);
+
+    sParticleDefinition dashTrail{};
+    dashTrail.spawnRate     = 110.0f;
+    dashTrail.lifetime      = 0.32f;
+    dashTrail.startSize     = 0.12f;
+    dashTrail.endSize       = 0.025f;
+    dashTrail.speed         = 0.15f;
+    dashTrail.spread        = 0.8f;
+    dashTrail.acceleration  = { 0.0f, -1.5f, 0.0f };
+    dashTrail.startColor    = { 0.60f, 0.73f, 0.31f, 0.7f };
+    dashTrail.endColor      = { 0.25f, 0.40f, 0.12f, 0.0f };
+
+    const cVec3f dashPosition = m_playerController.GetPosition() + cVec3f(0.0f, 0.65f, 0.0f);
+    if (m_playerDashTime > 0.0f && !m_inventoryOpen && !m_runState.HasPendingAugmentSelection())
+    {
+        if (!m_particleSystem.IsAlive(m_playerDashEmitter))
+        {
+            m_playerDashEmitter = m_particleSystem.CreateEmitter(dashTrail, dashPosition);
+            m_particleSystem.Burst(dashTrail, dashPosition, 18);
+        }
+        m_particleSystem.SetPosition(m_playerDashEmitter, dashPosition);
+    }
+    else if (m_particleSystem.IsAlive(m_playerDashEmitter))
+    {
+        m_particleSystem.StopEmitter(m_playerDashEmitter);
+        if (m_playerDashTime <= 0.0f)
+            m_particleSystem.Burst(dashTrail, dashPosition, 12);
+    }
+
     const auto poisonDefinition = [](bool _player)
     {
         sParticleDefinition definition{};
@@ -531,7 +723,7 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
         definition.endSize      = 0.11f;
         definition.speed        = 0.08f;
         definition.spread       = 0.15f;
-        definition.startColor   = _player ? std::array<float, 4>{ 0.12f, 0.85f, 0.38f, 0.65f } : std::array<float, 4>{ 0.4f, 0.9f, 0.015f, 0.65f };
+        definition.startColor   = _player ? std::array<float, 4>{ 0.38f, 0.57f, 0.16f, 0.58f } : std::array<float, 4>{ 0.62f, 0.64f, 0.14f, 0.65f };
         definition.endColor     = definition.startColor;
         definition.endColor[3]  = 0.0f;
 
@@ -542,15 +734,68 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
 
     for (const Gameplay::sProjectile& projectile : m_projectileManager.GetProjectiles())
     {
-        if (projectile.type != Gameplay::eProjectileType::EnemySpore && projectile.type != Gameplay::eProjectileType::PlayerSpore)
-            continue;
-
         auto visual = std::find_if(m_projectileVisuals.begin(), m_projectileVisuals.end(), [&](const sProjectileVisual& _rVisual)
         {
             return _rVisual.id == projectile.id;
         });
 
         if (visual == m_projectileVisuals.end())
+            continue;
+
+        const bool isArcane  = visual->mesh == m_icoSphereMesh;
+        const bool isThorn   = visual->mesh == m_crystalMesh;
+        const bool isHostile = projectile.type == Gameplay::eProjectileType::EnemyCone
+            || projectile.type == Gameplay::eProjectileType::EnemyReflected;
+
+        if (isArcane || isThorn)
+        {
+            if (visual->trailHostile != isHostile)
+                m_particleSystem.StopEmitter(visual->trailEmitter);
+            visual->trailHostile = isHostile;
+            sParticleDefinition trail{};
+            trail.spawnRate  = isArcane ? 65.0f : 42.0f;
+            trail.lifetime   = 0.28f;
+            trail.startSize  = isArcane ? 0.13f : 0.065f;
+            trail.endSize    = 0.015f;
+            trail.speed      = 0.02f;
+            trail.spread     = 0.12f;
+            trail.startColor = isHostile ? std::array<float, 4>{ 0.88f, 0.48f, 0.15f, 0.7f }
+                : isArcane ? std::array<float, 4>{ 0.22f, 0.67f, 0.95f, 0.65f }
+                : std::array<float, 4>{ 0.66f, 0.79f, 0.29f, 0.7f };
+
+            trail.endColor    = trail.startColor;
+            trail.endColor[3] = 0.0f;
+
+            if (!m_particleSystem.IsAlive(visual->trailEmitter))
+            {
+                visual->trailEmitter = m_particleSystem.CreateEmitter(trail, projectile.position);
+                m_particleSystem.Burst(trail, projectile.position, 10);
+            }
+            if (visual->wasChanneling && !projectile.channeling)
+            {
+                sParticleDefinition release = trail;
+                release.speed     = 0.1f;
+                release.spread    = 1.6f;
+                release.startSize = 0.1f;
+                m_particleSystem.Burst(release, projectile.position, 20);
+            }
+            visual->wasChanneling   = projectile.channeling;
+            cVec3f emissionPosition = projectile.position;
+
+            if (projectile.channeling)
+            {
+                const float phase = m_playerChannelTime * 10.0f;
+                const cVec3f side(projectile.direction.z(), 0.0f, -projectile.direction.x());
+                const cVec3f right = side.isZero() ? cVec3f(1.0f, 0.0f, 0.0f) : side.normalized();
+                emissionPosition += (right * std::cos(phase) + cVec3f(0.0f, std::sin(phase), 0.0f))
+                    * (0.18f + 0.08f * projectile.visualScale);
+            }
+            m_particleSystem.SetPosition(visual->trailEmitter, emissionPosition);
+            continue;
+        }
+        m_particleSystem.StopEmitter(visual->trailEmitter);
+
+        if (projectile.type != Gameplay::eProjectileType::EnemySpore && projectile.type != Gameplay::eProjectileType::PlayerSpore)
             continue;
 
         const auto chunk = std::make_pair(static_cast<int>(std::floor(projectile.position.x() / World::c_chunkSize + 0.5f)),
@@ -580,7 +825,7 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
                 definition.endSize       = 0.85f;
                 definition.lifetime      = 2.0f;
                 definition.speed         = 0.13f;
-                definition.startColor[3] = 0.32f;
+                definition.startColor[3] = player ? 0.22f : 0.26f;
             }
             visual->sporeEmitter = m_particleSystem.CreateEmitter(definition, projectile.position);
         }
@@ -601,7 +846,7 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
             }
             std::array<sParticleSurface, Gameplay::sProjectile::c_maxGroundSamples> surfaces{};
             std::array<float, 4> color = poisonDefinition(player).startColor;
-            color[3] = 0.88f;
+            color[3] = player ? 0.64f : 0.72f;
             for (size_t index = 0; index < projectile.groundSampleCount; ++index)
             {
                 surfaces[index] = { projectile.groundSamples[index], projectile.groundNormals[index], projectile.GetGroundSampleRadius(index) };
@@ -624,6 +869,29 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
 
         if (!World::WorldGenerator::GetLoadedChunks().contains(chunk))
             continue;
+
+        if (impact.type == Gameplay::eProjectileType::PlayerSphere || impact.type == Gameplay::eProjectileType::PlayerCone
+            || impact.type == Gameplay::eProjectileType::PlayerReflected || impact.type == Gameplay::eProjectileType::EnemyCone
+            || impact.type == Gameplay::eProjectileType::EnemyReflected)
+        {
+            sParticleDefinition sparks{};
+            sparks.speed        = 0.35f;
+            sparks.spread       = 2.4f;
+            sparks.lifetime     = 0.3f;
+            sparks.startSize    = 0.09f;
+            sparks.endSize      = 0.01f;
+            sparks.acceleration = { 0.0f, -2.0f, 0.0f };
+            sparks.startColor = impact.type == Gameplay::eProjectileType::EnemyCone || impact.type == Gameplay::eProjectileType::EnemyReflected
+                ? std::array<float, 4>{ 0.95f, 0.57f, 0.20f, 0.85f }
+                : impact.type == Gameplay::eProjectileType::PlayerSphere
+                ? std::array<float, 4>{ 0.4f, 0.8f, 1.0f, 0.85f }
+                : std::array<float, 4>{ 0.76f, 0.83f, 0.38f, 0.85f };
+
+            sparks.endColor     = sparks.startColor;
+            sparks.endColor[3]  = 0.0f;
+            m_particleSystem.Burst(sparks, impact.position, 18);
+            continue;
+        }
 
         sParticleDefinition definition = poisonDefinition(impact.type == Gameplay::eProjectileType::PlayerSpore);
         definition.speed        = 0.8f;
