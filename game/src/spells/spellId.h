@@ -9,7 +9,7 @@ namespace Gameplay
             ArcaneOrb,
             Fireball,
             StoneShard,
-            ThornBurst,
+            Dash,
             SporeOrb,
 
             SandLance,

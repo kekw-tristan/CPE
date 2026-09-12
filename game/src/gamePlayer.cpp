@@ -2,13 +2,24 @@
 
 // -------------------------------------------------------------------------------------------------------------------------
 
-void cGame::UpdatePlayer()
+void cGame::UpdatePlayer(float _deltaTime)
 {
     using namespace Engine;
     using namespace Engine::Platform;
 
     constexpr float c_moveSpeed = 6.0f;
     constexpr float c_jumpVelocity = 6.0f;
+
+    if (m_playerDashTime > 0.0f)
+    {
+        const float dashFrameTime = std::min(_deltaTime, m_playerDashTime);
+        const float dashSpeed = _deltaTime > 0.0f ? m_playerDashSpeed * dashFrameTime / _deltaTime : 0.0f;
+
+        m_playerController.Move(m_playerDashDirection, dashSpeed);
+        m_playerDashTime = std::max(0.0f, m_playerDashTime - _deltaTime);
+        m_playerYaw = std::atan2(m_playerDashDirection.x(), m_playerDashDirection.z());
+        return;
+    }
 
     GFX::cCamera& rCamera = GFX::GetCamera();
 
@@ -103,7 +114,8 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
 
     if (spellDefinition.castType != Gameplay::sSpellCastType::Projectile
         && spellDefinition.castType != Gameplay::sSpellCastType::ConeProjectile
-        && spellDefinition.castType != Gameplay::sSpellCastType::SporeProjectile)
+        && spellDefinition.castType != Gameplay::sSpellCastType::SporeProjectile
+        && spellDefinition.castType != Gameplay::sSpellCastType::Dash)
         return;
 
     if (m_playerMana < spellDefinition.manaCost)
@@ -112,6 +124,24 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     const Gameplay::sSpellStats& spellStats = pSpell->GetSpellStats();
 
     using Engine::Math::cVec3f;
+
+    if (spellDefinition.castType == Gameplay::sSpellCastType::Dash)
+    {
+        float cameraDirection[4];
+        Engine::GFX::GetCamera().GetDirection(cameraDirection);
+
+        const cVec3f dashDirection(cameraDirection[0], 0.0f, cameraDirection[2]);
+        if (dashDirection.isZero())
+            return;
+
+        m_playerDashDirection = dashDirection.normalized();
+        m_playerDashSpeed     = spellStats.projectileSpeed;
+        m_playerDashTime      = spellStats.duration;
+
+        m_playerMana = std::max(0.0f, m_playerMana - spellDefinition.manaCost);
+        m_runState.StartSpellCooldown(spellSlot);
+        return;
+    }
 
     float cameraDirection[4];
     float cameraPosition[4];
@@ -218,6 +248,9 @@ void cGame::BeginRun()
     m_playerHealth      = m_playerMaxHealth;
     m_playerMaxMana     = c_playerBaseMaxMana;
     m_playerMana        = m_playerMaxMana;
+    m_playerDashTime    = 0.0f;
+    m_playerDashSpeed   = 0.0f;
+    m_playerDashDirection = {};
 
     if (!m_runState.GrantSpell(Gameplay::sSpellId::ArcaneOrb))
         return;

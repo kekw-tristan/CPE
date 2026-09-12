@@ -17,6 +17,7 @@ namespace Gameplay
             Projectile,
             ConeProjectile,
             SporeProjectile,
+            Dash,
 
             NumberOfElements,
             Undefined = -1

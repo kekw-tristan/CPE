@@ -106,7 +106,7 @@ namespace Gameplay
             sItemDefinition{ sItemId::ArcaneOrb,      "Arcane Orb",      sItemType::Spell, sArmorSlot::Undefined, 1 },
             sItemDefinition{ sItemId::Fireball,       "Fireball",        sItemType::Spell, sArmorSlot::Undefined, 1 },
             sItemDefinition{ sItemId::StoneShard,     "Stone Cone",      sItemType::Spell, sArmorSlot::Undefined, 1 },
-            sItemDefinition{ sItemId::ThornBurst,     "Thorn Burst",     sItemType::Spell, sArmorSlot::Undefined, 1 },
+            sItemDefinition{ sItemId::Dash,           "Dash",            sItemType::Spell, sArmorSlot::Undefined, 1 },
             sItemDefinition{ sItemId::SporeOrb,       "Poison Mushroom", sItemType::Spell, sArmorSlot::Undefined, 1 },
                                                                          
             sItemDefinition{ sItemId::SandLance,      "Sand Lance",      sItemType::Spell, sArmorSlot::Undefined, 1 },

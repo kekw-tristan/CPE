@@ -147,7 +147,7 @@ class cGame : public cApplication
         void RebuildWorldInstanceList();
         void ClearRenderInstances();
     
-        void UpdatePlayer();
+        void UpdatePlayer(float _deltaTime);
         void UpdatePlayerSpell(float _deltaTime);
         void UpdateUsableInput(bool _gameplayInputEnabled);
         void UpdateInventoryInput();
@@ -259,6 +259,10 @@ class cGame : public cApplication
         float m_playerMaxMana    = c_playerBaseMaxMana;
         float m_playerMana       = c_playerBaseMaxMana;
         float m_playerAttackTime = 0.0f;
+        float m_playerDashTime   = 0.0f;
+        float m_playerDashSpeed  = 0.0f;
+
+        Engine::Math::cVec3f m_playerDashDirection;
 
         std::array<bool, 4> m_spellKeysWasDown{};
         std::array<bool, Gameplay::cInventory::c_numberOfUsableSlots> m_usableKeysWasDown{};
@@ -286,4 +290,3 @@ class cGame : public cApplication
         bool m_inventoryKeyWasDown  = false;
         bool m_escapeKeyWasDown     = false;
 };
-    

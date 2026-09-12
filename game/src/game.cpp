@@ -78,7 +78,7 @@ void cGame::OnUpdate(float _deltaTime)
 
     if (!m_inventoryOpen && !augmentSelectionPending)
     {
-        UpdatePlayer();
+        UpdatePlayer(_deltaTime);
 
         m_playerController.Update(_deltaTime);
         UpdateThirdPersonCamera(_deltaTime);

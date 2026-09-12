@@ -185,6 +185,20 @@ namespace UI
 
             switch (_spell)
             {
+                case Gameplay::sItemId::Dash:
+                {
+                    const ImVec2 start(center.x - 18.0f * _scale, center.y);
+                    const ImVec2 end(center.x + 18.0f * _scale, center.y);
+
+                    _rDrawList.AddLine(start, end, IM_COL32(97, 212, 166, 255), 5.0f * _scale);
+                    _rDrawList.AddTriangleFilled(
+                        ImVec2(end.x, end.y),
+                        ImVec2(end.x - 12.0f * _scale, end.y - 9.0f * _scale),
+                        ImVec2(end.x - 12.0f * _scale, end.y + 9.0f * _scale),
+                        IM_COL32(179, 255, 211, 255));
+                    break;
+                }
+
                 case Gameplay::sItemId::StoneShard:
                 {
                     const ImVec2 points[3] =
