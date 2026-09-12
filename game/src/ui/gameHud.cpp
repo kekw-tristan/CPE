@@ -237,6 +237,53 @@ namespace UI
 
         // -----------------------------------------------------------------------------------------------------------------
 
+        void DrawUsableIcon(
+            ImDrawList& _rDrawList,
+            const ImVec2& _rCenter,
+            float _scale,
+            Gameplay::sItemId::Enum _item)
+        {
+            const ImU32 potionColor = _item == Gameplay::sItemId::HealthPotion
+                ? IM_COL32(190, 58, 72, 255)
+                : IM_COL32(50, 118, 214, 255);
+            const ImVec2 bottleStart(_rCenter.x - 10.0f * _scale, _rCenter.y - 13.0f * _scale);
+            const ImVec2 bottleEnd(_rCenter.x + 10.0f * _scale, _rCenter.y + 14.0f * _scale);
+
+            _rDrawList.AddRectFilled(bottleStart, bottleEnd, potionColor, 4.0f * _scale);
+            _rDrawList.AddRect(
+                bottleStart,
+                bottleEnd,
+                IM_COL32(229, 238, 255, 230),
+                4.0f * _scale,
+                0,
+                1.5f * _scale);
+            _rDrawList.AddRectFilled(
+                ImVec2(_rCenter.x - 5.0f * _scale, _rCenter.y - 19.0f * _scale),
+                ImVec2(_rCenter.x + 5.0f * _scale, _rCenter.y - 11.0f * _scale),
+                potionColor,
+                2.0f * _scale);
+
+            if (_item == Gameplay::sItemId::HealthPotion)
+            {
+                _rDrawList.AddLine(
+                    ImVec2(_rCenter.x - 5.0f * _scale, _rCenter.y),
+                    ImVec2(_rCenter.x + 5.0f * _scale, _rCenter.y),
+                    IM_COL32(255, 238, 238, 255),
+                    2.0f * _scale);
+                _rDrawList.AddLine(
+                    ImVec2(_rCenter.x, _rCenter.y - 5.0f * _scale),
+                    ImVec2(_rCenter.x, _rCenter.y + 5.0f * _scale),
+                    IM_COL32(255, 238, 238, 255),
+                    2.0f * _scale);
+            }
+            else if (_item == Gameplay::sItemId::ManaPotion)
+            {
+                _rDrawList.AddCircleFilled(_rCenter, 5.0f * _scale, IM_COL32(220, 240, 255, 255));
+            }
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------
+
         void DrawSpellCooldown(ImDrawList& _rDrawList, const ImVec2& _rPosition, float _scale, float _remainingSeconds, float _cooldownFraction)
         {
             if (_cooldownFraction <= 0.0f)
@@ -355,47 +402,11 @@ namespace UI
             }
             else
             {
-                const ImU32 potionColor = _rSlot.item == Gameplay::sItemId::HealthPotion
-                    ? IM_COL32(190, 58, 72, 255)
-                    : IM_COL32(50, 118, 214, 255);
-                const ImVec2 bottleStart(_rPosition.x + 22.0f * _scale, _rPosition.y + 16.0f * _scale);
-                const ImVec2 bottleEnd(_rPosition.x + 42.0f * _scale, _rPosition.y + 43.0f * _scale);
-
-                _rDrawList.AddRectFilled(bottleStart, bottleEnd, potionColor, 4.0f * _scale);
-                _rDrawList.AddRect(
-                    bottleStart,
-                    bottleEnd,
-                    IM_COL32(229, 238, 255, 230),
-                    4.0f * _scale,
-                    0,
-                    1.5f * _scale);
-                _rDrawList.AddRectFilled(
-                    ImVec2(_rPosition.x + 27.0f * _scale, _rPosition.y + 10.0f * _scale),
-                    ImVec2(_rPosition.x + 37.0f * _scale, _rPosition.y + 18.0f * _scale),
-                    potionColor,
-                    2.0f * _scale);
-
-                if (_rSlot.item == Gameplay::sItemId::HealthPotion)
-                {
-                    const ImVec2 center(_rPosition.x + 32.0f * _scale, _rPosition.y + 29.0f * _scale);
-                    _rDrawList.AddLine(
-                        ImVec2(center.x - 5.0f * _scale, center.y),
-                        ImVec2(center.x + 5.0f * _scale, center.y),
-                        IM_COL32(255, 238, 238, 255),
-                        2.0f * _scale);
-                    _rDrawList.AddLine(
-                        ImVec2(center.x, center.y - 5.0f * _scale),
-                        ImVec2(center.x, center.y + 5.0f * _scale),
-                        IM_COL32(255, 238, 238, 255),
-                        2.0f * _scale);
-                }
-                else if (_rSlot.item == Gameplay::sItemId::ManaPotion)
-                {
-                    _rDrawList.AddCircleFilled(
-                        ImVec2(_rPosition.x + 32.0f * _scale, _rPosition.y + 29.0f * _scale),
-                        5.0f * _scale,
-                        IM_COL32(220, 240, 255, 255));
-                }
+                DrawUsableIcon(
+                    _rDrawList,
+                    ImVec2(_rPosition.x + 32.0f * _scale, _rPosition.y + 29.0f * _scale),
+                    _scale,
+                    _rSlot.item);
 
                 char amount[16];
                 std::snprintf(amount, sizeof(amount), "%u", _rSlot.amount);
@@ -551,6 +562,7 @@ namespace UI
             ImDrawList& _rDrawList,
             const ImVec2& _rCenter,
             float _radius,
+            Gameplay::sItemId::Enum _item,
             Gameplay::sItemType::Enum _type,
             ImU32 _color)
         {
@@ -558,32 +570,7 @@ namespace UI
             {
             case Gameplay::sItemType::Usable:
             {
-                const float bottleWidth = _radius * 0.8f;
-                const float bottleHeight = _radius * 1.25f;
-
-                const ImVec2 min(
-                    _rCenter.x - bottleWidth * 0.5f,
-                    _rCenter.y - bottleHeight * 0.3f
-                );
-
-                const ImVec2 max(
-                    _rCenter.x + bottleWidth * 0.5f,
-                    _rCenter.y + bottleHeight * 0.55f
-                );
-
-                _rDrawList.AddRectFilled(
-                    min,
-                    max,
-                    _color,
-                    4.0f
-                );
-
-                _rDrawList.AddRectFilled(
-                    ImVec2(_rCenter.x - bottleWidth * 0.22f, min.y - _radius * 0.35f),
-                    ImVec2(_rCenter.x + bottleWidth * 0.22f, min.y + _radius * 0.05f),
-                    _color,
-                    2.0f
-                );
+                DrawUsableIcon(_rDrawList, _rCenter, _radius / 18.0f, _item);
 
                 break;
             }
@@ -610,20 +597,12 @@ namespace UI
 
             case Gameplay::sItemType::Spell:
             {
-                _rDrawList.AddCircleFilled(
-                    _rCenter,
-                    _radius,
-                    _color,
-                    24
-                );
+                const float spellScale = _radius / 18.0f;
+                const ImVec2 spellPosition(
+                    _rCenter.x - 32.0f * spellScale,
+                    _rCenter.y - 26.0f * spellScale);
 
-                _rDrawList.AddCircle(
-                    _rCenter,
-                    _radius * 0.62f,
-                    IM_COL32(225, 230, 255, 220),
-                    24,
-                    2.0f
-                );
+                DrawSpellIcon(_rDrawList, spellPosition, spellScale, _item);
 
                 break;
             }
@@ -704,6 +683,7 @@ namespace UI
                     *pDrawList,
                     iconCenter,
                     14.0f * _scale,
+                    _rSlot.item,
                     definition.type,
                     itemColor
                 );
@@ -1163,6 +1143,7 @@ namespace UI
                     *pDrawList,
                     ImVec2(iconMin.x + iconSize * 0.5f, iconMin.y + iconSize * 0.5f),
                     7.5f * scale,
+                    slot.item,
                     definition.type,
                     GetInventoryItemColor(slot, definition.type)
                 );
