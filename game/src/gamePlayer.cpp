@@ -7,9 +7,9 @@ void cGame::UpdatePlayer(float _deltaTime)
     using namespace Engine;
     using namespace Engine::Platform;
 
-    constexpr float c_moveSpeed = 6.0f;
-    constexpr float c_jumpVelocity = 6.0f;
-    constexpr float c_sprintMultiplier = 1.5f;
+    constexpr float c_moveSpeed         = 6.0f;
+    constexpr float c_jumpVelocity      = 6.0f;
+    constexpr float c_sprintMultiplier  = 1.5f;
 
     m_playerSpeedPotionTime = std::max(0.0f, m_playerSpeedPotionTime - _deltaTime);
 
@@ -90,6 +90,108 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
 
     m_playerAttackTime = std::max(0.0f, m_playerAttackTime - _deltaTime);
 
+    const auto isSpellSlotHeld = [&](size_t _slot)
+    {
+        if (_slot == 0)
+            return Engine::Platform::IsMouseButtonDown(c_leftMouseButton);
+
+        if (_slot == 1)
+            return Engine::Platform::IsMouseButtonDown(c_rightMouseButton);
+
+        return _slot >= 2 && _slot < Gameplay::cRunState::c_numberOfSpellSlots
+            && Engine::Platform::IsKeyDown(c_spellKeys[_slot - 2]);
+    };
+
+    if (m_playerChannelProjectileId != 0)
+    {
+        const Gameplay::cSpellInstance* pChannelSpell = m_runState.GetSpellInSlot(m_playerChannelSlot);
+        if (pChannelSpell == nullptr)
+        {
+            m_playerChannelProjectileId = 0;
+            m_playerChannelSlot = Gameplay::cRunState::c_numberOfSpellSlots;
+            return;
+        }
+
+        const Gameplay::sSpellDefinition& channelDefinition = Gameplay::SpellManager::GetSpell(pChannelSpell->GetSpellId());
+        const Gameplay::sSpellStats& channelStats = pChannelSpell->GetSpellStats();
+        const float channelDuration = std::max(channelDefinition.channelDuration, 0.01f);
+
+        m_playerChannelTime = std::min(channelDuration, m_playerChannelTime + _deltaTime);
+
+        float cameraDirection[4];
+        Engine::GFX::GetCamera().GetDirection(cameraDirection);
+
+        Engine::Math::cVec3f direction(cameraDirection[0], cameraDirection[1], cameraDirection[2]);
+        direction.normalize();
+
+        if (direction.isZero())
+            direction = { 0.0f, 0.0f, 1.0f };
+
+        const float chargeFraction  = m_playerChannelTime / channelDuration;
+        const float chargedRadius   = channelStats.projectileRadius * (0.5f + chargeFraction);
+        
+        const Engine::Math::cVec3f castPosition = m_playerController.GetPosition() + Engine::Math::cVec3f(0.0f, 1.25f, 0.0f);
+
+        m_projectileManager.UpdatePlayerChannelCone(
+            m_playerChannelProjectileId,
+            castPosition + direction * 0.9f,
+            direction,
+            chargedRadius,
+            1.25f + 1.75f * chargeFraction);
+
+        if (!isSpellSlotHeld(m_playerChannelSlot) || m_playerChannelTime >= channelDuration)
+        {
+            const int projectileCount = std::max(1, channelStats.projectileCount);
+            const float centerProjectile = 0.5f * static_cast<float>(projectileCount - 1);
+            const float chargedDamage = channelStats.damage * (1.0f + 2.0f * chargeFraction);
+
+            for (int projectileIndex = 0; projectileIndex < projectileCount; ++projectileIndex)
+            {
+                const float angle = (static_cast<float>(projectileIndex) - centerProjectile) * 0.12f;
+                const float cosine = std::cos(angle);
+                const float sine = std::sin(angle);
+                const Engine::Math::cVec3f projectileDirection(
+                    direction.x() * cosine + direction.z() * sine,
+                    direction.y(),
+                   -direction.x() * sine + direction.z() * cosine);
+
+                if (projectileIndex == 0)
+                {
+                    m_projectileManager.ReleasePlayerChannelCone(
+                        m_playerChannelProjectileId,
+                        projectileDirection,
+                        channelStats.projectileSpeed,
+                        chargedDamage,
+                        channelStats.duration);
+                    continue;
+                }
+
+                Gameplay::sProjectileSpawnDesc projectile{};
+                projectile.position     = castPosition + direction * 0.9f;
+                projectile.direction    = projectileDirection;
+                projectile.speed        = channelStats.projectileSpeed;
+                projectile.damage       = chargedDamage;
+                projectile.lifetime     = channelStats.duration;
+                projectile.radius       = chargedRadius;
+                projectile.visualScale  = 1.25f + 1.75f * chargeFraction;
+                projectile.pierces      = channelStats.pierceCount;
+
+                m_projectileManager.SpawnPlayerCone(projectile);
+            }
+
+            m_playerMana = std::max(0.0f, m_playerMana - channelDefinition.manaCost);
+            
+            m_runState.StartSpellCooldown(m_playerChannelSlot);
+            
+            m_playerAttackTime          = 0.4f;
+            m_playerChannelTime         = 0.0f;
+            m_playerChannelProjectileId = 0;
+            m_playerChannelSlot         = Gameplay::cRunState::c_numberOfSpellSlots;
+        }
+
+        return;
+    }
+
     if (m_mouseReleased)
         return;
 
@@ -124,7 +226,8 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     if (spellDefinition.castType != Gameplay::sSpellCastType::Projectile
         && spellDefinition.castType != Gameplay::sSpellCastType::ConeProjectile
         && spellDefinition.castType != Gameplay::sSpellCastType::SporeProjectile
-        && spellDefinition.castType != Gameplay::sSpellCastType::Dash)
+        && spellDefinition.castType != Gameplay::sSpellCastType::Dash
+        && spellDefinition.castType != Gameplay::sSpellCastType::ChannelProjectile)
         return;
 
     if (m_playerMana < spellDefinition.manaCost)
@@ -133,6 +236,31 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     const Gameplay::sSpellStats& spellStats = pSpell->GetSpellStats();
 
     using Engine::Math::cVec3f;
+
+    if (spellDefinition.castType == Gameplay::sSpellCastType::ChannelProjectile)
+    {
+        float cameraDirection[4];
+        Engine::GFX::GetCamera().GetDirection(cameraDirection);
+
+        cVec3f direction(cameraDirection[0], cameraDirection[1], cameraDirection[2]);
+        direction.normalize();
+
+        if (direction.isZero())
+            return;
+
+        Gameplay::sProjectileSpawnDesc projectile{};
+        projectile.position = m_playerController.GetPosition() + cVec3f(0.0f, 1.25f, 0.0f) + direction * 0.9f;
+        projectile.direction = direction;
+        projectile.radius = spellStats.projectileRadius * 0.5f;
+        projectile.visualScale = 1.25f;
+        projectile.lifetime = spellStats.duration;
+        projectile.pierces = spellStats.pierceCount;
+
+        m_playerChannelProjectileId = m_projectileManager.SpawnPlayerChannelCone(projectile);
+        m_playerChannelSlot = spellSlot;
+        m_playerChannelTime = 0.0f;
+        return;
+    }
 
     if (spellDefinition.castType == Gameplay::sSpellCastType::Dash)
     {
@@ -260,6 +388,9 @@ void cGame::BeginRun()
     m_playerSpeedPotionTime = 0.0f;
     m_playerDashTime    = 0.0f;
     m_playerDashSpeed   = 0.0f;
+    m_playerChannelTime = 0.0f;
+    m_playerChannelSlot = Gameplay::cRunState::c_numberOfSpellSlots;
+    m_playerChannelProjectileId = 0;
     m_playerDashDirection = {};
 
     if (!m_runState.GrantSpell(Gameplay::sSpellId::ArcaneOrb))

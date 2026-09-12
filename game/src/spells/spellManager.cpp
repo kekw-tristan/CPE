@@ -19,7 +19,7 @@ namespace Gameplay
         {
             sSpellDefinition{ sSpellId::ArcaneOrb,      World::sBossId::Undefined,       sItemId::ArcaneOrb,      sSpellCastType::Projectile,       0.0f, "Arcane Orb",      { 12.0f, 0.45f, 13.0f, 2.5f, 0.8f, 1 } },
             
-            sSpellDefinition{ sSpellId::Fireball,       World::sBossId::ForestCrawler,   sItemId::Fireball,       sSpellCastType::Projectile,       0.0f, "Fireball",        { 25.0f, 1.00f, 13.0f, 2.5f, 0.8f, 1 } },
+            sSpellDefinition{ sSpellId::ThornLance,     World::sBossId::ForestCrawler,   sItemId::ThornLance,     sSpellCastType::ChannelProjectile, 0.0f, "Thorn Lance",     { 25.0f, 1.00f, 13.0f, 2.5f, 0.8f, 1 }, 2.0f },
             sSpellDefinition{ sSpellId::StoneShard,     World::sBossId::ForestBrute,     sItemId::StoneShard,     sSpellCastType::ConeProjectile,   15.0f, "Stone Cone",      { 32.0f, 1.20f, 10.0f, 2.2f, 0.6f, 1 } },
             sSpellDefinition{ sSpellId::Dash,           World::sBossId::ForestThornwolf, sItemId::Dash,           sSpellCastType::Dash,             14.0f, "Dash",            { 0.0f, 0.85f, 16.0f, 0.45f, 0.0f, 0 } },
             sSpellDefinition{ sSpellId::SporeOrb,       World::sBossId::ForestSporecap,  sItemId::SporeOrb,       sSpellCastType::SporeProjectile,  18.0f, "Poison Mushroom", { 36.0f, 1.50f, 12.0f, 4.5f, 4.0f, 1 } },
@@ -56,7 +56,7 @@ namespace Gameplay
 
         constexpr std::array<SpellManager::sBossDefinition, World::sBossId::NumberOfElements> c_bosses =
         {
-            SpellManager::sBossDefinition{ World::sBossId::ForestCrawler,   World::sBiomeType::Forest,  World::sEnemyType::ForestThornshooter, sSpellId::Fireball },
+            SpellManager::sBossDefinition{ World::sBossId::ForestCrawler,   World::sBiomeType::Forest,  World::sEnemyType::ForestThornshooter, sSpellId::ThornLance },
             SpellManager::sBossDefinition{ World::sBossId::ForestBrute,     World::sBiomeType::Forest,  World::sEnemyType::ForestBarkguard,    sSpellId::StoneShard },
             SpellManager::sBossDefinition{ World::sBossId::ForestThornwolf, World::sBiomeType::Forest,  World::sEnemyType::ForestRootcharger,  sSpellId::Dash },
             SpellManager::sBossDefinition{ World::sBossId::ForestSporecap,  World::sBiomeType::Forest,  World::sEnemyType::ForestSporecap,     sSpellId::SporeOrb },

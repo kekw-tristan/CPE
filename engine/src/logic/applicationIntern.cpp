@@ -382,6 +382,13 @@ namespace Engine::Logic
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    bool cApplicationIntern::IsMouseButtonDown(int _button) const
+    {
+        return m_input.IsMouseButtonDown(_button);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     bool cApplicationIntern::WasMouseButtonPressed(int _button) const
     {
         return m_input.WasMouseButtonPressed(_button);

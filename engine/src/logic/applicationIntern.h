@@ -108,6 +108,7 @@ namespace Engine::Logic
         public:
 
             bool IsKeydown(int _key) const;
+            bool IsMouseButtonDown(int _button) const;
             bool WasMouseButtonPressed(int _button) const;
 
         private:

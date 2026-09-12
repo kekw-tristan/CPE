@@ -277,6 +277,13 @@ namespace Engine::Platform
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    bool IsMouseButtonDown(int _button)
+    {
+        return s_pApplicationIntern->IsMouseButtonDown(_button);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     bool WasMouseButtonPressed(int _button)
     {
         return s_pApplicationIntern->WasMouseButtonPressed(_button);

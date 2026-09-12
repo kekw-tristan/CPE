@@ -7,7 +7,7 @@ namespace Gameplay
         enum Enum
         {
             ArcaneOrb,
-            Fireball,
+            ThornLance,
             StoneShard,
             Dash,
             SporeOrb,

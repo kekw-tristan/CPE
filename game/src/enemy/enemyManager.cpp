@@ -709,7 +709,7 @@ namespace Gameplay
         projectile.speed     = _rEnemy.type == World::sEnemyType::ForestThornshooter ? 13.0f : 9.0f;
         projectile.damage    = _rDefinition.attackDamage;
         projectile.lifetime  = 2.5f;
-        projectile.radius    = _rEnemy.type == World::sEnemyType::ForestThornshooter ? 0.3f : 0.8f;
+        projectile.radius    = _rEnemy.type == World::sEnemyType::ForestThornshooter ? 0.45f : 0.8f;
 
         if (_rEnemy.type == World::sEnemyType::ForestSporecap)
         {
@@ -745,7 +745,15 @@ namespace Gameplay
             }
         }
         else
+        {
+            if (_rEnemy.type == World::sEnemyType::ForestThornshooter)
+            {
+                const Engine::Math::cVec3f target = _rContext.playerPosition + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f);
+                projectile.direction = (target - projectile.position).normalized();
+            }
+
             _rProjectileManager.SpawnCone(projectile);
+        }
     }
 
     // -------------------------------------------------------------------------------------------------------------------------

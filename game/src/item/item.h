@@ -60,7 +60,7 @@ namespace Gameplay
             ForestBoots,
 
             ArcaneOrb,
-            Fireball,
+            ThornLance,
             StoneShard,
             Dash,
             SporeOrb,

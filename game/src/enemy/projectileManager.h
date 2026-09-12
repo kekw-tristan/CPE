@@ -45,10 +45,12 @@ namespace Gameplay
         float damage            = 0.0f;
         float lifetime          = 0.0f;
         float radius            = 0.8f;
+        float visualScale       = 1.0f;
 
         bool  isAreaOfEffect    = false;
         bool  areaActive        = false;
         bool  hitPlayer         = false;
+        bool  channeling        = false;
         
         float areaAge           = 0.0f;
         float areaTickTime      = 0.0f;
@@ -79,6 +81,7 @@ namespace Gameplay
         float damage    = 0.0f;
         float lifetime  = 0.0f;
         float radius    = 0.8f;
+        float visualScale = 1.0f;
         
         bool isAreaOfEffect = false;
         
@@ -99,8 +102,14 @@ namespace Gameplay
             uint64_t SpawnSpore(const sProjectileSpawnDesc& _rDesc);
             uint64_t SpawnShockwave(const sProjectileSpawnDesc& _rDesc);
             uint64_t SpawnPlayerSphere(const sProjectileSpawnDesc& _rDesc);
+            uint64_t SpawnPlayerChannelCone(const sProjectileSpawnDesc& _rDesc);
             uint64_t SpawnPlayerCone(const sProjectileSpawnDesc& _rDesc);
             uint64_t SpawnPlayerSpore(const sProjectileSpawnDesc& _rDesc);
+
+            bool UpdatePlayerChannelCone(uint64_t _id, const Engine::Math::cVec3f& _rPosition,
+                                         const Engine::Math::cVec3f& _rDirection, float _radius, float _visualScale);
+            bool ReleasePlayerChannelCone(uint64_t _id, const Engine::Math::cVec3f& _rDirection,
+                                          float _speed, float _damage, float _lifetime);
 
             void Update(float _deltaTime, const Engine::Math::cVec3f& _rPlayerPosition, cEnemyManager& _rEnemyManager);
             void Clear();

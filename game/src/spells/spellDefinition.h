@@ -18,6 +18,7 @@ namespace Gameplay
             ConeProjectile,
             SporeProjectile,
             Dash,
+            ChannelProjectile,
 
             NumberOfElements,
             Undefined = -1
@@ -33,6 +34,7 @@ namespace Gameplay
         float                manaCost       = 0.0f;
 
         std::string          name;
-        sSpellStats          baseStats; 
+        sSpellStats          baseStats;
+        float                channelDuration = 0.0f;
     };
 }

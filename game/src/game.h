@@ -264,6 +264,10 @@ class cGame : public cApplication
         float m_playerSpeedPotionTime = 0.0f;
         float m_playerDashTime   = 0.0f;
         float m_playerDashSpeed  = 0.0f;
+        float m_playerChannelTime = 0.0f;
+
+        size_t m_playerChannelSlot = Gameplay::cRunState::c_numberOfSpellSlots;
+        uint64_t m_playerChannelProjectileId = 0;
 
         Engine::Math::cVec3f m_playerDashDirection;
 

@@ -185,6 +185,40 @@ namespace UI
 
             switch (_spell)
             {
+                case Gameplay::sItemId::ThornLance:
+                {
+                    const ImU32 stemColor = IM_COL32(86, 116, 44, 255);
+                    const ImU32 thornColor = IM_COL32(190, 219, 103, 255);
+                    const ImU32 highlightColor = IM_COL32(235, 255, 174, 255);
+
+                    _rDrawList.AddLine(
+                        ImVec2(center.x - 17.0f * _scale, center.y + 15.0f * _scale),
+                        ImVec2(center.x + 9.0f * _scale, center.y - 11.0f * _scale),
+                        stemColor,
+                        5.0f * _scale);
+                    _rDrawList.AddTriangleFilled(
+                        ImVec2(center.x + 5.0f * _scale, center.y - 16.0f * _scale),
+                        ImVec2(center.x + 23.0f * _scale, center.y - 23.0f * _scale),
+                        ImVec2(center.x + 16.0f * _scale, center.y - 5.0f * _scale),
+                        thornColor);
+                    _rDrawList.AddTriangleFilled(
+                        ImVec2(center.x - 5.0f * _scale, center.y + 1.0f * _scale),
+                        ImVec2(center.x - 7.0f * _scale, center.y - 10.0f * _scale),
+                        ImVec2(center.x + 4.0f * _scale, center.y - 4.0f * _scale),
+                        thornColor);
+                    _rDrawList.AddTriangleFilled(
+                        ImVec2(center.x + 1.0f * _scale, center.y + 7.0f * _scale),
+                        ImVec2(center.x + 12.0f * _scale, center.y + 5.0f * _scale),
+                        ImVec2(center.x + 6.0f * _scale, center.y + 16.0f * _scale),
+                        thornColor);
+                    _rDrawList.AddLine(
+                        ImVec2(center.x + 10.0f * _scale, center.y - 15.0f * _scale),
+                        ImVec2(center.x + 19.0f * _scale, center.y - 19.0f * _scale),
+                        highlightColor,
+                        2.0f * _scale);
+                    break;
+                }
+
                 case Gameplay::sItemId::Dash:
                 {
                     const ImVec2 start(center.x - 18.0f * _scale, center.y);

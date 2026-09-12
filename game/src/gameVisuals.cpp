@@ -356,7 +356,7 @@ void cGame::SyncProjectileRenderInstances()
         else if (projectile.type == Gameplay::eProjectileType::PlayerSphere)
         {
             transform.rotation = { 0.0f, 0.0f, 0.0f };
-            transform.scale = { 0.42f, 0.42f, 0.42f };
+            transform.scale = { 0.42f * projectile.visualScale, 0.42f * projectile.visualScale, 0.42f * projectile.visualScale };
         }
         else if (projectile.type == Gameplay::eProjectileType::PlayerSpore
             || projectile.type == Gameplay::eProjectileType::EnemySpore)
@@ -373,9 +373,17 @@ void cGame::SyncProjectileRenderInstances()
                 + projectile.direction.z() * projectile.direction.z());
             const float pitch = std::atan2(horizontalLength, projectile.direction.y());
             const float yaw = std::atan2(projectile.direction.x(), projectile.direction.z());
+            const float radiusScale = projectile.type == Gameplay::eProjectileType::EnemyCone
+                ? projectile.radius / 0.3f
+                : projectile.type == Gameplay::eProjectileType::PlayerCone
+                ? projectile.visualScale
+                : 1.0f;
+            const float lengthScale = projectile.type == Gameplay::eProjectileType::PlayerCone
+                ? projectile.visualScale
+                : 1.0f;
 
             transform.rotation = { pitch, yaw, 0.0f };
-            transform.scale = { 0.14f, 0.65f, 0.14f };
+            transform.scale = { 0.14f * radiusScale, 0.65f * lengthScale, 0.14f * radiusScale };
         }
 
         visual->pInstance->worldMatrix = CreateTransformMatrix(transform);

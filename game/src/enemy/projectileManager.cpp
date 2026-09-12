@@ -180,6 +180,15 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    uint64_t cProjectileManager::SpawnPlayerChannelCone(const sProjectileSpawnDesc& _rDesc)
+    {
+        const uint64_t id = Spawn(_rDesc, eProjectileType::PlayerCone);
+        m_projectiles.back().channeling = true;
+        return id;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     uint64_t cProjectileManager::SpawnPlayerCone(const sProjectileSpawnDesc& _rDesc)
     {
         return Spawn(_rDesc, eProjectileType::PlayerCone);
@@ -190,6 +199,47 @@ namespace Gameplay
     uint64_t cProjectileManager::SpawnPlayerSpore(const sProjectileSpawnDesc& _rDesc)
     {
         return Spawn(_rDesc, eProjectileType::PlayerSpore);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool cProjectileManager::UpdatePlayerChannelCone(uint64_t _id, const Engine::Math::cVec3f& _rPosition,
+                                                      const Engine::Math::cVec3f& _rDirection, float _radius, float _visualScale)
+    {
+        const auto projectile = std::find_if(m_projectiles.begin(), m_projectiles.end(), [_id](const sProjectile& _rProjectile)
+        {
+            return _rProjectile.id == _id && _rProjectile.channeling;
+        });
+
+        if (projectile == m_projectiles.end())
+            return false;
+
+        projectile->position    = _rPosition;
+        projectile->direction   = _rDirection.normalized();
+        projectile->radius      = _radius;
+        projectile->visualScale = _visualScale;
+        return true;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    bool cProjectileManager::ReleasePlayerChannelCone(uint64_t _id, const Engine::Math::cVec3f& _rDirection,
+                                                       float _speed, float _damage, float _lifetime)
+    {
+        const auto projectile = std::find_if(m_projectiles.begin(), m_projectiles.end(), [_id](const sProjectile& _rProjectile)
+        {
+            return _rProjectile.id == _id && _rProjectile.channeling;
+        });
+
+        if (projectile == m_projectiles.end())
+            return false;
+
+        projectile->channeling = false;
+        projectile->direction  = _rDirection.normalized();
+        projectile->speed      = _speed;
+        projectile->damage     = _damage;
+        projectile->lifetime   = _lifetime;
+        return true;
     }
 
     // -------------------------------------------------------------------------------------------------------------------------
@@ -206,6 +256,7 @@ namespace Gameplay
         projectile.damage           = _rDesc.damage;
         projectile.lifetime         = _rDesc.lifetime;
         projectile.radius           = _rDesc.radius;
+        projectile.visualScale      = _rDesc.visualScale;
         projectile.isAreaOfEffect   = _rDesc.isAreaOfEffect;
         projectile.areaRadius       = std::max(0.2f, _rDesc.areaRadius > 0.0f ? _rDesc.areaRadius : _rDesc.radius);
         projectile.areaDuration     = std::max(0.01f, _rDesc.areaDuration);
@@ -235,6 +286,9 @@ namespace Gameplay
 
         for (sProjectile& projectile : m_projectiles)
         {
+            if (projectile.channeling)
+                continue;
+
             const bool isPlayerProjectile = projectile.type == eProjectileType::PlayerSphere
                 || projectile.type == eProjectileType::PlayerCone
                 || projectile.type == eProjectileType::PlayerSpore;
@@ -327,14 +381,21 @@ namespace Gameplay
                         }
                     }
                 }
-                else if (Engine::Math::cVec3f::distanceSquared(projectile.position, playerCenter) <= 0.6f * 0.6f)
+                else
                 {
-                    if (projectile.isAreaOfEffect)
-                        activateArea(projectile);
-                    else
+                    const float playerHitRadius = projectile.type == eProjectileType::EnemyCone
+                        ? projectile.radius + 0.4f
+                        : 0.6f;
+
+                    if (Engine::Math::cVec3f::distanceSquared(projectile.position, playerCenter) <= playerHitRadius * playerHitRadius)
                     {
-                        m_pendingPlayerDamage += projectile.damage;
-                        projectile.lifetime = 0.0f;
+                        if (projectile.isAreaOfEffect)
+                            activateArea(projectile);
+                        else
+                        {
+                            m_pendingPlayerDamage += projectile.damage;
+                            projectile.lifetime = 0.0f;
+                        }
                     }
                 }
 
