@@ -235,15 +235,22 @@ namespace UI
 
                 case Gameplay::sItemId::StoneShard:
                 {
-                    const ImVec2 points[3] =
-                    {
-                        ImVec2(center.x, center.y - 18.0f * _scale),
-                        ImVec2(center.x + 15.0f * _scale, center.y + 14.0f * _scale),
-                        ImVec2(center.x - 15.0f * _scale, center.y + 14.0f * _scale)
-                    };
+                    const ImU32 auraColor = IM_COL32(69, 167, 235, 255);
+                    const ImU32 coreColor = IM_COL32(191, 231, 255, 255);
 
-                    _rDrawList.AddTriangleFilled(points[0], points[1], points[2], IM_COL32(188, 104, 42, 255));
-                    _rDrawList.AddTriangle(points[0], points[1], points[2], IM_COL32(255, 216, 148, 255), 2.0f * _scale);
+                    _rDrawList.AddCircle(center, 18.0f * _scale, auraColor, 24, 3.0f * _scale);
+                    _rDrawList.AddCircle(center, 11.0f * _scale, IM_COL32(68, 109, 145, 255), 20, 2.0f * _scale);
+                    _rDrawList.AddCircleFilled(center, 5.0f * _scale, coreColor);
+                    _rDrawList.AddLine(
+                        ImVec2(center.x - 23.0f * _scale, center.y),
+                        ImVec2(center.x - 15.0f * _scale, center.y),
+                        coreColor,
+                        2.0f * _scale);
+                    _rDrawList.AddLine(
+                        ImVec2(center.x + 15.0f * _scale, center.y),
+                        ImVec2(center.x + 23.0f * _scale, center.y),
+                        coreColor,
+                        2.0f * _scale);
                     break;
                 }
 

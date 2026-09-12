@@ -77,6 +77,8 @@ namespace Gameplay
         float stateTime            = 0.0f;
         float attackCooldown       = 0.0f;
         float attackPoseWeight     = 0.0f;
+        float projectileReflectionAuraTime     = 0.0f;
+        float projectileReflectionAuraCooldown = 4.0f;
         bool dashHitPlayer         = false;
         eEnemyState state          = eEnemyState::Idle;
         uint64_t transformRevision = 1;
@@ -112,6 +114,7 @@ namespace Gameplay
             const sEnemy* TryGetEnemy(sEnemyHandle _handle) const;
             float FindAimDistance(const Engine::Math::cVec3f& _rOrigin, const Engine::Math::cVec3f& _rDirection, float _maximumDistance) const;
             void ApplyPoisonDamage(const sProjectile& _rArea, float _damage);
+            bool TryReflectPlayerProjectile(sProjectile& _rProjectile, const Engine::Math::cVec3f& _rPlayerPosition);
             float ConsumePlayerDamage();
             const std::vector<sEnemyDeathEvent>& GetDeathEvents() const;
             void ClearDeathEvents();

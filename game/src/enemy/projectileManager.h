@@ -16,7 +16,9 @@ namespace Gameplay
         EnemyShockwave,
         PlayerSphere,
         PlayerCone,
-        PlayerSpore
+        PlayerSpore,
+        PlayerReflected,
+        EnemyReflected
     };
 
     struct sProjectile
@@ -51,6 +53,7 @@ namespace Gameplay
         bool  areaActive        = false;
         bool  hitPlayer         = false;
         bool  channeling        = false;
+        bool  reflectedCone     = false;
         
         float areaAge           = 0.0f;
         float areaTickTime      = 0.0f;
@@ -111,7 +114,8 @@ namespace Gameplay
             bool ReleasePlayerChannelCone(uint64_t _id, const Engine::Math::cVec3f& _rDirection,
                                           float _speed, float _damage, float _lifetime);
 
-            void Update(float _deltaTime, const Engine::Math::cVec3f& _rPlayerPosition, cEnemyManager& _rEnemyManager);
+            void Update(float _deltaTime, const Engine::Math::cVec3f& _rPlayerPosition, cEnemyManager& _rEnemyManager,
+                        float _playerReflectionAuraTime, float _playerReflectionAuraRadius, float _playerReflectionDamageMultiplier);
             void Clear();
 
             const std::vector<sProjectile>& GetProjectiles() const;

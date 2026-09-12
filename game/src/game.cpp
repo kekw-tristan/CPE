@@ -96,7 +96,8 @@ void cGame::OnUpdate(float _deltaTime)
         enemyContext.playerPosition = m_playerController.GetPosition();
 
         m_enemyManager.Update(enemyContext, m_projectileManager);
-        m_projectileManager.Update(_deltaTime, enemyContext.playerPosition, m_enemyManager);
+        m_projectileManager.Update(_deltaTime, enemyContext.playerPosition, m_enemyManager,
+            m_playerReflectionAuraTime, m_playerReflectionAuraRadius, m_playerReflectionDamageMultiplier);
 
         for (const Gameplay::sEnemyDeathEvent& deathEvent : m_enemyManager.GetDeathEvents())
         {
@@ -382,9 +383,14 @@ void cGame::OnShutdown()
     m_enemyManager.Clear();
     m_projectileManager.Clear();
     m_particleSystem.Clear();
+    GFX::LightManager::DestroyLight(m_playerReflectionAuraLight);
+    m_playerReflectionAuraLight = GFX::c_invalidLightHandle;
 
     for (sEnemyVisual& visual : m_enemyVisuals)
+    {
         GFX::ShapeModelLights::Destroy(visual.lightHandles);
+        GFX::LightManager::DestroyLight(visual.auraLight);
+    }
 
     m_enemyVisuals.clear();
     m_healthBars.clear();

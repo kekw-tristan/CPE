@@ -277,6 +277,41 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    bool cEnemyManager::TryReflectPlayerProjectile(sProjectile& _rProjectile, const Engine::Math::cVec3f& _rPlayerPosition)
+    {
+        for (uint32_t slotIndex : m_activeSlots)
+        {
+            sEnemySlot& slot = m_slots[slotIndex];
+            sEnemy& enemy = slot.enemy;
+
+            if (!slot.occupied || !slot.active || enemy.state == eEnemyState::Dead
+                || enemy.type != World::sEnemyType::ForestBarkguard || enemy.projectileReflectionAuraTime <= 0.0f)
+            {
+                continue;
+            }
+
+            const Engine::Math::cVec3f auraCenter = enemy.position + Engine::Math::cVec3f(0.0f, 1.4f * enemy.scale, 0.0f);
+            const float reflectionRadius = 1.8f * enemy.scale + _rProjectile.radius;
+            if (Engine::Math::cVec3f::distanceSquared(_rProjectile.position, auraCenter) > reflectionRadius * reflectionRadius)
+                continue;
+
+            const Engine::Math::cVec3f direction = (_rPlayerPosition + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f) - _rProjectile.position).normalized();
+            if (direction.isZero())
+                return false;
+
+            _rProjectile.reflectedCone = _rProjectile.type == eProjectileType::PlayerCone;
+            _rProjectile.type          = eProjectileType::EnemyReflected;
+            _rProjectile.direction     = direction;
+            _rProjectile.damage        *= 1.5f;
+            _rProjectile.speed         *= 1.15f;
+            return true;
+        }
+
+        return false;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     void cEnemyManager::SetActive(sEnemyHandle _handle, bool _active)
     {
         if (_handle.index < m_slots.size())
@@ -491,6 +526,22 @@ namespace Gameplay
 
     void cEnemyManager::UpdateEnemy(sEnemy& _rEnemy, const sEnemyDefinition& _rDefinition, const sEnemyUpdateContext& _rContext, cProjectileManager& _rProjectileManager)
     {
+        if (_rEnemy.type == World::sEnemyType::ForestBarkguard && _rEnemy.state != eEnemyState::Idle)
+        {
+            _rEnemy.projectileReflectionAuraTime = std::max(0.0f, _rEnemy.projectileReflectionAuraTime - _rContext.deltaTime);
+            _rEnemy.projectileReflectionAuraCooldown -= _rContext.deltaTime;
+
+            if (_rEnemy.projectileReflectionAuraCooldown <= 0.0f)
+            {
+                _rEnemy.projectileReflectionAuraTime = 2.5f;
+                _rEnemy.projectileReflectionAuraCooldown = 8.0f;
+            }
+        }
+        else if (_rEnemy.type == World::sEnemyType::ForestBarkguard)
+        {
+            _rEnemy.projectileReflectionAuraTime = 0.0f;
+        }
+
         if (_rEnemy.isBoss && (std::abs(_rContext.playerPosition.x() - _rEnemy.homePosition.x()) > 12.5f
             || std::abs(_rContext.playerPosition.z() - _rEnemy.homePosition.z()) > 12.5f))
         {

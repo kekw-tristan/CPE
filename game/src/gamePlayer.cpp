@@ -12,6 +12,66 @@ void cGame::UpdatePlayer(float _deltaTime)
     constexpr float c_sprintMultiplier  = 1.5f;
 
     m_playerSpeedPotionTime = std::max(0.0f, m_playerSpeedPotionTime - _deltaTime);
+    m_playerReflectionAuraTime = std::max(0.0f, m_playerReflectionAuraTime - _deltaTime);
+
+    if (m_playerReflectionAuraTime > 0.0f)
+    {
+        m_playerReflectionAuraPhase = std::fmod(m_playerReflectionAuraPhase + _deltaTime * 2.4f, 6.28318530718f);
+
+        GFX::sLight auraLight{};
+        auraLight.type      = GFX::sLightType::Point;
+        auraLight.color     = { 0.32f, 0.72f, 1.0f };
+        auraLight.intensity = 3.0f;
+        auraLight.position  = m_playerController.GetPosition() + Math::cVec3f(0.0f, 1.0f, 0.0f);
+        auraLight.radius    = m_playerReflectionAuraRadius + 2.0f;
+
+        if (m_playerReflectionAuraLight == GFX::c_invalidLightHandle)
+            m_playerReflectionAuraLight = GFX::LightManager::CreateLight(auraLight);
+        else
+            GFX::LightManager::UpdateLight(m_playerReflectionAuraLight, auraLight);
+
+        for (size_t shieldIndex = 0; shieldIndex < m_playerReflectionAuraShields.size(); ++shieldIndex)
+        {
+            GFX::sInstanceData*& rpShield = m_playerReflectionAuraShields[shieldIndex];
+            if (rpShield == nullptr)
+            {
+                rpShield = m_pool.Create();
+                rpShield->color = { 0.32f, 0.72f, 1.0f, 1.0f };
+                rpShield->materialIndex = m_playerSphereMaterial;
+                m_dynamicMeshInstances[m_beveledCubeMesh].push_back(rpShield);
+                m_dynamicInstanceListDirty = true;
+            }
+
+            const float angle = m_playerReflectionAuraPhase + static_cast<float>(shieldIndex) * 1.57079632679f;
+            GFX::sTransform shieldTransform{};
+            shieldTransform.position = m_playerController.GetPosition() + Math::cVec3f(
+                std::cos(angle) * m_playerReflectionAuraRadius,
+                1.1f + std::sin(m_playerReflectionAuraPhase * 2.0f + static_cast<float>(shieldIndex)) * 0.12f,
+                std::sin(angle) * m_playerReflectionAuraRadius);
+            shieldTransform.rotation = { 0.0f, angle, 0.0f };
+            shieldTransform.scale    = { 0.38f, 0.55f, 0.08f };
+            rpShield->worldMatrix = CreateTransformMatrix(shieldTransform);
+        }
+    }
+    else if (m_playerReflectionAuraLight != GFX::c_invalidLightHandle)
+    {
+        GFX::LightManager::DestroyLight(m_playerReflectionAuraLight);
+        m_playerReflectionAuraLight = GFX::c_invalidLightHandle;
+    }
+
+    if (m_playerReflectionAuraTime <= 0.0f)
+    {
+        for (GFX::sInstanceData*& rpShield : m_playerReflectionAuraShields)
+        {
+            if (rpShield == nullptr)
+                continue;
+
+            std::erase(m_dynamicMeshInstances[m_beveledCubeMesh], rpShield);
+            m_pool.Destroy(rpShield);
+            rpShield = nullptr;
+            m_dynamicInstanceListDirty = true;
+        }
+    }
 
     if (m_playerDashTime > 0.0f)
     {
@@ -227,7 +287,8 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
         && spellDefinition.castType != Gameplay::sSpellCastType::ConeProjectile
         && spellDefinition.castType != Gameplay::sSpellCastType::SporeProjectile
         && spellDefinition.castType != Gameplay::sSpellCastType::Dash
-        && spellDefinition.castType != Gameplay::sSpellCastType::ChannelProjectile)
+        && spellDefinition.castType != Gameplay::sSpellCastType::ChannelProjectile
+        && spellDefinition.castType != Gameplay::sSpellCastType::ReflectionAura)
         return;
 
     if (m_playerMana < spellDefinition.manaCost)
@@ -236,6 +297,19 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     const Gameplay::sSpellStats& spellStats = pSpell->GetSpellStats();
 
     using Engine::Math::cVec3f;
+
+    if (spellDefinition.castType == Gameplay::sSpellCastType::ReflectionAura)
+    {
+        m_playerReflectionAuraTime          = spellStats.duration;
+        m_playerReflectionAuraRadius        = spellStats.projectileRadius;
+        m_playerReflectionDamageMultiplier  = 1.0f + spellStats.damage * 0.01f;
+
+        m_playerMana = std::max(0.0f, m_playerMana - spellDefinition.manaCost);
+
+        m_runState.StartSpellCooldown(spellSlot);
+        m_playerAttackTime = 0.4f;
+        return;
+    }
 
     if (spellDefinition.castType == Gameplay::sSpellCastType::ChannelProjectile)
     {
@@ -389,6 +463,10 @@ void cGame::BeginRun()
     m_playerDashTime    = 0.0f;
     m_playerDashSpeed   = 0.0f;
     m_playerChannelTime = 0.0f;
+    m_playerReflectionAuraTime = 0.0f;
+    m_playerReflectionAuraRadius = 0.0f;
+    m_playerReflectionDamageMultiplier = 1.0f;
+    m_playerReflectionAuraPhase = 0.0f;
     m_playerChannelSlot = Gameplay::cRunState::c_numberOfSpellSlots;
     m_playerChannelProjectileId = 0;
     m_playerDashDirection = {};

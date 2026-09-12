@@ -85,7 +85,10 @@ class cGame : public cApplication
             Math::cVec3f                previousPosition  = { 0.0f, 0.0f, 0.0f };
             float                       walkPhase         = 0.0f;
             float                       walkWeight        = 0.0f;
-    
+            GFX::LightHandle            auraLight         = GFX::c_invalidLightHandle;
+            float                       auraShieldPhase   = 0.0f;
+            std::array<GFX::sInstanceData*, 4> auraShields{};
+
             std::vector<sEnemyRenderPart> renderParts;
             std::vector<GFX::LightHandle> lightHandles;
         };
@@ -265,6 +268,12 @@ class cGame : public cApplication
         float m_playerDashTime   = 0.0f;
         float m_playerDashSpeed  = 0.0f;
         float m_playerChannelTime = 0.0f;
+        float m_playerReflectionAuraTime = 0.0f;
+        float m_playerReflectionAuraRadius = 0.0f;
+        float m_playerReflectionDamageMultiplier = 1.0f;
+        float m_playerReflectionAuraPhase = 0.0f;
+        GFX::LightHandle m_playerReflectionAuraLight = GFX::c_invalidLightHandle;
+        std::array<GFX::sInstanceData*, 4> m_playerReflectionAuraShields{};
 
         size_t m_playerChannelSlot = Gameplay::cRunState::c_numberOfSpellSlots;
         uint64_t m_playerChannelProjectileId = 0;

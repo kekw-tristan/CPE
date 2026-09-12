@@ -271,7 +271,8 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    void cProjectileManager::Update(float _deltaTime, const Engine::Math::cVec3f& _rPlayerPosition, cEnemyManager& _rEnemyManager)
+    void cProjectileManager::Update(float _deltaTime, const Engine::Math::cVec3f& _rPlayerPosition, cEnemyManager& _rEnemyManager,
+                                    float _playerReflectionAuraTime, float _playerReflectionAuraRadius, float _playerReflectionDamageMultiplier)
     {
         m_impactEvents.clear();
 
@@ -289,9 +290,24 @@ namespace Gameplay
             if (projectile.channeling)
                 continue;
 
-            const bool isPlayerProjectile = projectile.type == eProjectileType::PlayerSphere
+            if (projectile.type == eProjectileType::EnemyCone && _playerReflectionAuraTime > 0.0f)
+            {
+                const Engine::Math::cVec3f auraCenter = _rPlayerPosition + Engine::Math::cVec3f(0.0f, 1.0f, 0.0f);
+                const float reflectionRadius = _playerReflectionAuraRadius + projectile.radius;
+                if (Engine::Math::cVec3f::distanceSquared(projectile.position, auraCenter) <= reflectionRadius * reflectionRadius)
+                {
+                    projectile.type          = eProjectileType::PlayerReflected;
+                    projectile.direction     = projectile.direction * -1.0f;
+                    projectile.damage        *= _playerReflectionDamageMultiplier;
+                    projectile.speed         *= 1.15f;
+                    projectile.reflectedCone = true;
+                }
+            }
+
+            bool isPlayerProjectile = projectile.type == eProjectileType::PlayerSphere
                 || projectile.type == eProjectileType::PlayerCone
-                || projectile.type == eProjectileType::PlayerSpore;
+                || projectile.type == eProjectileType::PlayerSpore
+                || projectile.type == eProjectileType::PlayerReflected;
 
             float remainingTime = std::max(0.0f, _deltaTime);
             while (remainingTime > 0.000001f && projectile.lifetime > 0.0f)
@@ -347,6 +363,10 @@ namespace Gameplay
                         projectile.areaTickTime = 0.0f;
                     continue;
                 }
+
+                if (isPlayerProjectile && projectile.type != eProjectileType::PlayerReflected
+                    && !projectile.isAreaOfEffect && _rEnemyManager.TryReflectPlayerProjectile(projectile, _rPlayerPosition))
+                    isPlayerProjectile = false;
 
                 if (MoveProjectile(projectile, stepTime))
                 {

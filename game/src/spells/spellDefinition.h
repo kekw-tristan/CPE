@@ -19,6 +19,7 @@ namespace Gameplay
             SporeProjectile,
             Dash,
             ChannelProjectile,
+            ReflectionAura,
 
             NumberOfElements,
             Undefined = -1

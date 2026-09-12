@@ -442,6 +442,13 @@ void cGame::RefreshWorldRenderInstances()
             removed.insert(part.pInstance);
 
         GFX::ShapeModelLights::Destroy(_rVisual.lightHandles);
+        GFX::LightManager::DestroyLight(_rVisual.auraLight);
+
+        for (GFX::sInstanceData* pShield : _rVisual.auraShields)
+        {
+            if (pShield != nullptr)
+                removed.insert(pShield);
+        }
 
         return true;
     });
