@@ -9,6 +9,7 @@ void cGame::UpdatePlayer(float _deltaTime)
 
     constexpr float c_moveSpeed = 6.0f;
     constexpr float c_jumpVelocity = 6.0f;
+    constexpr float c_sprintMultiplier = 1.5f;
 
     m_playerSpeedPotionTime = std::max(0.0f, m_playerSpeedPotionTime - _deltaTime);
 
@@ -58,7 +59,12 @@ void cGame::UpdatePlayer(float _deltaTime)
         m_playerYaw = std::atan2(movement.x(), movement.z());
     }
 
-    const float moveSpeed = m_playerSpeedPotionTime > 0.0f ? c_moveSpeed * c_speedPotionMultiplier : c_moveSpeed;
+    const bool sprinting = IsKeyDown(340) || IsKeyDown(344);
+    float moveSpeed = sprinting ? c_moveSpeed * c_sprintMultiplier : c_moveSpeed;
+
+    if (m_playerSpeedPotionTime > 0.0f)
+        moveSpeed *= c_speedPotionMultiplier;
+
     m_playerController.Move(movement, moveSpeed);
 
     if (IsKeyDown(32))
@@ -262,6 +268,8 @@ void cGame::BeginRun()
     const Gameplay::sSpellDefinition& starterSpell = Gameplay::SpellManager::GetSpell(Gameplay::sSpellId::ArcaneOrb);
     if (!m_inventory.AddItem(starterSpell.inventoryItem))
         return;
+
+    m_inventory.AddItem({ Gameplay::sItemId::SpeedPotion, 10 });
 
     const auto& inventorySlots = m_inventory.GetInventorySlots();
     for (size_t inventorySlot = 0; inventorySlot < inventorySlots.size(); ++inventorySlot)
