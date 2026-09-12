@@ -45,6 +45,17 @@ namespace Gameplay
 
             sItemDefinition
             {
+                sItemId::SpeedPotion,
+                "Speed Potion",
+                sItemType::Usable,
+                sArmorSlot::Undefined,
+                10
+            },
+
+            // ---------------------------------------------------------------------------------------------------------------------
+
+            sItemDefinition
+            {
                 sItemId::ForestHelmet,
                 "Forest Helmet",
                 sItemType::Armor,

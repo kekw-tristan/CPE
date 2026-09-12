@@ -245,6 +245,8 @@ namespace UI
         {
             const ImU32 potionColor = _item == Gameplay::sItemId::HealthPotion
                 ? IM_COL32(190, 58, 72, 255)
+                : _item == Gameplay::sItemId::SpeedPotion
+                ? IM_COL32(170, 130, 28, 255)
                 : IM_COL32(50, 118, 214, 255);
             const ImVec2 bottleStart(_rCenter.x - 10.0f * _scale, _rCenter.y - 13.0f * _scale);
             const ImVec2 bottleEnd(_rCenter.x + 10.0f * _scale, _rCenter.y + 14.0f * _scale);
@@ -279,6 +281,21 @@ namespace UI
             else if (_item == Gameplay::sItemId::ManaPotion)
             {
                 _rDrawList.AddCircleFilled(_rCenter, 5.0f * _scale, IM_COL32(220, 240, 255, 255));
+            }
+            else if (_item == Gameplay::sItemId::SpeedPotion)
+            {
+                const ImU32 lightningColor = IM_COL32(255, 247, 190, 255);
+
+                _rDrawList.AddTriangleFilled(
+                    ImVec2(_rCenter.x + 1.0f * _scale, _rCenter.y - 8.0f * _scale),
+                    ImVec2(_rCenter.x - 5.0f * _scale, _rCenter.y + 1.0f * _scale),
+                    ImVec2(_rCenter.x + 1.0f * _scale, _rCenter.y + 1.0f * _scale),
+                    lightningColor);
+                _rDrawList.AddTriangleFilled(
+                    ImVec2(_rCenter.x - 1.0f * _scale, _rCenter.y - 1.0f * _scale),
+                    ImVec2(_rCenter.x + 5.0f * _scale, _rCenter.y - 1.0f * _scale),
+                    ImVec2(_rCenter.x - 4.0f * _scale, _rCenter.y + 8.0f * _scale),
+                    lightningColor);
             }
         }
 

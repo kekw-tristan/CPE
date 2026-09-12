@@ -96,7 +96,7 @@ namespace Gameplay
 
     sItemStack cLootManager::RollRegularDrop()
     {
-        std::discrete_distribution<int> dropType({ 40, 30, 30 });
+        std::discrete_distribution<int> dropType({ 35, 25, 10, 30 });
 
         switch (dropType(m_random))
         {
@@ -105,6 +105,9 @@ namespace Gameplay
 
             case 1:
                 return { sItemId::ManaPotion, 1 };
+
+            case 2:
+                return { sItemId::SpeedPotion, 1 };
 
             default:
                 return RollArmor();

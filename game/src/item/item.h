@@ -51,6 +51,7 @@ namespace Gameplay
         {
             HealthPotion,
             ManaPotion,
+            SpeedPotion,
 
             ForestHelmet,
             ForestChest,

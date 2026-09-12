@@ -248,6 +248,8 @@ class cGame : public cApplication
         static constexpr float c_levelUpManaBonus    = 10.0f;
         static constexpr float c_healthPotionRestore = 35.0f;
         static constexpr float c_manaPotionRestore   = 35.0f;
+        static constexpr float c_speedPotionDuration = 5.0f;
+        static constexpr float c_speedPotionMultiplier = 1.5f;
     
         static constexpr uint32_t c_regularEnemyExperience  = 25;
         static constexpr uint32_t c_bossExperience          = 100;
@@ -259,6 +261,7 @@ class cGame : public cApplication
         float m_playerMaxMana    = c_playerBaseMaxMana;
         float m_playerMana       = c_playerBaseMaxMana;
         float m_playerAttackTime = 0.0f;
+        float m_playerSpeedPotionTime = 0.0f;
         float m_playerDashTime   = 0.0f;
         float m_playerDashSpeed  = 0.0f;
 

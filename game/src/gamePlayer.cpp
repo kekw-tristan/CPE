@@ -10,6 +10,8 @@ void cGame::UpdatePlayer(float _deltaTime)
     constexpr float c_moveSpeed = 6.0f;
     constexpr float c_jumpVelocity = 6.0f;
 
+    m_playerSpeedPotionTime = std::max(0.0f, m_playerSpeedPotionTime - _deltaTime);
+
     if (m_playerDashTime > 0.0f)
     {
         const float dashFrameTime = std::min(_deltaTime, m_playerDashTime);
@@ -56,7 +58,8 @@ void cGame::UpdatePlayer(float _deltaTime)
         m_playerYaw = std::atan2(movement.x(), movement.z());
     }
 
-    m_playerController.Move(movement, c_moveSpeed);
+    const float moveSpeed = m_playerSpeedPotionTime > 0.0f ? c_moveSpeed * c_speedPotionMultiplier : c_moveSpeed;
+    m_playerController.Move(movement, moveSpeed);
 
     if (IsKeyDown(32))
         m_playerController.Jump(c_jumpVelocity);
@@ -248,6 +251,7 @@ void cGame::BeginRun()
     m_playerHealth      = m_playerMaxHealth;
     m_playerMaxMana     = c_playerBaseMaxMana;
     m_playerMana        = m_playerMaxMana;
+    m_playerSpeedPotionTime = 0.0f;
     m_playerDashTime    = 0.0f;
     m_playerDashSpeed   = 0.0f;
     m_playerDashDirection = {};
@@ -338,6 +342,11 @@ void cGame::UpdateUsableInput(bool _gameplayInputEnabled)
                     m_playerMana = restoredMana;
                 break;
             }
+
+            case Gameplay::sItemId::SpeedPotion:
+                if (m_inventory.UseItem(slotIndex))
+                    m_playerSpeedPotionTime = c_speedPotionDuration;
+                break;
         }
     }
 }
