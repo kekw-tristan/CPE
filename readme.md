@@ -8,6 +8,11 @@ The project is focused on building a lightweight, extensible engine while develo
 
 # Blog
 
+## 13.9.2026
+
+Worked on several areas of the game: improved enemy spawning, added four new enemy types, updated world generation, added unique boss-drop spells for each enemy, improved the graphics with HDR and bloom, and added chunk culling for better performance.
+![Updated Spawn](blogImages/updatedSpawn.png)
+
 ## 5.9.2026
 
 The game now features a sky and fog system, enemies, bosses, a first player attack, and health tracking for both the player and enemies.
