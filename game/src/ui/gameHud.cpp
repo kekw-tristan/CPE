@@ -197,7 +197,6 @@ namespace UI
 
             const ImU32 moss = IM_COL32(118, 150, 73, 255);
             const ImU32 sap = IM_COL32(215, 224, 147, 255);
-            const ImU32 bark = IM_COL32(112, 78, 43, 255);
             _rDrawList.AddCircleFilled(center, 22.0f * _scale, IM_COL32(12, 21, 25, 235), 32);
             _rDrawList.AddCircle(center, 22.0f * _scale, IM_COL32(164, 151, 109, 65), 32, _scale);
 
@@ -205,46 +204,78 @@ namespace UI
             {
                 case Gameplay::sItemId::ThornLance:
                 {
-                    line(-16, 16, 10, -10, bark, 5);
-                    facet(-10, 10, 18, -19, 7, -1, moss);
-                    facet(-10, 10, 18, -19, -1, -7, sap);
-                    facet(-8, 7, -13, -5, 0, -2, moss);
-                    facet(-2, 2, 11, 6, 5, -5, moss);
-                    facet(4, -7, 1, -17, 10, -13, sap);
-                    line(-15, 15, 13, -14, IM_COL32(240, 236, 181, 230), 1);
+                    line(-21, 9, -13, 1, IM_COL32(84, 183, 115, 125), 1.5f);
+                    line(-10, 15, -4, 9, IM_COL32(154, 214, 137, 150), 1.2f);
+                    facet(-16, 14, 11, -18, -5, -3, IM_COL32(117, 218, 130, 255));
+                    facet(-16, 14, 1, 4, 11, -18, IM_COL32(32, 112, 76, 255));
+                    facet(-9, 6, -14, 4, -9, -2, IM_COL32(79, 157, 91, 255));
+                    facet(-4, 4, 1, 7, 2, 0, IM_COL32(50, 133, 83, 255));
+                    facet(11, -18, -4, -1, -1, 0, IM_COL32(220, 246, 170, 255));
+                    line(-15, 13, 8, -14, IM_COL32(191, 233, 151, 245), 1.1f);
                     break;
                 }
 
                 case Gameplay::sItemId::StoneShard:
                 {
-                    const std::array<ImVec2, 5> shield = {
-                        point(-15, -13), point(0, -18), point(15, -13), point(12, 7), point(0, 19)
+                    const std::array<ImVec2, 6> shield = {
+                        point(0, -19), point(16, -13), point(13, 6),
+                        point(0, 16), point(-13, 6), point(-16, -13)
                     };
-                    const std::array<ImVec2, 5> left = {
-                        point(-15, -13), point(0, -18), point(0, 19), point(-12, 7), point(-15, -3)
+                    const std::array<ImVec2, 4> leftPanel = {
+                        point(-14, -12), point(-6, -15), point(-5, 10), point(-11, 5)
                     };
-                    _rDrawList.AddConvexPolyFilled(shield.data(), static_cast<int>(shield.size()), bark);
-                    _rDrawList.AddConvexPolyFilled(left.data(), static_cast<int>(left.size()), IM_COL32(148, 111, 57, 255));
-                    line(-15, -13, 0, -18, sap, 1.5f);
-                    line(0, -18, 15, -13, moss, 1.5f);
-                    line(0, 13, 0, -12, sap, 2);
-                    line(0, 0, -8, -6, moss, 2);
-                    line(0, -5, 8, -11, sap, 2);
-                    line(0, 6, 7, 0, moss, 2);
-                    line(-11, -8, -9, 4, IM_COL32(58, 45, 28, 255), 1);
-                    line(11, -6, 8, 7, IM_COL32(58, 45, 28, 255), 1);
+                    const std::array<ImVec2, 6> centerPanel = {
+                        point(0, -17), point(4, -15), point(4, 10),
+                        point(0, 14), point(-4, 10), point(-4, -15)
+                    };
+                    const std::array<ImVec2, 4> rightPanel = {
+                        point(6, -15), point(14, -12), point(11, 5), point(5, 10)
+                    };
+                    _rDrawList.AddPolyline(shield.data(), static_cast<int>(shield.size()), IM_COL32(184, 210, 111, 40), ImDrawFlags_Closed, 5.0f * _scale);
+                    _rDrawList.AddConvexPolyFilled(shield.data(), static_cast<int>(shield.size()), IM_COL32(53, 44, 30, 255));
+                    _rDrawList.AddConvexPolyFilled(leftPanel.data(), static_cast<int>(leftPanel.size()), IM_COL32(147, 97, 51, 255));
+                    _rDrawList.AddConvexPolyFilled(centerPanel.data(), static_cast<int>(centerPanel.size()), IM_COL32(183, 130, 67, 255));
+                    _rDrawList.AddConvexPolyFilled(rightPanel.data(), static_cast<int>(rightPanel.size()), IM_COL32(111, 74, 43, 255));
+                    line(-14, -12, -6, -15, IM_COL32(234, 194, 119, 255), 1.3f);
+                    line(-4, -15, 0, -17, IM_COL32(246, 211, 137, 255), 1.3f);
+                    line(0, -12, 0, 10, IM_COL32(225, 244, 151, 255), 1.8f);
+                    line(-7, -8, 0, -2, IM_COL32(186, 218, 117, 255), 1.5f);
+                    line(0, 4, 8, -3, IM_COL32(205, 232, 134, 255), 1.5f);
+                    facet(0, -6, -3, -2, 0, 2, IM_COL32(241, 251, 182, 255));
+                    facet(0, -6, 0, 2, 3, -2, IM_COL32(163, 205, 104, 255));
+                    line(-11, -8, -9, 3, IM_COL32(85, 56, 34, 255), 1);
+                    line(10, -9, 8, -5, IM_COL32(62, 48, 31, 255), 1);
                     break;
                 }
 
                 case Gameplay::sItemId::Dash:
                 {
-                    for (int slash = 0; slash < 3; ++slash)
-                    {
-                        const float offset = static_cast<float>(slash) * 8.0f;
-                        facet(-16 + offset, 13, -9 + offset, -7, 4 + offset, -15, moss);
-                        facet(-16 + offset, 13, 4 + offset, -15, -4 + offset, 5, sap);
-                        line(-21, 8 - offset, -12 + offset, 5 - offset, IM_COL32(139, 164, 100, 150), 1);
-                    }
+                    const ImU32 shadow = IM_COL32(49, 105, 79, 255);
+                    const ImU32 jade = IM_COL32(113, 204, 151, 255);
+                    const ImU32 highlight = IM_COL32(221, 247, 194, 255);
+
+                    // A forward-leaning runner and trailing cloak stay readable at inventory scale.
+                    line(-19, -10, -10, -10, IM_COL32(113, 204, 151, 115), 1.5f);
+                    line(-21, -3, -14, -3, IM_COL32(113, 204, 151, 170), 1.8f);
+                    line(-19, 5, -12, 5, IM_COL32(177, 233, 175, 145), 1.5f);
+
+                    facet(-15, -6, 2, -8, -5, 4, shadow);
+                    facet(-15, -6, 2, -8, -7, -1, jade);
+                    line(-15, -6, 2, -8, IM_COL32(177, 233, 175, 230), 1.0f);
+
+                    _rDrawList.AddCircleFilled(point(7, -13), 4.5f * _scale, jade, 6);
+                    facet(3, -15, 7, -17, 11, -13, highlight);
+                    facet(2, -8, 8, -6, -1, 5, jade);
+                    facet(2, -8, -1, 5, -5, 1, highlight);
+
+                    line(5, -6, 10, -1, jade, 3.0f);
+                    line(10, -1, 16, -5, highlight, 2.8f);
+                    line(-2, 3, 7, 6, highlight, 3.8f);
+                    line(7, 6, 5, 15, jade, 3.5f);
+                    line(5, 15, 11, 15, highlight, 2.5f);
+                    line(-2, 3, -8, 11, jade, 3.5f);
+                    line(-8, 11, -15, 8, shadow, 3.0f);
+                    line(-15, 8, -17, 11, jade, 2.5f);
                     break;
                 }
 
@@ -271,20 +302,33 @@ namespace UI
 
                 case Gameplay::sItemId::ArcaneOrb:
                 {
-                    _rDrawList.AddCircleFilled(center, 14.0f * _scale, IM_COL32(51, 142, 186, 45), 24);
-                    std::array<ImVec2, 25> orbit{};
+                    const std::array<ImVec2, 8> core = {
+                        point(-12, -5), point(-5, -12), point(5, -12), point(12, -5),
+                        point(12, 5), point(5, 12), point(-5, 12), point(-12, 5)
+                    };
+                    std::array<ImVec2, 20> orbit{};
                     for (size_t index = 0; index < orbit.size(); ++index)
                     {
-                        const float angle = static_cast<float>(index) * 6.28318530718f / 24.0f;
-                        orbit[index] = point(std::cos(angle) * 19.0f, std::sin(angle) * 8.0f - std::cos(angle) * 7.0f);
+                        const float angle = static_cast<float>(index) * 6.28318530718f / static_cast<float>(orbit.size());
+                        const float x = std::cos(angle) * 20.0f;
+                        const float y = std::sin(angle) * 9.0f;
+                        orbit[index] = point(x * 0.9f + y * 0.44f, y * 0.9f - x * 0.44f);
                     }
-                    _rDrawList.AddPolyline(orbit.data(), static_cast<int>(orbit.size()), IM_COL32(91, 178, 210, 210), 0, 1.4f * _scale);
-                    facet(0, -14, -9, 0, 0, 13, IM_COL32(73, 156, 192, 255));
-                    facet(0, -14, 9, 0, 0, 13, IM_COL32(134, 222, 237, 255));
-                    facet(0, -14, -9, 0, 1, -3, IM_COL32(210, 246, 247, 255));
-                    facet(0, 13, 9, 0, 1, -3, IM_COL32(57, 120, 168, 255));
-                    _rDrawList.AddCircleFilled(point(-18, 7), 2.0f * _scale, IM_COL32(190, 231, 242, 255), 6);
-                    _rDrawList.AddCircleFilled(point(18, -7), 1.6f * _scale, IM_COL32(190, 231, 242, 255), 6);
+
+                    _rDrawList.AddPolyline(orbit.data(), static_cast<int>(orbit.size()), IM_COL32(141, 119, 224, 150), ImDrawFlags_Closed, 1.2f * _scale);
+                    _rDrawList.AddCircleFilled(center, 15.0f * _scale, IM_COL32(92, 172, 237, 35), 16);
+                    _rDrawList.AddConvexPolyFilled(core.data(), static_cast<int>(core.size()), IM_COL32(78, 144, 224, 255));
+                    facet(-12, -5, -5, -12, -2, -2, IM_COL32(160, 231, 255, 255));
+                    facet(-5, -12, 5, -12, -2, -2, IM_COL32(222, 250, 255, 255));
+                    facet(5, -12, 12, -5, -2, -2, IM_COL32(116, 208, 246, 255));
+                    facet(-2, -2, 12, -5, 12, 5, IM_COL32(80, 179, 240, 255));
+                    facet(-12, 5, -2, -2, -5, 12, IM_COL32(114, 99, 202, 255));
+                    facet(-2, -2, 5, 12, -5, 12, IM_COL32(82, 77, 167, 255));
+                    line(-10, -6, -5, -11, IM_COL32(233, 253, 255, 255), 1.5f);
+
+                    facet(15, -13, 20, -10, 16, -6, IM_COL32(197, 176, 255, 255));
+                    facet(-20, 8, -16, 4, -15, 12, IM_COL32(174, 229, 255, 255));
+                    line(-17, 15, -11, 12, IM_COL32(152, 116, 222, 170), 1.5f);
                     break;
                 }
 

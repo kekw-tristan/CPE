@@ -17,12 +17,12 @@ namespace Gameplay
 
         const std::array<sSpellDefinition, sSpellId::NumberOfElements> c_spells =
         {
-            sSpellDefinition{ sSpellId::ArcaneOrb,      World::sBossId::Undefined,       sItemId::ArcaneOrb,      sSpellCastType::Projectile,       0.0f, "Arcane Orb",      { 1000.f, 0.45f, 13.0f, 2.5f, 0.8f, 1 } },
+            sSpellDefinition{ sSpellId::ArcaneOrb,      World::sBossId::Undefined,       sItemId::ArcaneOrb,      sSpellCastType::Projectile,       0.0f, "Arcane Orb",      { 24.0f, 0.30f, 34.0f, 1.05f, 0.55f, 1 } },
             
-            sSpellDefinition{ sSpellId::ThornLance,     World::sBossId::ForestCrawler,   sItemId::ThornLance,     sSpellCastType::ChannelProjectile, 0.0f, "Thorn Lance",     { 25.0f, 1.00f, 13.0f, 2.5f, 0.8f, 1 }, 2.0f },
+            sSpellDefinition{ sSpellId::ThornLance,     World::sBossId::ForestCrawler,   sItemId::ThornLance,     sSpellCastType::ChannelProjectile, 0.0f, "Thorn Lance",     { 25.0f, 1.00f, 26.0f, 1.25f, 0.8f, 1 }, 1.2f },
             sSpellDefinition{ sSpellId::StoneShard,     World::sBossId::ForestBrute,     sItemId::StoneShard,     sSpellCastType::ReflectionAura,   15.0f, "Bark Ward",       { 50.0f, 8.00f, 0.0f, 2.5f, 2.0f, 1 } },
-            sSpellDefinition{ sSpellId::Dash,           World::sBossId::ForestThornwolf, sItemId::Dash,           sSpellCastType::Dash,             14.0f, "Dash",            { 0.0f, 0.85f, 16.0f, 0.45f, 0.0f, 0 } },
-            sSpellDefinition{ sSpellId::SporeOrb,       World::sBossId::ForestSporecap,  sItemId::SporeOrb,       sSpellCastType::SporeProjectile,  18.0f, "Poison Mushroom", { 36.0f, 1.50f, 12.0f, 4.5f, 4.0f, 1 } },
+            sSpellDefinition{ sSpellId::Dash,           World::sBossId::ForestThornwolf, sItemId::Dash,           sSpellCastType::Dash,             14.0f, "Dash",            { 0.0f, 0.85f, 24.0f, 0.30f, 0.0f, 0 } },
+            sSpellDefinition{ sSpellId::SporeOrb,       World::sBossId::ForestSporecap,  sItemId::SporeOrb,       sSpellCastType::SporeProjectile,  18.0f, "Poison Mushroom", { 36.0f, 1.50f, 21.0f, 4.5f, 4.0f, 1 } },
 
             sSpellDefinition{ sSpellId::SandLance,      World::sBossId::DesertLancer,    sItemId::SandLance,      sSpellCastType::Projectile,       14.0f, "Sand Lance",      { 35.0f, 1.10f, 18.0f, 1.8f, 0.5f, 1 } },
             sSpellDefinition{ sSpellId::SunDisk,        World::sBossId::DesertSentinel,  sItemId::SunDisk,        sSpellCastType::Projectile,       18.0f, "Sun Disk",        { 28.0f, 1.25f, 12.0f, 2.8f, 1.0f, 1 } },

@@ -89,17 +89,48 @@ float4 PSMain(VSOutput _input) : SV_Target
     float alpha;
     if (mode > 1.5)
     {
-        // World-space noise crosses tile edges without a visible grid or repeated circles.
+        // Stationary triangular facets form a dry spore bed across terrain tile seams.
         float2 p = _input.worldXZ;
         float distanceToEdge = _input.areaClip.z - length(p - _input.areaClip.xy);
         clip(distanceToEdge);
-        float edge = smoothstep(0.0, 0.22, distanceToEdge);
-        float drift = Noise(p * 0.85 + float2(age * 0.12, -age * 0.09));
-        float swirls = Noise(p * 2.1 + float2(drift * 2.0, age * 0.18));
-        float veins = pow(saturate(1.0 - abs(swirls - 0.5) * 8.0), 3.0);
-        float rim = (1.0 - smoothstep(0.12, 0.42, distanceToEdge)) * edge;
-        color = lerp(color * 0.055, color * 0.28, drift) + color * (veins * 0.22 + rim * 0.35);
-        alpha = _input.color.a * edge * (0.82 + 0.18 * swirls);
+        float edge = smoothstep(0.0, 0.10, distanceToEdge);
+        float2 lattice = float2(p.x - p.y * 0.57735, p.y * 1.15470) * 1.8;
+        float2 cell = floor(lattice);
+        float2 local = frac(lattice);
+        float triangleIndex = step(1.0, local.x + local.y);
+        float facet = Hash(cell + triangleIndex * float2(17.0, 31.0));
+        float seamDistance = min(min(min(local.x, local.y), min(1.0 - local.x, 1.0 - local.y)),
+            abs(local.x + local.y - 1.0) * 0.7071);
+        float mycelium = 1.0 - smoothstep(0.015, 0.045, seamDistance);
+        float rim = 1.0 - smoothstep(0.06, 0.20, distanceToEdge);
+        float pulse = 0.95 + 0.05 * sin(age * 2.5);
+        color *= (0.22 + 0.18 * facet + 0.12 * mycelium + 0.25 * rim) * pulse;
+        alpha = _input.color.a * edge;
+    }
+    else if (mode < -3.5)
+    {
+        // Upright, beveled skull silhouette with inset eyes and three square teeth.
+        float2 p = _input.uv;
+        float2 head = abs(p - float2(0.0, 0.18));
+        float headDistance = max(max(head.x - 0.64, head.y - 0.57), head.x + head.y - 1.0);
+        float jawDistance = max(abs(p.x) - 0.40, abs(p.y + 0.43) - 0.27);
+        float silhouette = min(headDistance, jawDistance);
+        float aa = max(fwidth(silhouette), 0.008);
+        float mask = 1.0 - smoothstep(-aa, aa, silhouette);
+        float2 eye = abs(float2(abs(p.x) - 0.28, p.y - 0.15));
+        float eyes = 1.0 - smoothstep(-aa, aa, max(eye.x - 0.17, eye.y - 0.16));
+        float nose = 1.0 - smoothstep(-aa, aa, abs(p.x) + abs(p.y + 0.14) - 0.12);
+        float teeth = step(p.y, -0.40) * (1.0 - smoothstep(0.025, 0.025 + aa, abs(abs(p.x) - 0.135)));
+        color *= lerp(0.08, 1.0, 1.0 - max(eyes, nose));
+        alpha = _input.color.a * mask * (1.0 - teeth);
+    }
+    else if (mode < -2.5)
+    {
+        float2 p = _input.uv;
+        float shape = abs(p.x) + abs(p.y) * 0.75 - 0.72;
+        float aa = max(fwidth(shape), 0.015);
+        alpha = _input.color.a * (1.0 - smoothstep(-aa, aa, shape));
+        color *= p.x + p.y * 0.4 > 0.0 ? 0.65 : 1.0;
     }
     else if (mode < -1.5)
     {

@@ -253,7 +253,10 @@ namespace Engine::GFX
                 data.color[index] = particle.definition.startColor[index] * (1.0f - t) + particle.definition.endColor[index] * t;
             data.color[3] *= std::min(particle.age * 15.0f, 1.0f);
             data.normalMode[3] = -static_cast<float>(particle.definition.appearance);
-            data.rotationAge = { particle.rotation + particle.age * 0.3f, particle.age, 0.0f, 0.0f };
+            const float rotation = particle.definition.appearance == eParticleAppearance::Skull
+                ? std::sin(particle.age * 2.0f + particle.rotation) * 0.10f
+                : particle.rotation + particle.age * 0.3f;
+            data.rotationAge = { rotation, particle.age, 0.0f, 0.0f };
             m_renderData.push_back(data);
         }
         // Cache depth once; the sort must not reconstruct vectors for every comparison.

@@ -105,7 +105,7 @@ namespace Gameplay
     {
         const Engine::Math::cVec3f offset = _rTarget - _rDesc.position;
         const float distance = std::sqrt(offset.x() * offset.x() + offset.z() * offset.z());
-        const float flightTime = std::clamp(distance / std::max(_rDesc.speed, 1.0f), 0.25f, 1.8f);
+        const float flightTime = std::clamp(distance / std::max(_rDesc.speed, 1.0f), 0.16f, 1.8f);
         _rDesc.gravity = 12.0f;
         const Engine::Math::cVec3f velocity = offset / flightTime
             + Engine::Math::cVec3f(0.0f, 0.5f * _rDesc.gravity * flightTime, 0.0f);

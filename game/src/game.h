@@ -116,7 +116,7 @@ class cGame : public cApplication
         struct sProjectileVisual
         {
             GFX::sParticleEmitterHandle sporeEmitter;
-            GFX::sParticleEmitterHandle bubbleEmitter;
+            GFX::sParticleEmitterHandle skullEmitter;
             GFX::sParticleEmitterHandle trailEmitter;
             std::array<GFX::sInstanceData*, 6> details{};
             GFX::MeshHandle detailMesh = nullptr;
@@ -285,6 +285,7 @@ class cGame : public cApplication
         float m_spellVisualTime         = 0.0f;
 
         GFX::sParticleEmitterHandle m_playerDashEmitter;
+        std::array<GFX::sInstanceData*, 6> m_playerDashStreaks{};
         float m_playerChannelTime                = 0.0f;
         float m_playerReflectionAuraDuration     = 0.0f;
         float m_playerReflectionAuraTime         = 0.0f;

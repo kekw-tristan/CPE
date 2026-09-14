@@ -767,7 +767,7 @@ namespace Gameplay
             const Engine::Math::cVec3f target = _rContext.playerPosition + Engine::Math::cVec3f(0.0f, 0.2f, 0.0f);
             
             projectile.position = _rEnemy.position + Engine::Math::cVec3f(0.0f, 1.5f * _rEnemy.scale, 0.0f) + _rEnemy.attackDirection * (0.6f * _rEnemy.scale);
-            projectile.speed    = 10.5f;
+            projectile.speed    = 18.0f;
             
             AimMushroomThrow(projectile, target);
             

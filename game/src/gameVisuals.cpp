@@ -24,6 +24,43 @@ void cGame::UpdatePlayerRenderInstances()
 
     const cMatrix4x4f playerMatrix = CreateTransformMatrix(playerTransform);
 
+    for (size_t streakIndex = 0; streakIndex < m_playerDashStreaks.size(); ++streakIndex)
+    {
+        sInstanceData*& rpStreak = m_playerDashStreaks[streakIndex];
+        if (dashWeight <= 0.0f)
+        {
+            if (rpStreak != nullptr)
+            {
+                std::erase(m_dynamicMeshInstances[m_crystalMesh], rpStreak);
+                m_pool.Destroy(rpStreak);
+                rpStreak = nullptr;
+                m_dynamicInstanceListDirty = true;
+            }
+            continue;
+        }
+
+        if (rpStreak == nullptr)
+        {
+            rpStreak = m_pool.Create();
+            rpStreak->materialIndex = m_sapSpellMaterial;
+            rpStreak->color = { 0.66f, 0.92f, 0.63f, 1.0f };
+            m_dynamicMeshInstances[m_crystalMesh].push_back(rpStreak);
+            m_dynamicInstanceListDirty = true;
+        }
+
+        const float side = streakIndex % 2 == 0 ? -1.0f : 1.0f;
+        const float layer = static_cast<float>(streakIndex / 2);
+        const cVec3f right(m_playerDashDirection.z(), 0.0f, -m_playerDashDirection.x());
+        sTransform streak{};
+        streak.position = m_playerController.GetPosition()
+            + right * (side * (0.42f + layer * 0.13f))
+            + cVec3f(0.0f, 0.55f + layer * 0.38f, 0.0f)
+            - m_playerDashDirection * (0.48f + layer * 0.24f);
+        streak.rotation = { 1.57079632679f, std::atan2(m_playerDashDirection.x(), m_playerDashDirection.z()), 0.0f };
+        streak.scale = { 0.055f * dashWeight, (1.65f - layer * 0.3f) * dashWeight, 0.035f * dashWeight };
+        rpStreak->worldMatrix = CreateTransformMatrix(streak);
+    }
+
     const float attackAge = 0.4f - m_playerAttackTime;
     float attackWeight = attackAge < 0.06f ? attackAge / 0.06f : m_playerAttackTime / 0.34f;
 
@@ -405,6 +442,7 @@ void cGame::SyncProjectileRenderInstances()
             || projectile.type == Gameplay::eProjectileType::EnemyCone || (isReflected && projectile.reflectedCone);
 
         const bool isArcane  = projectile.type == Gameplay::eProjectileType::PlayerSphere || (isReflected && !projectile.reflectedCone);
+
         const bool isHostile = projectile.type == Gameplay::eProjectileType::EnemyCone
             || projectile.type == Gameplay::eProjectileType::EnemySpore || projectile.type == Gameplay::eProjectileType::EnemyReflected;
 
@@ -435,8 +473,8 @@ void cGame::SyncProjectileRenderInstances()
                 ? std::array<float, 4>{ 0.27f, 0.43f, 0.12f, 1.0f }
                 : isPlayerSpell
                     ? projectile.type == Gameplay::eProjectileType::PlayerCone
-                        ? std::array<float, 4>{ 0.40f, 0.32f, 0.10f, 1.0f }
-                        : std::array<float, 4>{ 0.28f, 0.70f, 0.92f, 1.0f }
+                        ? std::array<float, 4>{ 0.24f, 0.53f, 0.20f, 1.0f }
+                        : std::array<float, 4>{ 0.46f, 0.82f, 0.98f, 1.0f }
                     : projectile.type == Gameplay::eProjectileType::EnemyShockwave
                         ? std::array<float, 4>{ 0.85f, 0.46f, 0.12f, 1.0f }
                     : isSpore ? std::array<float, 4>{ 0.43f, 0.48f, 0.12f, 1.0f }
@@ -444,8 +482,8 @@ void cGame::SyncProjectileRenderInstances()
 
             if (isThorn || isArcane)
             {
-                pInstance->materialIndex = isThorn ? m_barkSpellMaterial
-                    : isHostile ? m_hostileSpellMaterial : m_arcaneSpellMaterial;
+                pInstance->materialIndex = isHostile ? m_hostileSpellMaterial
+                    : isThorn ? m_sapSpellMaterial : m_arcaneSpellMaterial;
             }
             else
             {
@@ -454,7 +492,7 @@ void cGame::SyncProjectileRenderInstances()
                 pInstance->materialIndex = materialModel.materialIndices.size() > materialSlot ? materialModel.materialIndices[materialSlot] : 0;
             }
 
-            const MeshHandle mesh = isArcane ? m_icoSphereMesh : isThorn ? m_crystalMesh : m_sphereMesh;
+            const MeshHandle mesh = isArcane ? m_icoSphereMesh : isThorn ? m_coneMesh : m_sphereMesh;
 
             m_dynamicMeshInstances[mesh].push_back(pInstance);
 
@@ -465,9 +503,11 @@ void cGame::SyncProjectileRenderInstances()
 
             if (isArcane || isThorn || isSpore)
             {
-                projectileVisual.detailMesh = isSpore ? m_icoSphereMesh : m_crystalMesh;
-                for (sInstanceData*& rpDetail : projectileVisual.details)
+                projectileVisual.detailMesh = isSpore ? m_icoSphereMesh : isArcane ? m_crystalMesh : m_coneMesh;
+                const size_t detailCount = isThorn ? 3 : projectileVisual.details.size();
+                for (size_t detailIndex = 0; detailIndex < detailCount; ++detailIndex)
                 {
+                    sInstanceData*& rpDetail = projectileVisual.details[detailIndex];
                     rpDetail = m_pool.Create();
                     rpDetail->materialIndex = isHostile ? m_hostileSpellMaterial
                         : isArcane ? m_arcaneSpellMaterial : m_sapSpellMaterial;
@@ -509,8 +549,8 @@ void cGame::SyncProjectileRenderInstances()
 
         if (isReflected)
         {
-            visual->pInstance->materialIndex = isThorn ? m_barkSpellMaterial
-                : isHostile ? m_hostileSpellMaterial : m_arcaneSpellMaterial;
+            visual->pInstance->materialIndex = isHostile ? m_hostileSpellMaterial
+                : isThorn ? m_sapSpellMaterial : m_arcaneSpellMaterial;
             for (sInstanceData* pDetail : visual->details)
             {
                 if (pDetail == nullptr)
@@ -548,11 +588,13 @@ void cGame::SyncProjectileRenderInstances()
                 ? std::array<float, 4>{ 0.85f, 0.46f, 0.12f, 1.0f }
                 : std::array<float, 4>{ 0.38f, 0.75f * pulse, 0.12f, 1.0f };
         }
-        else if (visual->mesh == m_icoSphereMesh)
+        else if (isArcane)
         {
-            const float pulse   = (1.0f + 0.06f * std::sin(m_spellVisualTime * 13.0f)) * projectile.visualScale;
-            transform.rotation  = { m_spellVisualTime * 1.7f, m_spellVisualTime * 2.3f, 0.0f };
-            transform.scale     = { 0.32f * pulse, 0.38f * pulse, 0.32f * pulse };
+            const float horizontalLength = std::sqrt(projectile.direction.x() * projectile.direction.x()
+                + projectile.direction.z() * projectile.direction.z());
+            transform.rotation = { std::atan2(horizontalLength, projectile.direction.y()),
+                std::atan2(projectile.direction.x(), projectile.direction.z()), 0.0f };
+            transform.scale = { projectile.visualScale, projectile.visualScale, projectile.visualScale };
         }
         else if (projectile.type == Gameplay::eProjectileType::PlayerSpore
             || projectile.type == Gameplay::eProjectileType::EnemySpore)
@@ -570,18 +612,23 @@ void cGame::SyncProjectileRenderInstances()
 
             const float pitch       = std::atan2(horizontalLength, projectile.direction.y());
             const float yaw         = std::atan2(projectile.direction.x(), projectile.direction.z());
-            const float radiusScale = projectile.type == Gameplay::eProjectileType::EnemyCone
-                || projectile.type == Gameplay::eProjectileType::PlayerReflected ? projectile.radius / 0.3f
-                : isThorn ? projectile.visualScale : 1.0f;
-
-            const float lengthScale = isThorn ? projectile.visualScale : 1.0f;
+            // All thorn owners share the same proportions, including after reflection.
+            const float scale = isThorn ? projectile.visualScale : 1.0f;
 
             transform.rotation = { pitch, yaw, 0.0f };
-            transform.scale = { 0.14f * radiusScale, 0.65f * lengthScale, 0.14f * radiusScale };
+            transform.scale = { 0.22f * scale, 1.5f * scale, 0.22f * scale };
         }
 
         const cMatrix4x4f projectileMatrix = CreateTransformMatrix(transform);
         visual->pInstance->worldMatrix = projectileMatrix;
+        if (isArcane)
+        {
+            const float pulse = 1.0f + 0.035f * std::sin(projectile.flightAge * 12.0f);
+            sTransform core{};
+            core.rotation = { projectile.flightAge * 1.8f, projectile.flightAge * 2.5f, 0.0f };
+            core.scale = { 0.72f * pulse, 0.84f * pulse, 0.72f * pulse };
+            visual->pInstance->worldMatrix = CreateTransformMatrix(core) * projectileMatrix;
+        }
         if (visual->pStem != nullptr)
         {
             sTransform stem{};
@@ -609,13 +656,41 @@ void cGame::SyncProjectileRenderInstances()
                 detail.position = { std::cos(phase) * 0.23f, 0.275f, std::sin(phase) * 0.23f };
                 detail.scale = { 0.105f, 0.05f, 0.09f };
             }
-            else if (visual->mesh == m_icoSphereMesh)
+            else if (isArcane)
             {
-                const float orbit = phase + m_spellVisualTime * 3.0f;
-
-                detail.position = { std::cos(orbit) * 1.35f, std::sin(orbit * 2.0f) * 0.38f, std::sin(orbit) * 1.35f };
-                detail.rotation = { 0.45f, -orbit, 0.8f };
-                detail.scale    = { 0.20f, 0.60f, 0.20f };
+                if (detailIndex < 4)
+                {
+                    const float orbit = static_cast<float>(detailIndex) * 1.57079632679f + projectile.flightAge * 7.0f;
+                    detail.position = { std::cos(orbit) * 0.42f, std::sin(orbit * 2.0f) * 0.12f, std::sin(orbit) * 0.42f };
+                    detail.rotation = { 0.35f, orbit, 0.4f };
+                    detail.scale = { 0.10f, 0.24f, 0.10f };
+                }
+                else
+                {
+                    const float tailIndex = static_cast<float>(detailIndex - 4);
+                    detail.position = { 0.0f, -0.55f - tailIndex * 0.40f, 0.0f };
+                    detail.scale = { 0.18f - tailIndex * 0.07f, 0.55f - tailIndex * 0.15f, 0.18f - tailIndex * 0.07f };
+                }
+                pDetail->color = isHostile ? std::array<float, 4>{ 0.94f, 0.55f, 0.24f, 1.0f }
+                    : detailIndex % 2 == 0 ? std::array<float, 4>{ 0.74f, 0.60f, 1.0f, 1.0f }
+                    : std::array<float, 4>{ 0.66f, 0.94f, 1.0f, 1.0f };
+            }
+            else if (isThorn)
+            {
+                if (detailIndex == 0)
+                {
+                    // Close the broad base with a short tapered tail; the forward tip stays bare.
+                    detail.position = { 0.0f, -0.68f, 0.0f };
+                    detail.rotation = { 3.14159265359f, 0.0f, 0.0f };
+                    detail.scale = { 1.0f, 0.36f, 1.0f };
+                }
+                else
+                {
+                    const float side = detailIndex == 1 ? -1.0f : 1.0f;
+                    detail.position = { side * 0.65f, -0.46f, 0.0f };
+                    detail.rotation = { 0.0f, 0.0f, side * 2.7f };
+                    detail.scale = { 0.32f, 0.24f, 0.32f };
+                }
             }
             else
             {
@@ -655,7 +730,7 @@ void cGame::SyncProjectileRenderInstances()
         }
 
         m_particleSystem.StopEmitter(visual->sporeEmitter);
-        m_particleSystem.StopEmitter(visual->bubbleEmitter);
+        m_particleSystem.StopEmitter(visual->skullEmitter);
         m_particleSystem.StopEmitter(visual->trailEmitter);
         for (sInstanceData* pDetail : visual->details)
         {
@@ -687,15 +762,15 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
     m_spellVisualTime = std::fmod(m_spellVisualTime + _deltaTime, 628.318530718f);
 
     sParticleDefinition dashTrail{};
-    dashTrail.spawnRate     = 110.0f;
-    dashTrail.lifetime      = 0.32f;
-    dashTrail.startSize     = 0.12f;
-    dashTrail.endSize       = 0.025f;
-    dashTrail.speed         = 0.15f;
-    dashTrail.spread        = 0.8f;
-    dashTrail.acceleration  = { 0.0f, -1.5f, 0.0f };
-    dashTrail.startColor    = { 0.60f, 0.73f, 0.31f, 0.7f };
-    dashTrail.endColor      = { 0.25f, 0.40f, 0.12f, 0.0f };
+    dashTrail.spawnRate     = 130.0f;
+    dashTrail.lifetime      = 0.18f;
+    dashTrail.startSize     = 0.085f;
+    dashTrail.endSize       = 0.01f;
+    dashTrail.speed         = 0.05f;
+    dashTrail.spread        = 0.35f;
+    dashTrail.acceleration  = { 0.0f, -0.6f, 0.0f };
+    dashTrail.startColor    = { 0.66f, 0.92f, 0.63f, 0.8f };
+    dashTrail.endColor      = { 0.28f, 0.58f, 0.32f, 0.0f };
 
     const cVec3f dashPosition = m_playerController.GetPosition() + cVec3f(0.0f, 0.65f, 0.0f);
     if (m_playerDashTime > 0.0f && !m_inventoryOpen && !m_runState.HasPendingAugmentSelection())
@@ -717,13 +792,14 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
     const auto poisonDefinition = [](bool _player)
     {
         sParticleDefinition definition{};
-        definition.spawnRate    = 45.0f;
-        definition.lifetime     = 0.55f;
-        definition.startSize    = 0.035f;
-        definition.endSize      = 0.11f;
-        definition.speed        = 0.08f;
-        definition.spread       = 0.15f;
-        definition.startColor   = _player ? std::array<float, 4>{ 0.38f, 0.57f, 0.16f, 0.58f } : std::array<float, 4>{ 0.62f, 0.64f, 0.14f, 0.65f };
+        definition.appearance   = eParticleAppearance::Facet;
+        definition.spawnRate    = 65.0f;
+        definition.lifetime     = 0.22f;
+        definition.startSize    = 0.085f;
+        definition.endSize      = 0.012f;
+        definition.speed        = 0.025f;
+        definition.spread       = 0.04f;
+        definition.startColor   = _player ? std::array<float, 4>{ 0.30f, 0.95f, 0.16f, 0.82f } : std::array<float, 4>{ 0.72f, 0.90f, 0.08f, 0.88f };
         definition.endColor     = definition.startColor;
         definition.endColor[3]  = 0.0f;
 
@@ -742,45 +818,46 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
         if (visual == m_projectileVisuals.end())
             continue;
 
-        const bool isArcane  = visual->mesh == m_icoSphereMesh;
-        const bool isThorn   = visual->mesh == m_crystalMesh;
+        const bool isReflected = projectile.type == Gameplay::eProjectileType::EnemyReflected
+            || projectile.type == Gameplay::eProjectileType::PlayerReflected;
+        const bool isArcane = projectile.type == Gameplay::eProjectileType::PlayerSphere
+            || (isReflected && !projectile.reflectedCone);
+        const bool isThorn = projectile.type == Gameplay::eProjectileType::PlayerCone
+            || projectile.type == Gameplay::eProjectileType::EnemyCone || (isReflected && projectile.reflectedCone);
         const bool isHostile = projectile.type == Gameplay::eProjectileType::EnemyCone
             || projectile.type == Gameplay::eProjectileType::EnemyReflected;
 
         if (isArcane || isThorn)
         {
-            if (visual->trailHostile != isHostile)
+            if (visual->trailHostile != isHostile || visual->wasChanneling != projectile.channeling)
                 m_particleSystem.StopEmitter(visual->trailEmitter);
             visual->trailHostile = isHostile;
             sParticleDefinition trail{};
-            trail.spawnRate  = isArcane ? 65.0f : 42.0f;
-            trail.lifetime   = 0.28f;
-            trail.startSize  = isArcane ? 0.13f : 0.065f;
-            trail.endSize    = 0.015f;
+            trail.appearance = eParticleAppearance::Facet;
+            trail.spawnRate  = projectile.channeling ? 48.0f : isArcane ? 85.0f : 55.0f;
+            trail.lifetime   = 0.18f;
+            trail.startSize  = isArcane ? 0.10f : 0.045f;
+            trail.endSize    = 0.008f;
             trail.speed      = 0.02f;
-            trail.spread     = 0.12f;
+            trail.spread     = 0.07f;
             trail.startColor = isHostile ? std::array<float, 4>{ 0.88f, 0.48f, 0.15f, 0.7f }
-                : isArcane ? std::array<float, 4>{ 0.22f, 0.67f, 0.95f, 0.65f }
-                : std::array<float, 4>{ 0.66f, 0.79f, 0.29f, 0.7f };
+                : isArcane ? std::array<float, 4>{ 0.42f, 0.82f, 1.0f, 0.8f }
+                : std::array<float, 4>{ 0.62f, 0.86f, 0.34f, 0.75f };
 
-            trail.endColor    = trail.startColor;
+            trail.endColor = isArcane && !isHostile ? std::array<float, 4>{ 0.55f, 0.30f, 0.95f, 0.0f }
+                : trail.startColor;
             trail.endColor[3] = 0.0f;
 
-            if (!m_particleSystem.IsAlive(visual->trailEmitter))
-            {
-                visual->trailEmitter = m_particleSystem.CreateEmitter(trail, projectile.position);
-                m_particleSystem.Burst(trail, projectile.position, 10);
-            }
             if (visual->wasChanneling && !projectile.channeling)
             {
                 sParticleDefinition release = trail;
-                release.speed     = 0.1f;
-                release.spread    = 1.6f;
-                release.startSize = 0.1f;
-                m_particleSystem.Burst(release, projectile.position, 20);
+                release.speed     = 0.05f;
+                release.spread    = 2.8f;
+                release.startSize = 0.075f;
+                m_particleSystem.Burst(release, projectile.position, 16);
             }
             visual->wasChanneling   = projectile.channeling;
-            cVec3f emissionPosition = projectile.position;
+            cVec3f emissionPosition = projectile.position - projectile.direction * ((isThorn ? 1.25f : 0.4f) * projectile.visualScale);
 
             if (projectile.channeling)
             {
@@ -788,7 +865,22 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
                 const cVec3f side(projectile.direction.z(), 0.0f, -projectile.direction.x());
                 const cVec3f right = side.isZero() ? cVec3f(1.0f, 0.0f, 0.0f) : side.normalized();
                 emissionPosition += (right * std::cos(phase) + cVec3f(0.0f, std::sin(phase), 0.0f))
-                    * (0.18f + 0.08f * projectile.visualScale);
+                    * (0.12f + 0.04f * projectile.visualScale);
+            }
+            if (!m_particleSystem.IsAlive(visual->trailEmitter))
+            {
+                visual->trailEmitter = m_particleSystem.CreateEmitter(trail, emissionPosition);
+                m_particleSystem.Burst(trail, emissionPosition, isArcane ? 4 : 8);
+                if (isArcane)
+                {
+                    sParticleDefinition flash = trail;
+                    flash.appearance = eParticleAppearance::Soft;
+                    flash.lifetime   = 0.10f;
+                    flash.startSize  = 0.28f;
+                    flash.endSize    = 0.02f;
+                    flash.spread     = 0.0f;
+                    m_particleSystem.Burst(flash, projectile.position, 1);
+                }
             }
             m_particleSystem.SetPosition(visual->trailEmitter, emissionPosition);
             continue;
@@ -804,7 +896,7 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
         if (!World::WorldGenerator::GetLoadedChunks().contains(chunk))
         {
             m_particleSystem.StopEmitter(visual->sporeEmitter, true);
-            m_particleSystem.StopEmitter(visual->bubbleEmitter, true);
+            m_particleSystem.StopEmitter(visual->skullEmitter, true);
             continue;
         }
 
@@ -819,34 +911,35 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
             sParticleDefinition definition = poisonDefinition(player);
             if (projectile.areaActive)
             {
-                definition.appearance    = eParticleAppearance::Vapor;
-                definition.spawnRate     = 40.0f;
-                definition.startSize     = 0.35f;
-                definition.endSize       = 0.85f;
-                definition.lifetime      = 2.0f;
-                definition.speed         = 0.13f;
-                definition.startColor[3] = player ? 0.22f : 0.26f;
+                definition.spawnRate     = 26.0f;
+                definition.startSize     = 0.045f;
+                definition.endSize       = 0.018f;
+                definition.lifetime      = 0.75f;
+                definition.speed         = 0.24f;
+                definition.spread        = 0.08f;
             }
             visual->sporeEmitter = m_particleSystem.CreateEmitter(definition, projectile.position);
         }
-        m_particleSystem.SetPosition(visual->sporeEmitter, projectile.position);
+        const cVec3f sporePosition = projectile.areaActive ? projectile.position
+            : projectile.position - projectile.direction * 0.25f + cVec3f(0.0f, -0.08f, 0.0f);
+        m_particleSystem.SetPosition(visual->sporeEmitter, sporePosition);
         if (projectile.areaActive)
         {
-            if (!m_particleSystem.IsAlive(visual->bubbleEmitter))
+            if (!m_particleSystem.IsAlive(visual->skullEmitter))
             {
-                sParticleDefinition bubbles = poisonDefinition(player);
-                bubbles.appearance    = eParticleAppearance::Bubble;
-                bubbles.spawnRate     = 8.0f;
-                bubbles.startSize     = 0.045f;
-                bubbles.endSize       = 0.13f;
-                bubbles.lifetime      = 1.0f;
-                bubbles.speed         = 0.11f;
-                bubbles.spread        = 0.05f;
-                visual->bubbleEmitter = m_particleSystem.CreateEmitter(bubbles, projectile.position);
+                sParticleDefinition skulls = poisonDefinition(player);
+                skulls.appearance = eParticleAppearance::Skull;
+                skulls.spawnRate  = 3.0f;
+                skulls.lifetime   = 1.4f;
+                skulls.startSize  = 0.18f;
+                skulls.endSize    = 0.25f;
+                skulls.speed      = 0.55f;
+                skulls.spread     = 0.10f;
+                visual->skullEmitter = m_particleSystem.CreateEmitter(skulls, projectile.position);
             }
             std::array<sParticleSurface, Gameplay::sProjectile::c_maxGroundSamples> surfaces{};
             std::array<float, 4> color = poisonDefinition(player).startColor;
-            color[3] = player ? 0.64f : 0.72f;
+            color[3] = (player ? 0.76f : 0.82f) * std::clamp(projectile.lifetime / 0.3f, 0.0f, 1.0f);
             for (size_t index = 0; index < projectile.groundSampleCount; ++index)
             {
                 surfaces[index] = { projectile.groundSamples[index], projectile.groundNormals[index], projectile.GetGroundSampleRadius(index) };
@@ -855,7 +948,7 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
                 m_particleSystem.AddSurface(surfaces[index], color, projectile.areaAge);
             }
             m_particleSystem.SetSurfaces(visual->sporeEmitter, { surfaces.data(), projectile.groundSampleCount });
-            m_particleSystem.SetSurfaces(visual->bubbleEmitter, { surfaces.data(), projectile.groundSampleCount });
+            m_particleSystem.SetSurfaces(visual->skullEmitter, { surfaces.data(), projectile.groundSampleCount });
         }
     }
 
@@ -875,10 +968,10 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
             || impact.type == Gameplay::eProjectileType::EnemyReflected)
         {
             sParticleDefinition sparks{};
-            sparks.speed        = 0.35f;
-            sparks.spread       = 2.4f;
-            sparks.lifetime     = 0.3f;
-            sparks.startSize    = 0.09f;
+            sparks.speed        = 0.15f;
+            sparks.spread       = 4.0f;
+            sparks.lifetime     = 0.2f;
+            sparks.startSize    = 0.075f;
             sparks.endSize      = 0.01f;
             sparks.acceleration = { 0.0f, -2.0f, 0.0f };
             sparks.startColor = impact.type == Gameplay::eProjectileType::EnemyCone || impact.type == Gameplay::eProjectileType::EnemyReflected
@@ -887,9 +980,31 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
                 ? std::array<float, 4>{ 0.4f, 0.8f, 1.0f, 0.85f }
                 : std::array<float, 4>{ 0.76f, 0.83f, 0.38f, 0.85f };
 
-            sparks.endColor     = sparks.startColor;
-            sparks.endColor[3]  = 0.0f;
-            m_particleSystem.Burst(sparks, impact.position, 18);
+            const bool isOrbImpact = impact.type == Gameplay::eProjectileType::PlayerSphere;
+            if (isOrbImpact)
+            {
+                sparks.appearance   = eParticleAppearance::Facet;
+                sparks.spread       = 5.5f;
+                sparks.lifetime     = 0.28f;
+                sparks.startSize    = 0.10f;
+                sparks.acceleration = { 0.0f, -0.6f, 0.0f };
+            }
+            sparks.endColor = isOrbImpact ? std::array<float, 4>{ 0.55f, 0.30f, 0.95f, 0.0f } : sparks.startColor;
+            sparks.endColor[3] = 0.0f;
+            m_particleSystem.Burst(sparks, impact.position, isOrbImpact ? 14 : 18);
+            if (isOrbImpact)
+            {
+                sParticleDefinition flash = sparks;
+                flash.appearance   = eParticleAppearance::Soft;
+                flash.speed        = 0.0f;
+                flash.spread       = 0.0f;
+                flash.acceleration = {};
+                flash.lifetime     = 0.13f;
+                flash.startSize    = 0.18f;
+                flash.endSize      = 0.60f;
+                flash.startColor   = { 0.75f, 0.94f, 1.0f, 0.9f };
+                m_particleSystem.Burst(flash, impact.position, 1);
+            }
             continue;
         }
 
@@ -901,15 +1016,6 @@ void cGame::UpdateProjectileEffects(float _deltaTime)
         definition.lifetime     = 0.85f;
 
         m_particleSystem.Burst(definition, impact.position, 36);
-
-        definition.appearance    = eParticleAppearance::Vapor;
-        definition.startSize     = 0.3f;
-        definition.endSize       = 1.0f;
-        definition.speed         = 0.35f;
-        definition.spread        = 1.1f;
-        definition.startColor[3] = 0.45f;
-
-        m_particleSystem.Burst(definition, impact.position, 12);
     }
     m_projectileManager.ClearImpactEvents();
 }

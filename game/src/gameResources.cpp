@@ -70,8 +70,9 @@ void cGame::InitMeshes()
     m_playerSphereMaterial = MaterialManager::CreateMaterial(playerSphereMaterial);
 
     sMaterial arcaneMaterial{};
-    arcaneMaterial.roughness        = 0.28f;
-    arcaneMaterial.emissiveColor    = { 0.12f, 0.65f, 0.9f };
+    arcaneMaterial.roughness        = 0.18f;
+    arcaneMaterial.shapeContrast    = 1.35f;
+    arcaneMaterial.emissiveColor    = { 0.14f, 0.58f, 0.82f };
     arcaneMaterial.emissiveStrength = 1.4f;
     m_arcaneSpellMaterial           = MaterialManager::CreateMaterial(arcaneMaterial);
 
@@ -737,6 +738,7 @@ void cGame::ClearRenderInstances()
 
     m_dynamicInstances.clear();
     m_dynamicMeshInstances.clear();
+    m_playerDashStreaks.fill(nullptr);
     m_staticInstances.clear();
     m_worldDrawBatches.clear();
     ++m_staticInstanceRevision;

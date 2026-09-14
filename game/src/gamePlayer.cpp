@@ -15,17 +15,21 @@ void cGame::UpdatePlayer(float _deltaTime)
     m_playerDashVisualTime      = std::max(0.0f, m_playerDashVisualTime - _deltaTime);
     m_playerReflectionAuraTime  = std::max(0.0f, m_playerReflectionAuraTime - _deltaTime);
 
+    const std::array<GFX::MeshHandle, 3> wardMeshes = { m_frustumMesh, m_crystalMesh, m_wedgeMesh };
+
     if (m_playerReflectionAuraTime > 0.0f)
     {
-        m_playerReflectionAuraPhase = std::fmod(m_playerReflectionAuraPhase + _deltaTime * 1.2f, 6.28318530718f);
-        const float growth      = std::clamp((m_playerReflectionAuraDuration - m_playerReflectionAuraTime) / 0.22f, 0.0f, 1.0f);
-        const float wardWeight  = growth * std::clamp(m_playerReflectionAuraTime / 0.35f, 0.0f, 1.0f);
+        m_playerReflectionAuraPhase = std::fmod(m_playerReflectionAuraPhase + _deltaTime * 0.8f, 6.28318530718f);
+        const float progress   = std::clamp((m_playerReflectionAuraDuration - m_playerReflectionAuraTime) / 0.12f, 0.0f, 1.0f);
+        const float growth     = 1.0f - (1.0f - progress) * (1.0f - progress) * (1.0f - progress);
+        const float wardWeight = growth * std::clamp(m_playerReflectionAuraTime / 0.2f, 0.0f, 1.0f);
+        const Math::cVec3f playerPosition = m_playerController.GetPosition();
 
         GFX::sLight auraLight{};
         auraLight.type      = GFX::sLightType::Point;
-        auraLight.color     = { 0.64f, 0.78f, 0.28f };
-        auraLight.intensity = 1.8f * wardWeight;
-        auraLight.position  = m_playerController.GetPosition() + Math::cVec3f(0.0f, 1.0f, 0.0f);
+        auraLight.color     = { 0.72f, 0.86f, 0.30f };
+        auraLight.intensity = (1.9f + (1.0f - growth) * 0.5f) * wardWeight;
+        auraLight.position  = playerPosition + Math::cVec3f(0.0f, 1.0f, 0.0f);
         auraLight.radius    = m_playerReflectionAuraRadius + 2.0f;
 
         if (m_playerReflectionAuraLight == GFX::c_invalidLightHandle)
@@ -35,38 +39,52 @@ void cGame::UpdatePlayer(float _deltaTime)
 
         for (size_t shieldIndex = 0; shieldIndex < m_playerReflectionAuraShields.size(); ++shieldIndex)
         {
-            const bool isInlay      = shieldIndex >= 4;
-            const float shieldPhase = static_cast<float>(shieldIndex % 4);
-            
+            const size_t partIndex  = shieldIndex / 4;
+            const bool isInlay      = partIndex != 0;
+            const float shieldPhase = static_cast<float>(shieldIndex % 4) * 1.57079632679f;
+            const GFX::MeshHandle mesh = wardMeshes[partIndex];
+
             GFX::sInstanceData*& rpShield = m_playerReflectionAuraShields[shieldIndex];
             if (rpShield == nullptr)
             {
                 rpShield = m_pool.Create();
-                rpShield->color = isInlay ? std::array<float, 4>{ 0.56f, 0.66f, 0.22f, 1.0f }
-                    : std::array<float, 4>{ 0.30f, 0.22f, 0.09f, 1.0f };
+                rpShield->color = partIndex == 0 ? std::array<float, 4>{ 0.34f, 0.25f, 0.11f, 1.0f }
+                    : partIndex == 1 ? std::array<float, 4>{ 0.72f, 0.86f, 0.30f, 1.0f }
+                    : std::array<float, 4>{ 0.68f, 0.61f, 0.24f, 1.0f };
                 rpShield->materialIndex = isInlay ? m_sapSpellMaterial : m_barkSpellMaterial;
-                m_dynamicMeshInstances[m_beveledCubeMesh].push_back(rpShield);
+                m_dynamicMeshInstances[mesh].push_back(rpShield);
                 m_dynamicInstanceListDirty = true;
             }
 
-            const float angle  = m_playerReflectionAuraPhase + shieldPhase * 1.57079632679f;
-            const float radius = m_playerReflectionAuraRadius * (0.65f + 0.35f * growth) + (isInlay ? 0.09f : 0.0f);
+            const float angle  = m_playerReflectionAuraPhase + shieldPhase;
+            const float radius = m_playerReflectionAuraRadius * (0.72f + 0.28f * growth);
 
             GFX::sTransform shieldTransform{};
-            shieldTransform.position = m_playerController.GetPosition() + Math::cVec3f(
+            shieldTransform.position = playerPosition + Math::cVec3f(
                 std::cos(angle) * radius,
-                1.1f + std::sin(m_playerReflectionAuraPhase * 2.0f + shieldPhase) * 0.12f,
+                1.08f + std::sin(m_playerReflectionAuraPhase * 2.0f + shieldPhase) * 0.035f,
                 std::sin(angle) * radius);
-            shieldTransform.rotation = { 0.12f * std::sin(angle), 1.57079632679f - angle, 0.12f * std::cos(angle) };
-            shieldTransform.scale    = { 0.58f * wardWeight, 1.05f * wardWeight, 0.16f * wardWeight };
+            shieldTransform.rotation = { 0.0f, 1.57079632679f - angle, 0.0f };
+            shieldTransform.scale    = { wardWeight, wardWeight, wardWeight };
 
-            if (isInlay)
+            // Keep the tapered bark shell and its raised sap details in one local frame.
+            GFX::sTransform partTransform{};
+            if (partIndex == 0)
             {
-                shieldTransform.position += Math::cVec3f(0.0f, shieldIndex >= 8 ? 0.2f : -0.2f, 0.0f);
-                shieldTransform.rotation += Math::cVec3f(0.0f, 0.0f, shieldIndex >= 8 ? 0.5f : -0.5f);
-                shieldTransform.scale = { 0.055f * wardWeight, 0.48f * wardWeight, 0.035f * wardWeight };
+                partTransform.rotation = { 3.14159265359f, 0.0f, 0.0f };
+                partTransform.scale    = { 0.82f, 1.2f, 0.22f };
             }
-            rpShield->worldMatrix = CreateTransformMatrix(shieldTransform);
+            else if (partIndex == 1)
+            {
+                partTransform.position = { 0.0f, 0.02f, 0.115f };
+                partTransform.scale    = { 0.14f, 0.92f, 0.07f };
+            }
+            else
+            {
+                partTransform.position = { 0.0f, 0.42f, 0.1f };
+                partTransform.scale    = { 0.7f, 0.12f, 0.1f };
+            }
+            rpShield->worldMatrix = CreateTransformMatrix(partTransform) * CreateTransformMatrix(shieldTransform);
         }
     }
     else if (m_playerReflectionAuraLight != GFX::c_invalidLightHandle)
@@ -77,12 +95,13 @@ void cGame::UpdatePlayer(float _deltaTime)
 
     if (m_playerReflectionAuraTime <= 0.0f)
     {
-        for (GFX::sInstanceData*& rpShield : m_playerReflectionAuraShields)
+        for (size_t shieldIndex = 0; shieldIndex < m_playerReflectionAuraShields.size(); ++shieldIndex)
         {
+            GFX::sInstanceData*& rpShield = m_playerReflectionAuraShields[shieldIndex];
             if (rpShield == nullptr)
                 continue;
 
-            std::erase(m_dynamicMeshInstances[m_beveledCubeMesh], rpShield);
+            std::erase(m_dynamicMeshInstances[wardMeshes[shieldIndex / 4]], rpShield);
             m_pool.Destroy(rpShield);
             rpShield = nullptr;
             m_dynamicInstanceListDirty = true;
@@ -294,6 +313,21 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
     else if (spellKeysPressed[3])
         spellSlot = 5;
 
+    // Fresh ability presses take priority over holding the basic attack.
+    if (spellSlot >= Gameplay::cRunState::c_numberOfSpellSlots)
+    {
+        for (size_t slot = 0; slot < Gameplay::cRunState::c_numberOfSpellSlots; ++slot)
+        {
+            const Gameplay::cSpellInstance* pHeldSpell = m_runState.GetSpellInSlot(slot);
+            if (pHeldSpell != nullptr && pHeldSpell->GetSpellId() == Gameplay::sSpellId::ArcaneOrb
+                && !pHeldSpell->IsOnCooldown() && isSpellSlotHeld(slot))
+            {
+                spellSlot = slot;
+                break;
+            }
+        }
+    }
+
     if (spellSlot >= Gameplay::cRunState::c_numberOfSpellSlots)
         return;
 
@@ -437,6 +471,9 @@ void cGame::UpdatePlayerSpell(float _deltaTime)
         projectile.radius           = spellStats.projectileRadius;
         projectile.isAreaOfEffect   = spellDefinition.castType == Gameplay::sSpellCastType::SporeProjectile;
         projectile.pierces          = spellStats.pierceCount;
+
+        if (pSpell->GetSpellId() == Gameplay::sSpellId::ArcaneOrb)
+            projectile.visualScale = std::clamp(spellStats.projectileRadius / 0.55f, 0.7f, 1.8f);
 
         if (projectile.isAreaOfEffect)
         {

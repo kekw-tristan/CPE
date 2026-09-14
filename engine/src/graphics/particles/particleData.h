@@ -47,7 +47,9 @@ namespace Engine::GFX
     {
         Soft,
         Vapor,
-        Bubble
+        Bubble,
+        Facet,
+        Skull
     };
 
     struct sParticleDefinition
