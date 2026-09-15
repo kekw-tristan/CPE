@@ -30,6 +30,7 @@ namespace UI
         float offsetZ        = 0.0f;
         float healthFraction = 1.0f;
         bool  inArena        = false;
+        const char* objective = nullptr;
     };
 
     struct sInventorySlotHudState

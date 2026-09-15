@@ -260,12 +260,31 @@ void cGame::OnDrawUI()
     for (const auto& definition : World::WorldGenerator::GetLayout().dungeons)
     {
         auto& dungeon = hudState.dungeons[static_cast<size_t>(definition.bossId)];
-        const auto offset = definition.center - m_playerController.GetPosition();
+        const auto arenaPosition = definition.center + Math::cVec3f(0.0f, World::GetBossArenaHeight(definition.bossId), 0.0f);
+        const auto offset = arenaPosition - m_playerController.GetPosition();
 
         dungeon.offsetX  = offset.x();
         dungeon.offsetZ  = offset.z();
         dungeon.distance = std::sqrt(offset.x() * offset.x() + offset.z() * offset.z());
-        dungeon.inArena  = std::abs(offset.x()) <= 12.5f && std::abs(offset.z()) <= 12.5f;
+        dungeon.inArena = World::IsInsideBossArena(definition.bossId, m_playerController.GetPosition(), arenaPosition);
+
+        const auto localPosition = m_playerController.GetPosition() - definition.center;
+        if (definition.bossId == World::sBossId::ForestSporecap
+            && std::abs(localPosition.x()) < 90.0f && localPosition.z() > -216.0f && localPosition.z() < 90.0f)
+        {
+            if (dungeon.inArena)
+                dungeon.objective = "Hutkrone: Besiege den Sporenkoenig.";
+            else if (localPosition.y() >= 74.0f)
+                dungeon.objective = "Aussenaufstieg: Folge der Treppe auf den Pilzhut.";
+            else if (localPosition.y() >= 71.0f)
+                dungeon.objective = "Kronensaal: Der Westausgang fuehrt zum Pilzhut.";
+            else if (localPosition.y() >= 47.0f)
+                dungeon.objective = "Alchemie: Folge der Wendeltreppe nach oben.";
+            else if (localPosition.y() >= 23.0f)
+                dungeon.objective = "Pilzgaerten: Folge der Wendeltreppe nach oben.";
+            else
+                dungeon.objective = "Empfangshalle: Folge der Treppe zur Hutkrone.";
+        }
     }
 
     // quest

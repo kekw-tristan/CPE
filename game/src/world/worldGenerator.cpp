@@ -162,12 +162,29 @@ namespace World
                         dungeon.bossId      = static_cast<sBossId::Enum>(i);
                         dungeon.type        = Gameplay::SpellManager::GetBoss(dungeon.bossId).enemyType;
 
+                        const bool mushroomDungeon = dungeon.bossId == sBossId::ForestSporecap;
+                        if (mushroomDungeon)
+                        {
+                            // Leave room for the great hall and its southern approach, away from the sanctuary.
+                            const float x = std::cos(angle) * 330.0f;
+                            const float z = std::sin(angle) * 330.0f;
+                            float floorHeight = GetTerrainSurfaceHeight(x, z);
+                            for (int localZ = -120; localZ <= 60; localZ += 4)
+                            {
+                                for (int localX = -68; localX <= 68; localX += 4)
+                                    floorHeight = std::max(floorHeight, GetTerrainSurfaceHeight(x + localX, z + localZ));
+                            }
+                            dungeon.center = Math::cVec3f(x, floorHeight + 2.0f, z);
+                        }
+                        const float approachZ = mushroomDungeon ? 204.0f : 30.0f;
+                        const float entranceZ = mushroomDungeon ? 200.0f : 14.0f;
+
                         m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
-                        m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - 30.0f) });
-                        m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -30.0f) });
-                        m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -14.0f) });
-                        m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -30.0f) });
-                        m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - 30.0f) });
+                        m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - approachZ) });
+                        m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -approachZ) });
+                        m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -entranceZ) });
+                        m_layout.mainPath.push_back({ dungeon.center + Math::cVec3f(0.0f, 0.0f, -approachZ) });
+                        m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - approachZ) });
                         m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
                     }
                 }
@@ -204,8 +221,19 @@ namespace World
         {
             auto& generator = GetGenerator();
 
-            const int centerX = static_cast<int>(std::floor(_rPosition.x() / c_chunkSize + 0.5f));
-            const int centerZ = static_cast<int>(std::floor(_rPosition.z() / c_chunkSize + 0.5f));
+            int centerX = static_cast<int>(std::floor(_rPosition.x() / c_chunkSize + 0.5f));
+            int centerZ = static_cast<int>(std::floor(_rPosition.z() / c_chunkSize + 0.5f));
+
+            // Avoid repeatedly unloading/reloading whole rows when combat movement straddles a chunk edge.
+            constexpr float c_streamingHysteresis = 8.0f;
+            const float centerMargin = c_chunkSize * 0.5f + c_streamingHysteresis;
+            if (generator.m_hasCenter)
+            {
+                if (std::abs(_rPosition.x() - generator.m_centerX * c_chunkSize) <= centerMargin)
+                    centerX = generator.m_centerX;
+                if (std::abs(_rPosition.z() - generator.m_centerZ * c_chunkSize) <= centerMargin)
+                    centerZ = generator.m_centerZ;
+            }
 
             const bool moved = !generator.m_hasCenter || centerX != generator.m_centerX || centerZ != generator.m_centerZ;
 

@@ -117,6 +117,11 @@ namespace World
                 return 0.0f;
             for (const auto& dungeon : _rWorldLayout.dungeons)
             {
+                if (dungeon.bossId == sBossId::ForestSporecap
+                    && std::abs(_rPosition.x() - dungeon.center.x()) < 88.0f
+                    && _rPosition.z() - dungeon.center.z() > -216.0f
+                    && _rPosition.z() - dungeon.center.z() < 80.0f)
+                    return 0.0f;
                 if (std::abs(_rPosition.x() - dungeon.center.x()) < 20.0f
                     && _rPosition.z() - dungeon.center.z() > -32.0f
                     && _rPosition.z() - dungeon.center.z() < 20.0f)
@@ -990,6 +995,60 @@ namespace World
 
             for (const auto& dungeon : _rLayout.dungeons)
             {
+                if (dungeon.bossId == sBossId::ForestSporecap)
+                {
+                    // The full prefab fits within the load radius from every point on its approach.
+                    // Its owning chunk creates and removes the hall, stairs, lights and mesh collisions together.
+                    if (belongsToChunk(dungeon.center))
+                    {
+                        static GFX::sAssetHandle s_mushroomAsset{};
+                        static bool s_attempted = false;
+                        if (!s_attempted)
+                        {
+                            s_attempted = true;
+                            try
+                            {
+                                s_mushroomAsset = GFX::AssetManager::Load("./assets/prefabs/mushroom_dungeon.prefab.json");
+                            }
+                            catch (const std::exception& exception)
+                            {
+                                std::cerr << "Failed to load mushroom dungeon: " << exception.what() << '\n';
+                            }
+                        }
+                        if (s_mushroomAsset.IsValid() && s_mushroomAsset.type == GFX::sAssetType::Prefab)
+                        {
+                            GFX::sTransform transform{};
+                            transform.position = dungeon.center;
+                            transform.scale = { 1.0f, 1.0f, 1.0f };
+                            InstantiatePrefab(_rScene, static_cast<GFX::PrefabHandle>(s_mushroomAsset.handle), transform);
+
+                            constexpr int c_stepCount = 160;
+                            const float entryHeight = GetTerrainSurfaceHeight(dungeon.center.x(), dungeon.center.z() - 200.0f);
+                            for (int step = 0; step < c_stepCount; ++step)
+                            {
+                                const float fraction = static_cast<float>(step + 1) / c_stepCount;
+                                const float treadLength = 156.0f / c_stepCount;
+                                const float z = dungeon.center.z() - 200.0f + (static_cast<float>(step) + 0.5f) * treadLength;
+                                const float top = entryHeight + (dungeon.center.y() - entryHeight) * fraction;
+                                GFX::sShapeInstance stair{};
+                                stair.modelHandle = WorldModels::Get("dungeon_step");
+                                stair.transform.position = { dungeon.center.x(), top, z };
+                                stair.transform.scale = { 16.0f, 100.0f, treadLength };
+                                stair.collisionMode = GFX::eShapeCollisionMode::Mesh;
+                                stair.generateLights = false;
+                                _rScene.AddShapeInstance(stair);
+                            }
+                        }
+                    }
+                    const Math::cVec3f bossPosition = dungeon.center + Math::cVec3f(0.0f, GetBossArenaHeight(dungeon.bossId), 0.0f);
+                    addSpawn({ dungeon.type, bossPosition, 3.1415926f, true, dungeon.bossId });
+                    for (int rank = 0; rank < 4; ++rank)
+                    {
+                        for (int side = -1; side <= 1; side += 2)
+                            addSpawn({ dungeon.type, dungeon.center + Math::cVec3f(side * 6.0f, rank * 24.0f, 8.0f), 3.1415926f });
+                    }
+                    continue;
+                }
                 if (!intersectsChunk(dungeon.center.x() - 16.0f, dungeon.center.x() + 16.0f,
                     dungeon.center.z() - 28.0f, dungeon.center.z() + 16.0f))
                     continue;

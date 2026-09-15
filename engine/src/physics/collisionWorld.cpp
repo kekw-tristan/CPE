@@ -11,7 +11,6 @@
 #include <optional>
 #include <stdexcept>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -308,12 +307,24 @@ namespace Engine::Physics
 
         bool cCollisionWorld::FindGroundHeight(const Math::cVec3f& _rPosition, float _maximumHeight, float& _rGroundHeight) const
         {
-            const std::vector<std::size_t> candidates = FindCandidates(_rPosition.x(), _rPosition.x(), _rPosition.z(), _rPosition.z());
+            // A point query visits exactly one cell: its collider indices are already unique.
+            // Spore impacts perform hundreds of these queries, so avoid allocating and sorting per sample.
+            const auto cell = m_spatialGrid.find({ ToCell(_rPosition.x()), ToCell(_rPosition.z()) });
+            if (cell == m_spatialGrid.end())
+                return false;
+
             float bestHeight = -std::numeric_limits<float>::infinity();
 
-            for (const std::size_t colliderIndex : candidates)
+            for (const std::size_t colliderIndex : cell->second)
             {
                 const sAABBCollider& collider = m_colliders[colliderIndex];
+                const Math::cVec3f minimum = collider.center - collider.halfExtents;
+                const Math::cVec3f maximum = collider.center + collider.halfExtents;
+                if (_rPosition.x() < minimum.x() || _rPosition.x() > maximum.x()
+                    || _rPosition.z() < minimum.z() || _rPosition.z() > maximum.z()
+                    || (minimum.y() > _maximumHeight && collider.groundHeightSampler == nullptr))
+                    continue;
+
                 if (m_triangles[colliderIndex])
                 {
                     float height = 0.0f;
@@ -324,12 +335,6 @@ namespace Engine::Physics
                     continue;
                 }
                 if (!collider.isGround)
-                    continue;
-
-                const Math::cVec3f minimum = collider.center - collider.halfExtents;
-                const Math::cVec3f maximum = collider.center + collider.halfExtents;
-                if (_rPosition.x() < minimum.x() || _rPosition.x() > maximum.x() ||
-                    _rPosition.z() < minimum.z() || _rPosition.z() > maximum.z())
                     continue;
 
                 const float surfaceHeight = collider.groundHeightSampler
@@ -350,7 +355,7 @@ namespace Engine::Physics
 
         std::vector<std::size_t> cCollisionWorld::FindCandidates(float _minX, float _maxX, float _minZ, float _maxZ) const
         {
-            std::unordered_set<std::size_t> uniqueCandidates;
+            std::vector<std::size_t> candidates;
 
             for (int32_t z = ToCell(_minZ); z <= ToCell(_maxZ); ++z)
             {
@@ -358,12 +363,12 @@ namespace Engine::Physics
                 {
                     const auto cell = m_spatialGrid.find({ x, z });
                     if (cell != m_spatialGrid.end())
-                        uniqueCandidates.insert(cell->second.begin(), cell->second.end());
+                        candidates.insert(candidates.end(), cell->second.begin(), cell->second.end());
                 }
             }
 
-            std::vector<std::size_t> candidates{ uniqueCandidates.begin(), uniqueCandidates.end() };
             std::sort(candidates.begin(), candidates.end());
+            candidates.erase(std::unique(candidates.begin(), candidates.end()), candidates.end());
             return candidates;
         }
 

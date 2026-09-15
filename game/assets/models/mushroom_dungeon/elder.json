@@ -1,0 +1,940 @@
+{
+    "name": "mushroom_dungeon_elder",
+    "materials": [
+        {
+            "albedo": [
+                0.13,
+                0.18,
+                0.22
+            ],
+            "roughness": 0.78,
+            "metallic": 0,
+            "lightWrap": 0.25,
+            "shapeContrast": 1.2,
+            "ambientStrength": 1.1,
+            "emissiveColor": [
+                0.13,
+                0.18,
+                0.22
+            ],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [
+                0.65,
+                0.59,
+                0.4
+            ],
+            "roughness": 0.78,
+            "metallic": 0,
+            "lightWrap": 0.25,
+            "shapeContrast": 1.2,
+            "ambientStrength": 1.1,
+            "emissiveColor": [
+                0.58,
+                0.66,
+                0.49
+            ],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [
+                0.48,
+                0.12,
+                0.24
+            ],
+            "roughness": 0.78,
+            "metallic": 0,
+            "lightWrap": 0.25,
+            "shapeContrast": 1.2,
+            "ambientStrength": 1.1,
+            "emissiveColor": [
+                0.3,
+                0.09,
+                0.38
+            ],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [
+                0.1,
+                0.86,
+                0.72
+            ],
+            "roughness": 0.78,
+            "metallic": 0,
+            "lightWrap": 0.25,
+            "shapeContrast": 1.2,
+            "ambientStrength": 1.1,
+            "emissiveColor": [
+                0.1,
+                0.86,
+                0.72
+            ],
+            "emissiveStrength": 1.5
+        },
+        {
+            "albedo": [
+                0.95,
+                0.56,
+                0.18
+            ],
+            "roughness": 0.78,
+            "metallic": 0,
+            "lightWrap": 0.25,
+            "shapeContrast": 1.2,
+            "ambientStrength": 1.1,
+            "emissiveColor": [
+                0.95,
+                0.56,
+                0.18
+            ],
+            "emissiveStrength": 1.8
+        },
+        {
+            "albedo": [
+                0.26,
+                0.36,
+                0.31
+            ],
+            "roughness": 0.78,
+            "metallic": 0,
+            "lightWrap": 0.25,
+            "shapeContrast": 1.2,
+            "ambientStrength": 1.1,
+            "emissiveColor": [
+                0.26,
+                0.36,
+                0.31
+            ],
+            "emissiveStrength": 0
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "Sphere",
+            "position": [
+                0,
+                89,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                152,
+                4,
+                152
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                0.0,
+                87,
+                57.0
+            ],
+            "rotation": [
+                0,
+                0.0,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0.0,
+                108,
+                60.0
+            ],
+            "rotation": [
+                0,
+                0.0,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                21.812955644810117,
+                87,
+                52.66113335314334
+            ],
+            "rotation": [
+                0,
+                0.39269908169872414,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                22.961005941905388,
+                108,
+                55.43277195067721
+            ],
+            "rotation": [
+                0,
+                0.39269908169872414,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                40.305086527633215,
+                87,
+                40.305086527633215
+            ],
+            "rotation": [
+                0,
+                0.7853981633974483,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                42.42640687119285,
+                108,
+                42.42640687119285
+            ],
+            "rotation": [
+                0,
+                0.7853981633974483,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                52.66113335314334,
+                87,
+                21.81295564481012
+            ],
+            "rotation": [
+                0,
+                1.1780972450961724,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                55.43277195067721,
+                108,
+                22.96100594190539
+            ],
+            "rotation": [
+                0,
+                1.1780972450961724,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                57.0,
+                87,
+                3.4902433775699565e-15
+            ],
+            "rotation": [
+                0,
+                1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                60.0,
+                108,
+                3.67394039744206e-15
+            ],
+            "rotation": [
+                0,
+                1.5707963267948966,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                52.66113335314334,
+                87,
+                -21.812955644810113
+            ],
+            "rotation": [
+                0,
+                1.9634954084936207,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                55.43277195067721,
+                108,
+                -22.961005941905384
+            ],
+            "rotation": [
+                0,
+                1.9634954084936207,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                40.305086527633215,
+                87,
+                -40.30508652763321
+            ],
+            "rotation": [
+                0,
+                2.356194490192345,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                42.42640687119285,
+                108,
+                -42.426406871192846
+            ],
+            "rotation": [
+                0,
+                2.356194490192345,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                21.812955644810124,
+                87,
+                -52.66113335314334
+            ],
+            "rotation": [
+                0,
+                2.748893571891069,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                22.961005941905395,
+                108,
+                -55.43277195067721
+            ],
+            "rotation": [
+                0,
+                2.748893571891069,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                6.980486755139913e-15,
+                87,
+                -57.0
+            ],
+            "rotation": [
+                0,
+                3.141592653589793,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                7.34788079488412e-15,
+                108,
+                -60.0
+            ],
+            "rotation": [
+                0,
+                3.141592653589793,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                -21.81295564481011,
+                87,
+                -52.66113335314335
+            ],
+            "rotation": [
+                0,
+                3.5342917352885173,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -22.96100594190538,
+                108,
+                -55.432771950677214
+            ],
+            "rotation": [
+                0,
+                3.5342917352885173,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                -40.30508652763321,
+                87,
+                -40.305086527633215
+            ],
+            "rotation": [
+                0,
+                3.9269908169872414,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -42.426406871192846,
+                108,
+                -42.42640687119286
+            ],
+            "rotation": [
+                0,
+                3.9269908169872414,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                -52.661133353143335,
+                87,
+                -21.81295564481015
+            ],
+            "rotation": [
+                0,
+                4.319689898685965,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -55.43277195067719,
+                108,
+                -22.96100594190542
+            ],
+            "rotation": [
+                0,
+                4.319689898685965,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                -57.0,
+                87,
+                -1.047073013270987e-14
+            ],
+            "rotation": [
+                0,
+                4.71238898038469,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -60.0,
+                108,
+                -1.1021821192326178e-14
+            ],
+            "rotation": [
+                0,
+                4.71238898038469,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                -52.661133353143335,
+                87,
+                21.81295564481013
+            ],
+            "rotation": [
+                0,
+                5.105088062083414,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -55.4327719506772,
+                108,
+                22.961005941905402
+            ],
+            "rotation": [
+                0,
+                5.105088062083414,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                -40.305086527633215,
+                87,
+                40.3050865276332
+            ],
+            "rotation": [
+                0,
+                5.497787143782138,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -42.42640687119286,
+                108,
+                42.42640687119284
+            ],
+            "rotation": [
+                0,
+                5.497787143782138,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                -21.812955644810152,
+                87,
+                52.661133353143335
+            ],
+            "rotation": [
+                0,
+                5.890486225480862,
+                0
+            ],
+            "scale": [
+                1,
+                0.6,
+                30
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                -22.961005941905423,
+                108,
+                55.43277195067719
+            ],
+            "rotation": [
+                0,
+                5.890486225480862,
+                0
+            ],
+            "scale": [
+                6,
+                1.2,
+                6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        }
+    ]
+}
