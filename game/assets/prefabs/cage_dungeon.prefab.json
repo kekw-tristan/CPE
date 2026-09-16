@@ -2247,7 +2247,7 @@
             "position": [
                 -16,
                 0,
-                -110.5
+                -97.5
             ],
             "rotation": [
                 0,
@@ -2267,7 +2267,7 @@
             "position": [
                 16,
                 0,
-                -110.5
+                -97.5
             ],
             "rotation": [
                 0,
@@ -2307,7 +2307,7 @@
             "position": [
                 -16,
                 0,
-                -78.5
+                -65.5
             ],
             "rotation": [
                 0,
@@ -2327,7 +2327,7 @@
             "position": [
                 16,
                 0,
-                -78.5
+                -65.5
             ],
             "rotation": [
                 0,
@@ -2367,7 +2367,7 @@
             "position": [
                 -16,
                 0,
-                -44.5
+                -31.5
             ],
             "rotation": [
                 0,
@@ -2387,7 +2387,7 @@
             "position": [
                 16,
                 0,
-                -44.5
+                -31.5
             ],
             "rotation": [
                 0,
@@ -2405,8 +2405,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -100
             ],
             "rotation": [
@@ -2425,8 +2425,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -96
             ],
             "rotation": [
@@ -2445,8 +2445,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -92
             ],
             "rotation": [
@@ -2465,8 +2465,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -88
             ],
             "rotation": [
@@ -2485,8 +2485,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -84
             ],
             "rotation": [
@@ -2505,8 +2505,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -80
             ],
             "rotation": [
@@ -2525,8 +2525,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -76
             ],
             "rotation": [
@@ -2545,8 +2545,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -72
             ],
             "rotation": [
@@ -2565,8 +2565,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -68
             ],
             "rotation": [
@@ -2585,8 +2585,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -64
             ],
             "rotation": [
@@ -2605,8 +2605,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -60
             ],
             "rotation": [
@@ -2625,8 +2625,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -56
             ],
             "rotation": [
@@ -2645,8 +2645,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -52
             ],
             "rotation": [
@@ -2665,8 +2665,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -48
             ],
             "rotation": [
@@ -2705,9 +2705,9 @@
         {
             "asset": "../models/cage_dungeon/feather.json",
             "position": [
-                -22,
-                8,
-                -91
+                -28,
+                0.04,
+                -86
             ],
             "rotation": [
                 0,
@@ -2725,9 +2725,9 @@
         {
             "asset": "../models/cage_dungeon/feather.json",
             "position": [
-                -22,
-                8,
-                -60
+                -28,
+                0.04,
+                -52
             ],
             "rotation": [
                 0,
@@ -2746,7 +2746,7 @@
             "asset": "../models/cage_dungeon/lantern.json",
             "position": [
                 -12,
-                2,
+                0.04,
                 -92
             ],
             "rotation": [
@@ -2766,7 +2766,7 @@
             "asset": "../models/cage_dungeon/lantern.json",
             "position": [
                 -12,
-                2,
+                0.04,
                 -58
             ],
             "rotation": [
@@ -2785,8 +2785,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -100
             ],
             "rotation": [
@@ -2805,8 +2805,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -96
             ],
             "rotation": [
@@ -2825,8 +2825,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -92
             ],
             "rotation": [
@@ -2845,8 +2845,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -88
             ],
             "rotation": [
@@ -2865,8 +2865,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -84
             ],
             "rotation": [
@@ -2885,8 +2885,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -80
             ],
             "rotation": [
@@ -2905,8 +2905,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -76
             ],
             "rotation": [
@@ -2925,8 +2925,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -72
             ],
             "rotation": [
@@ -2945,8 +2945,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -68
             ],
             "rotation": [
@@ -2965,8 +2965,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -64
             ],
             "rotation": [
@@ -2985,8 +2985,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -60
             ],
             "rotation": [
@@ -3005,8 +3005,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -56
             ],
             "rotation": [
@@ -3025,8 +3025,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -52
             ],
             "rotation": [
@@ -3045,8 +3045,8 @@
         {
             "asset": "../models/cage_dungeon/bar.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -48
             ],
             "rotation": [
@@ -3085,9 +3085,9 @@
         {
             "asset": "../models/cage_dungeon/feather.json",
             "position": [
-                22,
-                8,
-                -91
+                28,
+                0.04,
+                -86
             ],
             "rotation": [
                 0,
@@ -3105,9 +3105,9 @@
         {
             "asset": "../models/cage_dungeon/feather.json",
             "position": [
-                22,
-                8,
-                -60
+                28,
+                0.04,
+                -52
             ],
             "rotation": [
                 0,
@@ -3126,7 +3126,7 @@
             "asset": "../models/cage_dungeon/lantern.json",
             "position": [
                 12,
-                2,
+                0.04,
                 -92
             ],
             "rotation": [
@@ -3146,7 +3146,7 @@
             "asset": "../models/cage_dungeon/lantern.json",
             "position": [
                 12,
-                2,
+                0.04,
                 -58
             ],
             "rotation": [
@@ -4765,8 +4765,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -100
             ],
             "rotation": [
@@ -4785,8 +4785,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -96
             ],
             "rotation": [
@@ -4805,8 +4805,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -92
             ],
             "rotation": [
@@ -4825,8 +4825,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -88
             ],
             "rotation": [
@@ -4845,8 +4845,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -84
             ],
             "rotation": [
@@ -4865,8 +4865,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -80
             ],
             "rotation": [
@@ -4885,8 +4885,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -76
             ],
             "rotation": [
@@ -4905,8 +4905,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -72
             ],
             "rotation": [
@@ -4925,8 +4925,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -68
             ],
             "rotation": [
@@ -4945,8 +4945,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -64
             ],
             "rotation": [
@@ -4965,8 +4965,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -60
             ],
             "rotation": [
@@ -4985,8 +4985,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -56
             ],
             "rotation": [
@@ -5005,8 +5005,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -52
             ],
             "rotation": [
@@ -5025,8 +5025,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                -19,
-                0,
+                -31,
+                0.04,
                 -48
             ],
             "rotation": [
@@ -5045,8 +5045,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -100
             ],
             "rotation": [
@@ -5065,8 +5065,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -96
             ],
             "rotation": [
@@ -5085,8 +5085,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -92
             ],
             "rotation": [
@@ -5105,8 +5105,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -88
             ],
             "rotation": [
@@ -5125,8 +5125,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -84
             ],
             "rotation": [
@@ -5145,8 +5145,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -80
             ],
             "rotation": [
@@ -5165,8 +5165,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -76
             ],
             "rotation": [
@@ -5185,8 +5185,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -72
             ],
             "rotation": [
@@ -5205,8 +5205,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -68
             ],
             "rotation": [
@@ -5225,8 +5225,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -64
             ],
             "rotation": [
@@ -5245,8 +5245,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -60
             ],
             "rotation": [
@@ -5265,8 +5265,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -56
             ],
             "rotation": [
@@ -5285,8 +5285,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -52
             ],
             "rotation": [
@@ -5305,8 +5305,8 @@
         {
             "asset": "../models/cage_dungeon/bar_ornaments.json",
             "position": [
-                19,
-                0,
+                31,
+                0.04,
                 -48
             ],
             "rotation": [
@@ -5320,6 +5320,106 @@
                 1
             ],
             "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/cage_dungeon/lantern.json",
+            "position": [
+                -28,
+                0.04,
+                -100
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/cage_dungeon/lantern.json",
+            "position": [
+                -28,
+                0.04,
+                -66
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/cage_dungeon/lantern.json",
+            "position": [
+                28,
+                0.04,
+                -100
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/cage_dungeon/lantern.json",
+            "position": [
+                28,
+                0.04,
+                -66
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/cage_dungeon/furnished_rooms.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
             "generateLights": false
         }
     ]

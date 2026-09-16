@@ -1546,8 +1546,8 @@
             "asset": "../models/tree_dungeon/lantern.json",
             "position": [
                 -12,
-                0,
-                -43
+                8,
+                -30
             ],
             "rotation": [
                 0,
@@ -1606,8 +1606,8 @@
             "asset": "../models/tree_dungeon/lantern.json",
             "position": [
                 12,
-                0,
-                -43
+                8,
+                -30
             ],
             "rotation": [
                 0,
@@ -2500,6 +2500,106 @@
                 1
             ],
             "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                -20,
+                0.04,
+                -99
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.6,
+                0.6
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                -20,
+                0.04,
+                -81
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.6,
+                0.6
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                20,
+                0.04,
+                -99
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.6,
+                0.6
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                20,
+                0.04,
+                -81
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.6,
+                0.6
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/furnished_rooms.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
             "generateLights": false
         }
     ]

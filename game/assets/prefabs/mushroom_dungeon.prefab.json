@@ -1047,7 +1047,7 @@
             "position": [
                 -20,
                 72,
-                -17
+                -11
             ],
             "scale": [
                 1,
@@ -1207,7 +1207,7 @@
             "position": [
                 20,
                 72,
-                -17
+                -11
             ],
             "scale": [
                 1,
@@ -1700,6 +1700,206 @@
                 0
             ],
             "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/mushroom_dungeon/scroll_shelf.json",
+            "position": [
+                -18,
+                72,
+                -15
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/mushroom_dungeon/alchemy_table.json",
+            "position": [
+                -19,
+                72,
+                8
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/mushroom_dungeon/nursery.json",
+            "position": [
+                -17,
+                0,
+                14
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.7,
+                0.7,
+                0.7
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/mushroom_dungeon/bench.json",
+            "position": [
+                -18,
+                24,
+                3
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/mushroom_dungeon/cluster.json",
+            "position": [
+                -23,
+                48,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.6,
+                0.6
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/mushroom_dungeon/scroll_shelf.json",
+            "position": [
+                18,
+                72,
+                -15
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/mushroom_dungeon/alchemy_table.json",
+            "position": [
+                19,
+                72,
+                8
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/mushroom_dungeon/nursery.json",
+            "position": [
+                17,
+                0,
+                14
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.7,
+                0.7,
+                0.7
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/mushroom_dungeon/bench.json",
+            "position": [
+                18,
+                24,
+                3
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/mushroom_dungeon/cluster.json",
+            "position": [
+                23,
+                48,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.6,
+                0.6
+            ],
+            "generateColliders": true,
             "generateLights": false
         }
     ]
