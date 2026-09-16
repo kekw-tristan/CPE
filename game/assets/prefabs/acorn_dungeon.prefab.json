@@ -1,0 +1,1406 @@
+{
+    "assetType": "Prefab",
+    "name": "Bernsteinkern - Die gespaltene Rieseneichel",
+    "objects": [
+        {
+            "asset": "../models/acorn_dungeon/foundation.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/walkway.json",
+            "position": [
+                0,
+                0,
+                -68
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/arena_floor.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/arena_rim.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -1.570796,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -1.439897,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -1.308997,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -1.178097,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -1.047198,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -0.916298,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -0.785398,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -0.654498,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -0.523599,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -0.392699,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -0.261799,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                -0.1309,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0.1309,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0.261799,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0.392699,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0.523599,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0.654498,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0.785398,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0.916298,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                1.047198,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                2.094395,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                2.225295,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                2.356194,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                2.487094,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                2.617994,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                2.748894,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                2.879793,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                3.010693,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                3.141593,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                3.272492,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                3.403392,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                3.534292,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                3.665191,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                3.796091,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                3.926991,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                4.057891,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                4.18879,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                4.31969,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                4.45059,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/shell_rib.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                4.581489,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.86
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/cap_scales.json",
+            "position": [
+                0,
+                53,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.9
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/cap_scales.json",
+            "position": [
+                0,
+                53,
+                0
+            ],
+            "rotation": [
+                0,
+                0.785398,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.9
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/cap_scales.json",
+            "position": [
+                0,
+                53,
+                0
+            ],
+            "rotation": [
+                0,
+                1.570796,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.9
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/cap_scales.json",
+            "position": [
+                0,
+                53,
+                0
+            ],
+            "rotation": [
+                0,
+                2.356194,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.9
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/cap_scales.json",
+            "position": [
+                0,
+                53,
+                0
+            ],
+            "rotation": [
+                0,
+                3.141593,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.9
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/cap_scales.json",
+            "position": [
+                0,
+                53,
+                0
+            ],
+            "rotation": [
+                0,
+                3.926991,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.9
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/cap_scales.json",
+            "position": [
+                0,
+                53,
+                0
+            ],
+            "rotation": [
+                0,
+                4.712389,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.9
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/cap_scales.json",
+            "position": [
+                0,
+                53,
+                0
+            ],
+            "rotation": [
+                0,
+                5.497787,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                0.9
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/sprout.json",
+            "position": [
+                4,
+                65,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/amber_heart.json",
+            "position": [
+                0,
+                32,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/acorn_dungeon/root_arch.json",
+            "position": [
+                0,
+                0,
+                -103
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/root_arch.json",
+            "position": [
+                0,
+                0,
+                -72
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/root_arch.json",
+            "position": [
+                0,
+                0,
+                -38
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/root_rail.json",
+            "position": [
+                -17,
+                0,
+                -100
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/seed_pod.json",
+            "position": [
+                -24,
+                0,
+                -95
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.5,
+                1.5,
+                1.5
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/acorn_dungeon/root_rail.json",
+            "position": [
+                -17,
+                0,
+                -80
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/seed_pod.json",
+            "position": [
+                -24,
+                0,
+                -75
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.5,
+                1.5,
+                1.5
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/acorn_dungeon/root_rail.json",
+            "position": [
+                -17,
+                0,
+                -60
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/seed_pod.json",
+            "position": [
+                -24,
+                0,
+                -55
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.5,
+                1.5,
+                1.5
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/acorn_dungeon/root_rail.json",
+            "position": [
+                17,
+                0,
+                -100
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/seed_pod.json",
+            "position": [
+                24,
+                0,
+                -95
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.5,
+                1.5,
+                1.5
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/acorn_dungeon/root_rail.json",
+            "position": [
+                17,
+                0,
+                -80
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/seed_pod.json",
+            "position": [
+                24,
+                0,
+                -75
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.5,
+                1.5,
+                1.5
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/acorn_dungeon/root_rail.json",
+            "position": [
+                17,
+                0,
+                -60
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/acorn_dungeon/seed_pod.json",
+            "position": [
+                24,
+                0,
+                -55
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.5,
+                1.5,
+                1.5
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        }
+    ]
+}

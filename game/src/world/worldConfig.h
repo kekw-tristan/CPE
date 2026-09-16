@@ -14,5 +14,10 @@ namespace World
     // Keep all four ruins and their guarded approaches outside the spawn clearing.
     constexpr float c_dungeonRadius = 190.0f;
 
+    constexpr float c_bossDungeonHalfWidth = 52.0f;
+    constexpr float c_bossDungeonFront = -108.0f;
+    constexpr float c_bossDungeonBack = 44.0f;
+    constexpr float c_bossDungeonApproach = -164.0f;
+
     constexpr int c_forestWallCount = 4480;
 }

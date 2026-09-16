@@ -1,0 +1,15 @@
+{
+    "name": "tree_dungeon_branch",
+    "materials": [
+        {"albedo":[0.25,0.12,0.055],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.25,0.12,0.055],"emissiveStrength":0},
+        {"albedo":[0.48,0.28,0.12],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.48,0.28,0.12],"emissiveStrength":0},
+        {"albedo":[0.72,0.49,0.25],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.72,0.49,0.25],"emissiveStrength":0},
+        {"albedo":[0.17,0.32,0.08],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.17,0.32,0.08],"emissiveStrength":0},
+        {"albedo":[0.61,0.85,0.24],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.61,0.85,0.24],"emissiveStrength":0.8}
+    ],
+    "shapes": [
+        {"meshType":"Cube","position":[4,5,0],"rotation":[0.6747409422235525,1.5707963267948966,0],"scale":[6,12.806248474865697,5],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[11.5,12.5,1.5],"rotation":[0.9898427726497769,1.1659045405098132,0],"scale":[4,9.1104335791443,4],"color":[1,1,1,1],"materialIndex":1},
+        {"meshType":"Cube","position":[9.5,14,-3.5],"rotation":[0.7607980759343126,2.7367008673047097,0],"scale":[3,11.045361017187261,3],"color":[1,1,1,1],"materialIndex":1}
+    ]
+}

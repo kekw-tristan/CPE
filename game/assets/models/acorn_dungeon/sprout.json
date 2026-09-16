@@ -1,0 +1,15 @@
+{
+    "name": "acorn_dungeon_sprout",
+    "materials": [
+        {"albedo":[0.29,0.13,0.065],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.29,0.13,0.065],"emissiveStrength":0},
+        {"albedo":[0.57,0.29,0.1],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.57,0.29,0.1],"emissiveStrength":0},
+        {"albedo":[0.85,0.58,0.23],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.85,0.58,0.23],"emissiveStrength":0},
+        {"albedo":[0.26,0.32,0.12],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.26,0.32,0.12],"emissiveStrength":0},
+        {"albedo":[1,0.47,0.09],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[1,0.47,0.09],"emissiveStrength":1.2}
+    ],
+    "shapes": [
+        {"meshType":"Cube","position":[2,6,0],"rotation":[0.3217505543966423,1.5707963267948966,0],"scale":[4,12.649110640673518,4],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Cube","position":[8.5,15,1],"rotation":[0.9938649815584398,1.3521273809209546,0],"scale":[3,11,3],"color":[1,1,1,1],"materialIndex":0},
+        {"meshType":"Sphere","position":[15,18,2],"rotation":[0,0,0.3],"scale":[18,4,8],"color":[1,1,1,1],"materialIndex":3}
+    ]
+}

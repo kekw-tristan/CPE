@@ -122,9 +122,10 @@ namespace World
                     && _rPosition.z() - dungeon.center.z() > -216.0f
                     && _rPosition.z() - dungeon.center.z() < 80.0f)
                     return 0.0f;
-                if (std::abs(_rPosition.x() - dungeon.center.x()) < 20.0f
-                    && _rPosition.z() - dungeon.center.z() > -32.0f
-                    && _rPosition.z() - dungeon.center.z() < 20.0f)
+                if (dungeon.bossId != sBossId::ForestSporecap
+                    && std::abs(_rPosition.x() - dungeon.center.x()) < c_bossDungeonHalfWidth + 12.0f
+                    && _rPosition.z() - dungeon.center.z() > c_bossDungeonApproach - 12.0f
+                    && _rPosition.z() - dungeon.center.z() < c_bossDungeonBack + 12.0f)
                     return 0.0f;
             }
             if (_rWorldLayout.mainPath.size() < 2)
@@ -1051,37 +1052,90 @@ namespace World
                     }
                     continue;
                 }
-                if (!intersectsChunk(dungeon.center.x() - 16.0f, dungeon.center.x() + 16.0f,
-                    dungeon.center.z() - 28.0f, dungeon.center.z() + 16.0f))
+                const bool brute = dungeon.bossId == sBossId::ForestBrute;
+                const float arenaHeight = GetBossArenaHeight(dungeon.bossId);
+                const size_t assetIndex = static_cast<size_t>(dungeon.bossId);
+                static const char* c_prefabPaths[] =
+                {
+                    "./assets/prefabs/cage_dungeon.prefab.json",
+                    "./assets/prefabs/tree_dungeon.prefab.json",
+                    "./assets/prefabs/acorn_dungeon.prefab.json"
+                };
+                static const char* c_stepModels[] =
+                {
+                    "cage_dungeon/approach_step",
+                    "tree_dungeon/approach_step",
+                    "acorn_dungeon/approach_step"
+                };
+                static GFX::sAssetHandle s_assets[3]{};
+                static bool s_attempted[3]{};
+                if (assetIndex >= 3)
                     continue;
 
-                // Roofless ruins: boss chamber, a southern doorway and a guarded approach.
-                for (int offset = -14; offset <= 14; offset += 2)
+                // Geometry, collision and spawns share the same prefab validity. Failed assets
+                // must not leave an invisible arena with enemies standing above the terrain.
+                if (!s_attempted[assetIndex])
                 {
-                    const float value = static_cast<float>(offset);
+                    s_attempted[assetIndex] = true;
+                    try
+                    {
+                        s_assets[assetIndex] = GFX::AssetManager::Load(c_prefabPaths[assetIndex]);
+                    }
+                    catch (const std::exception& exception)
+                    {
+                        std::cerr << "Failed to load boss dungeon " << c_prefabPaths[assetIndex]
+                            << ": " << exception.what() << '\n';
+                    }
+                }
+                if (!s_assets[assetIndex].IsValid() || s_assets[assetIndex].type != GFX::sAssetType::Prefab)
+                    continue;
 
-                    addWall(dungeon.center + Math::cVec3f(-14.0f, 0.f, value), 1.25f);
-                    addWall(dungeon.center + Math::cVec3f(14.0f, 0.f, value), 1.25f);
-                    addWall(dungeon.center + Math::cVec3f(value, 0.f, 14.0f), 1.25f);
+                // Keep the entire prefab in its owner's chunk, like the mushroom dungeon.
+                // All walkable parts fit comfortably inside the five-chunk streaming radius.
+                if (belongsToChunk(dungeon.center))
+                {
+                    GFX::sTransform transform{};
+                    transform.position = dungeon.center;
+                    transform.scale = { 1.0f, 1.0f, 1.0f };
+                    InstantiatePrefab(_rScene, static_cast<GFX::PrefabHandle>(s_assets[assetIndex].handle), transform);
 
-                    if (std::abs(offset) >= 6)
-                        addWall(dungeon.center + Math::cVec3f(value, 0.0f, -14.0f), 1.25f);
+                    // Only the terrain-dependent approach is generated in code. Each dungeon
+                    // supplies its own tread model; the authored entrance meets it at local Y=0.
+                    constexpr int c_steps = 224;
+                    const float entryHeight = GetTerrainSurfaceHeight(dungeon.center.x(),
+                        dungeon.center.z() + c_bossDungeonApproach);
+                    const float run = c_bossDungeonFront - c_bossDungeonApproach;
+                    for (int step = 0; step < c_steps; ++step)
+                    {
+                        const float fraction = static_cast<float>(step + 1) / c_steps;
+                        const float z = c_bossDungeonApproach + (static_cast<float>(step) + 0.5f) * run / c_steps;
+                        const float terrain = GetTerrainSurfaceHeight(dungeon.center.x(), dungeon.center.z() + z);
+                        const float top = std::max(entryHeight + 0.2f
+                            + (dungeon.center.y() - entryHeight - 0.2f) * fraction, terrain + 0.2f);
+                        GFX::sShapeInstance stair{};
+                        stair.modelHandle = WorldModels::Get(c_stepModels[assetIndex]);
+                        stair.transform.position = { dungeon.center.x(), top, dungeon.center.z() + z };
+                        stair.transform.scale = { 20.0f, 120.0f, run / c_steps };
+                        stair.collisionMode = GFX::eShapeCollisionMode::Mesh;
+                        stair.generateLights = false;
+                        _rScene.AddShapeInstance(stair);
+                    }
                 }
 
-                for (int offset = -26; offset < -14; offset += 2)
-                {
-                    addWall(dungeon.center + Math::cVec3f(-7.0f, 0.0f, static_cast<float>(offset)), 1.25f);
-                    addWall(dungeon.center + Math::cVec3f(7.0f, 0.0f, static_cast<float>(offset)), 1.25f);
-                }
-
-                const Math::cVec3f bossPosition = dungeon.center;
-                const Math::cVec3f leftPosition = dungeon.center + Math::cVec3f(-3.0f, 0.0f, -22.0f);
-                const Math::cVec3f rightPosition = dungeon.center + Math::cVec3f(3.0f, 0.0f, -22.0f);
-
-                addSpawn({ dungeon.type, Math::cVec3f(bossPosition.x(), GetTerrainSurfaceHeight(bossPosition.x(), bossPosition.z()), bossPosition.z()),
+                addSpawn({ dungeon.type, dungeon.center + Math::cVec3f(0.0f, arenaHeight, 0.0f),
                     3.1415926f, true, dungeon.bossId, sEnemyTier::Unique });
-                addSpawn({ dungeon.type, Math::cVec3f(leftPosition.x(), GetTerrainSurfaceHeight(leftPosition.x(), leftPosition.z()), leftPosition.z()), 3.1415926f });
-                addSpawn({ dungeon.type, Math::cVec3f(rightPosition.x(), GetTerrainSurfaceHeight(rightPosition.x(), rightPosition.z()), rightPosition.z()), 3.1415926f });
+                // Guards stand on the actual floors, off the stair flights and gate thresholds.
+                for (int rank = 0; rank < 3; ++rank)
+                {
+                    const float z = -96.0f + rank * 24.0f;
+                    for (int side : { -1, 1 })
+                    {
+                        const float x = side * 8.0f;
+                        if (brute && rank == 2)
+                            continue;
+                        addSpawn({ dungeon.type, dungeon.center + Math::cVec3f(x, 0.0f, z), 3.1415926f });
+                    }
+                }
             }
         }
 

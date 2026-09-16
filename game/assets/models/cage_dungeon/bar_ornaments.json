@@ -1,0 +1,147 @@
+{
+    "name": "cage_dungeon_bar_ornaments",
+    "materials": [
+        {
+            "albedo": [
+                0.12,
+                0.2,
+                0.2
+            ],
+            "roughness": 0.38,
+            "metallic": 0.65,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [
+                0.12,
+                0.2,
+                0.2
+            ],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [
+                0.64,
+                0.43,
+                0.16
+            ],
+            "roughness": 0.38,
+            "metallic": 0.75,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [
+                0.64,
+                0.43,
+                0.16
+            ],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [
+                0.33,
+                0.46,
+                0.39
+            ],
+            "roughness": 0.88,
+            "metallic": 0,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [
+                0.33,
+                0.46,
+                0.39
+            ],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [
+                0.66,
+                0.77,
+                0.66
+            ],
+            "roughness": 0.88,
+            "metallic": 0,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [
+                0.66,
+                0.77,
+                0.66
+            ],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [
+                0.35,
+                0.83,
+                0.88
+            ],
+            "roughness": 0.88,
+            "metallic": 0,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [
+                0.35,
+                0.83,
+                0.88
+            ],
+            "emissiveStrength": 1
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "Sphere",
+            "position": [
+                0,
+                3,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.6,
+                1.6,
+                1.6
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [
+                0,
+                47,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1.5,
+                1.5,
+                1.5
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        }
+    ]
+}

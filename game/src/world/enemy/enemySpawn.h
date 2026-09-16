@@ -38,12 +38,14 @@ namespace World
 
     inline float GetBossArenaHalfExtent(sBossId::Enum _bossId)
     {
-        return _bossId == sBossId::ForestSporecap ? 36.0f : 12.5f;
+        return _bossId >= sBossId::ForestCrawler && _bossId <= sBossId::ForestSporecap ? 36.0f : 12.5f;
     }
 
     inline float GetBossArenaHeight(sBossId::Enum _bossId)
     {
-        return _bossId == sBossId::ForestSporecap ? 134.0f : 0.0f;
+        if (_bossId == sBossId::ForestSporecap)
+            return 134.0f;
+        return _bossId == sBossId::ForestBrute ? 8.0f : 0.0f;
     }
 
     inline bool IsInsideBossArena(sBossId::Enum _bossId,
@@ -51,14 +53,15 @@ namespace World
     {
         const auto offset = _rPosition - _rCenter;
         const float halfExtent = GetBossArenaHalfExtent(_bossId);
-        if (_bossId == sBossId::ForestSporecap)
+        if (_bossId >= sBossId::ForestCrawler && _bossId <= sBossId::ForestSporecap)
         {
             return offset.x() * offset.x() + offset.z() * offset.z() <= halfExtent * halfExtent
                 && offset.y() >= -6.0f && offset.y() <= 6.0f;
         }
 
         return offset.x() >= -halfExtent && offset.x() <= halfExtent
-            && offset.z() >= -halfExtent && offset.z() <= halfExtent;
+            && offset.z() >= -halfExtent && offset.z() <= halfExtent
+            && offset.y() >= -6.0f && offset.y() <= 6.0f;
     }
 
     struct sEnemyType

@@ -269,8 +269,7 @@ namespace Gameplay
         {
             slot.enemy.definition.maxHealth     *= 6.0f;
             slot.enemy.definition.attackDamage  *= 1.5f;
-            slot.enemy.definition.aggroRange    = _bossId == World::sBossId::ForestSporecap
-                ? 2.0f * World::GetBossArenaHalfExtent(_bossId) : 24.0f;
+            slot.enemy.definition.aggroRange    = 2.0f * World::GetBossArenaHalfExtent(_bossId);
             slot.enemy.definition.attackWindup  *= 1.4f;
 
             if (definition.attackType == eEnemyAttackType::Melee)
@@ -744,9 +743,10 @@ namespace Gameplay
             _rEnemy.position = { center.x(), groundHeight, center.z() };
         }
 
-        if (_rEnemy.bossId == World::sBossId::ForestSporecap)
+        if (_rEnemy.isBoss && _rEnemy.bossId >= World::sBossId::ForestCrawler
+            && _rEnemy.bossId <= World::sBossId::ForestSporecap)
         {
-            // Keep the complete capsule on the round roof, including near its stair opening.
+            // Keep the complete capsule inside the round arena, including near its entrance.
             const float movementRadius = World::GetBossArenaHalfExtent(_rEnemy.bossId) - 2.5f;
             const auto offset = _rEnemy.position - _rEnemy.homePosition;
             const float distance = std::sqrt(offset.x() * offset.x() + offset.z() * offset.z());
@@ -759,10 +759,11 @@ namespace Gameplay
         }
         else if (_rEnemy.isBoss)
         {
+            const float movementRadius = World::GetBossArenaHalfExtent(_rEnemy.bossId) - 2.5f;
             _rEnemy.position = {
-                std::clamp(_rEnemy.position.x(), _rEnemy.homePosition.x() - 10.0f, _rEnemy.homePosition.x() + 10.0f),
+                std::clamp(_rEnemy.position.x(), _rEnemy.homePosition.x() - movementRadius, _rEnemy.homePosition.x() + movementRadius),
                 _rEnemy.position.y(),
-                std::clamp(_rEnemy.position.z(), _rEnemy.homePosition.z() - 10.0f, _rEnemy.homePosition.z() + 10.0f)
+                std::clamp(_rEnemy.position.z(), _rEnemy.homePosition.z() - movementRadius, _rEnemy.homePosition.z() + movementRadius)
             };
         }
     }

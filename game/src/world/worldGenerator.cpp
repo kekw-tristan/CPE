@@ -176,8 +176,20 @@ namespace World
                             }
                             dungeon.center = Math::cVec3f(x, floorHeight + 2.0f, z);
                         }
-                        const float approachZ = mushroomDungeon ? 204.0f : 30.0f;
-                        const float entranceZ = mushroomDungeon ? 200.0f : 14.0f;
+                        else
+                        {
+                            // Keep the existing boss X/Z positions, but lift the courts above the terrain.
+                            float floorHeight = GetTerrainSurfaceHeight(dungeon.center.x(), dungeon.center.z());
+                            for (float z = c_bossDungeonFront; z <= c_bossDungeonBack; z += 2.0f)
+                            {
+                                for (float x = -c_bossDungeonHalfWidth; x <= c_bossDungeonHalfWidth; x += 2.0f)
+                                    floorHeight = std::max(floorHeight,
+                                        GetTerrainSurfaceHeight(dungeon.center.x() + x, dungeon.center.z() + z));
+                            }
+                            dungeon.center = { dungeon.center.x(), floorHeight + 2.0f, dungeon.center.z() };
+                        }
+                        const float approachZ = mushroomDungeon ? 204.0f : -c_bossDungeonApproach + 4.0f;
+                        const float entranceZ = mushroomDungeon ? 200.0f : -c_bossDungeonApproach;
 
                         m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
                         m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - approachZ) });
