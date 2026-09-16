@@ -28,6 +28,7 @@ namespace Gameplay
 
             bool AddItem(sItemId::Enum _item, uint32_t _amount = 1);
             bool AddItem(const sItemStack& _rItem);
+            bool AddPickedUpItem(const sItemStack& _rItem);
             bool RemoveItem(sItemId::Enum _item, uint32_t _amount = 1);
 
             bool MoveItem(size_t _sourceSlot, size_t _destinationSlot);

@@ -15,8 +15,9 @@ namespace Gameplay
                 && _rLeft.armor == _rRight.armor;
         }
 
+        template<typename tSlots>
         bool CanStoreItem(
-            const cInventory::InventorySlots& _rSlots,
+            const tSlots& _rSlots,
             const sItemStack& _rItem,
             uint32_t _maxStack,
             uint32_t _amount)
@@ -31,6 +32,48 @@ namespace Gameplay
                     availableCapacity += _maxStack;
 
                 if (availableCapacity >= _amount)
+                    return true;
+            }
+
+            return false;
+        }
+
+        template<typename tSlots>
+        bool StoreItem(
+            tSlots& _rSlots,
+            const sItemStack& _rItem,
+            uint32_t _maxStack)
+        {
+            uint32_t amount = _rItem.amount;
+
+            for (sItemStack& slot : _rSlots)
+            {
+                if (!AreStacksCompatible(slot, _rItem) || slot.amount >= _maxStack)
+                    continue;
+
+                const uint32_t available = _maxStack - slot.amount;
+                const uint32_t amountToAdd = std::min(available, amount);
+
+                slot.amount += amountToAdd;
+                amount -= amountToAdd;
+
+                if (amount == 0)
+                    return true;
+            }
+
+            for (sItemStack& slot : _rSlots)
+            {
+                if (!slot.IsEmpty())
+                    continue;
+
+                const uint32_t amountToAdd = std::min(_maxStack, amount);
+
+                slot = _rItem;
+                slot.amount = amountToAdd;
+
+                amount -= amountToAdd;
+
+                if (amount == 0)
                     return true;
             }
 
@@ -54,45 +97,31 @@ namespace Gameplay
 
         const sItemDefinition& definition = GetItemDefinition(_rItem.item);
         const uint32_t maxStack = std::max(1u, definition.maxStack);
-        uint32_t amount = _rItem.amount;
-
-        if (!CanStoreItem(m_inventorySlots, _rItem, maxStack, amount))
+        if (!CanStoreItem(m_inventorySlots, _rItem, maxStack, _rItem.amount))
             return false;
 
-        // Fill existing stacks first.
-        for (sItemStack& slot : m_inventorySlots)
-        {
-            if (!AreStacksCompatible(slot, _rItem) || slot.amount >= maxStack)
-                continue;
+        return StoreItem(m_inventorySlots, _rItem, maxStack);
+    }
 
-            const uint32_t available = maxStack - slot.amount;
-            const uint32_t amountToAdd = std::min(available, amount);
+    // ---------------------------------------------------------------------------------------------------------------------
 
-            slot.amount += amountToAdd;
-            amount -= amountToAdd;
+    bool cInventory::AddPickedUpItem(const sItemStack& _rItem)
+    {
+        if (_rItem.item == sItemId::Undefined || _rItem.amount == 0)
+            return false;
 
-            if (amount == 0)
-                return true;
-        }
+        const sItemDefinition& definition = GetItemDefinition(_rItem.item);
+        const uint32_t maxStack = std::max(1u, definition.maxStack);
 
-        // Create new stacks.
-        for (sItemStack& slot : m_inventorySlots)
-        {
-            if (!slot.IsEmpty())
-                continue;
+        if (definition.type == sItemType::Usable
+            && CanStoreItem(m_usableSlots, _rItem, maxStack, _rItem.amount))
+            return StoreItem(m_usableSlots, _rItem, maxStack);
 
-            const uint32_t amountToAdd = std::min(maxStack, amount);
+        if (definition.type == sItemType::Spell
+            && CanStoreItem(m_spellSlots, _rItem, maxStack, _rItem.amount))
+            return StoreItem(m_spellSlots, _rItem, maxStack);
 
-            slot = _rItem;
-            slot.amount = amountToAdd;
-
-            amount -= amountToAdd;
-
-            if (amount == 0)
-                return true;
-        }
-
-        return true;
+        return AddItem(_rItem);
     }
 
     // ---------------------------------------------------------------------------------------------------------------------

@@ -31,7 +31,7 @@ namespace Gameplay
         for (size_t index = 0; index < m_drops.size();)
         {
             const Engine::Math::cVec3f offset = m_drops[index].position - _rPlayerPosition;
-            if (offset.dot(offset) > pickupRadiusSquared || !_rInventory.AddItem(m_drops[index].item))
+            if (offset.dot(offset) > pickupRadiusSquared || !_rInventory.AddPickedUpItem(m_drops[index].item))
             {
                 ++index;
                 continue;

@@ -109,12 +109,20 @@ void cGame::OnUpdate(float _deltaTime)
         m_enemyManager.ClearDeathEvents();
 
         m_lootManager.CollectNearby(m_playerController.GetPosition(), m_inventory);
+        bool hasCollectedSpell = false;
         for (const Gameplay::sItemStack& item : m_lootManager.GetCollectedItems())
         {
             const Gameplay::sSpellId::Enum spellId = Gameplay::SpellManager::GetSpellId(item.item);
             if (spellId != Gameplay::sSpellId::Undefined)
+            {
                 m_runState.GrantSpell(spellId);
+                hasCollectedSpell = true;
+            }
         }
+
+        if (hasCollectedSpell)
+            SyncSpellLoadoutFromInventory();
+
         m_lootManager.ClearCollectedItems();
 
         const float receivedDamage = m_enemyManager.ConsumePlayerDamage() + m_projectileManager.ConsumePlayerDamage();
