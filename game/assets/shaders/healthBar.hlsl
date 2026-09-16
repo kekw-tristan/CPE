@@ -19,6 +19,7 @@ struct VSOutput
     float2 uv : TEXCOORD0;
     nointerpolation float2 size     : TEXCOORD1;
     nointerpolation float  fill     : TEXCOORD2;
+    nointerpolation float  tier     : TEXCOORD3;
     nointerpolation float4 color    : COLOR0;
 };
 
@@ -34,6 +35,7 @@ VSOutput VSMain(VSInput _input, uint _vertexId : SV_VertexID)
     output.uv       = corners[_vertexId];
     output.size     = float2(_input.positionWidth.w, _input.heightFill.x);
     output.fill     = saturate(_input.heightFill.y);
+    output.tier     = _input.heightFill.z;
     output.color    = _input.color;
 
     float4 viewPosition = mul(viewMatrix, float4(_input.positionWidth.xyz, 1.0));
@@ -46,13 +48,17 @@ VSOutput VSMain(VSInput _input, uint _vertexId : SV_VertexID)
 
 float4 PSMain(VSOutput _input) : SV_Target
 {
-    const float borderWidth = 0.012;
+    const float borderWidth = 0.022;
     const float2 border     = min(borderWidth / max(_input.size, 0.0001), 0.25);
     const float2 edge       = min(_input.uv, 1.0 - _input.uv);
 
     if (any(edge < border))
     {
-        return float4(0.015, 0.015, 0.02, 1.0);
+        const float3 borderColor = _input.tier < 0.5 ? float3(1.0, 1.0, 1.0)
+            : _input.tier < 1.5 ? float3(0.03, 0.38, 1.0)
+            : _input.tier < 2.5 ? float3(1.0, 0.55, 0.02)
+            : float3(0.92, 0.08, 1.0);
+        return float4(borderColor, 1.0);
     }
 
     const float interiorX = (_input.uv.x - border.x) / (1.0 - 2.0 * border.x);

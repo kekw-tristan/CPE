@@ -101,7 +101,10 @@ void cGame::OnUpdate(float _deltaTime)
 
         for (const Gameplay::sEnemyDeathEvent& deathEvent : m_enemyManager.GetDeathEvents())
         {
-            const uint32_t experience = deathEvent.isBoss ? c_bossExperience : c_regularEnemyExperience;
+            const uint32_t experience = deathEvent.tier == World::sEnemyTier::Unique ? c_bossExperience
+                : deathEvent.tier == World::sEnemyTier::Yellow ? c_yellowEnemyExperience
+                : deathEvent.tier == World::sEnemyTier::Blue ? c_blueEnemyExperience
+                : c_regularEnemyExperience;
             ApplyLevelUpRewards(m_runState.GrantExperience(experience));
             m_lootManager.DropEnemyLoot(deathEvent.position, deathEvent.isBoss, deathEvent.bossId);
         }
@@ -227,6 +230,10 @@ void cGame::OnDrawUI()
     hudState.inventory.visible                      = m_inventoryOpen;
     hudState.augmentSelection.visible               = m_runState.HasPendingAugmentSelection();
     hudState.augmentSelection.selectionsRemaining   = m_runState.GetPendingAugmentSelections();
+
+    float cameraDirection[4]{};
+    Engine::GFX::GetCamera().GetDirection(cameraDirection);
+    hudState.cameraYaw = std::atan2(cameraDirection[0], cameraDirection[2]);
 
     const auto& augmentChoices = m_runState.GetAugmentChoices();
     for (size_t choiceIndex = 0; choiceIndex < augmentChoices.size(); ++choiceIndex)

@@ -69,6 +69,7 @@ namespace UI
     struct sHudState
     {
         std::array<sDungeonHudState, 4> dungeons{};
+        float cameraYaw = 0.0f;
 
         float health    = 100.0f;
         float maxHealth = 100.0f;

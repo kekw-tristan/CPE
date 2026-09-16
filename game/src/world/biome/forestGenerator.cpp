@@ -626,8 +626,8 @@ namespace World
             {
                 sEnemyType::ForestThornshooter, sEnemyType::ForestBarkguard, sEnemyType::ForestSporecap, sEnemyType::ForestRootcharger
             };
-            // Undefined progression ID denotes a local miniboss, not one of the four forest guardians.
-            _rSpawns.push_back({ c_champions[variant], transform.position, angle + 3.1415926f, true });
+            _rSpawns.push_back({ c_champions[variant], transform.position, angle + 3.1415926f,
+                false, sBossId::Undefined, sEnemyTier::Yellow });
             for (int guard = 0; guard < 4; ++guard)
             {
                 const float x = guard % 2 == 0 ? -6.0f : 6.0f;
@@ -847,6 +847,7 @@ namespace World
             };
             std::uniform_int_distribution<uint32_t> enemyTypeDistribution(0,
                 static_cast<uint32_t>(sizeof(c_forestEnemyTypes) / sizeof(c_forestEnemyTypes[0])) - 1);
+            std::discrete_distribution<int> enemyTierDistribution({ 75, 20, 5 });
 
             const uint32_t packCount = packCountDistribution(_rRandomGenerator);
 
@@ -864,6 +865,7 @@ namespace World
                     sEnemySpawn spawn{};
 
                     spawn.type = c_forestEnemyTypes[enemyTypeDistribution(_rRandomGenerator)];
+                    spawn.tier = static_cast<sEnemyTier::Enum>(enemyTierDistribution(_rRandomGenerator));
                     spawn.position = Math::cVec3f(packCenter.x() + packOffsetDistribution(_rRandomGenerator), worldY, packCenter.z() + packOffsetDistribution(_rRandomGenerator));
                     spawn.position = Math::cVec3f(
                         spawn.position.x(),
@@ -1041,7 +1043,7 @@ namespace World
                         }
                     }
                     const Math::cVec3f bossPosition = dungeon.center + Math::cVec3f(0.0f, GetBossArenaHeight(dungeon.bossId), 0.0f);
-                    addSpawn({ dungeon.type, bossPosition, 3.1415926f, true, dungeon.bossId });
+                    addSpawn({ dungeon.type, bossPosition, 3.1415926f, true, dungeon.bossId, sEnemyTier::Unique });
                     for (int rank = 0; rank < 4; ++rank)
                     {
                         for (int side = -1; side <= 1; side += 2)
@@ -1076,7 +1078,8 @@ namespace World
                 const Math::cVec3f leftPosition = dungeon.center + Math::cVec3f(-3.0f, 0.0f, -22.0f);
                 const Math::cVec3f rightPosition = dungeon.center + Math::cVec3f(3.0f, 0.0f, -22.0f);
 
-                addSpawn({ dungeon.type, Math::cVec3f(bossPosition.x(), GetTerrainSurfaceHeight(bossPosition.x(), bossPosition.z()), bossPosition.z()), 3.1415926f, true, dungeon.bossId });
+                addSpawn({ dungeon.type, Math::cVec3f(bossPosition.x(), GetTerrainSurfaceHeight(bossPosition.x(), bossPosition.z()), bossPosition.z()),
+                    3.1415926f, true, dungeon.bossId, sEnemyTier::Unique });
                 addSpawn({ dungeon.type, Math::cVec3f(leftPosition.x(), GetTerrainSurfaceHeight(leftPosition.x(), leftPosition.z()), leftPosition.z()), 3.1415926f });
                 addSpawn({ dungeon.type, Math::cVec3f(rightPosition.x(), GetTerrainSurfaceHeight(rightPosition.x(), rightPosition.z()), rightPosition.z()), 3.1415926f });
             }

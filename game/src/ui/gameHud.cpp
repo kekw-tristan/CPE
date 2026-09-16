@@ -42,6 +42,10 @@ namespace UI
 
         constexpr std::array<const char*, 6> c_spellKeys = { "LMB", "RMB", "Q", "E", "R", "F" };
         constexpr std::array<const char*, 4> c_usableKeys = { "1", "2", "3", "4" };
+        constexpr std::array<const char*, 4> c_bossNames = {
+            "Uralter Kriecher", "Waldkoloss", "Dornenalpha", "Sporenkoenig"
+        };
+        constexpr std::array<const char*, 4> c_bossCompassLabels = { "K", "W", "D", "S" };
 
         constexpr float c_spellBarWidth         = static_cast<float>(c_spellKeys.size()) * c_slotSize + static_cast<float>(c_spellKeys.size() - 1) * c_slotSpacing;
 
@@ -85,6 +89,14 @@ namespace UI
 
         // -----------------------------------------------------------------------------------------------------------------
 
+        void DrawColoredText(ImDrawList& _rDrawList, const ImVec2& _rPosition, float _fontSize, const char* _pText, ImU32 _color)
+        {
+            _rDrawList.AddText(ImGui::GetFont(), _fontSize, ImVec2(_rPosition.x + 1.0f, _rPosition.y + 1.0f), IM_COL32(0, 0, 0, 230), _pText);
+            _rDrawList.AddText(ImGui::GetFont(), _fontSize, _rPosition, _color, _pText);
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------
+
         void DrawBar(ImDrawList& _rDrawList, const ImVec2& _rPosition, const ImVec2& _rSize, float _fraction, ImU32 _color, float _scale, const char* _pLabel, eBarDirection _direction)
         {
             const ImVec2 end(_rPosition.x + _rSize.x, _rPosition.y + _rSize.y);
@@ -121,6 +133,146 @@ namespace UI
                 4.0f * _scale);
 
             DrawText(_rDrawList, ImVec2(_rPosition.x + 6.0f * _scale, _rPosition.y + 4.0f * _scale), 13.0f * _scale, _pLabel);
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------
+
+        void DrawCompass(const sHudState& _rState, ImDrawList& _rDrawList, const ImGuiViewport& _rViewport, float _scale)
+        {
+            constexpr float c_twoPi = 6.28318530718f;
+            constexpr float c_halfCompassSpan = 1.308996939f;
+            constexpr int c_compassTickDegrees = 15;
+
+            const float width = std::min(560.0f * _scale, _rViewport.Size.x - 48.0f * _scale);
+            const float height = 60.0f * _scale;
+            const ImVec2 position(_rViewport.Pos.x + (_rViewport.Size.x - width) * 0.5f, _rViewport.Pos.y + 14.0f * _scale);
+            const ImVec2 end(position.x + width, position.y + height);
+            const float centerX = position.x + width * 0.5f;
+
+            _rDrawList.AddRectFilled(position, end, IM_COL32(8, 14, 22, 230), 6.0f * _scale);
+            _rDrawList.AddRect(position, end, IM_COL32(86, 113, 143, 210), 6.0f * _scale, 0, 1.0f * _scale);
+            _rDrawList.PushClipRect(position, end, true);
+
+            const float headingDegrees = _rState.cameraYaw * 180.0f / 3.14159265359f;
+            const float spanDegrees = c_halfCompassSpan * 180.0f / 3.14159265359f;
+            const int firstTick = static_cast<int>(std::floor((headingDegrees - spanDegrees) / c_compassTickDegrees)) * c_compassTickDegrees;
+            const int lastTick = static_cast<int>(std::ceil((headingDegrees + spanDegrees) / c_compassTickDegrees)) * c_compassTickDegrees;
+
+            for (int tickDegrees = firstTick; tickDegrees <= lastTick; tickDegrees += c_compassTickDegrees)
+            {
+                const float relative = (static_cast<float>(tickDegrees) - headingDegrees) * 3.14159265359f / 180.0f;
+                const float x = centerX + relative / c_halfCompassSpan * width * 0.5f;
+                const int normalizedDegrees = (tickDegrees % 360 + 360) % 360;
+                const bool cardinal = normalizedDegrees % 90 == 0;
+                const float tickHeight = cardinal ? 15.0f * _scale : 8.0f * _scale;
+
+                _rDrawList.AddLine(ImVec2(x, position.y + height - 4.0f * _scale),
+                    ImVec2(x, position.y + height - 4.0f * _scale - tickHeight),
+                    cardinal ? IM_COL32(215, 230, 247, 235) : IM_COL32(132, 158, 187, 190), 1.0f * _scale);
+
+                if (!cardinal)
+                    continue;
+
+                const char* pLabel = normalizedDegrees == 0 ? "N" : normalizedDegrees == 90 ? "O"
+                    : normalizedDegrees == 180 ? "S" : "W";
+                DrawCenteredText(_rDrawList, ImVec2(x, position.y + 13.0f * _scale), 14.0f * _scale, pLabel);
+            }
+
+            for (size_t index = 0; index < _rState.dungeons.size(); ++index)
+            {
+                const sDungeonHudState& dungeon = _rState.dungeons[index];
+                if (dungeon.defeated)
+                    continue;
+
+                const float targetYaw = std::atan2(dungeon.offsetX, dungeon.offsetZ);
+                const float relative = std::remainder(targetYaw - _rState.cameraYaw, c_twoPi);
+                const float x = centerX + std::clamp(relative / c_halfCompassSpan, -1.0f, 1.0f) * width * 0.5f;
+                const ImU32 markerColor = dungeon.inArena ? IM_COL32(244, 90, 82, 255) : IM_COL32(246, 190, 77, 255);
+                const std::array<ImVec2, 3> marker = {
+                    ImVec2(x, position.y + height - 6.0f * _scale),
+                    ImVec2(x - 5.0f * _scale, position.y + height - 15.0f * _scale),
+                    ImVec2(x + 5.0f * _scale, position.y + height - 15.0f * _scale)
+                };
+
+                _rDrawList.AddTriangleFilled(marker[0], marker[1], marker[2], markerColor);
+                char distanceLabel[20];
+                std::snprintf(distanceLabel, sizeof(distanceLabel), "%.0fm", std::max(0.0f, dungeon.distance));
+                DrawCenteredText(_rDrawList, ImVec2(x, position.y + 30.0f * _scale), 9.0f * _scale, distanceLabel);
+                DrawCenteredText(_rDrawList, ImVec2(x, position.y + 40.0f * _scale), 9.0f * _scale, c_bossCompassLabels[index]);
+            }
+
+            const std::array<ImVec2, 3> headingMarker = {
+                ImVec2(centerX, position.y + 2.0f * _scale),
+                ImVec2(centerX - 6.0f * _scale, position.y + 10.0f * _scale),
+                ImVec2(centerX + 6.0f * _scale, position.y + 10.0f * _scale)
+            };
+            _rDrawList.AddTriangleFilled(headingMarker[0], headingMarker[1], headingMarker[2], IM_COL32(235, 243, 255, 255));
+            _rDrawList.PopClipRect();
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------
+
+        void DrawBossTracker(const sHudState& _rState, ImDrawList& _rDrawList, const ImGuiViewport& _rViewport, float _scale)
+        {
+            const float width = 250.0f * _scale;
+            const float rowHeight = 38.0f * _scale;
+            const ImVec2 position(_rViewport.Pos.x + _rViewport.Size.x - width - 18.0f * _scale, _rViewport.Pos.y + 18.0f * _scale);
+            const ImVec2 end(position.x + width, position.y + 42.0f * _scale + rowHeight * static_cast<float>(_rState.dungeons.size()));
+
+            _rDrawList.AddRectFilled(position, end, IM_COL32(8, 14, 22, 220), 6.0f * _scale);
+            _rDrawList.AddRect(position, end, IM_COL32(83, 107, 135, 210), 6.0f * _scale, 0, 1.0f * _scale);
+
+            unsigned int defeated = 0;
+            for (const sDungeonHudState& dungeon : _rState.dungeons)
+                defeated += dungeon.defeated ? 1u : 0u;
+
+            char title[48];
+            std::snprintf(title, sizeof(title), "BOSSE  %u / %zu", defeated, _rState.dungeons.size());
+            DrawColoredText(_rDrawList, ImVec2(position.x + 12.0f * _scale, position.y + 11.0f * _scale), 14.0f * _scale, title, IM_COL32(215, 229, 246, 255));
+
+            for (size_t index = 0; index < _rState.dungeons.size(); ++index)
+            {
+                const sDungeonHudState& dungeon = _rState.dungeons[index];
+                const float rowTop = position.y + 38.0f * _scale + static_cast<float>(index) * rowHeight;
+                const ImVec2 rowStart(position.x + 7.0f * _scale, rowTop);
+                const ImVec2 rowEnd(position.x + width - 7.0f * _scale, rowTop + rowHeight - 4.0f * _scale);
+                const ImU32 rowColor = dungeon.defeated ? IM_COL32(40, 53, 67, 180) : IM_COL32(22, 32, 45, 235);
+                const ImU32 textColor = dungeon.defeated ? IM_COL32(116, 128, 141, 230) : IM_COL32(234, 239, 246, 255);
+
+                _rDrawList.AddRectFilled(rowStart, rowEnd, rowColor, 4.0f * _scale);
+                _rDrawList.AddCircleFilled(ImVec2(rowStart.x + 10.0f * _scale, rowTop + 16.0f * _scale), 4.0f * _scale,
+                    dungeon.defeated ? IM_COL32(104, 128, 112, 255) : IM_COL32(242, 187, 74, 255));
+
+                const ImVec2 labelPosition(rowStart.x + 21.0f * _scale, rowTop + 8.0f * _scale);
+                DrawColoredText(_rDrawList, labelPosition, 12.0f * _scale, c_bossNames[index], textColor);
+
+                if (dungeon.defeated)
+                {
+                    const ImVec2 textSize = ImGui::GetFont()->CalcTextSizeA(12.0f * _scale, FLT_MAX, 0.0f, c_bossNames[index]);
+                    _rDrawList.AddLine(ImVec2(labelPosition.x - 1.0f * _scale, labelPosition.y + textSize.y * 0.55f),
+                        ImVec2(labelPosition.x + textSize.x + 1.0f * _scale, labelPosition.y + textSize.y * 0.55f),
+                        IM_COL32(172, 68, 68, 255), 2.0f * _scale);
+                }
+            }
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------
+
+        void DrawActiveBossBar(const sHudState& _rState, ImDrawList& _rDrawList, const ImGuiViewport& _rViewport, float _scale)
+        {
+            for (size_t index = 0; index < _rState.dungeons.size(); ++index)
+            {
+                const sDungeonHudState& dungeon = _rState.dungeons[index];
+                if (!dungeon.inArena || dungeon.defeated)
+                    continue;
+
+                const float width = std::min(480.0f * _scale, _rViewport.Size.x - 80.0f * _scale);
+                const ImVec2 position(_rViewport.Pos.x + (_rViewport.Size.x - width) * 0.5f, _rViewport.Pos.y + 90.0f * _scale);
+                DrawCenteredText(_rDrawList, ImVec2(position.x + width * 0.5f, position.y + 7.0f * _scale), 15.0f * _scale, c_bossNames[index]);
+                DrawBar(_rDrawList, ImVec2(position.x, position.y + 18.0f * _scale), ImVec2(width, 23.0f * _scale),
+                    dungeon.healthFraction, IM_COL32(196, 54, 68, 255), _scale, "", eBarDirection::Horizontal);
+                return;
+            }
         }
 
         // -----------------------------------------------------------------------------------------------------------------
@@ -965,49 +1117,9 @@ namespace UI
             pDrawList->AddPolyline(points.data(), static_cast<int>(points.size()), reticleColor, 0, 2.0f * scale);
         }
 
-        constexpr std::array<const char*, 4> c_dungeonNames = {
-            "Wurzelgruft - Uralter Kriecher", "Steinheiligtum - Waldkoloss",
-            "Dornenbau - Dornenalpha", "Sporenkrypta - Sporenkoenig"
-        };
-        const ImVec2 questOrigin(pViewport->Pos.x + 18.0f * scale, pViewport->Pos.y + 18.0f * scale);
-        pDrawList->AddRectFilled(questOrigin,
-            ImVec2(questOrigin.x + 420.0f * scale, questOrigin.y + 156.0f * scale),
-            IM_COL32(9, 20, 12, 215), 6.0f * scale);
-        unsigned int defeated = 0;
-        const char* objective = "Eingaenge im Sueden. Flucht setzt lebende Bosse zurueck.";
-
-        for (size_t i = 0; i < _rState.dungeons.size(); ++i)
-        {
-            const auto& dungeon = _rState.dungeons[i];
-            defeated += dungeon.defeated ? 1u : 0u;
-            if (dungeon.objective != nullptr)
-            {
-                objective = dungeon.defeated ? "Sporenkrypta abgeschlossen! Kehre ueber die Treppen zurueck."
-                    : dungeon.objective;
-            }
-
-            char label[128];
-            std::snprintf(label, sizeof(label), "%s %s %.0fm %s%s", c_dungeonNames[i],
-                dungeon.defeated ? "[OK]" : "", dungeon.distance,
-                dungeon.offsetZ < 0.0f ? "S" : "N", dungeon.offsetX < 0.0f ? "W" : "O");
-            const ImVec2 row(questOrigin.x + 8.0f * scale,
-                questOrigin.y + (32.0f + static_cast<float>(i) * 24.0f) * scale);
-            DrawText(*pDrawList, row, 13.0f * scale, label);
-            if (dungeon.inArena && !dungeon.defeated)
-            {
-                DrawBar(*pDrawList, ImVec2(row.x, row.y + 15.0f * scale),
-                    ImVec2(400.0f * scale, 5.0f * scale), dungeon.healthFraction,
-                    IM_COL32(180, 55, 40, 255), scale, "", eBarDirection::Horizontal);
-            }
-        }
-
-        char progress[96];
-        std::snprintf(progress, sizeof(progress), "Ring 1: Wald - Bosse %u/4%s",
-            defeated, defeated == 4 ? " - Abgeschlossen!" : "");
-        DrawText(*pDrawList, ImVec2(questOrigin.x + 8.0f * scale, questOrigin.y + 8.0f * scale),
-            15.0f * scale, progress);
-        DrawText(*pDrawList, ImVec2(questOrigin.x + 8.0f * scale, questOrigin.y + 134.0f * scale),
-            12.0f * scale, objective);
+        DrawCompass(_rState, *pDrawList, *pViewport, scale);
+        DrawActiveBossBar(_rState, *pDrawList, *pViewport, scale);
+        DrawBossTracker(_rState, *pDrawList, *pViewport, scale);
 
         const float xpTop = pViewport->Pos.y + pViewport->Size.y - (c_xpHeight + c_bottomMargin) * scale;
         const float slotsTop = xpTop - (c_slotSize + c_xpSlotGap) * scale;

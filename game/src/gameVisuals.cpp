@@ -141,6 +141,7 @@ void cGame::PrepareEnemyHealthBars(const GFX::cCamera& _rCamera)
         bar.positionWidth[3] = c_healthBarWidth;
         bar.heightFill[0]    = c_healthBarHeight;
         bar.heightFill[1]    = std::clamp(pEnemy->health / maxHealth, 0.0f, 1.0f);
+        bar.heightFill[2]    = static_cast<float>(pEnemy->tier);
 
         m_healthBars.push_back(bar);
     }

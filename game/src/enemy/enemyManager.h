@@ -66,6 +66,7 @@ namespace Gameplay
         sEnemyHandle handle;
         World::sEnemyType::Enum type = World::sEnemyType::Undefined;
         World::sBossId::Enum bossId = World::sBossId::Undefined;
+        World::sEnemyTier::Enum tier = World::sEnemyTier::Normal;
         Engine::Math::cVec3f position;
         Engine::Math::cVec3f attackDirection;
         bool isBoss = false;
@@ -90,6 +91,7 @@ namespace Gameplay
         Engine::Math::cVec3f position;
         bool isBoss = false;
         World::sBossId::Enum bossId = World::sBossId::Undefined;
+        World::sEnemyTier::Enum tier = World::sEnemyTier::Normal;
     };
 
     struct sEnemyUpdateContext
@@ -102,7 +104,9 @@ namespace Gameplay
     {
         public:
 
-            sEnemyHandle Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation, bool _isBoss = false, World::sBossId::Enum _bossId = World::sBossId::Undefined);
+            sEnemyHandle Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation,
+                bool _isBoss = false, World::sBossId::Enum _bossId = World::sBossId::Undefined,
+                World::sEnemyTier::Enum _tier = World::sEnemyTier::Normal);
             void Update(const sEnemyUpdateContext& _rContext, cProjectileManager& _rProjectileManager);
             void Clear();
             void SetActive(sEnemyHandle _handle, bool _active);

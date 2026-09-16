@@ -267,6 +267,8 @@ class cGame : public cApplication
         static constexpr float c_speedPotionMultiplier  = 1.5f;
     
         static constexpr uint32_t c_regularEnemyExperience  = 25;
+        static constexpr uint32_t c_blueEnemyExperience     = 38;
+        static constexpr uint32_t c_yellowEnemyExperience   = 50;
         static constexpr uint32_t c_bossExperience          = 100;
     
         UI::cGameHud m_hud;

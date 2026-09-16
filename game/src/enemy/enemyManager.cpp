@@ -206,7 +206,13 @@ namespace Gameplay
 
     // -------------------------------------------------------------------------------------------------------------------------
 
-    sEnemyHandle cEnemyManager::Spawn(World::sEnemyType::Enum _type, const Engine::Math::cVec3f& _rPosition, float _rotation, bool _isBoss, World::sBossId::Enum _bossId)
+    sEnemyHandle cEnemyManager::Spawn(
+        World::sEnemyType::Enum _type,
+        const Engine::Math::cVec3f& _rPosition,
+        float _rotation,
+        bool _isBoss,
+        World::sBossId::Enum _bossId,
+        World::sEnemyTier::Enum _tier)
     {
         const sEnemyDefinition& definition = GetDefinition(_type);
         uint32_t slotIndex;
@@ -232,18 +238,37 @@ namespace Gameplay
         slot.enemy.type     = _type;
         slot.enemy.position = _rPosition;
         slot.enemy.rotation = _rotation;
-        slot.enemy.isBoss   = _isBoss;
-        slot.enemy.bossId   = _isBoss ? _bossId : World::sBossId::Undefined;
-        
-        const bool miniboss = _isBoss && _bossId == World::sBossId::Undefined;
 
-        slot.enemy.scale        = _isBoss ? (miniboss ? 1.8f : 2.5f) : 1.0f;
+        const bool uniqueBoss = _isBoss && _bossId != World::sBossId::Undefined;
+
+        slot.enemy.isBoss   = uniqueBoss;
+        slot.enemy.bossId   = uniqueBoss ? _bossId : World::sBossId::Undefined;
+        slot.enemy.tier     = uniqueBoss ? World::sEnemyTier::Unique : _tier;
+
+        slot.enemy.scale        = uniqueBoss ? 2.5f : 1.0f;
         slot.enemy.homePosition = _rPosition;
         slot.enemy.definition   = definition;
-        if (_isBoss)
+
+        switch (slot.enemy.tier)
         {
-            slot.enemy.definition.maxHealth     *= miniboss ? 3.5f : 6.0f;
-            slot.enemy.definition.attackDamage  *= miniboss ? 1.25f : 1.5f;
+            case World::sEnemyTier::Blue:
+                slot.enemy.definition.maxHealth *= 1.5f;
+                slot.enemy.definition.attackDamage *= 1.5f;
+                break;
+
+            case World::sEnemyTier::Yellow:
+                slot.enemy.definition.maxHealth *= 2.0f;
+                slot.enemy.definition.attackDamage *= 2.0f;
+                break;
+
+            default:
+                break;
+        }
+
+        if (uniqueBoss)
+        {
+            slot.enemy.definition.maxHealth     *= 6.0f;
+            slot.enemy.definition.attackDamage  *= 1.5f;
             slot.enemy.definition.aggroRange    = _bossId == World::sBossId::ForestSporecap
                 ? 2.0f * World::GetBossArenaHalfExtent(_bossId) : 24.0f;
             slot.enemy.definition.attackWindup  *= 1.4f;
@@ -364,7 +389,7 @@ namespace Gameplay
             slot.enemy.state     = eEnemyState::Dead;
             slot.enemy.stateTime = 0.0f;
             ++slot.enemy.transformRevision;
-            m_deathEvents.push_back({ slot.enemy.handle, slot.enemy.position, slot.enemy.isBoss, slot.enemy.bossId });
+            m_deathEvents.push_back({ slot.enemy.handle, slot.enemy.position, slot.enemy.isBoss, slot.enemy.bossId, slot.enemy.tier });
         }
     }
 

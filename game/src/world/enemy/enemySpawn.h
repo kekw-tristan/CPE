@@ -78,6 +78,20 @@ namespace World
         };
     };
 
+    struct sEnemyTier
+    {
+        enum Enum
+        {
+            Normal,
+            Blue,
+            Yellow,
+            Unique,
+
+            NumberOfElements,
+            Undefined = -1
+        };
+    };
+
     struct sEnemySpawn
     {
         sEnemyType::Enum     type     = sEnemyType::Undefined;
@@ -85,6 +99,7 @@ namespace World
         float                rotation = 0.0f;
         bool                 isBoss = false;
         sBossId::Enum        bossId = sBossId::Undefined;
+        sEnemyTier::Enum     tier = sEnemyTier::Normal;
     };
 
 }
