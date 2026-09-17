@@ -14,6 +14,12 @@ namespace World
     // Keep all four ruins and their guarded approaches outside the spawn clearing.
     constexpr float c_dungeonRadius = 190.0f;
 
+    // Mushroom kingdom envelope, including its peripheral rooms and bridges.
+    constexpr float c_mushroomDungeonRadius = 450.0f;
+    constexpr float c_mushroomDungeonHalfWidth = 224.0f;
+    constexpr float c_mushroomDungeonFront = -140.0f;
+    constexpr float c_mushroomDungeonBack = 232.0f;
+
     constexpr float c_bossDungeonHalfWidth = 52.0f;
     constexpr float c_bossDungeonFront = -108.0f;
     constexpr float c_bossDungeonBack = 44.0f;

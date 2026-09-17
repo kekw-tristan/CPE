@@ -165,13 +165,13 @@ namespace World
                         const bool mushroomDungeon = dungeon.bossId == sBossId::ForestSporecap;
                         if (mushroomDungeon)
                         {
-                            // Leave room for the great hall and its southern approach, away from the sanctuary.
-                            const float x = std::cos(angle) * 330.0f;
-                            const float z = std::sin(angle) * 330.0f;
+                            // Survey the whole kingdom so terrain cannot emerge inside its outer districts.
+                            const float x = std::cos(angle) * c_mushroomDungeonRadius;
+                            const float z = std::sin(angle) * c_mushroomDungeonRadius;
                             float floorHeight = GetTerrainSurfaceHeight(x, z);
-                            for (int localZ = -120; localZ <= 60; localZ += 4)
+                            for (float localZ = c_mushroomDungeonFront; localZ <= c_mushroomDungeonBack; localZ += 4.0f)
                             {
-                                for (int localX = -68; localX <= 68; localX += 4)
+                                for (float localX = -c_mushroomDungeonHalfWidth; localX <= c_mushroomDungeonHalfWidth; localX += 4.0f)
                                     floorHeight = std::max(floorHeight, GetTerrainSurfaceHeight(x + localX, z + localZ));
                             }
                             dungeon.center = Math::cVec3f(x, floorHeight + 2.0f, z);

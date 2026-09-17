@@ -118,9 +118,9 @@ namespace World
             for (const auto& dungeon : _rWorldLayout.dungeons)
             {
                 if (dungeon.bossId == sBossId::ForestSporecap
-                    && std::abs(_rPosition.x() - dungeon.center.x()) < 88.0f
+                    && std::abs(_rPosition.x() - dungeon.center.x()) < c_mushroomDungeonHalfWidth
                     && _rPosition.z() - dungeon.center.z() > -216.0f
-                    && _rPosition.z() - dungeon.center.z() < 80.0f)
+                    && _rPosition.z() - dungeon.center.z() < c_mushroomDungeonBack)
                     return 0.0f;
                 if (dungeon.bossId != sBossId::ForestSporecap
                     && std::abs(_rPosition.x() - dungeon.center.x()) < c_bossDungeonHalfWidth + 12.0f
@@ -1000,7 +1000,7 @@ namespace World
             {
                 if (dungeon.bossId == sBossId::ForestSporecap)
                 {
-                    // The full prefab fits within the load radius from every point on its approach.
+                    // The kingdom and approach stay within five 64-unit chunks of this owner.
                     // Its owning chunk creates and removes the hall, stairs, lights and mesh collisions together.
                     if (belongsToChunk(dungeon.center))
                     {
