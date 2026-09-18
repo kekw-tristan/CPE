@@ -163,6 +163,7 @@ namespace World
                         dungeon.type        = Gameplay::SpellManager::GetBoss(dungeon.bossId).enemyType;
 
                         const bool mushroomDungeon = dungeon.bossId == sBossId::ForestSporecap;
+                        const bool cageDungeon = dungeon.bossId == sBossId::ForestCrawler;
                         if (mushroomDungeon)
                         {
                             // Survey the whole kingdom so terrain cannot emerge inside its outer districts.
@@ -178,18 +179,28 @@ namespace World
                         }
                         else
                         {
-                            // Keep the existing boss X/Z positions, but lift the courts above the terrain.
-                            float floorHeight = GetTerrainSurfaceHeight(dungeon.center.x(), dungeon.center.z());
-                            for (float z = c_bossDungeonFront; z <= c_bossDungeonBack; z += 2.0f)
+                            // The expanded aviary needs its own reservation outside the spawn
+                            // clearing. Preserve its local cage origin and survey every wing.
+                            if (cageDungeon)
                             {
-                                for (float x = -c_bossDungeonHalfWidth; x <= c_bossDungeonHalfWidth; x += 2.0f)
+                                dungeon.center = { std::cos(angle) * c_cageDungeonRadius, 0.0f,
+                                    std::sin(angle) * c_cageDungeonRadius };
+                            }
+                            const float front = cageDungeon ? c_cageDungeonFront : c_bossDungeonFront;
+                            const float back = cageDungeon ? c_cageDungeonBack : c_bossDungeonBack;
+                            const float halfWidth = cageDungeon ? c_cageDungeonHalfWidth : c_bossDungeonHalfWidth;
+                            float floorHeight = GetTerrainSurfaceHeight(dungeon.center.x(), dungeon.center.z());
+                            for (float z = front; z <= back; z += 2.0f)
+                            {
+                                for (float x = -halfWidth; x <= halfWidth; x += 2.0f)
                                     floorHeight = std::max(floorHeight,
                                         GetTerrainSurfaceHeight(dungeon.center.x() + x, dungeon.center.z() + z));
                             }
                             dungeon.center = { dungeon.center.x(), floorHeight + 2.0f, dungeon.center.z() };
                         }
-                        const float approachZ = mushroomDungeon ? 204.0f : -c_bossDungeonApproach + 4.0f;
-                        const float entranceZ = mushroomDungeon ? 200.0f : -c_bossDungeonApproach;
+                        const float approach = cageDungeon ? c_cageDungeonApproach : c_bossDungeonApproach;
+                        const float approachZ = mushroomDungeon ? 204.0f : -approach + 4.0f;
+                        const float entranceZ = mushroomDungeon ? 200.0f : -approach;
 
                         m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
                         m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - approachZ) });

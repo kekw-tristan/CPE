@@ -25,5 +25,12 @@ namespace World
     constexpr float c_bossDungeonBack = 44.0f;
     constexpr float c_bossDungeonApproach = -164.0f;
 
+    // Royal aviary envelope, including the exterior crown approach.
+    constexpr float c_cageDungeonRadius = 520.0f;
+    constexpr float c_cageDungeonHalfWidth = 150.0f;
+    constexpr float c_cageDungeonFront = -276.0f;
+    constexpr float c_cageDungeonBack = 80.0f;
+    constexpr float c_cageDungeonApproach = -316.0f;
+
     constexpr int c_forestWallCount = 4480;
 }

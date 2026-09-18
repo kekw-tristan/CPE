@@ -122,7 +122,12 @@ namespace World
                     && _rPosition.z() - dungeon.center.z() > -216.0f
                     && _rPosition.z() - dungeon.center.z() < c_mushroomDungeonBack)
                     return 0.0f;
-                if (dungeon.bossId != sBossId::ForestSporecap
+                if (dungeon.bossId == sBossId::ForestCrawler
+                    && std::abs(_rPosition.x() - dungeon.center.x()) < c_cageDungeonHalfWidth + 12.0f
+                    && _rPosition.z() - dungeon.center.z() > c_cageDungeonApproach - 12.0f
+                    && _rPosition.z() - dungeon.center.z() < c_cageDungeonBack + 12.0f)
+                    return 0.0f;
+                if (dungeon.bossId != sBossId::ForestSporecap && dungeon.bossId != sBossId::ForestCrawler
                     && std::abs(_rPosition.x() - dungeon.center.x()) < c_bossDungeonHalfWidth + 12.0f
                     && _rPosition.z() - dungeon.center.z() > c_bossDungeonApproach - 12.0f
                     && _rPosition.z() - dungeon.center.z() < c_bossDungeonBack + 12.0f)
@@ -1053,6 +1058,7 @@ namespace World
                     continue;
                 }
                 const bool brute = dungeon.bossId == sBossId::ForestBrute;
+                const bool cage = dungeon.bossId == sBossId::ForestCrawler;
                 const float arenaHeight = GetBossArenaHeight(dungeon.bossId);
                 const size_t assetIndex = static_cast<size_t>(dungeon.bossId);
                 static const char* c_prefabPaths[] =
@@ -1102,13 +1108,15 @@ namespace World
                     // Only the terrain-dependent approach is generated in code. Each dungeon
                     // supplies its own tread model; the authored entrance meets it at local Y=0.
                     constexpr int c_steps = 224;
+                    const float approach = cage ? c_cageDungeonApproach : c_bossDungeonApproach;
+                    const float front = cage ? c_cageDungeonFront : c_bossDungeonFront;
                     const float entryHeight = GetTerrainSurfaceHeight(dungeon.center.x(),
-                        dungeon.center.z() + c_bossDungeonApproach);
-                    const float run = c_bossDungeonFront - c_bossDungeonApproach;
+                        dungeon.center.z() + approach);
+                    const float run = front - approach;
                     for (int step = 0; step < c_steps; ++step)
                     {
                         const float fraction = static_cast<float>(step + 1) / c_steps;
-                        const float z = c_bossDungeonApproach + (static_cast<float>(step) + 0.5f) * run / c_steps;
+                        const float z = approach + (static_cast<float>(step) + 0.5f) * run / c_steps;
                         const float terrain = GetTerrainSurfaceHeight(dungeon.center.x(), dungeon.center.z() + z);
                         const float top = std::max(entryHeight + 0.2f
                             + (dungeon.center.y() - entryHeight - 0.2f) * fraction, terrain + 0.2f);
@@ -1124,6 +1132,40 @@ namespace World
 
                 addSpawn({ dungeon.type, dungeon.center + Math::cVec3f(0.0f, arenaHeight, 0.0f),
                     3.1415926f, true, dungeon.bossId, sEnemyTier::Unique });
+                if (cage)
+                {
+                    // Authored combat pockets in cage_dungeon.py. Keep these off
+                    // thresholds, ramps and the clear center of the crown arena.
+                    static const Math::cVec3f c_guardPositions[] =
+                    {
+                        { -8.0f, 0.0f, -230.0f }, { 8.0f, 0.0f, -222.0f },
+                        { -68.0f, 0.0f, -230.0f }, { -106.0f, 0.0f, -230.0f },
+                        { -69.0f, 0.0f, -180.0f }, { -56.0f, 0.0f, -190.0f },
+                        { -6.0f, 0.0f, -184.0f }, { 62.0f, 0.0f, -230.0f },
+                        { 105.0f, 0.0f, -225.0f }, { 60.0f, 0.0f, -180.0f },
+                        { -100.0f, 0.0f, -140.0f }, { -78.0f, 0.0f, -122.0f },
+                        { -91.0f, 0.0f, -130.0f }, { 70.0f, 0.0f, -142.0f },
+                        { 83.0f, 0.0f, -133.0f }, { 130.0f, 0.0f, -140.0f },
+                        { -16.0f, 0.0f, -141.0f }, { 16.0f, 0.0f, -126.0f },
+                        { -6.0f, 0.0f, -122.0f }, { -115.0f, 8.0f, -57.0f },
+                        { -99.0f, 8.0f, -44.0f }, { -120.0f, 20.0f, -24.0f },
+                        { 60.0f, 8.0f, -63.0f }, { -9.0f, 24.0f, -132.0f },
+                        { 9.0f, 24.0f, -132.0f }, { 6.0f, 24.0f, 65.0f },
+                        { -8.0f, 0.0f, -84.0f }, { 8.0f, 0.0f, -50.0f },
+                        { -10.0f, 0.0f, 6.0f }, { 10.0f, 0.0f, 6.0f }
+                    };
+                    static const sEnemyType::Enum c_guardTypes[] =
+                    {
+                        sEnemyType::ForestBarkguard, sEnemyType::ForestCrawler,
+                        sEnemyType::ForestThornshooter
+                    };
+                    for (size_t i = 0; i < std::size(c_guardPositions); ++i)
+                    {
+                        addSpawn({ c_guardTypes[i % std::size(c_guardTypes)],
+                            dungeon.center + c_guardPositions[i], 3.1415926f });
+                    }
+                    continue;
+                }
                 // Guards stand on the actual floors, off the stair flights and gate thresholds.
                 for (int rank = 0; rank < 3; ++rank)
                 {

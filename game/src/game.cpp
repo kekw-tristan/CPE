@@ -74,14 +74,14 @@ void cGame::OnUpdate(float _deltaTime)
     }
     m_altWasDown = altDown;
 
-    //UpdateFreeCam(_deltaTime);
+    UpdateFreeCam(_deltaTime);
 
     if (!m_inventoryOpen && !augmentSelectionPending)
     {
         UpdatePlayer(_deltaTime);
 
         m_playerController.Update(_deltaTime);
-        UpdateThirdPersonCamera(_deltaTime);
+        //UpdateThirdPersonCamera(_deltaTime);
         UpdatePlayerSpell(_deltaTime);
     }
 

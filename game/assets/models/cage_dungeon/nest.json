@@ -1,0 +1,129 @@
+{
+    "name": "cage_dungeon_nest",
+    "materials": [
+        {
+            "albedo": [0.12, 0.2, 0.2],
+            "roughness": 0.38,
+            "metallic": 0.65,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [0.12, 0.2, 0.2],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.64, 0.43, 0.16],
+            "roughness": 0.38,
+            "metallic": 0.75,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [0.64, 0.43, 0.16],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.33, 0.46, 0.39],
+            "roughness": 0.88,
+            "metallic": 0,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [0.33, 0.46, 0.39],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.66, 0.77, 0.66],
+            "roughness": 0.88,
+            "metallic": 0,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [0.66, 0.77, 0.66],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.35, 0.83, 0.88],
+            "roughness": 0.88,
+            "metallic": 0,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [0.35, 0.83, 0.88],
+            "emissiveStrength": 1
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "Torus",
+            "position": [0, 0.45, 0],
+            "rotation": [0, 0, 0],
+            "scale": [15, 3, 15],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Cube",
+            "position": [0.0, 0.3, 6.0],
+            "rotation": [0, 0.4, 0.12],
+            "scale": [8, 0.55, 0.7],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Cube",
+            "position": [5.048825908847379, 0.3, 3.2418138352088386],
+            "rotation": [0, 1.4, 0.12],
+            "scale": [8, 0.55, 0.7],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Cube",
+            "position": [5.45578456095409, 0.3, -2.4968810192828546],
+            "rotation": [0, 2.4, 0.12],
+            "scale": [8, 0.55, 0.7],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Cube",
+            "position": [0.8467200483592032, 0.3, -5.939954979602673],
+            "rotation": [0, 3.4, 0.12],
+            "scale": [8, 0.55, 0.7],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Cube",
+            "position": [-4.540814971847569, 0.3, -3.921861725181672],
+            "rotation": [0, 4.4, 0.12],
+            "scale": [8, 0.55, 0.7],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Cube",
+            "position": [-5.7535456479788305, 0.3, 1.7019731127793576],
+            "rotation": [0, 5.4, 0.12],
+            "scale": [8, 0.55, 0.7],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 0
+        },
+        {
+            "meshType": "Sphere",
+            "position": [-2, 1.5, 0],
+            "rotation": [0, 0, 0],
+            "scale": [2.2, 3, 2.2],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Sphere",
+            "position": [1, 1.5, 1],
+            "rotation": [0, 0, 0],
+            "scale": [2.2, 3, 2.2],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 3
+        }
+    ]
+}

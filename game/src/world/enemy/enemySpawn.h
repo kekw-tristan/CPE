@@ -38,11 +38,15 @@ namespace World
 
     inline float GetBossArenaHalfExtent(sBossId::Enum _bossId)
     {
+        if (_bossId == sBossId::ForestCrawler)
+            return 18.0f;
         return _bossId >= sBossId::ForestCrawler && _bossId <= sBossId::ForestSporecap ? 36.0f : 12.5f;
     }
 
     inline float GetBossArenaHeight(sBossId::Enum _bossId)
     {
+        if (_bossId == sBossId::ForestCrawler)
+            return 64.0f;
         if (_bossId == sBossId::ForestSporecap)
             return 134.0f;
         return _bossId == sBossId::ForestBrute ? 8.0f : 0.0f;
