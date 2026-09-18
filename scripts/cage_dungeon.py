@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-from mushroom_dungeon import Geometry, read, shape, write_json
+from mushroom_dungeon import Geometry, coplanar_overlaps, read, shape, write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 MODELS = ROOT / "game/assets/models/cage_dungeon"
@@ -84,24 +84,24 @@ ROUTES = [
 def modules():
     palette = read(MODELS / "foundation.json")["materials"]
     parts = {
-        "court_deck": [shape("Cube", (0,-.6,0), (24,1.2,24), 2),
+        "court_deck": [shape("Cube", (0,-.6,0), (24.16,1.2,24.16), 2),
                        shape("Cube", (0,-1.6,0), (23,1,23), 0)],
         "catwalk": [shape("Cube", (0,-.4,0), (8,.8,12), 2),
-                    shape("Cube", (-3.6,-1,0), (.6,1.2,12), 1),
-                    shape("Cube", (3.6,-1,0), (.6,1.2,12), 1)],
+                    shape("Cube", (-3.6,-1,0), (.6,1.2,11.9), 1),
+                    shape("Cube", (3.6,-1,0), (.6,1.2,11.9), 1)],
         "brace": [shape("Cube", (0,0,0), (1,1,.8), 1)],
-        "landing": [shape("Cube", (0,-.45,0), (8,.9,8), 2)],
-        "wall_panel": [shape("Cube", (0,2,0), (12,4,1), 2),
+        "landing": [shape("Cube", (0,-.47,0), (8,.94,8), 2)],
+        "wall_panel": [shape("Cube", (0,1.94,0), (12,4.12,1), 2),
                        shape("Cube", (0,9.6,0), (12,.8,1.3), 1)]
                       + [shape("Cube", (x,6.5,0), (.35,5,.45), 0) for x in (-5,-2.5,0,2.5,5)],
-        "stone_panel": [shape("Cube", (0,4.75,0), (12,9.5,1), 2),
-                        shape("Cube", (0,9.6,0), (12,.8,1.3), 1)],
-        "portal": [shape("Cube", (x,4,0), (1,8,1.4), 1) for x in (-4.5,4.5)]
-                  + [shape("Cube", (0,8.5,0), (10,1,1.4), 1)],
+        "stone_panel": [shape("Cube", (0,4.69,0), (12,9.62,1), 2),
+                        shape("Cube", (0,9.6,0), (11.96,.8,1.3), 1)],
+        "portal": [shape("Cube", (x,3.91,0), (1,8.18,1.4), 1) for x in (-4.5,4.5)]
+                  + [shape("Cube", (0,8.54,0), (10,1.08,1.4), 1)],
         "parapet": [shape("Cube", (0,.7,0), (1,1.4,.45), 0),
                     shape("Cube", (0,1.45,0), (1,.1,.6), 1)],
         "buttress": [shape("Cube", (0,-38,0), (3,80,3), 2),
-                     shape("Cube", (0,2,0), (4,1,4), 1)],
+                     shape("Cube", (0,2,0), (3.9,1,3.9), 1)],
         "vault": [shape("Arch", (0,0,0), (24,20,8), 0)],
         "nest": [shape("Torus", (0,.45,0), (15,3,15), 2)]
                 + [shape("Cube", (math.sin(a)*6,.3,math.cos(a)*6), (8,.55,.7), 0, (0,a+.4,.12))
@@ -140,6 +140,7 @@ class Aviary:
         self.labels = []
         self.walks = []
         self.openings = collections.defaultdict(set)
+        self.bridge_count = 0
 
     def put(self, asset, p, scale=(1,1,1), yaw=0, collision=False, light=False, rotation=None, label=""):
         obj = dict(asset="../models/cage_dungeon/"+asset+".json", position=list(p),
@@ -164,6 +165,9 @@ class Aviary:
                 else: obj["position"][1],obj["position"][2] = 31.55,-14
             if asset == "lantern":
                 obj["generateColliders"] = False
+            if asset == "open_door":
+                obj["position"][0] += -.06 if x > 0 else .06
+                obj["position"][2] += .06
             # North wicket for the exterior balcony: preserve bars below and
             # above the opening, and preserve the uninterrupted royal bands.
             if asset == "bar" and z > 36 and abs(x) < 5 and y == 0:
@@ -204,7 +208,7 @@ class Aviary:
                     span = (length-gap)/2
                     offset = sign*(gap/2+span/2)
                     px,pz = (cx+offset,cz) if yaw==0 else (cx,cz+offset)
-                    self.put(panel,(px,y,pz),(span/12,h/10,1),yaw,True,label=name+" wall")
+                    self.put(panel,(px,y-(.04 if yaw else 0),pz),(span/12,h/10,1),yaw,True,label=name+" wall")
                 if opened:
                     self.put("portal",(cx,y,cz),(1.5,1,1),yaw,True,label=name+" threshold")
             # Deep narrow piers reach the terrain; floors have a visible frame.
@@ -213,6 +217,11 @@ class Aviary:
                     self.put("buttress",(x+dx,y-3,z+dz),collision=False)
 
     def bridge(self, a, b, width=8, rails=True, label="Bridge", end_gap=None):
+        self.bridge_count += 1
+        nominal_width = width
+        # Slightly recessed alternate stringers keep overlapping angled joints
+        # from sharing an exposed side plane. Walking centers stay unchanged.
+        width -= .08*(self.bridge_count%2)
         dx,dy,dz = (b[i]-a[i] for i in range(3))
         run = math.hypot(dx,dz)
         assert run > 0 and abs(dy)/run <= .34, (label,a,b)
@@ -222,11 +231,11 @@ class Aviary:
         # seams; raised surfaces remain within the controller's .5 step limit.
         top = tuple((a[i]+b[i])/2 for i in range(3))
         if abs(dy) < 1e-8:
-            top = (top[0],top[1]-.02*(len(self.objects)%5+1),top[2])
+            top = (top[0],top[1]-.02*(self.bridge_count%5+1),top[2])
         self.put("catwalk",top,
                  (width/8,1,(math.hypot(run,dy)+.12)/12),collision=True,
                  rotation=(pitch,yaw,0),label=label)
-        gap = width/2+1 if end_gap is None else end_gap
+        gap = nominal_width/2+1 if end_gap is None else end_gap
         if rails and run > 2*gap:
             # The rail's long axis is X; the deck's is Z. Convert the complete
             # basis to engine XYZ Euler order so rail tops follow both the slope
@@ -276,7 +285,8 @@ class Aviary:
             r=math.hypot(mx,mz)
             self.put("brace",(mx*(r+5)/r,(a[1]+b[1])/2-1.1,mz*(r+5)/r),
                      (11,1,1),-math.atan2(mz,mx))
-            self.put("landing",a,(.15,1,.15),collision=True,label="Ascent landing")
+            if i > 0:
+                self.put("landing",a,(.15,1,.15),collision=True,label="Ascent landing")
         self.put("landing",points[-1],(.15,1,.15),collision=True)
         self.walks.append(("Lower cage revolution",points))
         for point,top in ((points[6],(33,points[6][1],0)),(points[20],(-33,40.8,-14))):
@@ -320,7 +330,7 @@ class Aviary:
         for a,b in zip(nesting,nesting[1:]): self.bridge(a,b,6,label="Nesting observation gallery")
         for p in nesting[1:-1]:
             self.put("landing",p,(.15,1,.15),collision=True)
-            self.put("bar",(p[0],8,p[2]),(1.4,(p[1]-8)/50,1.4))
+            self.put("bar",(p[0],8,p[2]),(1.4,(p[1]-8-.2)/50,1.4))
         self.walks.append(("Nesting observation loop",[(-108,8,-48),(-108,8,-68)]+nesting+[(-108,8,-68),(-108,8,-48)]))
 
 
@@ -346,7 +356,7 @@ class Aviary:
             a=i*PI/12
             if 10<=i<=14: continue
             p=(19*math.sin(a),64,19*math.cos(a))
-            self.put("parapet",p,(5,1,1),a,True)
+            self.put("parapet",p,(5,1+.04*(i%2),1),a,True)
         for name in ("Keeper common room","Dormitory","Seed store","Feeding kitchen","Infirmary"):
             x,z,y,w,d,*_=ROOMS[name]
             self.put("keeper_furniture",(x-w*.27,y,z+d*.28),(.7,1,.65),collision=True)
@@ -435,6 +445,11 @@ def validate(level):
     assert b"\n" not in PREFAB.read_bytes().replace(b"\r\n",b""),PREFAB
     geo=Geometry(data["objects"],level.labels)
     visual=Geometry(data["objects"],level.labels,decorative=True)
+    # Check exposed, same-facing surfaces, including joints inside reused models.
+    # Buried intersections and opposing faces at ordinary butt joints are safe.
+    overlaps=coplanar_overlaps(data["objects"],geo)
+    assert not overlaps, [(level.labels[a[0]],a,level.labels[b[0]],b,area)
+                          for a,b,area in overlaps[:10]]
     for obj in data["objects"]:
         if obj["generateLights"] or Path(obj["asset"]).stem in {"keeper_furniture","feed_trough","nest","thorn_growth"}:
             x,y,z=obj["position"]
@@ -504,7 +519,7 @@ def validate(level):
     print(f"{len(models)} models; {len(data['objects'])} objects; {len(ROOMS)} new rooms; {loops} loops; {samples} traversal samples")
     for e in errors: print(e)
     assert not errors, f"{len(errors)} route audits failed"
-    print("Schema, references, room separation, route support, capsule clearance, fixtures, guards, boss floor and world envelope passed.")
+    print("Schema, references, exposed surface overlap, room separation, route support, capsule clearance, fixtures, guards, boss floor and world envelope passed.")
 
 
 def draw_map(level):

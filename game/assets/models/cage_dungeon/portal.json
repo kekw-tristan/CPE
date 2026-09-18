@@ -55,25 +55,25 @@
     "shapes": [
         {
             "meshType": "Cube",
-            "position": [-4.5, 4, 0],
+            "position": [-4.5, 3.91, 0],
             "rotation": [0, 0, 0],
-            "scale": [1, 8, 1.4],
+            "scale": [1, 8.18, 1.4],
             "color": [1, 1, 1, 1],
             "materialIndex": 1
         },
         {
             "meshType": "Cube",
-            "position": [4.5, 4, 0],
+            "position": [4.5, 3.91, 0],
             "rotation": [0, 0, 0],
-            "scale": [1, 8, 1.4],
+            "scale": [1, 8.18, 1.4],
             "color": [1, 1, 1, 1],
             "materialIndex": 1
         },
         {
             "meshType": "Cube",
-            "position": [0, 8.5, 0],
+            "position": [0, 8.54, 0],
             "rotation": [0, 0, 0],
-            "scale": [10, 1, 1.4],
+            "scale": [10, 1.08, 1.4],
             "color": [1, 1, 1, 1],
             "materialIndex": 1
         }

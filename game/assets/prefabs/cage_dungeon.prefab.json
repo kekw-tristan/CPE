@@ -924,7 +924,7 @@
         },
         {
             "asset": "../models/cage_dungeon/open_door.json",
-            "position": [-16, 0, -97.5],
+            "position": [-15.94, 0, -97.44],
             "rotation": [0, 1.570796, 0],
             "scale": [1, 1, 1],
             "generateColliders": true,
@@ -932,7 +932,7 @@
         },
         {
             "asset": "../models/cage_dungeon/open_door.json",
-            "position": [16, 0, -97.5],
+            "position": [15.94, 0, -97.44],
             "rotation": [0, 1.570796, 0],
             "scale": [1, 1, 1],
             "generateColliders": true,
@@ -948,7 +948,7 @@
         },
         {
             "asset": "../models/cage_dungeon/open_door.json",
-            "position": [-16, 0, -65.5],
+            "position": [-15.94, 0, -65.44],
             "rotation": [0, 1.570796, 0],
             "scale": [1, 1, 1],
             "generateColliders": true,
@@ -956,7 +956,7 @@
         },
         {
             "asset": "../models/cage_dungeon/open_door.json",
-            "position": [16, 0, -65.5],
+            "position": [15.94, 0, -65.44],
             "rotation": [0, 1.570796, 0],
             "scale": [1, 1, 1],
             "generateColliders": true,
@@ -972,7 +972,7 @@
         },
         {
             "asset": "../models/cage_dungeon/open_door.json",
-            "position": [-16, 0, -31.5],
+            "position": [-15.94, 0, -31.44],
             "rotation": [0, 1.570796, 0],
             "scale": [1, 1, 1],
             "generateColliders": true,
@@ -980,7 +980,7 @@
         },
         {
             "asset": "../models/cage_dungeon/open_door.json",
-            "position": [16, 0, -31.5],
+            "position": [15.94, 0, -31.44],
             "rotation": [0, 1.570796, 0],
             "scale": [1, 1, 1],
             "generateColliders": true,
@@ -2252,7 +2252,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-13.0, 0, -270.0],
+            "position": [-13.0, -0.04, -270.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.0, 1.2, 1],
             "generateColliders": true,
@@ -2260,7 +2260,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-13.0, 0, -258.0],
+            "position": [-13.0, -0.04, -258.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.0, 1.2, 1],
             "generateColliders": true,
@@ -2268,7 +2268,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [13.0, 0, -270.0],
+            "position": [13.0, -0.04, -270.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.0, 1.2, 1],
             "generateColliders": true,
@@ -2276,7 +2276,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [13.0, 0, -258.0],
+            "position": [13.0, -0.04, -258.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.0, 1.2, 1],
             "generateColliders": true,
@@ -2372,7 +2372,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-20.0, 0, -238.5],
+            "position": [-20.0, -0.04, -238.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.6, 1],
             "generateColliders": true,
@@ -2380,7 +2380,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-20.0, 0, -217.5],
+            "position": [-20.0, -0.04, -217.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.6, 1],
             "generateColliders": true,
@@ -2396,7 +2396,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [20.0, 0, -238.5],
+            "position": [20.0, -0.04, -238.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.6, 1],
             "generateColliders": true,
@@ -2404,7 +2404,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [20.0, 0, -217.5],
+            "position": [20.0, -0.04, -217.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.6, 1],
             "generateColliders": true,
@@ -2500,7 +2500,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-80.0, 0, -236.5],
+            "position": [-80.0, -0.04, -236.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.25, 1.0, 1],
             "generateColliders": true,
@@ -2508,7 +2508,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-80.0, 0, -219.5],
+            "position": [-80.0, -0.04, -219.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.25, 1.0, 1],
             "generateColliders": true,
@@ -2524,7 +2524,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-44.0, 0, -236.5],
+            "position": [-44.0, -0.04, -236.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.25, 1.0, 1],
             "generateColliders": true,
@@ -2532,7 +2532,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-44.0, 0, -219.5],
+            "position": [-44.0, -0.04, -219.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.25, 1.0, 1],
             "generateColliders": true,
@@ -2628,7 +2628,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-120.0, 0, -233.0],
+            "position": [-120.0, -0.04, -233.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.8333333333333334, 0.9, 1],
             "generateColliders": true,
@@ -2636,7 +2636,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-120.0, 0, -223.0],
+            "position": [-120.0, -0.04, -223.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.8333333333333334, 0.9, 1],
             "generateColliders": true,
@@ -2644,7 +2644,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-96.0, 0, -236.5],
+            "position": [-96.0, -0.04, -236.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.25, 0.9, 1],
             "generateColliders": true,
@@ -2652,7 +2652,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-96.0, 0, -219.5],
+            "position": [-96.0, -0.04, -219.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.25, 0.9, 1],
             "generateColliders": true,
@@ -2748,7 +2748,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-120.0, 0, -195.0],
+            "position": [-120.0, -0.04, -195.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.8333333333333334, 1.0, 1],
             "generateColliders": true,
@@ -2756,7 +2756,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-120.0, 0, -185.0],
+            "position": [-120.0, -0.04, -185.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.8333333333333334, 1.0, 1],
             "generateColliders": true,
@@ -2764,7 +2764,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-96.0, 0, -198.5],
+            "position": [-96.0, -0.04, -198.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.25, 1.0, 1],
             "generateColliders": true,
@@ -2772,7 +2772,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-96.0, 0, -181.5],
+            "position": [-96.0, -0.04, -181.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.25, 1.0, 1],
             "generateColliders": true,
@@ -2876,7 +2876,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-80.0, 0, -196.5],
+            "position": [-80.0, -0.04, -196.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 2.0, 1],
             "generateColliders": true,
@@ -2884,7 +2884,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-80.0, 0, -171.5],
+            "position": [-80.0, -0.04, -171.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 2.0, 1],
             "generateColliders": true,
@@ -2900,7 +2900,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-44.0, 0, -196.5],
+            "position": [-44.0, -0.04, -196.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 2.0, 1],
             "generateColliders": true,
@@ -2908,7 +2908,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-44.0, 0, -171.5],
+            "position": [-44.0, -0.04, -171.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 2.0, 1],
             "generateColliders": true,
@@ -3004,7 +3004,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-15.0, 0, -195.0],
+            "position": [-15.0, -0.04, -195.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.6666666666666666, 1.2, 1],
             "generateColliders": true,
@@ -3012,7 +3012,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-15.0, 0, -173.0],
+            "position": [-15.0, -0.04, -173.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.6666666666666666, 1.2, 1],
             "generateColliders": true,
@@ -3028,7 +3028,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [15.0, 0, -195.0],
+            "position": [15.0, -0.04, -195.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.6666666666666666, 1.2, 1],
             "generateColliders": true,
@@ -3036,7 +3036,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [15.0, 0, -173.0],
+            "position": [15.0, -0.04, -173.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.6666666666666666, 1.2, 1],
             "generateColliders": true,
@@ -3132,7 +3132,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [42.0, 0, -238.5],
+            "position": [42.0, -0.04, -238.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.0, 1],
             "generateColliders": true,
@@ -3140,7 +3140,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [42.0, 0, -217.5],
+            "position": [42.0, -0.04, -217.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.0, 1],
             "generateColliders": true,
@@ -3156,7 +3156,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [70.0, 0, -238.5],
+            "position": [70.0, -0.04, -238.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.0, 1],
             "generateColliders": true,
@@ -3164,7 +3164,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [70.0, 0, -217.5],
+            "position": [70.0, -0.04, -217.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.0, 1],
             "generateColliders": true,
@@ -3260,7 +3260,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [88.0, 0, -237.0],
+            "position": [88.0, -0.04, -237.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.3333333333333333, 0.9, 1],
             "generateColliders": true,
@@ -3268,7 +3268,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [88.0, 0, -219.0],
+            "position": [88.0, -0.04, -219.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.3333333333333333, 0.9, 1],
             "generateColliders": true,
@@ -3284,7 +3284,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [116.0, 0, -233.5],
+            "position": [116.0, -0.04, -233.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 0.9, 1],
             "generateColliders": true,
@@ -3292,7 +3292,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [116.0, 0, -222.5],
+            "position": [116.0, -0.04, -222.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 0.9, 1],
             "generateColliders": true,
@@ -3380,7 +3380,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [90.0, 0, -197.0],
+            "position": [90.0, -0.04, -197.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.3333333333333333, 0.9, 1],
             "generateColliders": true,
@@ -3388,7 +3388,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [90.0, 0, -179.0],
+            "position": [90.0, -0.04, -179.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.3333333333333333, 0.9, 1],
             "generateColliders": true,
@@ -3404,7 +3404,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [114.0, 0, -193.5],
+            "position": [114.0, -0.04, -193.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 0.9, 1],
             "generateColliders": true,
@@ -3412,7 +3412,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [114.0, 0, -182.5],
+            "position": [114.0, -0.04, -182.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 0.9, 1],
             "generateColliders": true,
@@ -3508,7 +3508,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [42.0, 0, -194.5],
+            "position": [42.0, -0.04, -194.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.0, 1],
             "generateColliders": true,
@@ -3516,7 +3516,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [42.0, 0, -173.5],
+            "position": [42.0, -0.04, -173.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.0, 1],
             "generateColliders": true,
@@ -3532,7 +3532,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [70.0, 0, -194.5],
+            "position": [70.0, -0.04, -194.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.0, 1],
             "generateColliders": true,
@@ -3540,7 +3540,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [70.0, 0, -173.5],
+            "position": [70.0, -0.04, -173.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.0, 1],
             "generateColliders": true,
@@ -3644,7 +3644,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-118.0, 0, -143.0],
+            "position": [-118.0, -0.04, -143.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.8333333333333333, 3.0, 1],
             "generateColliders": true,
@@ -3652,7 +3652,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-118.0, 0, -121.0],
+            "position": [-118.0, -0.04, -121.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.8333333333333333, 3.0, 1],
             "generateColliders": true,
@@ -3660,7 +3660,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-54.0, 0, -146.5],
+            "position": [-54.0, -0.04, -146.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.25, 3.0, 1],
             "generateColliders": true,
@@ -3668,7 +3668,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-54.0, 0, -117.5],
+            "position": [-54.0, -0.04, -117.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.25, 3.0, 1],
             "generateColliders": true,
@@ -3772,7 +3772,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [54.0, 0, -148.5],
+            "position": [54.0, -0.04, -148.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 2.2, 1],
             "generateColliders": true,
@@ -3780,7 +3780,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [54.0, 0, -123.5],
+            "position": [54.0, -0.04, -123.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 2.2, 1],
             "generateColliders": true,
@@ -3796,7 +3796,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [102.0, 0, -148.5],
+            "position": [102.0, -0.04, -148.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 2.2, 1],
             "generateColliders": true,
@@ -3804,7 +3804,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [102.0, 0, -123.5],
+            "position": [102.0, -0.04, -123.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 2.2, 1],
             "generateColliders": true,
@@ -3900,7 +3900,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [120.0, 0, -145.5],
+            "position": [120.0, -0.04, -145.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.4166666666666667, 1.2, 1],
             "generateColliders": true,
@@ -3908,7 +3908,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [120.0, 0, -126.5],
+            "position": [120.0, -0.04, -126.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.4166666666666667, 1.2, 1],
             "generateColliders": true,
@@ -3924,7 +3924,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [144.0, 0, -142.0],
+            "position": [144.0, -0.04, -142.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.0, 1.2, 1],
             "generateColliders": true,
@@ -3932,7 +3932,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [144.0, 0, -130.0],
+            "position": [144.0, -0.04, -130.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.0, 1.2, 1],
             "generateColliders": true,
@@ -4020,7 +4020,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [120.0, 0, -99.5],
+            "position": [120.0, -0.04, -99.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 0.9, 1],
             "generateColliders": true,
@@ -4028,7 +4028,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [120.0, 0, -88.5],
+            "position": [120.0, -0.04, -88.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 0.9, 1],
             "generateColliders": true,
@@ -4036,7 +4036,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [144.0, 0, -99.5],
+            "position": [144.0, -0.04, -99.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 0.9, 1],
             "generateColliders": true,
@@ -4044,7 +4044,7 @@
         },
         {
             "asset": "../models/cage_dungeon/stone_panel.json",
-            "position": [144.0, 0, -88.5],
+            "position": [144.0, -0.04, -88.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.9166666666666666, 0.9, 1],
             "generateColliders": true,
@@ -4132,7 +4132,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-30.0, 0, -147.5],
+            "position": [-30.0, -0.04, -147.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.4166666666666667, 4.4, 1],
             "generateColliders": true,
@@ -4140,7 +4140,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-30.0, 0, -116.5],
+            "position": [-30.0, -0.04, -116.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.4166666666666667, 4.4, 1],
             "generateColliders": true,
@@ -4156,7 +4156,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [30.0, 0, -147.5],
+            "position": [30.0, -0.04, -147.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.4166666666666667, 4.4, 1],
             "generateColliders": true,
@@ -4164,7 +4164,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [30.0, 0, -116.5],
+            "position": [30.0, -0.04, -116.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.4166666666666667, 4.4, 1],
             "generateColliders": true,
@@ -4268,7 +4268,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-142.0, 8, -62.0],
+            "position": [-142.0, 7.96, -62.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [2.3333333333333335, 3.4, 1],
             "generateColliders": true,
@@ -4276,7 +4276,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-142.0, 8, -34.0],
+            "position": [-142.0, 7.96, -34.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [2.3333333333333335, 3.4, 1],
             "generateColliders": true,
@@ -4284,7 +4284,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-74.0, 8, -65.5],
+            "position": [-74.0, 7.96, -65.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.75, 3.4, 1],
             "generateColliders": true,
@@ -4292,7 +4292,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-74.0, 8, -30.5],
+            "position": [-74.0, 7.96, -30.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.75, 3.4, 1],
             "generateColliders": true,
@@ -4388,7 +4388,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-120.0, 8, -6.0],
+            "position": [-120.0, 7.96, -6.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.0, 1.6, 1],
             "generateColliders": true,
@@ -4396,7 +4396,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-120.0, 8, 6.0],
+            "position": [-120.0, 7.96, 6.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.0, 1.6, 1],
             "generateColliders": true,
@@ -4404,7 +4404,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-96.0, 8, -6.0],
+            "position": [-96.0, 7.96, -6.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.0, 1.6, 1],
             "generateColliders": true,
@@ -4412,7 +4412,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-96.0, 8, 6.0],
+            "position": [-96.0, 7.96, 6.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.0, 1.6, 1],
             "generateColliders": true,
@@ -4500,7 +4500,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-68.0, 8, -57.5],
+            "position": [-68.0, 7.96, -57.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.4166666666666667, 1.8, 1],
             "generateColliders": true,
@@ -4508,7 +4508,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-68.0, 8, -38.5],
+            "position": [-68.0, 7.96, -38.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.4166666666666667, 1.8, 1],
             "generateColliders": true,
@@ -4524,7 +4524,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-48.0, 8, -57.5],
+            "position": [-48.0, 7.96, -57.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.4166666666666667, 1.8, 1],
             "generateColliders": true,
@@ -4532,7 +4532,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-48.0, 8, -38.5],
+            "position": [-48.0, 7.96, -38.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.4166666666666667, 1.8, 1],
             "generateColliders": true,
@@ -4636,7 +4636,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [54.0, 8, -76.5],
+            "position": [54.0, 7.96, -76.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.6, 1],
             "generateColliders": true,
@@ -4644,7 +4644,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [54.0, 8, -55.5],
+            "position": [54.0, 7.96, -55.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.5833333333333334, 1.6, 1],
             "generateColliders": true,
@@ -4660,7 +4660,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [78.0, 8, -73.0],
+            "position": [78.0, 7.96, -73.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.1666666666666667, 1.6, 1],
             "generateColliders": true,
@@ -4668,7 +4668,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [78.0, 8, -59.0],
+            "position": [78.0, 7.96, -59.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.1666666666666667, 1.6, 1],
             "generateColliders": true,
@@ -4756,7 +4756,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-16.0, 24, 54.5],
+            "position": [-16.0, 23.96, 54.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.4166666666666667, 1.4, 1],
             "generateColliders": true,
@@ -4764,7 +4764,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [-16.0, 24, 73.5],
+            "position": [-16.0, 23.96, 73.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.4166666666666667, 1.4, 1],
             "generateColliders": true,
@@ -4780,7 +4780,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [16.0, 24, 54.5],
+            "position": [16.0, 23.96, 54.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.4166666666666667, 1.4, 1],
             "generateColliders": true,
@@ -4788,7 +4788,7 @@
         },
         {
             "asset": "../models/cage_dungeon/wall_panel.json",
-            "position": [16.0, 24, 73.5],
+            "position": [16.0, 23.96, 73.5],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [0.4166666666666667, 1.4, 1],
             "generateColliders": true,
@@ -4836,15 +4836,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [0.0, -0.1, -247.0],
+            "position": [0.0, -0.04, -247.0],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [1.25, 1, 0.8433333333333333],
+            "scale": [1.24, 1, 0.8433333333333333],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-32.0, -0.02, -228.0],
+            "position": [-32.0, -0.06, -228.0],
             "rotation": [-0.0, -1.5707963267948966, 0],
             "scale": [1.0, 1, 2.0100000000000002],
             "generateColliders": true,
@@ -4852,7 +4852,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-32.0, -0.02, -232.0],
+            "position": [-32.0, -0.06, -232.0],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [14.0, 1, 1],
             "generateColliders": true,
@@ -4860,7 +4860,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-32.0, -0.02, -224.0],
+            "position": [-32.0, -0.06, -224.0],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [14.0, 1, 1],
             "generateColliders": true,
@@ -4870,13 +4870,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-88.0, -0.08, -228.0],
             "rotation": [-0.0, -1.5707963267948966, 0],
-            "scale": [0.875, 1, 1.3433333333333335],
+            "scale": [0.865, 1, 1.3433333333333335],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-88.0, -0.08, -231.5],
+            "position": [-88.0, -0.08, -231.46],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [7.0, 1, 1],
             "generateColliders": true,
@@ -4884,7 +4884,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-88.0, -0.08, -224.5],
+            "position": [-88.0, -0.08, -224.54],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [7.0, 1, 1],
             "generateColliders": true,
@@ -4892,7 +4892,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-108.0, -0.04, -209.0],
+            "position": [-108.0, -0.1, -209.0],
             "rotation": [-0.0, 0.0, 0],
             "scale": [0.875, 1, 1.51],
             "generateColliders": true,
@@ -4900,7 +4900,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-111.5, -0.04, -209.0],
+            "position": [-111.5, -0.1, -209.0],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [9.0, 1, 1],
             "generateColliders": true,
@@ -4908,7 +4908,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-104.5, -0.04, -209.0],
+            "position": [-104.5, -0.1, -209.0],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [9.0, 1, 1],
             "generateColliders": true,
@@ -4916,15 +4916,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-92.0, -0.1, -190.0],
+            "position": [-92.0, -0.02, -190.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
-            "scale": [0.875, 1, 0.6766666666666666],
+            "scale": [0.865, 1, 0.6766666666666666],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-88.0, -0.02, -187.0],
+            "position": [-88.0, -0.04, -187.0],
             "rotation": [-0.0, 0.0, 0],
             "scale": [0.875, 1, 0.51],
             "generateColliders": true,
@@ -4932,9 +4932,9 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-84.0, -0.04, -184.0],
+            "position": [-84.0, -0.06, -184.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
-            "scale": [0.875, 1, 0.6766666666666666],
+            "scale": [0.865, 1, 0.6766666666666666],
             "generateColliders": true,
             "generateLights": false
         },
@@ -4972,7 +4972,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-62.0, -0.04, -210.0],
+            "position": [-62.0, -0.08, -210.0],
             "rotation": [-0.0, 0.0, 0],
             "scale": [1.0, 1, 1.3433333333333335],
             "generateColliders": true,
@@ -4980,7 +4980,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-66.0, -0.04, -210.0],
+            "position": [-66.0, -0.08, -210.0],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [6.0, 1, 1],
             "generateColliders": true,
@@ -4988,7 +4988,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-58.0, -0.04, -210.0],
+            "position": [-58.0, -0.08, -210.0],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [6.0, 1, 1],
             "generateColliders": true,
@@ -4998,13 +4998,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [0.0, -0.1, -206.5],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [1.0, 1, 1.26],
+            "scale": [0.99, 1, 1.26],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-4.0, -0.1, -206.5],
+            "position": [-3.96, -0.1, -206.5],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [5.0, 1, 1],
             "generateColliders": true,
@@ -5012,7 +5012,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [4.0, -0.1, -206.5],
+            "position": [3.96, -0.1, -206.5],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [5.0, 1, 1],
             "generateColliders": true,
@@ -5020,7 +5020,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-29.5, -0.06, -184.0],
+            "position": [-29.5, -0.02, -184.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
             "scale": [1.0, 1, 2.4266666666666667],
             "generateColliders": true,
@@ -5028,7 +5028,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-29.5, -0.06, -180.0],
+            "position": [-29.5, -0.02, -180.0],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [19.0, 1, 1],
             "generateColliders": true,
@@ -5036,7 +5036,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-29.5, -0.06, -188.0],
+            "position": [-29.5, -0.02, -188.0],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [19.0, 1, 1],
             "generateColliders": true,
@@ -5044,15 +5044,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [31.0, -0.02, -228.0],
+            "position": [31.0, -0.04, -228.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
-            "scale": [1.0, 1, 1.8433333333333335],
+            "scale": [0.99, 1, 1.8433333333333335],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [31.0, -0.02, -224.0],
+            "position": [31.0, -0.04, -224.04],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [12.0, 1, 1],
             "generateColliders": true,
@@ -5060,7 +5060,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [31.0, -0.02, -232.0],
+            "position": [31.0, -0.04, -231.96],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [12.0, 1, 1],
             "generateColliders": true,
@@ -5068,7 +5068,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [79.0, -0.08, -228.0],
+            "position": [79.0, -0.06, -228.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
             "scale": [0.875, 1, 1.51],
             "generateColliders": true,
@@ -5076,7 +5076,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [79.0, -0.08, -224.5],
+            "position": [79.0, -0.06, -224.5],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [9.0, 1, 1],
             "generateColliders": true,
@@ -5084,7 +5084,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [79.0, -0.08, -231.5],
+            "position": [79.0, -0.06, -231.5],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [9.0, 1, 1],
             "generateColliders": true,
@@ -5092,15 +5092,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [102.0, -0.04, -208.0],
+            "position": [102.0, -0.08, -208.0],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [0.875, 1, 1.51],
+            "scale": [0.865, 1, 1.51],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [98.5, -0.04, -208.0],
+            "position": [98.54, -0.08, -208.0],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [9.0, 1, 1],
             "generateColliders": true,
@@ -5108,7 +5108,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [105.5, -0.04, -208.0],
+            "position": [105.46, -0.08, -208.0],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [9.0, 1, 1],
             "generateColliders": true,
@@ -5140,15 +5140,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [28.5, -0.06, -184.0],
+            "position": [28.5, -0.02, -184.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
-            "scale": [1.0, 1, 2.2600000000000002],
+            "scale": [0.99, 1, 2.2600000000000002],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [28.5, -0.06, -180.0],
+            "position": [28.5, -0.02, -180.04],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [17.0, 1, 1],
             "generateColliders": true,
@@ -5156,7 +5156,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [28.5, -0.06, -188.0],
+            "position": [28.5, -0.02, -187.96],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [17.0, 1, 1],
             "generateColliders": true,
@@ -5164,7 +5164,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [85.0, -0.02, -188.0],
+            "position": [85.0, -0.04, -188.0],
             "rotation": [-0.0, -1.5707963267948966, 0],
             "scale": [0.875, 1, 0.8433333333333333],
             "generateColliders": true,
@@ -5172,7 +5172,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [85.0, -0.02, -191.5],
+            "position": [85.0, -0.04, -191.5],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [1.0, 1, 1],
             "generateColliders": true,
@@ -5180,7 +5180,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [85.0, -0.02, -184.5],
+            "position": [85.0, -0.04, -184.5],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [1.0, 1, 1],
             "generateColliders": true,
@@ -5188,15 +5188,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [80.0, -0.08, -186.0],
+            "position": [80.0, -0.06, -186.0],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [0.875, 1, 0.3433333333333333],
+            "scale": [0.865, 1, 0.3433333333333333],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [75.0, -0.1, -184.0],
+            "position": [75.0, -0.08, -184.0],
             "rotation": [-0.0, -1.5707963267948966, 0],
             "scale": [0.875, 1, 0.8433333333333333],
             "generateColliders": true,
@@ -5204,7 +5204,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [75.0, -0.1, -187.5],
+            "position": [75.0, -0.08, -187.5],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [1.0, 1, 1],
             "generateColliders": true,
@@ -5212,7 +5212,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [75.0, -0.1, -180.5],
+            "position": [75.0, -0.08, -180.5],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [1.0, 1, 1],
             "generateColliders": true,
@@ -5252,15 +5252,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-62.0, -0.04, -162.5],
+            "position": [-62.0, -0.1, -162.5],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [1.125, 1, 0.5933333333333334],
+            "scale": [1.115, 1, 0.5933333333333334],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-74.0, -0.06, -159.0],
+            "position": [-74.0, -0.02, -159.0],
             "rotation": [-0.0, -1.5707963267948966, 0],
             "scale": [1.125, 1, 2.0100000000000002],
             "generateColliders": true,
@@ -5268,7 +5268,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-74.0, -0.06, -163.5],
+            "position": [-74.0, -0.02, -163.5],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [13.0, 1, 1],
             "generateColliders": true,
@@ -5276,7 +5276,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-74.0, -0.06, -154.5],
+            "position": [-74.0, -0.02, -154.5],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [13.0, 1, 1],
             "generateColliders": true,
@@ -5284,9 +5284,9 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-86.0, -0.02, -156.5],
+            "position": [-86.0, -0.04, -156.5],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [1.125, 1, 0.4266666666666667],
+            "scale": [1.115, 1, 0.4266666666666667],
             "generateColliders": true,
             "generateLights": false
         },
@@ -5324,7 +5324,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [56.0, -0.02, -166.5],
+            "position": [56.0, -0.06, -166.5],
             "rotation": [-0.0, 0.0, 0],
             "scale": [1.125, 1, 0.5933333333333334],
             "generateColliders": true,
@@ -5332,15 +5332,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [67.0, -0.04, -163.0],
+            "position": [67.0, -0.08, -163.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
-            "scale": [1.125, 1, 1.8433333333333335],
+            "scale": [1.115, 1, 1.8433333333333335],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [67.0, -0.04, -158.5],
+            "position": [67.0, -0.08, -158.54],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [11.0, 1, 1],
             "generateColliders": true,
@@ -5348,7 +5348,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [67.0, -0.04, -167.5],
+            "position": [67.0, -0.08, -167.46],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [11.0, 1, 1],
             "generateColliders": true,
@@ -5396,15 +5396,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-42.0, -0.1, -132.0],
+            "position": [-42.0, -0.02, -132.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
-            "scale": [1.5, 1, 2.0100000000000002],
+            "scale": [1.49, 1, 2.0100000000000002],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-42.0, -0.1, -126.0],
+            "position": [-42.0, -0.02, -126.04],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [10.0, 1, 1],
             "generateColliders": true,
@@ -5412,7 +5412,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-42.0, -0.1, -138.0],
+            "position": [-42.0, -0.02, -137.96],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [10.0, 1, 1],
             "generateColliders": true,
@@ -5420,7 +5420,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [49.0, -0.06, -136.0],
+            "position": [49.0, -0.04, -136.0],
             "rotation": [-0.0, -1.5707963267948966, 0],
             "scale": [1.5, 1, 0.8433333333333333],
             "generateColliders": true,
@@ -5428,15 +5428,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [44.0, -0.08, -134.0],
+            "position": [44.0, -0.06, -134.0],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [1.5, 1, 0.3433333333333333],
+            "scale": [1.49, 1, 0.3433333333333333],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [37.0, -0.1, -132.0],
+            "position": [37.0, -0.08, -132.0],
             "rotation": [-0.0, -1.5707963267948966, 0],
             "scale": [1.5, 1, 1.1766666666666665],
             "generateColliders": true,
@@ -5478,13 +5478,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [111.0, -0.1, -136.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
-            "scale": [1.0, 1, 1.51],
+            "scale": [0.99, 1, 1.51],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [111.0, -0.1, -132.0],
+            "position": [111.0, -0.1, -132.04],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [8.0, 1, 1],
             "generateColliders": true,
@@ -5492,7 +5492,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [111.0, -0.1, -140.0],
+            "position": [111.0, -0.1, -139.96],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [8.0, 1, 1],
             "generateColliders": true,
@@ -5500,7 +5500,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [132.0, -0.06, -114.5],
+            "position": [132.0, -0.02, -114.5],
             "rotation": [-0.0, 0.0, 0],
             "scale": [0.875, 1, 1.5933333333333335],
             "generateColliders": true,
@@ -5508,7 +5508,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [128.5, -0.06, -114.5],
+            "position": [128.5, -0.02, -114.5],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [10.0, 1, 1],
             "generateColliders": true,
@@ -5516,7 +5516,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [135.5, -0.06, -114.5],
+            "position": [135.5, -0.02, -114.5],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [10.0, 1, 1],
             "generateColliders": true,
@@ -5524,15 +5524,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-86.0, -0.02, -108.0],
+            "position": [-86.0, -0.04, -108.0],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [1.25, 1, 0.3433333333333333],
+            "scale": [1.24, 1, 0.3433333333333333],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-97.0, -0.04, -106.0],
+            "position": [-97.0, -0.06, -106.0],
             "rotation": [-0.0, -1.5707963267948966, 0],
             "scale": [1.25, 1, 1.8433333333333335],
             "generateColliders": true,
@@ -5540,7 +5540,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-97.0, -0.04, -111.0],
+            "position": [-97.0, -0.06, -111.0],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [10.0, 1, 1],
             "generateColliders": true,
@@ -5548,7 +5548,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-97.0, -0.04, -101.0],
+            "position": [-97.0, -0.06, -101.0],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [10.0, 1, 1],
             "generateColliders": true,
@@ -5558,13 +5558,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-108.0, 4.0, -91.0],
             "rotation": [-0.260602391747341, 0.0, 0],
-            "scale": [1.25, 1, 2.597362449376671],
+            "scale": [1.24, 1, 2.597362449376671],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-113.0, 4.0, -91.0],
+            "position": [-112.96, 4.0, -91.0],
             "rotation": [-1.5707963267948966, -1.3101939350475558, 1.5707963267948966],
             "scale": [19.04834939252005, 1, 1],
             "generateColliders": true,
@@ -5572,7 +5572,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-103.0, 4.0, -91.0],
+            "position": [-103.04, 4.0, -91.0],
             "rotation": [-1.5707963267948966, -1.3101939350475558, 1.5707963267948966],
             "scale": [19.04834939252005, 1, 1],
             "generateColliders": true,
@@ -5612,7 +5612,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-108.0, 7.96, -16.0],
+            "position": [-108.0, 7.9, -16.0],
             "rotation": [-0.0, 0.0, 0],
             "scale": [1.0, 1, 0.6766666666666666],
             "generateColliders": true,
@@ -5620,15 +5620,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-71.0, 7.94, -48.0],
+            "position": [-71.0, 7.98, -48.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
-            "scale": [1.25, 1, 0.51],
+            "scale": [1.24, 1, 0.51],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [78.0, -0.08, -115.0],
+            "position": [78.0, -0.04, -115.0],
             "rotation": [-0.0, 0.0, 0],
             "scale": [1.25, 1, 0.51],
             "generateColliders": true,
@@ -5636,9 +5636,9 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [72.0, -0.1, -112.0],
+            "position": [72.0, -0.06, -112.0],
             "rotation": [-0.0, -1.5707963267948966, 0],
-            "scale": [1.25, 1, 1.01],
+            "scale": [1.24, 1, 1.01],
             "generateColliders": true,
             "generateLights": false
         },
@@ -5702,13 +5702,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-58.0, 12.0, -18.0],
             "rotation": [-0.21866894587394195, 0.0, 0],
-            "scale": [1.0, 1, 3.0831814857642956],
+            "scale": [0.99, 1, 3.0831814857642956],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-62.0, 12.0, -18.0],
+            "position": [-61.96, 12.0, -18.0],
             "rotation": [-1.5707963267948966, -1.3521273809209546, 1.5707963267948966],
             "scale": [26.87817782917155, 1, 1],
             "generateColliders": true,
@@ -5716,7 +5716,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-54.0, 12.0, -18.0],
+            "position": [-54.04, 12.0, -18.0],
             "rotation": [-1.5707963267948966, -1.3521273809209546, 1.5707963267948966],
             "scale": [26.87817782917155, 1, 1],
             "generateColliders": true,
@@ -5748,15 +5748,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-58.0, 23.92, 56.0],
+            "position": [-58.0, 23.96, 56.0],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [1.0, 1, 1.3433333333333335],
+            "scale": [0.99, 1, 1.3433333333333335],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-62.0, 23.92, 56.0],
+            "position": [-61.96, 23.96, 56.0],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [6.0, 1, 1],
             "generateColliders": true,
@@ -5764,7 +5764,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-54.0, 23.92, 56.0],
+            "position": [-54.04, 23.96, 56.0],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [6.0, 1, 1],
             "generateColliders": true,
@@ -5772,7 +5772,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-37.0, 23.96, 64.0],
+            "position": [-37.0, 23.94, 64.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
             "scale": [1.0, 1, 3.51],
             "generateColliders": true,
@@ -5780,7 +5780,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-37.0, 23.96, 68.0],
+            "position": [-37.0, 23.94, 68.0],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [32.0, 1, 1],
             "generateColliders": true,
@@ -5788,7 +5788,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-37.0, 23.96, 60.0],
+            "position": [-37.0, 23.94, 60.0],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [32.0, 1, 1],
             "generateColliders": true,
@@ -5846,13 +5846,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [66.0, 12.0, -34.0],
             "rotation": [-0.21866894587394195, 0.0, 0],
-            "scale": [1.0, 1, 3.0831814857642956],
+            "scale": [0.99, 1, 3.0831814857642956],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [62.0, 12.0, -34.0],
+            "position": [62.04, 12.0, -34.0],
             "rotation": [-1.5707963267948966, -1.3521273809209546, 1.5707963267948966],
             "scale": [26.87817782917155, 1, 1],
             "generateColliders": true,
@@ -5860,7 +5860,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [70.0, 12.0, -34.0],
+            "position": [69.96, 12.0, -34.0],
             "rotation": [-1.5707963267948966, -1.3521273809209546, 1.5707963267948966],
             "scale": [26.87817782917155, 1, 1],
             "generateColliders": true,
@@ -5892,15 +5892,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [66.0, 23.96, 48.0],
+            "position": [66.0, 23.98, 48.0],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [1.0, 1, 2.6766666666666663],
+            "scale": [0.99, 1, 2.6766666666666663],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [62.0, 23.96, 48.0],
+            "position": [62.04, 23.98, 48.0],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [22.0, 1, 1],
             "generateColliders": true,
@@ -5908,7 +5908,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [70.0, 23.96, 48.0],
+            "position": [69.96, 23.98, 48.0],
             "rotation": [-0.0, -1.5707963267948966, 0.0],
             "scale": [22.0, 1, 1],
             "generateColliders": true,
@@ -5916,7 +5916,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [41.0, 23.9, 64.0],
+            "position": [41.0, 23.96, 64.0],
             "rotation": [-0.0, -1.5707963267948966, 0],
             "scale": [1.0, 1, 4.176666666666667],
             "generateColliders": true,
@@ -5924,7 +5924,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [41.0, 23.9, 60.0],
+            "position": [41.0, 23.96, 60.0],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [40.0, 1, 1],
             "generateColliders": true,
@@ -5932,7 +5932,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [41.0, 23.9, 68.0],
+            "position": [41.0, 23.96, 68.0],
             "rotation": [-3.141592653589793, -6.123233995736766e-17, 3.141592653589793],
             "scale": [40.0, 1, 1],
             "generateColliders": true,
@@ -5988,15 +5988,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [0.0, 23.92, 40.0],
+            "position": [0.0, 23.94, 40.0],
             "rotation": [-0.0, 3.141592653589793, 0],
-            "scale": [1.0, 1, 2.0100000000000002],
+            "scale": [0.99, 1, 2.0100000000000002],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [4.0, 23.92, 40.0],
+            "position": [3.96, 23.94, 40.0],
             "rotation": [0.0, 1.5707963267948966, 0.0],
             "scale": [14.0, 1, 1],
             "generateColliders": true,
@@ -6004,7 +6004,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-4.0, 23.92, 40.0],
+            "position": [-3.96, 23.94, 40.0],
             "rotation": [0.0, 1.5707963267948966, 0.0],
             "scale": [14.0, 1, 1],
             "generateColliders": true,
@@ -6027,24 +6027,16 @@
             "generateLights": false
         },
         {
-            "asset": "../models/cage_dungeon/landing.json",
-            "position": [3.429011037612589e-15, 0.0, -28.0],
-            "rotation": [0, 0, 0],
-            "scale": [0.15, 1, 0.15],
-            "generateColliders": true,
-            "generateLights": false
-        },
-        {
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [10.623466631435294, 3.2727272727272725, -25.6473172210291],
             "rotation": [-0.2900728387355931, 1.1780972450961724, 0],
-            "scale": [0.75, 1, 0.6456789620230503],
+            "scale": [0.74, 1, 0.6456789620230503],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [9.475416334340025, 3.2727272727272725, -22.87567862349524],
+            "position": [9.490723671634628, 3.2727272727272725, -22.91263380479569],
             "rotation": [-0.11792451571808434, -0.375455227381831, 0.3124993579848356],
             "scale": [5.828147544276604, 1, 1],
             "generateColliders": true,
@@ -6052,7 +6044,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [11.771516928530563, 3.2727272727272725, -28.418955818562956],
+            "position": [11.75620959123596, 3.2727272727272725, -28.382000637262507],
             "rotation": [-0.11792451571808434, -0.375455227381831, 0.3124993579848356],
             "scale": [5.828147544276604, 1, 1],
             "generateColliders": true,
@@ -6118,13 +6110,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [22.023850589593806, 7.636363636363637, -16.899494936611667],
             "rotation": [-0.2900728387355929, 0.6544984694978744, 0],
-            "scale": [0.75, 1, 0.6456789620230504],
+            "scale": [0.74, 1, 0.6456789620230504],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [19.643790568720103, 7.636363636363637, -15.073210649585503],
+            "position": [19.67552470233175, 7.636363636363637, -15.097561106745852],
             "rotation": [-0.35679762459877057, -0.8636354495344709, 0.45587923886178194],
             "scale": [5.828147544276605, 1, 1],
             "generateColliders": true,
@@ -6132,7 +6124,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [24.40391061046751, 7.636363636363637, -18.72577922363783],
+            "position": [24.372176476855863, 7.636363636363637, -18.70142876647748],
             "rotation": [-0.35679762459877057, -0.8636354495344709, 0.45587923886178194],
             "scale": [5.828147544276605, 1, 1],
             "generateColliders": true,
@@ -6198,13 +6190,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [27.522961568046956, 12.0, -3.6234666314352877],
             "rotation": [-0.290072838735593, 0.13089969389957484, 0],
-            "scale": [0.75, 1, 0.645678962023051],
+            "scale": [0.74, 1, 0.645678962023051],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [24.548626983925523, 12.0, -3.2318880547751325],
+            "position": [24.588284778380476, 12.0, -3.2371091024639345],
             "rotation": [-1.1394199291844893, -1.2533169758756804, 1.1585661659765962],
             "scale": [5.828147544276612, 1, 1],
             "generateColliders": true,
@@ -6212,7 +6204,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [30.49729615216839, 12.0, -4.015045208095443],
+            "position": [30.457638357713435, 12.0, -4.009824160406641],
             "rotation": [-1.1394199291844893, -1.2533169758756804, 1.1585661659765962],
             "scale": [5.828147544276612, 1, 1],
             "generateColliders": true,
@@ -6278,13 +6270,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [25.6473172210291, 16.363636363636363, 10.623466631435289],
             "rotation": [-0.2900728387355926, -0.39269908169872386, 0],
-            "scale": [0.75, 1, 0.6456789620230508],
+            "scale": [0.74, 1, 0.6456789620230508],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [22.875678623495237, 16.363636363636363, 9.47541633434002],
+            "position": [22.91263380479569, 16.363636363636363, 9.490723671634624],
             "rotation": [-2.5372586705320397, -1.0871014578071183, 2.479167925801525],
             "scale": [5.828147544276609, 1, 1],
             "generateColliders": true,
@@ -6292,7 +6284,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [28.41895581856296, 16.363636363636363, 11.771516928530557],
+            "position": [28.382000637262507, 16.363636363636363, 11.756209591235953],
             "rotation": [-2.5372586705320397, -1.0871014578071183, 2.479167925801525],
             "scale": [5.828147544276609, 1, 1],
             "generateColliders": true,
@@ -6358,13 +6350,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [16.899494936611664, 20.727272727272727, 22.023850589593806],
             "rotation": [-0.29007283873559225, -0.9162978572970232, 0],
-            "scale": [0.75, 1, 0.6456789620230515],
+            "scale": [0.74, 1, 0.6456789620230515],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [15.073210649585501, 20.727272727272727, 19.6437905687201],
+            "position": [15.09756110674585, 20.727272727272727, 19.67552470233175],
             "rotation": [-2.925545631737082, -0.6228215334088087, 2.7817343620729775],
             "scale": [5.828147544276619, 1, 1],
             "generateColliders": true,
@@ -6372,7 +6364,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [18.725779223637826, 20.727272727272727, 24.403910610467513],
+            "position": [18.701428766477477, 20.727272727272727, 24.372176476855863],
             "rotation": [-2.925545631737082, -0.6228215334088087, 2.7817343620729775],
             "scale": [5.828147544276619, 1, 1],
             "generateColliders": true,
@@ -6420,9 +6412,9 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [3.6234666314352926, 23.94, 27.522961568046956],
+            "position": [3.6234666314352926, 23.9, 27.522961568046956],
             "rotation": [-0.0, -1.439896632895322, 0],
-            "scale": [0.75, 1, 0.619122230360241],
+            "scale": [0.74, 1, 0.619122230360241],
             "generateColliders": true,
             "generateLights": false
         },
@@ -6470,7 +6462,7 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-10.62346663143529, 25.2, 25.6473172210291],
             "rotation": [-0.3172510384292149, -1.9634954084936207, 0],
-            "scale": [0.75, 1, 0.6511161295108969],
+            "scale": [0.74, 1, 0.6511161295108969],
             "generateColliders": true,
             "generateLights": false
         },
@@ -6534,13 +6526,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-22.0238505895938, 30.0, 16.899494936611674],
             "rotation": [-0.3172510384292145, -2.487094184091919, 0],
-            "scale": [0.75, 1, 0.6511161295108978],
+            "scale": [0.74, 1, 0.6511161295108978],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-19.643790568720096, 30.0, 15.07321064958551],
+            "position": [-19.675524702331742, 30.0, 15.097561106745859],
             "rotation": [2.755453429798741, 0.8537686062837402, 2.6469553371455956],
             "scale": [5.893393554130774, 1, 1],
             "generateColliders": true,
@@ -6548,7 +6540,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-24.403910610467502, 30.0, 18.725779223637836],
+            "position": [-24.372176476855856, 30.0, 18.701428766477488],
             "rotation": [2.755453429798741, 0.8537686062837402, 2.6469553371455956],
             "scale": [5.893393554130774, 1, 1],
             "generateColliders": true,
@@ -6614,13 +6606,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-27.522961568046956, 34.8, 3.623466631435288],
             "rotation": [-0.3172510384292148, -3.010692959690218, 0],
-            "scale": [0.75, 1, 0.651116129510897],
+            "scale": [0.74, 1, 0.651116129510897],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-24.548626983925523, 34.8, 3.231888054775132],
+            "position": [-24.588284778380476, 34.8, 3.2371091024639345],
             "rotation": [1.9701424727275285, 1.2284462838952463, 1.949173331721152],
             "scale": [5.893393554130765, 1, 1],
             "generateColliders": true,
@@ -6628,7 +6620,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-30.49729615216839, 34.8, 4.015045208095444],
+            "position": [-30.457638357713435, 34.8, 4.009824160406642],
             "rotation": [1.9701424727275285, 1.2284462838952463, 1.949173331721152],
             "scale": [5.893393554130765, 1, 1],
             "generateColliders": true,
@@ -6694,7 +6686,7 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-25.6473172210291, 39.599999999999994, -10.623466631435289],
             "rotation": [-0.3172510384292138, 2.7488935718910694, 0],
-            "scale": [0.75, 1, 0.651116129510899],
+            "scale": [0.74, 1, 0.651116129510899],
             "generateColliders": true,
             "generateLights": false
         },
@@ -6742,13 +6734,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-16.89949493661167, 44.4, -22.023850589593803],
             "rotation": [-0.3172510384292139, 2.2252947962927707, 0],
-            "scale": [0.75, 1, 0.6511161295108969],
+            "scale": [0.74, 1, 0.6511161295108969],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-15.073210649585507, 44.4, -19.6437905687201],
+            "position": [-15.097561106745855, 44.4, -19.67552470233175],
             "rotation": [0.23495131639340486, 0.6167440534716049, 0.39240168393139957],
             "scale": [5.893393554130763, 1, 1],
             "generateColliders": true,
@@ -6756,7 +6748,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-18.725779223637833, 44.4, -24.403910610467506],
+            "position": [-18.701428766477484, 44.4, -24.372176476855856],
             "rotation": [0.23495131639340486, 0.6167440534716049, 0.39240168393139957],
             "scale": [5.893393554130763, 1, 1],
             "generateColliders": true,
@@ -6820,15 +6812,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-3.6234666314353023, 47.94, -27.522961568046952],
+            "position": [-3.6234666314353023, 47.96, -27.522961568046952],
             "rotation": [-0.0, 1.7016960206944716, 0],
-            "scale": [0.75, 1, 0.6191222303602422],
+            "scale": [0.74, 1, 0.6191222303602422],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-3.2318880547751467, 47.94, -24.548626983925523],
+            "position": [-3.237109102463949, 47.96, -24.588284778380473],
             "rotation": [0.0, 0.13089969389957495, 0.0],
             "scale": [5.509466764322906, 1, 1],
             "generateColliders": true,
@@ -6836,7 +6828,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-4.015045208095458, 47.94, -30.49729615216838],
+            "position": [-4.009824160406656, 47.96, -30.45763835771343],
             "rotation": [0.0, 0.13089969389957495, 0.0],
             "scale": [5.509466764322906, 1, 1],
             "generateColliders": true,
@@ -6868,7 +6860,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [30.5, 13.010909090909092, 8.572527594031472e-16],
+            "position": [30.5, 13.030909090909091, 8.572527594031472e-16],
             "rotation": [-0.0, 1.570796326794897, 0],
             "scale": [0.3, 1, 0.4266666666666667],
             "generateColliders": true,
@@ -6876,15 +6868,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-28.62435565298214, 40.699999999999996, -14.000000000000004],
+            "position": [-28.62435565298214, 40.72, -14.000000000000004],
             "rotation": [-0.0, -1.570796326794896, 0],
-            "scale": [0.3, 1, 0.7392740578363098],
+            "scale": [0.29, 1, 0.7392740578363098],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-1.8369701987210292e-16, 47.98, -26.5],
+            "position": [-1.8369701987210292e-16, 47.9, -26.5],
             "rotation": [-0.0, 2.1635426784936574e-15, 0],
             "scale": [0.75, 1, 0.26],
             "generateColliders": true,
@@ -6894,13 +6886,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [3.235238063781514, 48.33333333333333, -24.574072828613353],
             "rotation": [-0.10179753689348735, 1.4398966328953218, 0],
-            "scale": [0.75, 1, 0.556689288042559],
+            "scale": [0.74, 1, 0.556689288042559],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [2.843659487121359, 48.33333333333333, -21.599738244491924],
+            "position": [2.848880534810161, 48.33333333333333, -21.639396038946874],
             "rotation": [-0.013377967097556674, -0.13021817308393774, 0.10266980997315193],
             "scale": [4.760271456510709, 1, 1],
             "generateColliders": true,
@@ -6908,7 +6900,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [3.6268166404416693, 48.33333333333333, -27.548407412734782],
+            "position": [3.6215955927528674, 48.33333333333333, -27.508749618279833],
             "rotation": [-0.013377967097556674, -0.13021817308393774, 0.10266980997315193],
             "scale": [4.760271456510709, 1, 1],
             "generateColliders": true,
@@ -6958,13 +6950,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [15.088834764831844, 49.66666666666667, -19.664152312137325],
             "rotation": [-0.10179753689348732, 0.9162978572970225, 0],
-            "scale": [0.75, 1, 0.5566892880425592],
+            "scale": [0.74, 1, 0.5566892880425592],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [13.26255047780568, 49.66666666666667, -17.284092291263622],
+            "position": [13.28690093496603, 49.66666666666667, -17.31582642487527],
             "rotation": [-0.07781968724443916, -0.6505321225482483, 0.1280535074051393],
             "scale": [4.7602714565107105, 1, 1],
             "generateColliders": true,
@@ -6972,7 +6964,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [16.915119051858007, 49.66666666666667, -22.04421233301103],
+            "position": [16.890768594697658, 49.66666666666667, -22.012478199399382],
             "rotation": [-0.07781968724443916, -0.6505321225482483, 0.1280535074051393],
             "scale": [4.7602714565107105, 1, 1],
             "generateColliders": true,
@@ -7022,13 +7014,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [22.899390375918834, 51.0, -9.48523806378151],
             "rotation": [-0.10179753689348835, 0.39269908169872364, 0],
-            "scale": [0.75, 1, 0.5566892880425595],
+            "scale": [0.74, 1, 0.5566892880425595],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [20.127751778384972, 51.0, -8.337187766686242],
+            "position": [20.164706959685425, 51.0, -8.352495103980846],
             "rotation": [-0.24058493354522933, -1.1657818778398525, 0.26085053320764334],
             "scale": [4.760271456510713, 1, 1],
             "generateColliders": true,
@@ -7036,7 +7028,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [25.671028973452696, 51.0, -10.63328836087678],
+            "position": [25.634073792152243, 51.0, -10.617981023582175],
             "rotation": [-0.24058493354522933, -1.1657818778398525, 0.26085053320764334],
             "scale": [4.760271456510713, 1, 1],
             "generateColliders": true,
@@ -7086,13 +7078,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [24.574072828613353, 52.33333333333333, 3.23523806378151],
             "rotation": [-0.10179753689348743, -0.1308996938995749, 0],
-            "scale": [0.75, 1, 0.5566892880425586],
+            "scale": [0.74, 1, 0.5566892880425586],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [21.599738244491924, 52.33333333333333, 2.843659487121355],
+            "position": [21.639396038946874, 52.33333333333333, 2.848880534810157],
             "rotation": [-2.4842258160305533, -1.4051516097391197, 2.4775479099725186],
             "scale": [4.760271456510703, 1, 1],
             "generateColliders": true,
@@ -7100,7 +7092,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [27.548407412734782, 52.33333333333333, 3.6268166404416653],
+            "position": [27.508749618279833, 52.33333333333333, 3.6215955927528634],
             "rotation": [-2.4842258160305533, -1.4051516097391197, 2.4775479099725186],
             "scale": [4.760271456510703, 1, 1],
             "generateColliders": true,
@@ -7150,13 +7142,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [19.66415231213733, 53.66666666666667, 15.088834764831843],
             "rotation": [-0.10179753689348733, -0.6544984694978735, 0],
-            "scale": [0.75, 1, 0.5566892880425591],
+            "scale": [0.74, 1, 0.5566892880425591],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [17.284092291263622, 53.66666666666667, 13.26255047780568],
+            "position": [17.315826424875272, 53.66666666666667, 13.28690093496603],
             "rotation": [-3.0099227635732864, -0.9095805462066465, 2.9753407311323365],
             "scale": [4.76027145651071, 1, 1],
             "generateColliders": true,
@@ -7164,7 +7156,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [22.044212333011036, 53.66666666666667, 16.915119051858003],
+            "position": [22.012478199399386, 53.66666666666667, 16.890768594697654],
             "rotation": [-3.0099227635732864, -0.9095805462066465, 2.9753407311323365],
             "scale": [4.76027145651071, 1, 1],
             "generateColliders": true,
@@ -7214,13 +7206,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [9.485238063781509, 55.0, 22.899390375918838],
             "rotation": [-0.1017975368934886, -1.1780972450961726, 0],
-            "scale": [0.75, 1, 0.5566892880425581],
+            "scale": [0.74, 1, 0.5566892880425581],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [8.33718776668624, 55.0, 20.127751778384976],
+            "position": [8.352495103980843, 55.0, 20.16470695968543],
             "rotation": [-3.0995243554566754, -0.3905556908428667, 3.031472890810709],
             "scale": [4.760271456510698, 1, 1],
             "generateColliders": true,
@@ -7228,7 +7220,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [10.633288360876778, 55.0, 25.6710289734527],
+            "position": [10.617981023582175, 55.0, 25.634073792152247],
             "rotation": [-3.0995243554566754, -0.3905556908428667, 3.031472890810709],
             "scale": [4.760271456510698, 1, 1],
             "generateColliders": true,
@@ -7278,13 +7270,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-3.2352380637815115, 56.33333333333333, 24.574072828613353],
             "rotation": [-0.10179753689348735, -1.7016960206944713, 0],
-            "scale": [0.75, 1, 0.556689288042559],
+            "scale": [0.74, 1, 0.556689288042559],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-2.8436594871213567, 56.33333333333333, 21.599738244491924],
+            "position": [-2.8488805348101587, 56.33333333333333, 21.639396038946874],
             "rotation": [3.1282146864922367, 0.13021817308393763, 3.0389228436166413],
             "scale": [4.760271456510709, 1, 1],
             "generateColliders": true,
@@ -7292,7 +7284,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-3.626816640441666, 56.33333333333333, 27.548407412734782],
+            "position": [-3.6215955927528642, 56.33333333333333, 27.508749618279833],
             "rotation": [3.1282146864922367, 0.13021817308393763, 3.0389228436166413],
             "scale": [4.760271456510709, 1, 1],
             "generateColliders": true,
@@ -7342,13 +7334,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-15.088834764831839, 57.66666666666667, 19.664152312137333],
             "rotation": [-0.10179753689348747, -2.22529479629277, 0],
-            "scale": [0.75, 1, 0.5566892880425584],
+            "scale": [0.74, 1, 0.5566892880425584],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-13.262550477805679, 57.66666666666667, 17.284092291263626],
+            "position": [-13.286900934966027, 57.66666666666667, 17.315826424875276],
             "rotation": [3.063772966345354, 0.6505321225482472, 3.013539146184654],
             "scale": [4.7602714565107, 1, 1],
             "generateColliders": true,
@@ -7356,7 +7348,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-16.915119051858, 57.66666666666667, 22.04421233301104],
+            "position": [-16.89076859469765, 57.66666666666667, 22.01247819939939],
             "rotation": [3.063772966345354, 0.6505321225482472, 3.013539146184654],
             "scale": [4.7602714565107, 1, 1],
             "generateColliders": true,
@@ -7406,13 +7398,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-22.899390375918834, 59.0, 9.48523806378151],
             "rotation": [-0.10179753689348824, -2.7488935718910694, 0],
-            "scale": [0.75, 1, 0.55668928804256],
+            "scale": [0.74, 1, 0.55668928804256],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-20.127751778384972, 59.0, 8.337187766686242],
+            "position": [-20.164706959685425, 59.0, 8.352495103980846],
             "rotation": [2.9010077200445643, 1.1657818778398525, 2.88074212038215],
             "scale": [4.76027145651072, 1, 1],
             "generateColliders": true,
@@ -7420,7 +7412,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-25.671028973452696, 59.0, 10.63328836087678],
+            "position": [-25.634073792152243, 59.0, 10.617981023582175],
             "rotation": [2.9010077200445643, 1.1657818778398525, 2.88074212038215],
             "scale": [4.76027145651072, 1, 1],
             "generateColliders": true,
@@ -7470,13 +7462,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-24.574072828613353, 60.33333333333333, -3.2352380637815044],
             "rotation": [-0.1017975368934875, 3.010692959690219, 0],
-            "scale": [0.75, 1, 0.5566892880425581],
+            "scale": [0.74, 1, 0.5566892880425581],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-21.59973824449192, 60.33333333333333, -2.843659487121351],
+            "position": [-21.639396038946874, 60.33333333333333, -2.848880534810153],
             "rotation": [0.6573668375592426, 1.4051516097391201, 0.6640447436172773],
             "scale": [4.760271456510698, 1, 1],
             "generateColliders": true,
@@ -7484,7 +7476,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-27.548407412734786, 60.33333333333333, -3.6268166404416577],
+            "position": [-27.508749618279833, 60.33333333333333, -3.621595592752856],
             "rotation": [0.6573668375592426, 1.4051516097391201, 0.6640447436172773],
             "scale": [4.760271456510698, 1, 1],
             "generateColliders": true,
@@ -7534,13 +7526,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-19.664152312137325, 61.66666666666667, -15.088834764831844],
             "rotation": [-0.1017975368934875, 2.487094184091919, 0],
-            "scale": [0.75, 1, 0.5566892880425581],
+            "scale": [0.74, 1, 0.5566892880425581],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-17.284092291263622, 61.66666666666667, -13.26255047780568],
+            "position": [-17.31582642487527, 61.66666666666667, -13.28690093496603],
             "rotation": [0.1316698900165069, 0.9095805462066456, 0.16625192245745665],
             "scale": [4.760271456510698, 1, 1],
             "generateColliders": true,
@@ -7548,7 +7540,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-22.04421233301103, 61.66666666666667, -16.915119051858007],
+            "position": [-22.012478199399382, 61.66666666666667, -16.890768594697658],
             "rotation": [0.1316698900165069, 0.9095805462066456, 0.16625192245745665],
             "scale": [4.760271456510698, 1, 1],
             "generateColliders": true,
@@ -7598,13 +7590,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-9.485238063781523, 63.0, -22.899390375918834],
             "rotation": [-0.1017975368934886, 1.9634954084936211, 0],
-            "scale": [0.75, 1, 0.5566892880425581],
+            "scale": [0.74, 1, 0.5566892880425581],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-8.337187766686252, 63.0, -20.127751778384976],
+            "position": [-8.352495103980857, 63.0, -20.164706959685425],
             "rotation": [0.042068298133118, 0.3905556908428672, 0.11011976277908414],
             "scale": [4.760271456510698, 1, 1],
             "generateColliders": true,
@@ -7612,7 +7604,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-10.633288360876794, 63.0, -25.671028973452692],
+            "position": [-10.617981023582189, 63.0, -25.634073792152243],
             "rotation": [0.042068298133118, 0.3905556908428672, 0.11011976277908414],
             "scale": [4.760271456510698, 1, 1],
             "generateColliders": true,
@@ -7668,9 +7660,9 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-1.5308084989341915e-15, 63.92, -21.5],
+            "position": [-1.5308084989341915e-15, 63.9, -21.5],
             "rotation": [-0.0, 4.3737385683834044e-16, 0],
-            "scale": [1.0, 1, 0.5933333333333334],
+            "scale": [0.99, 1, 0.5933333333333334],
             "generateColliders": true,
             "generateLights": false
         },
@@ -8036,7 +8028,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-45.0, 7.9, -48.0],
+            "position": [-45.0, 7.98, -48.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
             "scale": [1.0, 1, 0.51],
             "generateColliders": true,
@@ -8046,13 +8038,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-42.0, 12.0, -69.0],
             "rotation": [-0.18822150530477075, 3.141592653589793, 0],
-            "scale": [1.0, 1, 3.572926387738658],
+            "scale": [0.99, 1, 3.572926387738658],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-38.0, 12.0, -69.0],
+            "position": [-38.04, 12.0, -69.0],
             "rotation": [1.570796326794896, 1.382574821490126, 1.570796326794896],
             "scale": [32.7551166528639, 1, 1],
             "generateColliders": true,
@@ -8060,7 +8052,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-46.0, 12.0, -69.0],
+            "position": [-45.96, 12.0, -69.0],
             "rotation": [1.570796326794896, 1.382574821490126, 1.570796326794896],
             "scale": [32.7551166528639, 1, 1],
             "generateColliders": true,
@@ -8092,15 +8084,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-42.0, 23.96, -129.0],
+            "position": [-42.0, 23.92, -129.0],
             "rotation": [-0.0, 3.141592653589793, 0],
-            "scale": [1.0, 1, 0.51],
+            "scale": [0.99, 1, 0.51],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-33.0, 23.94, -132.0],
+            "position": [-33.0, 23.9, -132.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
             "scale": [1.0, 1, 1.51],
             "generateColliders": true,
@@ -8108,7 +8100,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-33.0, 23.94, -128.0],
+            "position": [-33.0, 23.9, -128.0],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [8.0, 1, 1],
             "generateColliders": true,
@@ -8116,7 +8108,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-33.0, 23.94, -136.0],
+            "position": [-33.0, 23.9, -136.0],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [8.0, 1, 1],
             "generateColliders": true,
@@ -8126,13 +8118,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [0.0, 23.98, -132.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
-            "scale": [1.0, 1, 4.01],
+            "scale": [0.99, 1, 4.01],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-2.4492935982947064e-16, 23.98, -128.0],
+            "position": [-2.4248006623117594e-16, 23.98, -128.04],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [38.0, 1, 1],
             "generateColliders": true,
@@ -8140,7 +8132,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [2.4492935982947064e-16, 23.98, -136.0],
+            "position": [2.4248006623117594e-16, 23.98, -135.96],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [38.0, 1, 1],
             "generateColliders": true,
@@ -8148,7 +8140,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [34.0, 23.92, -132.0],
+            "position": [34.0, 23.96, -132.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
             "scale": [1.0, 1, 1.6766666666666667],
             "generateColliders": true,
@@ -8156,7 +8148,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [34.0, 23.92, -128.0],
+            "position": [34.0, 23.96, -128.0],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [10.0, 1, 1],
             "generateColliders": true,
@@ -8164,7 +8156,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [34.0, 23.92, -136.0],
+            "position": [34.0, 23.96, -136.0],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [10.0, 1, 1],
             "generateColliders": true,
@@ -8172,9 +8164,9 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [44.0, 23.96, -129.0],
+            "position": [44.0, 23.94, -129.0],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [1.0, 1, 0.51],
+            "scale": [0.99, 1, 0.51],
             "generateColliders": true,
             "generateLights": false
         },
@@ -8206,13 +8198,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [44.0, 12.0, -69.0],
             "rotation": [0.18822150530477075, 0.0, 0],
-            "scale": [1.0, 1, 3.572926387738658],
+            "scale": [0.99, 1, 3.572926387738658],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [40.0, 12.0, -69.0],
+            "position": [40.04, 12.0, -69.0],
             "rotation": [1.5707963267948966, -1.382574821490126, -1.5707963267948966],
             "scale": [32.7551166528639, 1, 1],
             "generateColliders": true,
@@ -8220,7 +8212,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [48.0, 12.0, -69.0],
+            "position": [47.96, 12.0, -69.0],
             "rotation": [1.5707963267948966, -1.382574821490126, -1.5707963267948966],
             "scale": [32.7551166528639, 1, 1],
             "generateColliders": true,
@@ -8228,7 +8220,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [40.0, 7.92, -48.0],
+            "position": [40.0, 7.98, -48.0],
             "rotation": [-0.0, -1.5707963267948966, 0],
             "scale": [1.0, 1, 0.6766666666666666],
             "generateColliders": true,
@@ -8236,15 +8228,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [36.0, 7.9, -62.0],
+            "position": [36.0, 7.96, -62.0],
             "rotation": [-0.0, 3.141592653589793, 0],
-            "scale": [1.0, 1, 2.3433333333333333],
+            "scale": [0.99, 1, 2.3433333333333333],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [40.0, 7.9, -62.0],
+            "position": [39.96, 7.96, -62.0],
             "rotation": [0.0, 1.5707963267948966, 0.0],
             "scale": [18.0, 1, 1],
             "generateColliders": true,
@@ -8252,7 +8244,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [32.0, 7.9, -62.0],
+            "position": [32.04, 7.96, -62.0],
             "rotation": [0.0, 1.5707963267948966, 0.0],
             "scale": [18.0, 1, 1],
             "generateColliders": true,
@@ -8284,15 +8276,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [50.0, 7.98, -71.0],
+            "position": [50.0, 7.92, -71.0],
             "rotation": [-0.0, 0.0, 0],
-            "scale": [1.0, 1, 0.8433333333333333],
+            "scale": [0.99, 1, 0.8433333333333333],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [52.0, 7.96, -66.0],
+            "position": [52.0, 7.9, -66.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
             "scale": [1.0, 1, 0.3433333333333333],
             "generateColliders": true,
@@ -8526,13 +8518,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-132.0, 14.0, -49.0],
             "rotation": [-0.30587887140485215, 0.0, 0],
-            "scale": [0.75, 1, 3.3308098075285457],
+            "scale": [0.74, 1, 3.3308098075285457],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-135.0, 14.0, -49.0],
+            "position": [-134.96, 14.0, -49.0],
             "rotation": [-1.5707963267948966, -1.2649174553900444, 1.5707963267948966],
             "scale": [31.84971769034255, 1, 1],
             "generateColliders": true,
@@ -8540,7 +8532,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-129.0, 14.0, -49.0],
+            "position": [-129.04, 14.0, -49.0],
             "rotation": [-1.5707963267948966, -1.2649174553900444, 1.5707963267948966],
             "scale": [31.84971769034255, 1, 1],
             "generateColliders": true,
@@ -8548,7 +8540,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-132.0, 19.92, -27.0],
+            "position": [-132.0, 19.96, -27.0],
             "rotation": [-0.0, 0.0, 0],
             "scale": [0.75, 1, 0.51],
             "generateColliders": true,
@@ -8556,15 +8548,15 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-108.0, 19.9, -24.0],
+            "position": [-108.0, 19.94, -24.0],
             "rotation": [-0.0, 1.5707963267948966, 0],
-            "scale": [0.75, 1, 4.01],
+            "scale": [0.74, 1, 4.01],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-108.0, 19.9, -21.0],
+            "position": [-108.0, 19.94, -21.04],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [40.0, 1, 1],
             "generateColliders": true,
@@ -8572,7 +8564,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-108.0, 19.9, -27.0],
+            "position": [-108.0, 19.94, -26.96],
             "rotation": [-0.0, -6.123233995736766e-17, 0.0],
             "scale": [40.0, 1, 1],
             "generateColliders": true,
@@ -8580,7 +8572,7 @@
         },
         {
             "asset": "../models/cage_dungeon/catwalk.json",
-            "position": [-84.0, 19.94, -27.0],
+            "position": [-84.0, 19.92, -27.0],
             "rotation": [-0.0, 3.141592653589793, 0],
             "scale": [0.75, 1, 0.51],
             "generateColliders": true,
@@ -8590,13 +8582,13 @@
             "asset": "../models/cage_dungeon/catwalk.json",
             "position": [-84.0, 14.0, -49.0],
             "rotation": [0.30587887140485215, 3.141592653589793, 0],
-            "scale": [0.75, 1, 3.3308098075285457],
+            "scale": [0.74, 1, 3.3308098075285457],
             "generateColliders": true,
             "generateLights": false
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-81.0, 14.0, -49.0],
+            "position": [-81.04, 14.0, -49.0],
             "rotation": [-1.5707963267948961, 1.2649174553900444, -1.5707963267948963],
             "scale": [31.84971769034255, 1, 1],
             "generateColliders": true,
@@ -8604,7 +8596,7 @@
         },
         {
             "asset": "../models/cage_dungeon/parapet.json",
-            "position": [-87.0, 14.0, -49.0],
+            "position": [-86.96, 14.0, -49.0],
             "rotation": [-1.5707963267948961, 1.2649174553900444, -1.5707963267948963],
             "scale": [31.84971769034255, 1, 1],
             "generateColliders": true,
@@ -8622,7 +8614,7 @@
             "asset": "../models/cage_dungeon/bar.json",
             "position": [-132, 8, -30],
             "rotation": [0, 0, 0],
-            "scale": [1.4, 0.24, 1.4],
+            "scale": [1.4, 0.23600000000000002, 1.4],
             "generateColliders": false,
             "generateLights": false
         },
@@ -8638,7 +8630,7 @@
             "asset": "../models/cage_dungeon/bar.json",
             "position": [-132, 8, -24],
             "rotation": [0, 0, 0],
-            "scale": [1.4, 0.24, 1.4],
+            "scale": [1.4, 0.23600000000000002, 1.4],
             "generateColliders": false,
             "generateLights": false
         },
@@ -8654,7 +8646,7 @@
             "asset": "../models/cage_dungeon/bar.json",
             "position": [-84, 8, -24],
             "rotation": [0, 0, 0],
-            "scale": [1.4, 0.24, 1.4],
+            "scale": [1.4, 0.23600000000000002, 1.4],
             "generateColliders": false,
             "generateLights": false
         },
@@ -8670,7 +8662,7 @@
             "asset": "../models/cage_dungeon/bar.json",
             "position": [-84, 8, -30],
             "rotation": [0, 0, 0],
-            "scale": [1.4, 0.24, 1.4],
+            "scale": [1.4, 0.23600000000000002, 1.4],
             "generateColliders": false,
             "generateLights": false
         },
@@ -8998,7 +8990,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [0.0, 64, 19.0],
             "rotation": [0, 0.0, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.0, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9006,7 +8998,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [4.917561856947894, 64, 18.352590699492296],
             "rotation": [0, 0.2617993877991494, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.04, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9014,7 +9006,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [9.499999999999998, 64, 16.454482671904337],
             "rotation": [0, 0.5235987755982988, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.0, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9022,7 +9014,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [13.435028842544403, 64, 13.435028842544403],
             "rotation": [0, 0.7853981633974483, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.04, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9030,7 +9022,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [16.454482671904334, 64, 9.500000000000002],
             "rotation": [0, 1.0471975511965976, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.0, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9038,7 +9030,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [18.352590699492296, 64, 4.917561856947894],
             "rotation": [0, 1.3089969389957472, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.04, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9046,7 +9038,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [19.0, 64, 1.1634144591899855e-15],
             "rotation": [0, 1.5707963267948966, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.0, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9054,7 +9046,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [18.352590699492296, 64, -4.917561856947892],
             "rotation": [0, 1.832595714594046, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.04, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9062,7 +9054,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [16.454482671904337, 64, -9.499999999999996],
             "rotation": [0, 2.0943951023931953, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.0, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9070,7 +9062,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [13.435028842544403, 64, -13.435028842544401],
             "rotation": [0, 2.356194490192345, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.04, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9078,7 +9070,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [-13.435028842544396, 64, -13.43502884254441],
             "rotation": [0, 3.926990816987241, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.04, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9086,7 +9078,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [-16.45448267190433, 64, -9.500000000000009],
             "rotation": [0, 4.1887902047863905, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.0, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9094,7 +9086,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [-18.352590699492296, 64, -4.917561856947892],
             "rotation": [0, 4.4505895925855405, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.04, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9102,7 +9094,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [-19.0, 64, -3.4902433775699565e-15],
             "rotation": [0, 4.71238898038469, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.0, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9110,7 +9102,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [-18.3525906994923, 64, 4.917561856947886],
             "rotation": [0, 4.974188368183839, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.04, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9118,7 +9110,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [-16.454482671904334, 64, 9.500000000000002],
             "rotation": [0, 5.235987755982989, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.0, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9126,7 +9118,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [-13.435028842544407, 64, 13.4350288425444],
             "rotation": [0, 5.497787143782138, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.04, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9134,7 +9126,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [-9.500000000000009, 64, 16.45448267190433],
             "rotation": [0, 5.759586531581287, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.0, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9142,7 +9134,7 @@
             "asset": "../models/cage_dungeon/parapet.json",
             "position": [-4.91756185694791, 64, 18.352590699492293],
             "rotation": [0, 6.021385919380436, 0],
-            "scale": [5, 1, 1],
+            "scale": [5, 1.04, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -9444,7 +9436,7 @@
         },
         {
             "asset": "../models/cage_dungeon/lantern.json",
-            "position": [-104, -0.04, -109],
+            "position": [-104, -0.06, -109],
             "rotation": [0, 0, 0],
             "scale": [0.65, 0.65, 0.65],
             "generateColliders": false,
@@ -9484,7 +9476,7 @@
         },
         {
             "asset": "../models/cage_dungeon/lantern.json",
-            "position": [-52, 23.96, 62],
+            "position": [-52, 23.940000000000005, 62],
             "rotation": [0, 0, 0],
             "scale": [0.65, 0.65, 0.65],
             "generateColliders": false,
@@ -9500,7 +9492,7 @@
         },
         {
             "asset": "../models/cage_dungeon/lantern.json",
-            "position": [61, 23.899999999999995, 62],
+            "position": [61, 23.96, 62],
             "rotation": [0, 0, 0],
             "scale": [0.65, 0.65, 0.65],
             "generateColliders": false,
@@ -9548,7 +9540,7 @@
         },
         {
             "asset": "../models/cage_dungeon/lantern.json",
-            "position": [23, 23.980000000000004, -129],
+            "position": [23, 23.98, -129],
             "rotation": [0, 0, 0],
             "scale": [0.65, 0.65, 0.65],
             "generateColliders": false,

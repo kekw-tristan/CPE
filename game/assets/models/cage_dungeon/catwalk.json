@@ -65,7 +65,7 @@
             "meshType": "Cube",
             "position": [-3.6, -1, 0],
             "rotation": [0, 0, 0],
-            "scale": [0.6, 1.2, 12],
+            "scale": [0.6, 1.2, 11.9],
             "color": [1, 1, 1, 1],
             "materialIndex": 1
         },
@@ -73,7 +73,7 @@
             "meshType": "Cube",
             "position": [3.6, -1, 0],
             "rotation": [0, 0, 0],
-            "scale": [0.6, 1.2, 12],
+            "scale": [0.6, 1.2, 11.9],
             "color": [1, 1, 1, 1],
             "materialIndex": 1
         }

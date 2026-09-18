@@ -37,9 +37,11 @@ light instances mark selected decisions, overlooks and encounters. Ornamental
 growth, nests, vaults, hangers and lanterns have no mesh collision. Floors, ramps,
 doors, wall panels, rails and usable perches do. The finished prefab uses 1,207
 instances and approximately 4,574 shape parts, with small shared modules rather
-than a single district mesh. Sixteen original model files remain unchanged.
+than a single district mesh. The original cage silhouette is retained; small
+rebates at joints separate touching ring segments, ribs, gate frames and lantern
+bars so they do not render on the same plane.
 
-Measured original model bounds, before prefab transforms (X / Y / Z):
+Measured original model bounds, before prefab transforms and joint corrections (X / Y / Z):
 
 | Asset | Approximate local bounds |
 | --- | --- |
@@ -81,7 +83,8 @@ the game asset schema. The map is regenerated alongside the export.
 
 Validation checks actual exported geometry for floor support, a 0.4-unit capsule
 footprint, 2.4-unit head clearance, the controller's 0.5-unit step limit, room
-separation, optional-room entries, both perches, all ascent segments, light/prop
+separation, exposed coplanar faces within and between instances, optional-room
+entries, both perches, all ascent segments, light/prop
 support, guard placement, arena clearance, world reservations and the five-chunk
 streaming envelope. Schema checks cover every cage model and prefab reference.
 Static sampling is not a controller simulation or playtest. Camera occlusion,

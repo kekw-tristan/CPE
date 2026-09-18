@@ -1,24 +1,397 @@
 {
     "name": "cage_dungeon_dome_rib",
     "materials": [
-        {"albedo":[0.12,0.2,0.2],"roughness":0.38,"metallic":0.65,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.12,0.2,0.2],"emissiveStrength":0},
-        {"albedo":[0.64,0.43,0.16],"roughness":0.38,"metallic":0.75,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.64,0.43,0.16],"emissiveStrength":0},
-        {"albedo":[0.33,0.46,0.39],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.33,0.46,0.39],"emissiveStrength":0},
-        {"albedo":[0.66,0.77,0.66],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.66,0.77,0.66],"emissiveStrength":0},
-        {"albedo":[0.35,0.83,0.88],"roughness":0.88,"metallic":0,"ambientStrength":1.2,"lightWrap":0.22,"shapeContrast":1.1,"emissiveColor":[0.35,0.83,0.88],"emissiveStrength":1}
+        {
+            "albedo": [
+                0.12,
+                0.2,
+                0.2
+            ],
+            "roughness": 0.38,
+            "metallic": 0.65,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [
+                0.12,
+                0.2,
+                0.2
+            ],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [
+                0.64,
+                0.43,
+                0.16
+            ],
+            "roughness": 0.38,
+            "metallic": 0.75,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [
+                0.64,
+                0.43,
+                0.16
+            ],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [
+                0.33,
+                0.46,
+                0.39
+            ],
+            "roughness": 0.88,
+            "metallic": 0,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [
+                0.33,
+                0.46,
+                0.39
+            ],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [
+                0.66,
+                0.77,
+                0.66
+            ],
+            "roughness": 0.88,
+            "metallic": 0,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [
+                0.66,
+                0.77,
+                0.66
+            ],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [
+                0.35,
+                0.83,
+                0.88
+            ],
+            "roughness": 0.88,
+            "metallic": 0,
+            "ambientStrength": 1.2,
+            "lightWrap": 0.22,
+            "shapeContrast": 1.1,
+            "emissiveColor": [
+                0.35,
+                0.83,
+                0.88
+            ],
+            "emissiveStrength": 1
+        }
     ],
     "shapes": [
-        {"meshType":"Cube","position":[37.8374523661024,51.95789288330077,0],"rotation":[0.082831759210514,-1.5707963267948966,0],"scale":[1,3.9292575765737325,1],"color":[1,1,1,1],"materialIndex":1},
-        {"meshType":"Cube","position":[37.19004306559469,55.840178559838584,0],"rotation":[0.24681844067393924,-1.5707963267948966,0],"scale":[1,3.969069643334861,1],"color":[1,1,1,1],"materialIndex":1},
-        {"meshType":"Cube","position":[35.906301817206746,59.622537162014154,0],"rotation":[0.4060772922956449,-1.5707963267948966,0],"scale":[1,4.044871089845098,1],"color":[1,1,1,1],"materialIndex":1},
-        {"meshType":"Cube","position":[34.00819378961879,63.24025148547635,0],"rotation":[0.5583482183115421,-1.5707963267948966,0],"scale":[1,4.149707464603414,1],"color":[1,1,1,1],"materialIndex":1},
-        {"meshType":"Cube","position":[31.528196137437803,66.63142143513082,0],"rotation":[0.7023768288512082,-1.5707963267948966,0],"scale":[1,4.27460384141797,1],"color":[1,1,1,1],"materialIndex":1},
-        {"meshType":"Cube","position":[28.50874230807787,69.73802315292903,0],"rotation":[0.8378584740320323,-1.5707963267948966,0],"scale":[1,4.409736572627208,1],"color":[1,1,1,1],"materialIndex":1},
-        {"meshType":"Cube","position":[25.001495993710094,72.50690182216674,0],"rotation":[0.9652231724494573,-1.5707963267948966,0],"scale":[1,4.545405728822323,1],"color":[1,1,1,1],"materialIndex":1},
-        {"meshType":"Cube","position":[21.066467151165696,74.8906811611351,0],"rotation":[1.0853841248889655,-1.5707963267948966,0],"scale":[1,4.672713545522728,1],"color":[1,1,1,1],"materialIndex":1},
-        {"meshType":"Cube","position":[16.770985214936708,76.84857404443588,0],"rotation":[1.1995259813540196,-1.5707963267948966,0],"scale":[1,4.783975108400072,1],"color":[1,1,1,1],"materialIndex":1},
-        {"meshType":"Cube","position":[12.188547071884601,78.34708038200532,0],"rotation":[1.3089586747320827,-1.5707963267948966,0],"scale":[1,4.8729362550840065,1],"color":[1,1,1,1],"materialIndex":1},
-        {"meshType":"Cube","position":[7.397559509128877,79.36056031494317,0],"rotation":[1.4150323315239506,-1.5707963267948966,0],"scale":[1,4.934873457945446,1],"color":[1,1,1,1],"materialIndex":1},
-        {"meshType":"Cube","position":[2.479997652180984,79.87167292060715,0],"rotation":[1.519097596436644,-1.5707963267948966,0],"scale":[1,4.966631129499624,1],"color":[1,1,1,1],"materialIndex":1}
+        {
+            "meshType": "Cube",
+            "position": [
+                37.8374523661024,
+                51.95789288330077,
+                0
+            ],
+            "rotation": [
+                0.082831759210514,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.0,
+                3.9292575765737325,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                37.19004306559469,
+                55.840178559838584,
+                0
+            ],
+            "rotation": [
+                0.24681844067393924,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.08,
+                3.969069643334861,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                35.906301817206746,
+                59.622537162014154,
+                0
+            ],
+            "rotation": [
+                0.4060772922956449,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.0,
+                4.044871089845098,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                34.00819378961879,
+                63.24025148547635,
+                0
+            ],
+            "rotation": [
+                0.5583482183115421,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.08,
+                4.149707464603414,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                31.528196137437803,
+                66.63142143513082,
+                0
+            ],
+            "rotation": [
+                0.7023768288512082,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.0,
+                4.27460384141797,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                28.50874230807787,
+                69.73802315292903,
+                0
+            ],
+            "rotation": [
+                0.8378584740320323,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.08,
+                4.409736572627208,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                25.001495993710094,
+                72.50690182216674,
+                0
+            ],
+            "rotation": [
+                0.9652231724494573,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.0,
+                4.545405728822323,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                21.066467151165696,
+                74.8906811611351,
+                0
+            ],
+            "rotation": [
+                1.0853841248889655,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.08,
+                4.672713545522728,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                16.770985214936708,
+                76.84857404443588,
+                0
+            ],
+            "rotation": [
+                1.1995259813540196,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.0,
+                4.783975108400072,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                12.188547071884601,
+                78.34708038200532,
+                0
+            ],
+            "rotation": [
+                1.3089586747320827,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.08,
+                4.8729362550840065,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                7.397559509128877,
+                79.36056031494317,
+                0
+            ],
+            "rotation": [
+                1.4150323315239506,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.0,
+                4.934873457945446,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Cube",
+            "position": [
+                2.479997652180984,
+                79.87167292060715,
+                0
+            ],
+            "rotation": [
+                1.519097596436644,
+                -1.5707963267948966,
+                0
+            ],
+            "scale": [
+                1.08,
+                4.866631129499624,
+                1
+            ],
+            "color": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "materialIndex": 1
+        }
     ]
 }

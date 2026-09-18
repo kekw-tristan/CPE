@@ -73,7 +73,7 @@
             "meshType": "Cube",
             "position": [0.85, 2, 1.472243],
             "rotation": [0, 0.523599, 0],
-            "scale": [0.991027, 3.8, 0.3],
+            "scale": [0.991027, 3.88, 0.3],
             "color": [1, 1, 1, 1],
             "materialIndex": 1
         },
@@ -89,7 +89,7 @@
             "meshType": "Cube",
             "position": [1.7, 2, 0],
             "rotation": [0, 1.570796, 0],
-            "scale": [0.991027, 3.8, 0.3],
+            "scale": [0.991027, 3.88, 0.3],
             "color": [1, 1, 1, 1],
             "materialIndex": 1
         },
@@ -105,7 +105,7 @@
             "meshType": "Cube",
             "position": [0.85, 2, -1.472243],
             "rotation": [0, 2.617994, 0],
-            "scale": [0.991027, 3.8, 0.3],
+            "scale": [0.991027, 3.88, 0.3],
             "color": [1, 1, 1, 1],
             "materialIndex": 1
         },
@@ -121,7 +121,7 @@
             "meshType": "Cube",
             "position": [-0.85, 2, -1.472243],
             "rotation": [0, 3.665191, 0],
-            "scale": [0.991027, 3.8, 0.3],
+            "scale": [0.991027, 3.88, 0.3],
             "color": [1, 1, 1, 1],
             "materialIndex": 1
         },
@@ -137,7 +137,7 @@
             "meshType": "Cube",
             "position": [-1.7, 2, 0],
             "rotation": [0, 4.712389, 0],
-            "scale": [0.991027, 3.8, 0.3],
+            "scale": [0.991027, 3.88, 0.3],
             "color": [1, 1, 1, 1],
             "materialIndex": 1
         },
@@ -153,7 +153,7 @@
             "meshType": "Cube",
             "position": [-0.85, 2, 1.472243],
             "rotation": [0, 5.759587, 0],
-            "scale": [0.991027, 3.8, 0.3],
+            "scale": [0.991027, 3.88, 0.3],
             "color": [1, 1, 1, 1],
             "materialIndex": 1
         }

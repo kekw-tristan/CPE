@@ -97,7 +97,7 @@
             "meshType": "Cylinder",
             "position": [
                 0,
-                25,
+                24.7,
                 0
             ],
             "rotation": [
@@ -107,7 +107,7 @@
             ],
             "scale": [
                 0.9,
-                50,
+                50.6,
                 0.9
             ],
             "color": [
