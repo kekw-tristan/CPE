@@ -1,0 +1,2606 @@
+{
+    "assetType": "Prefab",
+    "name": "Herzholz - Der hohle Weltenstamm",
+    "objects": [
+        {
+            "asset": "../models/tree_dungeon/foundation.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/walkway.json",
+            "position": [
+                0,
+                0,
+                -68
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/arena_floor.json",
+            "position": [
+                0,
+                8,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/arena_rim.json",
+            "position": [
+                0,
+                8,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/arena_plinth.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/staircase.json",
+            "position": [
+                0,
+                0,
+                -64
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                0,
+                0,
+                40
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                6.257379,
+                0,
+                39.507534
+            ],
+            "rotation": [
+                0,
+                0.15708,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                12.36068,
+                0,
+                38.042261
+            ],
+            "rotation": [
+                0,
+                0.314159,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                18.15962,
+                0,
+                35.640261
+            ],
+            "rotation": [
+                0,
+                0.471239,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                23.51141,
+                0,
+                32.36068
+            ],
+            "rotation": [
+                0,
+                0.628319,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                28.284271,
+                0,
+                28.284271
+            ],
+            "rotation": [
+                0,
+                0.785398,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                32.36068,
+                0,
+                23.51141
+            ],
+            "rotation": [
+                0,
+                0.942478,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                35.640261,
+                0,
+                18.15962
+            ],
+            "rotation": [
+                0,
+                1.099557,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                38.042261,
+                0,
+                12.36068
+            ],
+            "rotation": [
+                0,
+                1.256637,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                39.507534,
+                0,
+                6.257379
+            ],
+            "rotation": [
+                0,
+                1.413717,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                40,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                1.570796,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                39.507534,
+                0,
+                -6.257379
+            ],
+            "rotation": [
+                0,
+                1.727876,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                38.042261,
+                0,
+                -12.36068
+            ],
+            "rotation": [
+                0,
+                1.884956,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                35.640261,
+                0,
+                -18.15962
+            ],
+            "rotation": [
+                0,
+                2.042035,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                32.36068,
+                0,
+                -23.51141
+            ],
+            "rotation": [
+                0,
+                2.199115,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                28.284271,
+                0,
+                -28.284271
+            ],
+            "rotation": [
+                0,
+                2.356194,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                23.51141,
+                0,
+                -32.36068
+            ],
+            "rotation": [
+                0,
+                2.513274,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                18.15962,
+                0,
+                -35.640261
+            ],
+            "rotation": [
+                0,
+                2.670354,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                12.36068,
+                34,
+                -38.042261
+            ],
+            "rotation": [
+                0,
+                2.827433,
+                0
+            ],
+            "scale": [
+                1,
+                0.5,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                6.257379,
+                34,
+                -39.507534
+            ],
+            "rotation": [
+                0,
+                2.984513,
+                0
+            ],
+            "scale": [
+                1,
+                0.5,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                0,
+                34,
+                -40
+            ],
+            "rotation": [
+                0,
+                3.141593,
+                0
+            ],
+            "scale": [
+                1,
+                0.5,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -6.257379,
+                34,
+                -39.507534
+            ],
+            "rotation": [
+                0,
+                3.298672,
+                0
+            ],
+            "scale": [
+                1,
+                0.5,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -12.36068,
+                34,
+                -38.042261
+            ],
+            "rotation": [
+                0,
+                3.455752,
+                0
+            ],
+            "scale": [
+                1,
+                0.5,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -18.15962,
+                0,
+                -35.640261
+            ],
+            "rotation": [
+                0,
+                3.612832,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -23.51141,
+                0,
+                -32.36068
+            ],
+            "rotation": [
+                0,
+                3.769911,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -28.284271,
+                0,
+                -28.284271
+            ],
+            "rotation": [
+                0,
+                3.926991,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -32.36068,
+                0,
+                -23.51141
+            ],
+            "rotation": [
+                0,
+                4.08407,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -35.640261,
+                0,
+                -18.15962
+            ],
+            "rotation": [
+                0,
+                4.24115,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -38.042261,
+                0,
+                -12.36068
+            ],
+            "rotation": [
+                0,
+                4.39823,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -39.507534,
+                0,
+                -6.257379
+            ],
+            "rotation": [
+                0,
+                4.555309,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -40,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                4.712389,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -39.507534,
+                0,
+                6.257379
+            ],
+            "rotation": [
+                0,
+                4.869469,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -38.042261,
+                0,
+                12.36068
+            ],
+            "rotation": [
+                0,
+                5.026548,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -35.640261,
+                0,
+                18.15962
+            ],
+            "rotation": [
+                0,
+                5.183628,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -32.36068,
+                0,
+                23.51141
+            ],
+            "rotation": [
+                0,
+                5.340708,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -28.284271,
+                0,
+                28.284271
+            ],
+            "rotation": [
+                0,
+                5.497787,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -23.51141,
+                0,
+                32.36068
+            ],
+            "rotation": [
+                0,
+                5.654867,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -18.15962,
+                0,
+                35.640261
+            ],
+            "rotation": [
+                0,
+                5.811946,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -12.36068,
+                0,
+                38.042261
+            ],
+            "rotation": [
+                0,
+                5.969026,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_stave.json",
+            "position": [
+                -6.257379,
+                0,
+                39.507534
+            ],
+            "rotation": [
+                0,
+                6.126106,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                0,
+                0,
+                40
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.7,
+                1,
+                0.4
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/branch.json",
+            "position": [
+                0,
+                56,
+                33
+            ],
+            "rotation": [
+                0,
+                -1.570796,
+                0
+            ],
+            "scale": [
+                0.75,
+                1,
+                0.75
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/foliage.json",
+            "position": [
+                0,
+                79,
+                36
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.85,
+                1,
+                0.85
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                20,
+                0,
+                34.641016
+            ],
+            "rotation": [
+                0,
+                0.523599,
+                0
+            ],
+            "scale": [
+                0.7,
+                1,
+                0.4
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/branch.json",
+            "position": [
+                16.5,
+                60,
+                28.578838
+            ],
+            "rotation": [
+                0,
+                -1.047198,
+                0
+            ],
+            "scale": [
+                0.75,
+                1,
+                0.75
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/foliage.json",
+            "position": [
+                18,
+                84,
+                31.176915
+            ],
+            "rotation": [
+                0,
+                0.523599,
+                0
+            ],
+            "scale": [
+                0.85,
+                1,
+                0.85
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                34.641016,
+                0,
+                20
+            ],
+            "rotation": [
+                0,
+                1.047198,
+                0
+            ],
+            "scale": [
+                0.7,
+                1,
+                0.4
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/branch.json",
+            "position": [
+                28.578838,
+                64,
+                16.5
+            ],
+            "rotation": [
+                0,
+                -0.523599,
+                0
+            ],
+            "scale": [
+                0.75,
+                1,
+                0.75
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/foliage.json",
+            "position": [
+                31.176915,
+                89,
+                18
+            ],
+            "rotation": [
+                0,
+                1.047198,
+                0
+            ],
+            "scale": [
+                0.85,
+                1,
+                0.85
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                40,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                1.570796,
+                0
+            ],
+            "scale": [
+                0.7,
+                1,
+                0.4
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/branch.json",
+            "position": [
+                33,
+                56,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.75,
+                1,
+                0.75
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/foliage.json",
+            "position": [
+                36,
+                79,
+                0
+            ],
+            "rotation": [
+                0,
+                1.570796,
+                0
+            ],
+            "scale": [
+                0.85,
+                1,
+                0.85
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                34.641016,
+                0,
+                -20
+            ],
+            "rotation": [
+                0,
+                2.094395,
+                0
+            ],
+            "scale": [
+                0.7,
+                1,
+                0.4
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/branch.json",
+            "position": [
+                28.578838,
+                60,
+                -16.5
+            ],
+            "rotation": [
+                0,
+                0.523599,
+                0
+            ],
+            "scale": [
+                0.75,
+                1,
+                0.75
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/foliage.json",
+            "position": [
+                31.176915,
+                84,
+                -18
+            ],
+            "rotation": [
+                0,
+                2.094395,
+                0
+            ],
+            "scale": [
+                0.85,
+                1,
+                0.85
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                -34.641016,
+                0,
+                -20
+            ],
+            "rotation": [
+                0,
+                4.18879,
+                0
+            ],
+            "scale": [
+                0.7,
+                1,
+                0.4
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/branch.json",
+            "position": [
+                -28.578838,
+                64,
+                -16.5
+            ],
+            "rotation": [
+                0,
+                2.617994,
+                0
+            ],
+            "scale": [
+                0.75,
+                1,
+                0.75
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/foliage.json",
+            "position": [
+                -31.176915,
+                89,
+                -18
+            ],
+            "rotation": [
+                0,
+                4.18879,
+                0
+            ],
+            "scale": [
+                0.85,
+                1,
+                0.85
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                -40,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                4.712389,
+                0
+            ],
+            "scale": [
+                0.7,
+                1,
+                0.4
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/branch.json",
+            "position": [
+                -33,
+                56,
+                0
+            ],
+            "rotation": [
+                0,
+                3.141593,
+                0
+            ],
+            "scale": [
+                0.75,
+                1,
+                0.75
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/foliage.json",
+            "position": [
+                -36,
+                79,
+                0
+            ],
+            "rotation": [
+                0,
+                4.712389,
+                0
+            ],
+            "scale": [
+                0.85,
+                1,
+                0.85
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                -34.641016,
+                0,
+                20
+            ],
+            "rotation": [
+                0,
+                5.235988,
+                0
+            ],
+            "scale": [
+                0.7,
+                1,
+                0.4
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/branch.json",
+            "position": [
+                -28.578838,
+                60,
+                16.5
+            ],
+            "rotation": [
+                0,
+                3.665191,
+                0
+            ],
+            "scale": [
+                0.75,
+                1,
+                0.75
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/foliage.json",
+            "position": [
+                -31.176915,
+                84,
+                18
+            ],
+            "rotation": [
+                0,
+                5.235988,
+                0
+            ],
+            "scale": [
+                0.85,
+                1,
+                0.85
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                -20,
+                0,
+                34.641016
+            ],
+            "rotation": [
+                0,
+                5.759587,
+                0
+            ],
+            "scale": [
+                0.7,
+                1,
+                0.4
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/branch.json",
+            "position": [
+                -16.5,
+                64,
+                28.578838
+            ],
+            "rotation": [
+                0,
+                4.18879,
+                0
+            ],
+            "scale": [
+                0.75,
+                1,
+                0.75
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/foliage.json",
+            "position": [
+                -18,
+                89,
+                31.176915
+            ],
+            "rotation": [
+                0,
+                5.759587,
+                0
+            ],
+            "scale": [
+                0.85,
+                1,
+                0.85
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/wooden_gate.json",
+            "position": [
+                0,
+                0,
+                -103
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/wooden_gate.json",
+            "position": [
+                0,
+                0,
+                -72
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                -12,
+                0,
+                -94
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                -12,
+                0,
+                -72
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                -12,
+                8,
+                -30
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                12,
+                0,
+                -94
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                12,
+                0,
+                -72
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                12,
+                8,
+                -30
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                -23,
+                0,
+                -96
+            ],
+            "rotation": [
+                0,
+                -1.570796,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.65,
+                0.65
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                -23,
+                0,
+                -78
+            ],
+            "rotation": [
+                0,
+                -1.570796,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.65,
+                0.65
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                23,
+                0,
+                -96
+            ],
+            "rotation": [
+                0,
+                1.570796,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.65,
+                0.65
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/root.json",
+            "position": [
+                23,
+                0,
+                -78
+            ],
+            "rotation": [
+                0,
+                1.570796,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.65,
+                0.65
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                0,
+                0,
+                40
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                6.257379,
+                0,
+                39.507534
+            ],
+            "rotation": [
+                0,
+                0.15708,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                12.36068,
+                0,
+                38.042261
+            ],
+            "rotation": [
+                0,
+                0.314159,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                18.15962,
+                0,
+                35.640261
+            ],
+            "rotation": [
+                0,
+                0.471239,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                23.51141,
+                0,
+                32.36068
+            ],
+            "rotation": [
+                0,
+                0.628319,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                28.284271,
+                0,
+                28.284271
+            ],
+            "rotation": [
+                0,
+                0.785398,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                32.36068,
+                0,
+                23.51141
+            ],
+            "rotation": [
+                0,
+                0.942478,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                35.640261,
+                0,
+                18.15962
+            ],
+            "rotation": [
+                0,
+                1.099557,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                38.042261,
+                0,
+                12.36068
+            ],
+            "rotation": [
+                0,
+                1.256637,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                39.507534,
+                0,
+                6.257379
+            ],
+            "rotation": [
+                0,
+                1.413717,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                40,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                1.570796,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                39.507534,
+                0,
+                -6.257379
+            ],
+            "rotation": [
+                0,
+                1.727876,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                38.042261,
+                0,
+                -12.36068
+            ],
+            "rotation": [
+                0,
+                1.884956,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                35.640261,
+                0,
+                -18.15962
+            ],
+            "rotation": [
+                0,
+                2.042035,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                32.36068,
+                0,
+                -23.51141
+            ],
+            "rotation": [
+                0,
+                2.199115,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                28.284271,
+                0,
+                -28.284271
+            ],
+            "rotation": [
+                0,
+                2.356194,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                23.51141,
+                0,
+                -32.36068
+            ],
+            "rotation": [
+                0,
+                2.513274,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                18.15962,
+                0,
+                -35.640261
+            ],
+            "rotation": [
+                0,
+                2.670354,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                12.36068,
+                34,
+                -38.042261
+            ],
+            "rotation": [
+                0,
+                2.827433,
+                0
+            ],
+            "scale": [
+                1,
+                0.5,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                6.257379,
+                34,
+                -39.507534
+            ],
+            "rotation": [
+                0,
+                2.984513,
+                0
+            ],
+            "scale": [
+                1,
+                0.5,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                0,
+                34,
+                -40
+            ],
+            "rotation": [
+                0,
+                3.141593,
+                0
+            ],
+            "scale": [
+                1,
+                0.5,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -6.257379,
+                34,
+                -39.507534
+            ],
+            "rotation": [
+                0,
+                3.298672,
+                0
+            ],
+            "scale": [
+                1,
+                0.5,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -12.36068,
+                34,
+                -38.042261
+            ],
+            "rotation": [
+                0,
+                3.455752,
+                0
+            ],
+            "scale": [
+                1,
+                0.5,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -18.15962,
+                0,
+                -35.640261
+            ],
+            "rotation": [
+                0,
+                3.612832,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -23.51141,
+                0,
+                -32.36068
+            ],
+            "rotation": [
+                0,
+                3.769911,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -28.284271,
+                0,
+                -28.284271
+            ],
+            "rotation": [
+                0,
+                3.926991,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -32.36068,
+                0,
+                -23.51141
+            ],
+            "rotation": [
+                0,
+                4.08407,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -35.640261,
+                0,
+                -18.15962
+            ],
+            "rotation": [
+                0,
+                4.24115,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -38.042261,
+                0,
+                -12.36068
+            ],
+            "rotation": [
+                0,
+                4.39823,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -39.507534,
+                0,
+                -6.257379
+            ],
+            "rotation": [
+                0,
+                4.555309,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -40,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                4.712389,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -39.507534,
+                0,
+                6.257379
+            ],
+            "rotation": [
+                0,
+                4.869469,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -38.042261,
+                0,
+                12.36068
+            ],
+            "rotation": [
+                0,
+                5.026548,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -35.640261,
+                0,
+                18.15962
+            ],
+            "rotation": [
+                0,
+                5.183628,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -32.36068,
+                0,
+                23.51141
+            ],
+            "rotation": [
+                0,
+                5.340708,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -28.284271,
+                0,
+                28.284271
+            ],
+            "rotation": [
+                0,
+                5.497787,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -23.51141,
+                0,
+                32.36068
+            ],
+            "rotation": [
+                0,
+                5.654867,
+                0
+            ],
+            "scale": [
+                1,
+                1.035,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -18.15962,
+                0,
+                35.640261
+            ],
+            "rotation": [
+                0,
+                5.811946,
+                0
+            ],
+            "scale": [
+                1,
+                1.07,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -12.36068,
+                0,
+                38.042261
+            ],
+            "rotation": [
+                0,
+                5.969026,
+                0
+            ],
+            "scale": [
+                1,
+                1.105,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/bark_crown.json",
+            "position": [
+                -6.257379,
+                0,
+                39.507534
+            ],
+            "rotation": [
+                0,
+                6.126106,
+                0
+            ],
+            "scale": [
+                1,
+                1.14,
+                1
+            ],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                -20,
+                0.04,
+                -99
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.6,
+                0.6
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                -20,
+                0.04,
+                -81
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.6,
+                0.6
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                20,
+                0.04,
+                -99
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.6,
+                0.6
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/lantern.json",
+            "position": [
+                20,
+                0.04,
+                -81
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                0.6,
+                0.6,
+                0.6
+            ],
+            "generateColliders": true,
+            "generateLights": true
+        },
+        {
+            "asset": "../models/tree_dungeon/furnished_rooms.json",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ],
+            "generateColliders": true,
+            "generateLights": false
+        }
+    ]
+}

@@ -127,7 +127,13 @@ namespace World
                     && _rPosition.z() - dungeon.center.z() > c_cageDungeonApproach - 12.0f
                     && _rPosition.z() - dungeon.center.z() < c_cageDungeonBack + 12.0f)
                     return 0.0f;
+                if (dungeon.bossId == sBossId::ForestBrute
+                    && std::abs(_rPosition.x() - dungeon.center.x()) < c_treeDungeonHalfWidth + 12.0f
+                    && _rPosition.z() - dungeon.center.z() > c_bossDungeonApproach - 12.0f
+                    && _rPosition.z() - dungeon.center.z() < c_treeDungeonBack + 12.0f)
+                    return 0.0f;
                 if (dungeon.bossId != sBossId::ForestSporecap && dungeon.bossId != sBossId::ForestCrawler
+                    && dungeon.bossId != sBossId::ForestBrute
                     && std::abs(_rPosition.x() - dungeon.center.x()) < c_bossDungeonHalfWidth + 12.0f
                     && _rPosition.z() - dungeon.center.z() > c_bossDungeonApproach - 12.0f
                     && _rPosition.z() - dungeon.center.z() < c_bossDungeonBack + 12.0f)
@@ -1166,6 +1172,44 @@ namespace World
                     }
                     continue;
                 }
+                if (brute)
+                {
+                    // Hand-authored Herzholz encounter pockets, audited against the prefab
+                    // by scripts/tree_dungeon.py. The boss occupies the crown at Y=224.
+                    static const Math::cVec3f c_treeGuardPositions[] =
+                    {
+                        { -7.0f, 0.0f, -94.0f }, { 3.0f, 0.0f, -78.0f },
+                        { -5.0f, 0.0f, -23.0f }, { -65.0f, 0.0f, -24.0f },
+                        { -118.0f, 0.0f, 6.0f }, { -103.0f, 0.0f, 19.0f },
+                        { -110.0f, 0.0f, 22.0f }, { -162.0f, 0.0f, 15.0f },
+                        { -57.0f, 8.0f, 62.0f }, { -7.0f, 8.0f, 32.0f },
+                        { 8.0f, 8.0f, 28.0f }, { 13.0f, 16.0f, 84.0f },
+                        { 26.0f, 16.0f, 97.0f }, { 72.0f, 24.0f, 28.0f },
+                        { -10.0f, 48.0f, -9.0f }, { 11.0f, 48.0f, 9.0f },
+                        { -9.0f, 48.0f, 14.0f }, { -67.0f, 60.0f, 6.0f },
+                        { -118.0f, 84.0f, 53.0f }, { -133.0f, 84.0f, 62.0f },
+                        { -123.0f, 84.0f, 70.0f }, { 63.0f, 84.0f, -5.0f },
+                        { 74.0f, 84.0f, 6.0f }, { -8.0f, 96.0f, 76.0f },
+                        { 9.0f, 96.0f, 89.0f }, { 0.0f, 96.0f, 95.0f },
+                        { 85.0f, 112.0f, 100.0f }, { 142.0f, 128.0f, 33.0f },
+                        { 155.0f, 128.0f, 44.0f }, { 150.0f, 128.0f, 26.0f },
+                        { 163.0f, 144.0f, 113.0f }, { -84.0f, 152.0f, -91.0f },
+                        { -149.0f, 168.0f, -17.0f }, { -139.0f, 168.0f, -13.0f },
+                        { 87.0f, 200.0f, 10.0f }, { 96.0f, 200.0f, 20.0f },
+                        { -8.0f, 216.0f, 113.0f }, { 7.0f, 216.0f, 125.0f }
+                    };
+                    static const sEnemyType::Enum c_treeGuardTypes[] =
+                    {
+                        sEnemyType::ForestBarkguard, sEnemyType::ForestThornshooter,
+                        sEnemyType::ForestRootcharger, sEnemyType::ForestSporecap
+                    };
+                    for (size_t i = 0; i < std::size(c_treeGuardPositions); ++i)
+                    {
+                        addSpawn({ c_treeGuardTypes[i % std::size(c_treeGuardTypes)],
+                            dungeon.center + c_treeGuardPositions[i], 3.1415926f });
+                    }
+                    continue;
+                }
                 // Guards stand on the actual floors, off the stair flights and gate thresholds.
                 for (int rank = 0; rank < 3; ++rank)
                 {
@@ -1173,8 +1217,6 @@ namespace World
                     for (int side : { -1, 1 })
                     {
                         const float x = side * 8.0f;
-                        if (brute && rank == 2)
-                            continue;
                         addSpawn({ dungeon.type, dungeon.center + Math::cVec3f(x, 0.0f, z), 3.1415926f });
                     }
                 }

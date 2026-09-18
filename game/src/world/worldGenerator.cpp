@@ -164,6 +164,7 @@ namespace World
 
                         const bool mushroomDungeon = dungeon.bossId == sBossId::ForestSporecap;
                         const bool cageDungeon = dungeon.bossId == sBossId::ForestCrawler;
+                        const bool treeDungeon = dungeon.bossId == sBossId::ForestBrute;
                         if (mushroomDungeon)
                         {
                             // Survey the whole kingdom so terrain cannot emerge inside its outer districts.
@@ -186,9 +187,16 @@ namespace World
                                 dungeon.center = { std::cos(angle) * c_cageDungeonRadius, 0.0f,
                                     std::sin(angle) * c_cageDungeonRadius };
                             }
+                            if (treeDungeon)
+                            {
+                                dungeon.center = { std::cos(angle) * c_treeDungeonRadius, 0.0f,
+                                    std::sin(angle) * c_treeDungeonRadius };
+                            }
                             const float front = cageDungeon ? c_cageDungeonFront : c_bossDungeonFront;
-                            const float back = cageDungeon ? c_cageDungeonBack : c_bossDungeonBack;
-                            const float halfWidth = cageDungeon ? c_cageDungeonHalfWidth : c_bossDungeonHalfWidth;
+                            const float back = cageDungeon ? c_cageDungeonBack
+                                : (treeDungeon ? c_treeDungeonBack : c_bossDungeonBack);
+                            const float halfWidth = cageDungeon ? c_cageDungeonHalfWidth
+                                : (treeDungeon ? c_treeDungeonHalfWidth : c_bossDungeonHalfWidth);
                             float floorHeight = GetTerrainSurfaceHeight(dungeon.center.x(), dungeon.center.z());
                             for (float z = front; z <= back; z += 2.0f)
                             {

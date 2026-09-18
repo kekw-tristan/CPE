@@ -32,5 +32,10 @@ namespace World
     constexpr float c_cageDungeonBack = 80.0f;
     constexpr float c_cageDungeonApproach = -316.0f;
 
+    // Herzholz includes the root caverns and the outer canopy branches.
+    constexpr float c_treeDungeonRadius = 620.0f;
+    constexpr float c_treeDungeonHalfWidth = 190.0f;
+    constexpr float c_treeDungeonBack = 155.0f;
+
     constexpr int c_forestWallCount = 4480;
 }
