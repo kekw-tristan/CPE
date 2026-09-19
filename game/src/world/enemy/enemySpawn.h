@@ -40,6 +40,8 @@ namespace World
     {
         if (_bossId == sBossId::ForestCrawler)
             return 18.0f;
+        if (_bossId == sBossId::ForestThornwolf)
+            return 20.0f;
         return _bossId >= sBossId::ForestCrawler && _bossId <= sBossId::ForestSporecap ? 36.0f : 12.5f;
     }
 
@@ -49,6 +51,8 @@ namespace World
             return 64.0f;
         if (_bossId == sBossId::ForestSporecap)
             return 134.0f;
+        if (_bossId == sBossId::ForestThornwolf)
+            return 184.0f;
         return _bossId == sBossId::ForestBrute ? 224.0f : 0.0f;
     }
 

@@ -132,7 +132,13 @@ namespace World
                     && _rPosition.z() - dungeon.center.z() > c_bossDungeonApproach - 12.0f
                     && _rPosition.z() - dungeon.center.z() < c_treeDungeonBack + 12.0f)
                     return 0.0f;
+                if (dungeon.bossId == sBossId::ForestThornwolf
+                    && std::abs(_rPosition.x() - dungeon.center.x()) < c_acornDungeonHalfWidth + 12.0f
+                    && _rPosition.z() - dungeon.center.z() > c_acornDungeonApproach - 12.0f
+                    && _rPosition.z() - dungeon.center.z() < c_acornDungeonBack + 12.0f)
+                    return 0.0f;
                 if (dungeon.bossId != sBossId::ForestSporecap && dungeon.bossId != sBossId::ForestCrawler
+                    && dungeon.bossId != sBossId::ForestThornwolf
                     && dungeon.bossId != sBossId::ForestBrute
                     && std::abs(_rPosition.x() - dungeon.center.x()) < c_bossDungeonHalfWidth + 12.0f
                     && _rPosition.z() - dungeon.center.z() > c_bossDungeonApproach - 12.0f
@@ -1065,6 +1071,7 @@ namespace World
                 }
                 const bool brute = dungeon.bossId == sBossId::ForestBrute;
                 const bool cage = dungeon.bossId == sBossId::ForestCrawler;
+                const bool acorn = dungeon.bossId == sBossId::ForestThornwolf;
                 const float arenaHeight = GetBossArenaHeight(dungeon.bossId);
                 const size_t assetIndex = static_cast<size_t>(dungeon.bossId);
                 static const char* c_prefabPaths[] =
@@ -1114,8 +1121,10 @@ namespace World
                     // Only the terrain-dependent approach is generated in code. Each dungeon
                     // supplies its own tread model; the authored entrance meets it at local Y=0.
                     constexpr int c_steps = 224;
-                    const float approach = cage ? c_cageDungeonApproach : c_bossDungeonApproach;
-                    const float front = cage ? c_cageDungeonFront : c_bossDungeonFront;
+                    const float approach = cage ? c_cageDungeonApproach
+                        : (acorn ? c_acornDungeonApproach : c_bossDungeonApproach);
+                    const float front = cage ? c_cageDungeonFront
+                        : (acorn ? c_acornDungeonFront : c_bossDungeonFront);
                     const float entryHeight = GetTerrainSurfaceHeight(dungeon.center.x(),
                         dungeon.center.z() + approach);
                     const float run = front - approach;
@@ -1210,14 +1219,40 @@ namespace World
                     }
                     continue;
                 }
-                // Guards stand on the actual floors, off the stair flights and gate thresholds.
-                for (int rank = 0; rank < 3; ++rank)
+                if (acorn)
                 {
-                    const float z = -96.0f + rank * 24.0f;
-                    for (int side : { -1, 1 })
+                    // Bernsteinkern combat pockets, audited with the authored shell routes.
+                    // Keep encounters on level floors; the Thornwolf occupies the sprout at Y=184.
+                    static const Math::cVec3f c_acornGuardPositions[] =
                     {
-                        const float x = side * 8.0f;
-                        addSpawn({ dungeon.type, dungeon.center + Math::cVec3f(x, 0.0f, z), 3.1415926f });
+                        { -7.0f, 0.0f, -222.0f }, { 7.0f, 0.0f, -182.0f },
+                        { -7.0f, 0.0f, -112.0f }, { 7.0f, 0.0f, -106.0f },
+                        { -62.0f, 8.0f, -89.0f }, { -99.0f, 16.0f, -47.0f },
+                        { -105.0f, 24.0f, 9.0f }, { -83.0f, 32.0f, 61.0f },
+                        { -73.0f, 32.0f, 69.0f }, { -27.0f, 40.0f, 120.0f },
+                        { 59.0f, 8.0f, -91.0f }, { 109.0f, 16.0f, -57.0f },
+                        { 141.0f, 24.0f, -4.0f }, { 151.0f, 24.0f, 7.0f },
+                        { 111.0f, 32.0f, 66.0f }, { 61.0f, 40.0f, 120.0f },
+                        { -8.0f, 48.0f, 65.0f }, { 9.0f, 48.0f, 73.0f },
+                        { -76.0f, 56.0f, 44.0f }, { -91.0f, 68.0f, -34.0f },
+                        { -80.0f, 68.0f, -24.0f }, { 59.0f, 56.0f, 45.0f },
+                        { 94.0f, 64.0f, 15.0f }, { 72.0f, 76.0f, -61.0f },
+                        { 85.0f, 76.0f, -52.0f }, { 0.0f, 88.0f, -92.0f },
+                        { -30.0f, 104.0f, 0.0f }, { 30.0f, 104.0f, 0.0f },
+                        { 125.0f, 128.0f, 13.0f }, { 90.0f, 140.0f, 68.0f },
+                        { -6.0f, 152.0f, 79.0f }, { 7.0f, 152.0f, 85.0f },
+                        { -63.0f, 160.0f, 37.0f }, { 65.0f, 168.0f, -27.0f },
+                        { -4.0f, 176.0f, -60.0f }, { 4.0f, 176.0f, -63.0f }
+                    };
+                    static const sEnemyType::Enum c_acornGuardTypes[] =
+                    {
+                        sEnemyType::ForestBarkguard, sEnemyType::ForestRootcharger,
+                        sEnemyType::ForestThornshooter, sEnemyType::ForestCrawler
+                    };
+                    for (size_t i = 0; i < std::size(c_acornGuardPositions); ++i)
+                    {
+                        addSpawn({ c_acornGuardTypes[i % std::size(c_acornGuardTypes)],
+                            dungeon.center + c_acornGuardPositions[i], 3.1415926f });
                     }
                 }
             }

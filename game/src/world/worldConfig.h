@@ -37,5 +37,12 @@ namespace World
     constexpr float c_treeDungeonHalfWidth = 190.0f;
     constexpr float c_treeDungeonBack = 155.0f;
 
+    // Bernsteinkern: fractured shell, root road and traversable cap.
+    constexpr float c_acornDungeonRadius = 720.0f;
+    constexpr float c_acornDungeonHalfWidth = 184.0f;
+    constexpr float c_acornDungeonFront = -252.0f;
+    constexpr float c_acornDungeonBack = 184.0f;
+    constexpr float c_acornDungeonApproach = -300.0f;
+
     constexpr int c_forestWallCount = 4480;
 }

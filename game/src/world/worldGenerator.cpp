@@ -165,6 +165,7 @@ namespace World
                         const bool mushroomDungeon = dungeon.bossId == sBossId::ForestSporecap;
                         const bool cageDungeon = dungeon.bossId == sBossId::ForestCrawler;
                         const bool treeDungeon = dungeon.bossId == sBossId::ForestBrute;
+                        const bool acornDungeon = dungeon.bossId == sBossId::ForestThornwolf;
                         if (mushroomDungeon)
                         {
                             // Survey the whole kingdom so terrain cannot emerge inside its outer districts.
@@ -192,11 +193,17 @@ namespace World
                                 dungeon.center = { std::cos(angle) * c_treeDungeonRadius, 0.0f,
                                     std::sin(angle) * c_treeDungeonRadius };
                             }
-                            const float front = cageDungeon ? c_cageDungeonFront : c_bossDungeonFront;
+                            if (acornDungeon)
+                            {
+                                dungeon.center = { std::cos(angle) * c_acornDungeonRadius, 0.0f,
+                                    std::sin(angle) * c_acornDungeonRadius };
+                            }
+                            const float front = cageDungeon ? c_cageDungeonFront
+                                : (acornDungeon ? c_acornDungeonFront : c_bossDungeonFront);
                             const float back = cageDungeon ? c_cageDungeonBack
-                                : (treeDungeon ? c_treeDungeonBack : c_bossDungeonBack);
+                                : (treeDungeon ? c_treeDungeonBack : (acornDungeon ? c_acornDungeonBack : c_bossDungeonBack));
                             const float halfWidth = cageDungeon ? c_cageDungeonHalfWidth
-                                : (treeDungeon ? c_treeDungeonHalfWidth : c_bossDungeonHalfWidth);
+                                : (treeDungeon ? c_treeDungeonHalfWidth : (acornDungeon ? c_acornDungeonHalfWidth : c_bossDungeonHalfWidth));
                             float floorHeight = GetTerrainSurfaceHeight(dungeon.center.x(), dungeon.center.z());
                             for (float z = front; z <= back; z += 2.0f)
                             {
@@ -206,7 +213,8 @@ namespace World
                             }
                             dungeon.center = { dungeon.center.x(), floorHeight + 2.0f, dungeon.center.z() };
                         }
-                        const float approach = cageDungeon ? c_cageDungeonApproach : c_bossDungeonApproach;
+                        const float approach = cageDungeon ? c_cageDungeonApproach
+                            : (acornDungeon ? c_acornDungeonApproach : c_bossDungeonApproach);
                         const float approachZ = mushroomDungeon ? 204.0f : -approach + 4.0f;
                         const float entranceZ = mushroomDungeon ? 200.0f : -approach;
 
