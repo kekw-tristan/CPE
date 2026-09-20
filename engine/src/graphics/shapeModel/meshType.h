@@ -27,6 +27,7 @@ namespace Engine::GFX
             ExtrudedPolygon,
             Disc,
             Arc,
+            Triangle,
 
             NumberOfElements,
 

@@ -104,6 +104,9 @@ namespace Engine::GFX
             case sMeshTypes::Arc:
                 return "Arc";
 
+            case sMeshTypes::Triangle:
+                return "Triangle";
+
             default:
                 return "Unknown";
             }
@@ -566,6 +569,11 @@ namespace Engine::GFX
                 AddShape(sMeshTypes::Arc);
             }
 
+            if (ImGui::MenuItem("Triangle"))
+            {
+                AddShape(sMeshTypes::Triangle);
+            }
+
             ImGui::EndPopup();
         }
 
@@ -642,7 +650,7 @@ namespace Engine::GFX
             {
                 "Plane", "PlaneChunk", "Cube", "Pyramid", "Sphere", "Cylinder", "Cone", "Torus", "Crystal",
                 "BeveledCube", "Frustum", "Wedge", "TriangularPrism", "IcoSphere", "Rock",
-                "GrassBlade", "Capsule", "Arch", "ExtrudedPolygon", "Disc", "Arc"
+                "GrassBlade", "Capsule", "Arch", "ExtrudedPolygon", "Disc", "Arc", "Triangle"
             };
             static_assert(sizeof(meshTypeNames) / sizeof(meshTypeNames[0]) == sMeshTypes::NumberOfElements);
 

@@ -365,6 +365,18 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    sMeshData cMeshGenerator::CreateTriangle()
+    {
+        sMeshData mesh{};
+        mesh.pDebugName = "GeneratedTriangle";
+        AddFace(mesh, { { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+            { 0.0f, 0.0f, 1.0f });
+        mesh.bounds = CalculateBounds(mesh.vertices);
+        return mesh;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     sMeshData cMeshGenerator::CreateCube(const sCubeDesc& _rDesc)
     {
         sMeshData mesh{};

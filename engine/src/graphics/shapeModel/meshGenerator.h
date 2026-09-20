@@ -194,6 +194,8 @@ namespace Engine::GFX
             static sMeshData CreateExtrudedPolygon(const sExtrudedPolygonDesc& _rDesc);
             static sMeshData CreateDisc(const sDiscDesc& _rDesc);
             static sMeshData CreateArc(const sArcDesc& _rDesc);
+            // Unit right triangle in XY: (0, 0), (1, 0), (0, 1), facing +Z.
+            static sMeshData CreateTriangle();
 
         private:
 

@@ -155,6 +155,12 @@ namespace Engine::GFX
                 return true;
             }
 
+            if (_rMeshTypeName == "Triangle")
+            {
+                _rMeshType = sMeshTypes::Triangle;
+                return true;
+            }
+
             return false;
         }
 
@@ -226,6 +232,9 @@ namespace Engine::GFX
 
                 case sMeshTypes::Arc:
                     return "Arc";
+
+                case sMeshTypes::Triangle:
+                    return "Triangle";
 
                 default:
                     return "Unknown";

@@ -200,6 +200,7 @@ class cGame : public cApplication
         GFX::MeshHandle m_extrudedPolygonMesh{};
         GFX::MeshHandle m_discMesh{};
         GFX::MeshHandle m_arcMesh{};
+        GFX::MeshHandle m_triangleMesh{};
     
         GFX::MaterialHandle m_playerSphereMaterial = -1;
         GFX::MaterialHandle m_arcaneSpellMaterial = -1;

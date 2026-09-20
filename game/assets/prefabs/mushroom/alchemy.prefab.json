@@ -1,0 +1,230 @@
+{
+    "assetType": "Prefab",
+    "name": "Myzel-Destillerie",
+    "objects": [
+        {
+            "asset": "../../models/mushroom_dungeon/module_shell.json",
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/module_mycelium.json",
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/fungal_pier.json",
+            "position": [-16, 0, -16],
+            "rotation": [0, 0, 0],
+            "scale": [0.65, 1.25, 0.65],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/cluster.json",
+            "position": [-13.12, 0, -13.12],
+            "rotation": [0, 0, 0],
+            "scale": [1.2, 1.2, 1.2],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/fungal_pier.json",
+            "position": [16, 0, 16],
+            "rotation": [0, 0, 0],
+            "scale": [0.65, 1.25, 0.65],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/cluster.json",
+            "position": [13.12, 0, 13.12],
+            "rotation": [0, 0, 0],
+            "scale": [1.2, 1.2, 1.2],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/fungal_pier.json",
+            "position": [-16, 0, 16],
+            "rotation": [0, 0, 0],
+            "scale": [0.65, 1.25, 0.65],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/cluster.json",
+            "position": [-13.12, 0, 13.12],
+            "rotation": [0, 0, 0],
+            "scale": [1.2, 1.2, 1.2],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/fungal_pier.json",
+            "position": [16, 0, -16],
+            "rotation": [0, 0, 0],
+            "scale": [0.65, 1.25, 0.65],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/cluster.json",
+            "position": [13.12, 0, -13.12],
+            "rotation": [0, 0, 0],
+            "scale": [1.2, 1.2, 1.2],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/lantern_amber.json",
+            "position": [-16, 7, -16],
+            "rotation": [0, 0, 0],
+            "scale": [1.2, 1.2, 1.2],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/lantern_amber.json",
+            "position": [16, 7, 16],
+            "rotation": [0, 0, 0],
+            "scale": [1.2, 1.2, 1.2],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/root_portal.json",
+            "position": [0.0, 0, 19.4],
+            "rotation": [0, 0.0, 0],
+            "scale": [1.2, 1.2, 0.75],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/inlay.json",
+            "position": [-3.8, 0, 12.0],
+            "rotation": [0, 0.0, 0],
+            "scale": [0.12, 1, 23],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/root_portal.json",
+            "position": [19.4, 0, 0.0],
+            "rotation": [0, 1.5707963267948966, 0],
+            "scale": [1.2, 1.2, 0.75],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/inlay.json",
+            "position": [12.0, 0, 3.8],
+            "rotation": [0, 1.5707963267948966, 0],
+            "scale": [0.12, 1, 23],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/root_portal.json",
+            "position": [0.0, 0, -19.4],
+            "rotation": [0, 3.141592653589793, 0],
+            "scale": [1.2, 1.2, 0.75],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/inlay.json",
+            "position": [3.8, 0, -12.0],
+            "rotation": [0, 3.141592653589793, 0],
+            "scale": [0.12, 1, 23],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/root_portal.json",
+            "position": [-19.4, 0, -0.0],
+            "rotation": [0, 4.71238898038469, 0],
+            "scale": [1.2, 1.2, 0.75],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/inlay.json",
+            "position": [-12.0, 0, -3.8],
+            "rotation": [0, 4.71238898038469, 0],
+            "scale": [0.12, 1, 23],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/alchemy_table.json",
+            "position": [-12, 0, -11],
+            "rotation": [0, 0, 0],
+            "scale": [1.5, 1.5, 1.5],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/growth_shelf.json",
+            "position": [-12, 0, -16.28],
+            "rotation": [0, 0, 0],
+            "scale": [0.8, 0.8, 0.8],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/alchemy_table.json",
+            "position": [-12, 0, 11],
+            "rotation": [0, 0, 0],
+            "scale": [1.5, 1.5, 1.5],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/growth_shelf.json",
+            "position": [-12, 0, 16.28],
+            "rotation": [0, 0, 0],
+            "scale": [0.8, 0.8, 0.8],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/alchemy_table.json",
+            "position": [12, 0, -11],
+            "rotation": [0, 0, 0],
+            "scale": [1.5, 1.5, 1.5],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/growth_shelf.json",
+            "position": [12, 0, -16.28],
+            "rotation": [0, 0, 0],
+            "scale": [0.8, 0.8, 0.8],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/alchemy_table.json",
+            "position": [12, 0, 11],
+            "rotation": [0, 0, 0],
+            "scale": [1.5, 1.5, 1.5],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/growth_shelf.json",
+            "position": [12, 0, 16.28],
+            "rotation": [0, 0, 0],
+            "scale": [0.8, 0.8, 0.8],
+            "generateColliders": false,
+            "generateLights": false
+        }
+    ]
+}

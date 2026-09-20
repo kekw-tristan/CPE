@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math/vector3.h"
+#include "../worldConfig.h"
 
 #include <cstdint>
 
@@ -38,6 +39,8 @@ namespace World
 
     inline float GetBossArenaHalfExtent(sBossId::Enum _bossId)
     {
+        if (_bossId == sBossId::ForestSporecap)
+            return 36.0f * c_mushroomDungeonScale;
         if (_bossId == sBossId::ForestCrawler)
             return 18.0f;
         if (_bossId == sBossId::ForestThornwolf)
@@ -50,7 +53,7 @@ namespace World
         if (_bossId == sBossId::ForestCrawler)
             return 64.0f;
         if (_bossId == sBossId::ForestSporecap)
-            return 134.0f;
+            return 3.0f * (78.0f * c_mushroomDungeonScale);
         if (_bossId == sBossId::ForestThornwolf)
             return 184.0f;
         return _bossId == sBossId::ForestBrute ? 224.0f : 0.0f;

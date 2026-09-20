@@ -1,0 +1,54 @@
+{
+    "assetType": "Prefab",
+    "name": "Bridge to the ancient heart",
+    "objects": [
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [0, 0, -7],
+            "rotation": [0, 0, 0],
+            "scale": [10, 1.2, 34],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/root_portal.json",
+            "position": [0, 0, -18],
+            "rotation": [0, 0, 0],
+            "scale": [1.2, 1.2, 0.8],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/parapet.json",
+            "position": [-6, 0, -7],
+            "rotation": [0, 1.5707963267948966, 0],
+            "scale": [34, 1, 1],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/lantern_cyan.json",
+            "position": [-6, 4, -15],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/parapet.json",
+            "position": [6, 0, -7],
+            "rotation": [0, 1.5707963267948966, 0],
+            "scale": [34, 1, 1],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/lantern_cyan.json",
+            "position": [6, 4, -15],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": false,
+            "generateLights": true
+        }
+    ]
+}

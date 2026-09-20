@@ -1,0 +1,302 @@
+{
+    "assetType": "Prefab",
+    "name": "Ascent through living mycelium",
+    "objects": [
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [48, 1.2, 48],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [-19, 0.0, -19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [-19.0, 0.0, 0.0],
+            "rotation": [0, 0.0, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/lantern_cyan.json",
+            "position": [-19, 3.0, -19],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [-19, 6.5, 19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [0.0, 6.5, 19.0],
+            "rotation": [0, 1.5707963267948966, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [19, 13.0, 19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [19.0, 13.0, 0.0],
+            "rotation": [0, 3.141592653589793, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [19, 19.5, -19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [0.0, 19.5, -19.0],
+            "rotation": [0, -1.5707963267948966, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [-19, 26.0, -19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [-19.0, 26.0, 0.0],
+            "rotation": [0, 0.0, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/lantern_cyan.json",
+            "position": [-19, 29.0, -19],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [-19, 32.5, 19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [0.0, 32.5, 19.0],
+            "rotation": [0, 1.5707963267948966, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [19, 39.0, 19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [19.0, 39.0, 0.0],
+            "rotation": [0, 3.141592653589793, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [19, 45.5, -19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [0.0, 45.5, -19.0],
+            "rotation": [0, -1.5707963267948966, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [-19, 52.0, -19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [-19.0, 52.0, 0.0],
+            "rotation": [0, 0.0, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/lantern_cyan.json",
+            "position": [-19, 55.0, -19],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [-19, 58.5, 19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [0.0, 58.5, 19.0],
+            "rotation": [0, 1.5707963267948966, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [19, 65.0, 19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [19.0, 65.0, 0.0],
+            "rotation": [0, 3.141592653589793, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [19, 71.5, -19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/stair_flight.json",
+            "position": [0.0, 71.5, -19.0],
+            "rotation": [0, -1.5707963267948966, 0],
+            "scale": [0.75, 0.8125, 1.3333333333333333],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [-19, 78.0, -19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [-19, 78.0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 32],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [-19, 78.0, 19],
+            "rotation": [0, 0, 0],
+            "scale": [6, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [-8, 78.0, 19],
+            "rotation": [0, 0, 0],
+            "scale": [16, 1, 6],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/floor_plate.json",
+            "position": [0, 78.0, 20],
+            "rotation": [0, 0, 0],
+            "scale": [10, 1, 8],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/fungal_pier.json",
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1.5, 5.5, 1.5],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/root_portal.json",
+            "position": [0, 0, -23],
+            "rotation": [0, 0, 0],
+            "scale": [1.2, 1.2, 0.7],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/root_portal.json",
+            "position": [0, 78.0, 23],
+            "rotation": [0, 0, 0],
+            "scale": [1.2, 1.2, 0.7],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/transition_shell.json",
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": true,
+            "generateLights": false
+        }
+    ]
+}

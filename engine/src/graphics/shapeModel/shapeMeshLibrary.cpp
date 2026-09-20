@@ -46,6 +46,7 @@ namespace Engine::GFX
             meshes[static_cast<size_t>(sMeshTypes::ExtrudedPolygon)] = cMeshGenerator::CreateExtrudedPolygon(sExtrudedPolygonDesc{});
             meshes[static_cast<size_t>(sMeshTypes::Disc)] = cMeshGenerator::CreateDisc(sDiscDesc{});
             meshes[static_cast<size_t>(sMeshTypes::Arc)] = cMeshGenerator::CreateArc(sArcDesc{});
+            meshes[static_cast<size_t>(sMeshTypes::Triangle)] = cMeshGenerator::CreateTriangle();
 
             return meshes;
         }

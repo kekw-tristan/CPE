@@ -811,6 +811,9 @@ Engine::GFX::MeshHandle cGame::GetMesh(Engine::GFX::sMeshTypes::Enum _type)
         case sMeshTypes::Arc:
             return m_arcMesh;
 
+        case sMeshTypes::Triangle:
+            return m_triangleMesh;
+
         default:
             return nullptr;
     }

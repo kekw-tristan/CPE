@@ -93,6 +93,7 @@ class cEditor : public cApplication
         GFX::MeshHandle m_extrudedPolygonMesh{};
         GFX::MeshHandle m_discMesh{};
         GFX::MeshHandle m_arcMesh{};
+        GFX::MeshHandle m_triangleMesh{};
 
         GFX::sInstanceData* m_playerInstance;
 

@@ -5,6 +5,7 @@
 #include "../terrainHeight.h"
 #include "../worldModels.h"
 #include "../prefab.h"
+#include "../mushroomDungeon.h"
 
 #include "../enemy/enemySpawn.h"
 
@@ -16,6 +17,7 @@
 #include "physics/collider.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <exception>
 #include <iostream>
@@ -42,6 +44,16 @@ namespace World
         {
             return std::abs(_rPosition.x()) <= c_forestSpawnClearHalfExtent + _padding
                 && std::abs(_rPosition.z() - c_forestSpawnCenterZ) <= c_forestSpawnClearHalfExtent + _padding;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        Math::cVec3f RotateMushroomOffset(const Math::cVec3f& _rOffset, float _rotation)
+        {
+            const float cosine = std::cos(_rotation);
+            const float sine = std::sin(_rotation);
+            return Math::cVec3f(_rOffset.x() * cosine + _rOffset.z() * sine, _rOffset.y(),
+                -_rOffset.x() * sine + _rOffset.z() * cosine);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
@@ -118,9 +130,11 @@ namespace World
             for (const auto& dungeon : _rWorldLayout.dungeons)
             {
                 if (dungeon.bossId == sBossId::ForestSporecap
-                    && std::abs(_rPosition.x() - dungeon.center.x()) < c_mushroomDungeonHalfWidth
-                    && _rPosition.z() - dungeon.center.z() > -216.0f
-                    && _rPosition.z() - dungeon.center.z() < c_mushroomDungeonBack)
+                    && !dungeon.mushroomLayout.modules.empty()
+                    && _rPosition.x() >= dungeon.center.x() + dungeon.mushroomLayout.minimumBounds.x() - 12.0f
+                    && _rPosition.x() <= dungeon.center.x() + dungeon.mushroomLayout.maximumBounds.x() + 12.0f
+                    && _rPosition.z() >= dungeon.center.z() + dungeon.mushroomLayout.minimumBounds.z() - 12.0f
+                    && _rPosition.z() <= dungeon.center.z() + dungeon.mushroomLayout.maximumBounds.z() + 12.0f)
                     return 0.0f;
                 if (dungeon.bossId == sBossId::ForestCrawler
                     && std::abs(_rPosition.x() - dungeon.center.x()) < c_cageDungeonHalfWidth + 12.0f
@@ -1017,43 +1031,151 @@ namespace World
             {
                 if (dungeon.bossId == sBossId::ForestSporecap)
                 {
-                    // The kingdom and approach stay within five 64-unit chunks of this owner.
-                    // Its owning chunk creates and removes the hall, stairs, lights and mesh collisions together.
-                    if (belongsToChunk(dungeon.center))
+                    // Stream each room with its owner; large layouts extend beyond one load window.
+                    if (intersectsChunk(dungeon.center.x() + dungeon.mushroomLayout.minimumBounds.x(),
+                        dungeon.center.x() + dungeon.mushroomLayout.maximumBounds.x(),
+                        dungeon.center.z() + dungeon.mushroomLayout.minimumBounds.z(),
+                        dungeon.center.z() + dungeon.mushroomLayout.maximumBounds.z()))
                     {
-                        static GFX::sAssetHandle s_mushroomAsset{};
+                        static std::array<GFX::sAssetHandle, sMushroomModuleType::Count> s_mushroomAssets{};
+                        static GFX::sAssetHandle s_doorwaySeal{};
                         static bool s_attempted = false;
                         if (!s_attempted)
                         {
                             s_attempted = true;
                             try
                             {
-                                s_mushroomAsset = GFX::AssetManager::Load("./assets/prefabs/mushroom_dungeon.prefab.json");
+                                s_doorwaySeal = GFX::AssetManager::Load("./assets/prefabs/mushroom/doorway_seal.prefab.json");
                             }
                             catch (const std::exception& exception)
                             {
-                                std::cerr << "Failed to load mushroom dungeon: " << exception.what() << '\n';
+                                std::cerr << "Failed to load mushroom doorway: " << exception.what() << '\n';
+                            }
+                            for (size_t i = 0; i < s_mushroomAssets.size(); ++i)
+                            {
+                                try
+                                {
+                                    s_mushroomAssets[i] = GFX::AssetManager::Load(
+                                        GetMushroomDungeonModuleDesc(static_cast<sMushroomModuleType::Enum>(i)).prefabPath);
+                                }
+                                catch (const std::exception& exception)
+                                {
+                                    std::cerr << "Failed to load mushroom dungeon module: " << exception.what() << '\n';
+                                }
                             }
                         }
-                        if (s_mushroomAsset.IsValid() && s_mushroomAsset.type == GFX::sAssetType::Prefab)
-                        {
-                            GFX::sTransform transform{};
-                            transform.position = dungeon.center;
-                            transform.scale = { 1.0f, 1.0f, 1.0f };
-                            InstantiatePrefab(_rScene, static_cast<GFX::PrefabHandle>(s_mushroomAsset.handle), transform);
 
-                            constexpr int c_stepCount = 160;
-                            const float entryHeight = GetTerrainSurfaceHeight(dungeon.center.x(), dungeon.center.z() - 200.0f);
-                            for (int step = 0; step < c_stepCount; ++step)
+                        static const char* c_decorationPaths[] =
+                        {
+                            "./assets/models/mushroom_dungeon/cluster.json",
+                            "./assets/models/mushroom_dungeon/roots.json",
+                            "./assets/models/mushroom_dungeon/herald_banner.json",
+                            "./assets/models/mushroom_dungeon/hanging_spores.json",
+                            "./assets/models/mushroom_dungeon/lantern_cyan.json"
+                        };
+                        static std::array<GFX::sAssetHandle, std::size(c_decorationPaths)> s_decorationAssets{};
+                        static bool s_decorationAttempted = false;
+                        if (!s_decorationAttempted)
+                        {
+                            s_decorationAttempted = true;
+                            for (size_t i = 0; i < s_decorationAssets.size(); ++i)
                             {
-                                const float fraction = static_cast<float>(step + 1) / c_stepCount;
-                                const float treadLength = 156.0f / c_stepCount;
-                                const float z = dungeon.center.z() - 200.0f + (static_cast<float>(step) + 0.5f) * treadLength;
-                                const float top = entryHeight + (dungeon.center.y() - entryHeight) * fraction;
+                                try
+                                {
+                                    s_decorationAssets[i] = GFX::AssetManager::Load(c_decorationPaths[i]);
+                                }
+                                catch (const std::exception& exception)
+                                {
+                                    std::cerr << "Failed to load mushroom decoration: " << exception.what() << '\n';
+                                }
+                            }
+                        }
+
+                        for (const auto& module : dungeon.mushroomLayout.modules)
+                        {
+                            const size_t moduleIndex = static_cast<size_t>(module.type);
+                            if (moduleIndex >= s_mushroomAssets.size()
+                                || !s_mushroomAssets[moduleIndex].IsValid()
+                                || s_mushroomAssets[moduleIndex].type != GFX::sAssetType::Prefab)
+                                continue;
+
+                            const float rotation = static_cast<float>(module.rotationQuarterTurns) * 1.57079633f;
+                            GFX::sTransform transform{};
+                            transform.position = dungeon.center + Math::cVec3f(
+                                static_cast<float>(module.cellX) * c_mushroomDungeonCellSize, module.floorHeight,
+                                static_cast<float>(module.cellZ) * c_mushroomDungeonCellSize);
+                            if (!belongsToChunk(transform.position))
+                                continue;
+                            transform.rotation = { 0.0f, rotation, 0.0f };
+                            transform.scale = { c_mushroomDungeonScale, c_mushroomDungeonScale, c_mushroomDungeonScale };
+                            InstantiatePrefab(_rScene, static_cast<GFX::PrefabHandle>(s_mushroomAssets[moduleIndex].handle), transform);
+
+                            if (GetMushroomDungeonModuleDesc(module.type).sealUnusedSockets
+                                && s_doorwaySeal.IsValid() && s_doorwaySeal.type == GFX::sAssetType::Prefab)
+                            {
+                                for (int direction = 0; direction < 4; ++direction)
+                                {
+                                    if ((module.connectionMask & (1u << direction)) != 0)
+                                        continue;
+                                    GFX::sTransform sealTransform = transform;
+                                    sealTransform.rotation = { 0.0f, static_cast<float>(direction) * 1.57079633f, 0.0f };
+                                    InstantiatePrefab(_rScene, static_cast<GFX::PrefabHandle>(s_doorwaySeal.handle), sealTransform);
+                                }
+                            }
+
+                            if (module.type != sMushroomModuleType::BossApproach
+                                && (module.category == sMushroomModuleCategory::Corridor
+                                    || module.category == sMushroomModuleCategory::Optional
+                                    || module.category == sMushroomModuleCategory::CombatSmall
+                                    || module.category == sMushroomModuleCategory::CombatLarge))
+                            {
+                                const size_t decorationIndex = module.decorationVariant % s_decorationAssets.size();
+                                if (s_decorationAssets[decorationIndex].IsValid()
+                                    && s_decorationAssets[decorationIndex].type == GFX::sAssetType::ShapeModel)
+                                {
+                                    GFX::sShapeInstance decoration{};
+                                    decoration.modelHandle = static_cast<GFX::ShapeModelHandle>(s_decorationAssets[decorationIndex].handle);
+                                    decoration.transform.position = transform.position + RotateMushroomOffset(
+                                        Math::cVec3f(module.decorationVariant % 2 == 0 ? -10.0f : 10.0f,
+                                            decorationIndex == 3 ? 12.0f : 0.0f, -16.0f) * c_mushroomDungeonScale, rotation);
+                                    decoration.transform.rotation = { 0.0f, rotation, 0.0f };
+                                    const float decorationScale = (decorationIndex == 1 ? 0.08f : 0.65f) * c_mushroomDungeonScale;
+                                    decoration.transform.scale = { decorationScale, decorationScale, decorationScale };
+                                    decoration.generateLights = decorationIndex == s_decorationAssets.size() - 1;
+                                    decoration.collisionMode = GFX::eShapeCollisionMode::Disabled;
+                                    _rScene.AddShapeInstance(decoration);
+                                }
+                            }
+                        }
+
+                        const auto entrance = std::find_if(dungeon.mushroomLayout.modules.begin(),
+                            dungeon.mushroomLayout.modules.end(), [](const sMushroomDungeonModule& _rModule)
+                        {
+                            return _rModule.category == sMushroomModuleCategory::Entrance;
+                        });
+                        if (entrance != dungeon.mushroomLayout.modules.end())
+                        {
+                            const float approachStartZ = dungeon.mushroomLayout.minimumBounds.z() + 8.0f * c_mushroomDungeonScale;
+                            // Level root gallery continues from here through the shell to the entrance.
+                            constexpr float entranceZ = -300.0f * c_mushroomDungeonScale;
+                            const float entryHeight = GetTerrainSurfaceHeight(dungeon.center.x(), dungeon.center.z() + approachStartZ);
+                            // Fine treads follow intervening terrain peaks as well as the
+                            // ascent, keeping individual risers below the controller step limit.
+                            const int stepCount = std::max(320, static_cast<int>(std::ceil(std::max(
+                                (entranceZ - approachStartZ) / 0.2f, std::abs(dungeon.center.y() - entryHeight) / 0.2f))));
+                            const float treadLength = (entranceZ - approachStartZ) / stepCount;
+                            for (int step = 0; step < stepCount; ++step)
+                            {
+                                const float fraction = static_cast<float>(step + 1) / stepCount;
+                                const float z = dungeon.center.z() + approachStartZ + (static_cast<float>(step) + 0.5f) * treadLength;
+                                const float top = std::max(entryHeight + (dungeon.center.y() - entryHeight) * fraction,
+                                    GetTerrainSurfaceHeight(dungeon.center.x(), z) + 0.05f);
                                 GFX::sShapeInstance stair{};
                                 stair.modelHandle = WorldModels::Get("dungeon_step");
                                 stair.transform.position = { dungeon.center.x(), top, z };
-                                stair.transform.scale = { 16.0f, 100.0f, treadLength };
+                                if (!belongsToChunk(stair.transform.position))
+                                    continue;
+                                stair.transform.scale = { 10.0f * c_mushroomDungeonScale, 200.0f, treadLength };
                                 stair.collisionMode = GFX::eShapeCollisionMode::Mesh;
                                 stair.generateLights = false;
                                 _rScene.AddShapeInstance(stair);
@@ -1062,10 +1184,33 @@ namespace World
                     }
                     const Math::cVec3f bossPosition = dungeon.center + Math::cVec3f(0.0f, GetBossArenaHeight(dungeon.bossId), 0.0f);
                     addSpawn({ dungeon.type, bossPosition, 3.1415926f, true, dungeon.bossId, sEnemyTier::Unique });
-                    for (int rank = 0; rank < 4; ++rank)
+                    for (const auto& module : dungeon.mushroomLayout.modules)
                     {
-                        for (int side = -1; side <= 1; side += 2)
-                            addSpawn({ dungeon.type, dungeon.center + Math::cVec3f(side * 6.0f, rank * 24.0f, 8.0f), 3.1415926f });
+                        if (module.category != sMushroomModuleCategory::CombatSmall
+                            && module.category != sMushroomModuleCategory::CombatLarge)
+                            continue;
+
+                        const float rotation = static_cast<float>(module.rotationQuarterTurns) * 1.57079633f;
+                        const Math::cVec3f roomCenter = dungeon.center + Math::cVec3f(
+                            static_cast<float>(module.cellX) * c_mushroomDungeonCellSize, module.floorHeight,
+                            static_cast<float>(module.cellZ) * c_mushroomDungeonCellSize);
+                        const std::array<Math::cVec3f, 4> offsets =
+                        {
+                            Math::cVec3f(-7.0f, 0.0f, -7.0f), Math::cVec3f(7.0f, 0.0f, -7.0f),
+                            Math::cVec3f(-7.0f, 0.0f, 7.0f), Math::cVec3f(7.0f, 0.0f, 7.0f)
+                        };
+                        const size_t spawnCount = module.category == sMushroomModuleCategory::CombatLarge ? offsets.size()
+                            : (module.floorIndex >= 2 ? 3 : 2);
+                        for (size_t i = 0; i < spawnCount; ++i)
+                        {
+                            const auto enemyType = i == 0 ? sEnemyType::ForestBarkguard
+                                : (i == 1 && module.type == sMushroomModuleType::Nursery ? sEnemyType::ForestCrawler : dungeon.type);
+                            const auto tier = module.floorIndex >= 2 && i == 0
+                                && module.category == sMushroomModuleCategory::CombatLarge ? sEnemyTier::Blue : sEnemyTier::Normal;
+                            const size_t pocket = (i + module.decorationVariant) % offsets.size();
+                            addSpawn({ enemyType, roomCenter + RotateMushroomOffset(offsets[pocket] * c_mushroomDungeonScale, rotation),
+                                3.1415926f, false, sBossId::Undefined, tier });
+                        }
                     }
                     continue;
                 }

@@ -36,6 +36,7 @@ void cGame::InitMeshes()
     m_extrudedPolygonMesh   = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::ExtrudedPolygon));
     m_discMesh              = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Disc));
     m_arcMesh               = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Arc));
+    m_triangleMesh          = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Triangle));
 
     SubmitMesh(m_planeMesh);
     SubmitMesh(m_chunkPlaneMesh);
@@ -58,6 +59,7 @@ void cGame::InitMeshes()
     SubmitMesh(m_extrudedPolygonMesh);
     SubmitMesh(m_discMesh);
     SubmitMesh(m_arcMesh);
+    SubmitMesh(m_triangleMesh);
 
     sMaterial playerSphereMaterial{};
 

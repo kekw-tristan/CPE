@@ -1,6 +1,7 @@
 #include "worldGenerator.h"
 #include "chunk.h"
 #include "worldConfig.h"
+#include "mushroomDungeon.h"
 #include "worldModels.h"
 #include "terrainHeight.h"
 #include "biome/forestGenerator.h"
@@ -72,6 +73,7 @@ namespace World
                         case GFX::sMeshTypes::Arch:
                         case GFX::sMeshTypes::ExtrudedPolygon:
                         case GFX::sMeshTypes::Disc:
+                        case GFX::sMeshTypes::Triangle:
                         case GFX::sMeshTypes::Arc:
                             break;
 
@@ -168,13 +170,15 @@ namespace World
                         const bool acornDungeon = dungeon.bossId == sBossId::ForestThornwolf;
                         if (mushroomDungeon)
                         {
-                            // Survey the whole kingdom so terrain cannot emerge inside its outer districts.
-                            const float x = std::cos(angle) * c_mushroomDungeonRadius;
-                            const float z = std::sin(angle) * c_mushroomDungeonRadius;
+                            // The module layout is retained with the world layout before any chunk is streamed.
+                            const float x = std::cos(angle) * c_sporecapDungeonRadius;
+                            const float z = std::sin(angle) * c_sporecapDungeonRadius;
+                            dungeon.center = Math::cVec3f(x, 0.0f, z);
+                            GenerateMushroomDungeonLayout(m_seed, dungeon);
                             float floorHeight = GetTerrainSurfaceHeight(x, z);
-                            for (float localZ = c_mushroomDungeonFront; localZ <= c_mushroomDungeonBack; localZ += 4.0f)
+                            for (float localZ = dungeon.mushroomLayout.minimumBounds.z(); localZ <= dungeon.mushroomLayout.maximumBounds.z(); localZ += 4.0f)
                             {
-                                for (float localX = -c_mushroomDungeonHalfWidth; localX <= c_mushroomDungeonHalfWidth; localX += 4.0f)
+                                for (float localX = dungeon.mushroomLayout.minimumBounds.x(); localX <= dungeon.mushroomLayout.maximumBounds.x(); localX += 4.0f)
                                     floorHeight = std::max(floorHeight, GetTerrainSurfaceHeight(x + localX, z + localZ));
                             }
                             dungeon.center = Math::cVec3f(x, floorHeight + 2.0f, z);
@@ -215,8 +219,8 @@ namespace World
                         }
                         const float approach = cageDungeon ? c_cageDungeonApproach
                             : (acornDungeon ? c_acornDungeonApproach : c_bossDungeonApproach);
-                        const float approachZ = mushroomDungeon ? 204.0f : -approach + 4.0f;
-                        const float entranceZ = mushroomDungeon ? 200.0f : -approach;
+                        const float entranceZ = mushroomDungeon ? -dungeon.mushroomLayout.minimumBounds.z() - 8.0f * c_mushroomDungeonScale : -approach;
+                        const float approachZ = entranceZ + 4.0f;
 
                         m_layout.mainPath.push_back({ Math::cVec3f(0.0f, 0.0f, 0.0f) });
                         m_layout.mainPath.push_back({ Math::cVec3f(dungeon.center.x() * 0.4f, 0.0f, dungeon.center.z() - approachZ) });
@@ -285,12 +289,31 @@ namespace World
 
             bool changed = false;
 
+            // The Elder Shell extends beyond the ordinary room streaming window.
+            // Retain its single owner (and colliders) while its envelope is nearby.
+            const auto& mushroom = generator.m_layout.dungeons[sBossId::ForestSporecap];
+            const auto& bounds = mushroom.mushroomLayout;
+            constexpr float c_landmarkViewMargin = c_chunkSize * 2.0f;
+            const bool retainLandmark = !bounds.modules.empty()
+                && centerX * c_chunkSize >= mushroom.center.x() + bounds.minimumBounds.x() - c_landmarkViewMargin
+                && centerX * c_chunkSize <= mushroom.center.x() + bounds.maximumBounds.x() + c_landmarkViewMargin
+                && centerZ * c_chunkSize >= mushroom.center.z() + bounds.minimumBounds.z() - c_landmarkViewMargin
+                && centerZ * c_chunkSize <= mushroom.center.z() + bounds.maximumBounds.z() + c_landmarkViewMargin;
+            const std::pair<int, int> landmarkOwner =
+            {
+                static_cast<int>(std::floor(mushroom.center.x() / c_chunkSize + 0.5f)),
+                static_cast<int>(std::floor(mushroom.center.z() / c_chunkSize + 0.5f))
+            };
+
             if (moved)
             {
                 std::erase_if(generator.m_chunks, [&](const auto& _rEntry)
                 {
                     if (std::abs(_rEntry.first.first - centerX) <= c_chunkLoadRadius
                         && std::abs(_rEntry.first.second - centerZ) <= c_chunkLoadRadius)
+                        return false;
+
+                    if (retainLandmark && _rEntry.first == landmarkOwner)
                         return false;
 
                     for (auto handle : _rEntry.second.colliders)
@@ -304,14 +327,23 @@ namespace World
             generator.m_windowComplete = true;
             int generated = 0;
 
-            // Nearest chunks first, including the ground after a teleport.
-            for (int radius = 0; radius <= c_chunkLoadRadius; ++radius)
+            // Ground first, then the landmark owner, then normal distance rings.
+            // The extra owner still consumes the existing per-update chunk budget.
+            for (int pass = 0; pass <= c_chunkLoadRadius + 1; ++pass)
             {
-                for (int z = centerZ - radius; z <= centerZ + radius; ++z)
+                const bool landmarkPass = pass == 1;
+                if (landmarkPass && !retainLandmark)
+                    continue;
+                const int radius = pass == 0 ? 0 : pass - 1;
+                const int firstZ = landmarkPass ? landmarkOwner.second : centerZ - radius;
+                const int lastZ = landmarkPass ? landmarkOwner.second : centerZ + radius;
+                const int firstX = landmarkPass ? landmarkOwner.first : centerX - radius;
+                const int lastX = landmarkPass ? landmarkOwner.first : centerX + radius;
+                for (int z = firstZ; z <= lastZ; ++z)
                 {
-                    for (int x = centerX - radius; x <= centerX + radius; ++x)
+                    for (int x = firstX; x <= lastX; ++x)
                     {
-                        if (std::max(std::abs(x - centerX), std::abs(z - centerZ)) != radius
+                        if ((!landmarkPass && std::max(std::abs(x - centerX), std::abs(z - centerZ)) != radius)
                             || x < -c_worldChunkCountX / 2 || x >= c_worldChunkCountX / 2
                             || z < -c_worldChunkCountZ / 2 || z >= c_worldChunkCountZ / 2
                             || generator.m_chunks.contains({ x, z }))

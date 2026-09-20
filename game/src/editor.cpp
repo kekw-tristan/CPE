@@ -162,6 +162,9 @@ void cEditor::OnInit()
     m_arcMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Arc));
     SubmitMesh(m_arcMesh);
 
+    m_triangleMesh = CreateMesh(ShapeMeshLibrary::GetMeshData(sMeshTypes::Triangle));
+    SubmitMesh(m_triangleMesh);
+
     // -------------------------------------------------------------------------------------------------------------------------
     // Build scene render data
     // -------------------------------------------------------------------------------------------------------------------------
@@ -583,6 +586,9 @@ Engine::GFX::MeshHandle cEditor::GetMesh(Engine::GFX::sMeshTypes::Enum _type)
 
         case sMeshTypes::Arc:
             return m_arcMesh;
+
+        case sMeshTypes::Triangle:
+            return m_triangleMesh;
 
         default:
             return nullptr;
