@@ -83,7 +83,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/lantern_cyan.json",
+            "asset": "../../models/mushroom_dungeon/lantern_amber.json",
             "position": [-16, 7, -16],
             "rotation": [0, 0, 0],
             "scale": [1.2, 1.2, 1.2],
@@ -91,12 +91,36 @@
             "generateLights": true
         },
         {
-            "asset": "../../models/mushroom_dungeon/lantern_cyan.json",
+            "asset": "../../models/mushroom_dungeon/lantern_amber.json",
             "position": [16, 7, 16],
             "rotation": [0, 0, 0],
             "scale": [1.2, 1.2, 1.2],
             "generateColliders": false,
             "generateLights": true
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/lantern_cyan.json",
+            "position": [15, 3, -15],
+            "rotation": [0, 0, 0],
+            "scale": [0.7, 0.7, 0.7],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/hanging_spores.json",
+            "position": [-15, 13, 15],
+            "rotation": [0, 0, 0],
+            "scale": [1.1, 1.1, 1.1],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/hanging_spores.json",
+            "position": [15, 13, -15],
+            "rotation": [0, 0, 0],
+            "scale": [1.1, 1.1, 1.1],
+            "generateColliders": false,
+            "generateLights": false
         },
         {
             "asset": "../../models/mushroom_dungeon/root_portal.json",

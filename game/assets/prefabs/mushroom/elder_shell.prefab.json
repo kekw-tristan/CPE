@@ -11,6 +11,14 @@
             "generateLights": false
         },
         {
+            "asset": "../../models/mushroom_dungeon/elder_floor.json",
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
             "asset": "../../models/mushroom_dungeon/elder_hollow_cap.json",
             "position": [0, 0, 0],
             "rotation": [0, 0, 0],
@@ -25,6 +33,14 @@
             "scale": [1, 1, 1],
             "generateColliders": false,
             "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/elder_interior.json",
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": false,
+            "generateLights": true
         },
         {
             "asset": "../../models/mushroom_dungeon/elder_exterior_details.json",
@@ -75,6 +91,14 @@
             "generateLights": true
         },
         {
+            "asset": "../../models/mushroom_dungeon/lantern_amber.json",
+            "position": [-8, 5, -239],
+            "rotation": [0, 0, 0],
+            "scale": [1.1, 1.1, 1.1],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
             "asset": "../../models/mushroom_dungeon/cluster.json",
             "position": [-13.6, 0, -294],
             "rotation": [0, 0, 0],
@@ -111,6 +135,14 @@
             "position": [8, 6, -272],
             "rotation": [0, 0, 0],
             "scale": [1.4, 1.4, 1.4],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/lantern_amber.json",
+            "position": [8, 5, -239],
+            "rotation": [0, 0, 0],
+            "scale": [1.1, 1.1, 1.1],
             "generateColliders": false,
             "generateLights": true
         },

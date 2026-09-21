@@ -233,12 +233,17 @@ def export():
     for name, title in titles.items():
         objects = [object_("module_shell", collider=True), object_("module_mycelium")]
         warm = name in ("entrance", "nursery", "alchemy", "shrine", "side_room")
-        lantern = "lantern_amber" if warm else "lantern_cyan"
+        lantern = "lantern_amber"
         for x, z in [(-16, -16), (16, 16), (-16, 16), (16, -16)]:
             objects.append(object_("fungal_pier", (x, 0, z), (.65, 1.25, .65), collider=True))
             objects.append(object_("cluster", (x * .82, 0, z * .82), (1.2, 1.2, 1.2)))
         for x, z in [(-16, -16), (16, 16)]:
             objects.append(object_(lantern, (x, 7, z), (1.2, 1.2, 1.2), light=True))
+        # Warm pools at the walls and a small cool accent give the open rooms depth.
+        if not warm:
+            objects.append(object_("lantern_cyan", (15, 3, -15), (.7, .7, .7), light=True))
+        for x, z in ((-15, 15), (15, -15)):
+            objects.append(object_("hanging_spores", (x, 13, z), (1.1, 1.1, 1.1)))
         for side in range(4):
             yaw = side * PI / 2
             x, z = rotate(0, 19.4, yaw)
@@ -365,18 +370,25 @@ def export_landmark(palette, save):
     for material in palette:
         material.update(metallic=0, emissiveStrength=0, roughness=.88,
                         lightWrap=.35, ambientStrength=1.1, shapeContrast=.85)
-    palette[1].update(albedo=[.79, .71, .56])
-    palette[2].update(albedo=[.62, .25, .17])
+    palette[1].update(albedo=[.81, .73, .59])
+    palette[2].update(albedo=[.54, .20, .12], roughness=.94)
     palette[3].update(albedo=[.40, .57, .46])
-    palette[9].update(albedo=[.72, .36, .23])
-    palette[10].update(albedo=[.38, .33, .23])
+    palette[9].update(albedo=[.68, .32, .18])
+    palette[10].update(albedo=[.30, .26, .17])
+    palette[11].update(albedo=[.24, .34, .17], roughness=1)
     palette[12].update(albedo=[.49, .65, .51], emissiveColor=[.28, .65, .46], emissiveStrength=.25)
-    palette[13].update(albedo=[.89, .74, .50], emissiveColor=[.66, .43, .19],
-                       emissiveStrength=.13, ambientStrength=1.3)
-    palette[14].update(albedo=[.94, .84, .64])
+    palette[13].update(albedo=[.92, .80, .60], ambientStrength=1.12)
+    palette[14].update(albedo=[.82, .70, .48])
     import copy
     palette.append(copy.deepcopy(palette[13]))
-    palette[15].update(albedo=[.62, .43, .25], emissiveStrength=.07)
+    palette[15].update(albedo=[.42, .29, .17], emissiveStrength=0, ambientStrength=.95)
+    for albedo, glow, strength in (
+            ([.58, .42, .27], [.52, .30, .12], .035),  # 16: warm inner tissue
+            ([.34, .25, .18], [.34, .22, .12], .015),  # 17: recessed folds
+            ([.38, .60, .43], [.24, .65, .40], .45)):  # 18: living mycelium
+        palette.append(copy.deepcopy(palette[1]))
+        palette[-1].update(albedo=albedo, emissiveColor=glow, emissiveStrength=strength,
+                           roughness=.95, ambientStrength=1.15)
     sectors = 64
 
     def surface(radius, y, i, cap=False):
@@ -392,10 +404,19 @@ def export_landmark(palette, save):
         bend = 16 * math.sin(y / 250)
         wobble = 1 + .009 * math.sin(3 * a + .4) + .006 * math.cos(5 * a + y * .004)
         if cap:
-            wobble += .025 * math.sin(a + .8) + .018 * math.cos(3 * a - .5)
+            wobble += .055 * math.sin(a + .8) + .025 * math.cos(3 * a - .5)
+            skirt = min(1, radius / 300) * min(1, max(0, (335 - y) / 150))
+            # Broad waves and three worn notches continue across the lip and gills.
+            wear = sum(math.exp(-(math.atan2(math.sin(a - notch), math.cos(a - notch)) / .12) ** 2)
+                       for notch in (.85, 2.6, 4.35))
+            radius -= skirt * wear * 5
+            y += skirt * (9 * math.sin(a - .4) + 5 * math.sin(5 * a + .7) + 14 * wear)
         else:
             # Outward-only fibres preserve clearance and continue into the gills.
-            radius += (3 + 4 * math.sin(PI * max(0, y) / 396)) * (1 + math.cos(12 * a + y * .006))
+            radius += (5 + 5 * math.sin(PI * max(0, y) / 396)) * (1 + math.cos(12 * a + y * .009))
+            # Buttress the foot while keeping the entrance gallery exposed.
+            gate_distance = math.atan2(math.sin(a - PI), math.cos(a - PI))
+            radius += 18 * math.exp(-(y / 32) ** 2) * (1 - math.exp(-(gate_distance / .25) ** 2))
         return [bend + math.sin(a) * radius * wobble,
                 y + (3 * math.sin(2 * a + .7) + 2 * math.cos(3 * a) if cap else 0),
                 -3 * math.sin(y / 170) + math.cos(a) * radius * wobble]
@@ -413,17 +434,43 @@ def export_landmark(palette, save):
                           surface(r1 - inset, y1, i + 1), surface(r1 - inset, y1, i)]
                 if reverse:
                     points.reverse()
-                quad(stem, *points, 1)
+                material = 16 if reverse else (10 if y1 <= 0 else 1)
+                quad(stem, *points, material)
             if gate and y0 == 24:
                 quad(stem, surface(r0, y0, i), surface(r0 - 4, y0, i),
                      surface(r0 - 4, y0, i + 1), surface(r0, y0, i + 1), 1)
     write(MODELS / "elder_hollow_stem.json", dict(name="Fluted ivory elder stem", materials=palette, shapes=stem))
 
+    # A solid earthen base follows the irregular inner wall. Its top sits just
+    # below the room floors and entrance gallery, avoiding coplanar surfaces.
+    floor = []
+    floor_top, floor_bottom = -.15, -4
+    floor_center = [0, floor_top, 0]
+    floor_under = [0, floor_bottom, 0]
+
+    def floor_edge(sector, height):
+        low = surface(249, -8, sector)
+        high = surface(247, 0, sector)
+        t = (floor_top + 8) / 8
+        return [low[0] + (high[0] - low[0]) * t, height,
+                low[2] + (high[2] - low[2]) * t]
+
+    for sector in range(sectors):
+        a, b = floor_edge(sector, floor_top), floor_edge(sector + 1, floor_top)
+        c, d = floor_edge(sector, floor_bottom), floor_edge(sector + 1, floor_bottom)
+        triangle(floor, floor_center, a, b, 16)
+        triangle(floor, floor_under, d, c, 17)
+        quad(floor, a, c, d, b, 10)
+    floor_palette = copy.deepcopy(palette)
+    floor_palette[16].update(albedo=[.32, .27, .18], roughness=1, emissiveStrength=0)
+    write(MODELS / "elder_floor.json", dict(name="Continuous earthen mycelium floor",
+          materials=floor_palette, shapes=floor))
+
     cap, gills = [], []
     # A deep bell-shaped skirt exposes the spotted russet cap from ground level.
     # Its inward-rolled edge stays outside the rooms and below the stem shoulder.
     profile = [(0, 335), (65, 331), (132, 321), (200, 306), (256, 270),
-               (294, 225), (316, 171), (318, 139), (313, 128), (301, 129)]
+               (294, 225), (321, 182), (328, 155), (324, 143), (311, 145)]
     lip_band = len(profile) - 2
     for band, ((r0, y0), (r1, y1)) in enumerate(zip(profile, profile[1:])):
         for i in range(sectors):
@@ -443,8 +490,8 @@ def export_landmark(palette, save):
 
     # Each rib is part of the shell, with a deep rounded fold and a darker flank.
     # Lamellae curve up inside the lowered skirt and meet the unchanged stem.
-    lamellae = [(301, 129, 0), (291, 158, 5), (279, 184, 8),
-                (265, 197, 10), (253, 202, 6), (244, 198, 0)]
+    lamellae = [(311, 145, 0), (296, 169, 10), (279, 190, 17),
+                (265, 201, 20), (253, 203, 12), (244, 198, 0)]
 
     def gill_point(ring, sector):
         radius, y, depth = ring
@@ -464,11 +511,67 @@ def export_landmark(palette, save):
     write(MODELS / "elder_hollow_cap.json", dict(name="Deep bell-shaped russet elder crown", materials=palette, shapes=cap))
     write(MODELS / "elder_gills.json", dict(name="Deep honey ivory descending lamellae", materials=palette, shapes=gills))
 
+    # A separate inward-facing vault gives the crown real thickness. Its last
+    # ring shares the inner stem vertices; no duplicate coplanar backfaces.
+    interior = []
+    vault = [(0, 329), (65, 325), (132, 315), (200, 300),
+             (250, 264), (282, 222), (240, 198)]
+
+    def vault_point(ring, sector):
+        radius, height = ring
+        if ring == vault[-1]:
+            return surface(radius, height, sector)
+        if radius == 0:
+            return [16 * math.sin(height / 250), height, -3 * math.sin(height / 170)]
+        point = surface(radius, height, sector, True)
+        # Folds deepen toward the shoulder and taper out at the stem connection.
+        point[1] -= 5 * math.sin(PI * (sector % 1)) * min(1, radius / 180)
+        return point
+
+    for outer, inner in zip(vault, vault[1:]):
+        for i in range(sectors):
+            for half, material in ((0, 16), (1, 17)):
+                a, b = i + half * .5, i + (half + 1) * .5
+                if outer[0] == 0:
+                    triangle(interior, vault_point(outer, a), vault_point(inner, b),
+                             vault_point(inner, a), material)
+                else:
+                    quad(interior, vault_point(outer, b), vault_point(inner, b),
+                         vault_point(inner, a), vault_point(outer, a), material)
+
+    # Thin branching veins sit just inside the wall, beyond all room footprints.
+    def vein_point(height, sector):
+        radius = next(r0 + (r1 - r0) * (height - y0) / (y1 - y0)
+                      for (r0, y0), (r1, y1) in zip(stem_rings, stem_rings[1:]) if y0 <= height <= y1)
+        return surface(radius - 5.5, height, sector)
+
+    for sector in (4, 15, 26, 39, 49, 58):
+        for start, end in ((18, 58), (92, 143), (165, 195)):
+            for step in range(4):
+                low, high = start + (end - start) * step / 4, start + (end - start) * (step + 1) / 4
+                a = sector + .35 * math.sin(low * .07 + sector)
+                b = sector + .35 * math.sin(high * .07 + sector)
+                quad(interior, vein_point(low, a - .035), vein_point(high, b - .035),
+                     vein_point(high, b + .035), vein_point(low, a + .035), 18)
+
+    # Local light sources illuminate the vault without flooding every room.
+    lights = [dict(name="heart_amber", type="Point", position=[0, 290, 0],
+                   color=[1, .57, .26], intensity=3, radius=145, castsShadow=False)]
+    for i, sector in enumerate((4, 26, 49)):
+        point = vein_point(150, sector)
+        point[0] *= .94
+        point[2] *= .94
+        lights.append(dict(name=f"mycelium_{i}", type="Point", position=point,
+                           color=[.34, .64, .43], intensity=1.3, radius=75, castsShadow=False))
+    write(MODELS / "elder_interior.json", dict(name="Honey vault and living mycelium",
+          materials=palette, shapes=interior, lights=lights))
+
     details = []
     # Continuous tapered roots replace intersecting ellipsoids and thick columns.
     for root, angle in enumerate((.12, .92, 1.77, 2.43, 3.92, 4.82, 5.67)):
         rings = []
-        for distance, y, width in ((222, 32, 16), (244, 7, 14), (272, -10, 10), (296, -38, 6), (304, -135, .5)):
+        for distance, y, width in ((242, 32, 23), (268, 8, 20), (298, -2, 14),
+                                   (327, -14, 8), (343, -55, 3), (343, -135, .5)):
             a = angle + .09 * math.sin(distance / 70 + root)
             center = [math.sin(a) * distance, y, math.cos(a) * distance]
             rings.append([[center[0] + math.cos(a) * width * math.cos(j * PI / 4),
@@ -506,15 +609,18 @@ def export_landmark(palette, save):
         moss = fan_point(.2, .38, width * .12)
         details.append(shape("Sphere", moss, [width * .32, 2.2, width * .22], 11, angle))
 
-    for angle, height, width in ((.5, 80, 52), (1.35, 137, 64), (2.1, 60, 48),
-                                 (2.65, 152, 62), (3.55, 92, 66), (4.15, 169, 58),
-                                 (4.9, 65, 52), (5.5, 128, 64)):
-        for j in range(3):
-            shelf(angle + j * .075, height - j * 9, width * (1 - j * .22))
+    for angle, height, width, count in ((.65, 105, 64, 4), (2.1, 68, 46, 2),
+                                       (3.65, 120, 70, 4), (5.25, 155, 56, 3)):
+        for j in range(count):
+            shelf(angle + j * .09, height - j * 12, width * (1 - j * .18))
+
+    # Low moss cushions nestle between the buttresses, leaving the approach clear.
+    for angle, size in ((.42, 25), (.69, 18), (1.85, 22), (3.95, 26), (4.2, 17), (5.45, 23)):
+        point = surface(266, 1, angle * sectors / (2 * PI) + .5)
+        details.append(shape("Sphere", point, [size, 5, size * .7], 11, angle))
 
     # Attached pearl-like spore clusters replace the thin hanging strings.
-    for colony in range(10):
-        sector = colony * sectors / 10 + .5
+    for sector in (6.5, 8.5, 35.5, 38.5, 53.5):
         for j in range(3):
             point = gill_point(lamellae[2], sector + j * .13)
             point[1] -= 1.5
@@ -522,7 +628,9 @@ def export_landmark(palette, save):
     write(MODELS / "elder_exterior_details.json", dict(name="Scalloped woodland fans and jade spore pearls", materials=palette, shapes=details))
 
     exterior = [object_("elder_hollow_stem", collider=True),
+                object_("elder_floor", collider=True),
                 object_("elder_hollow_cap"), object_("elder_gills"),
+                object_("elder_interior", light=True),
                 object_("elder_exterior_details"),
                 object_("floor_plate", (0, 0, -258), (12, 1.2, 84), collider=True),
                 object_("root_portal", (0, 0, -269), (2.1, 2.5, 1.5)),
@@ -530,6 +638,7 @@ def export_landmark(palette, save):
     for x in (-8, 8):
         exterior.append(object_("parapet", (x, 0, -258), (84, 1, 1), PI / 2, True))
         exterior.append(object_("lantern_amber", (x, 6, -272), (1.4, 1.4, 1.4), light=True))
+        exterior.append(object_("lantern_amber", (x, 5, -239), (1.1, 1.1, 1.1), light=True))
         for z in (-294, -260, -229):
             exterior.append(object_("cluster", (x * 1.7, 0, z), (1.8, 1.8, 1.8)))
     for a, size in ((.5, 1.1), (1.8, .85), (4.5, 1.3), (5.2, .8)):
@@ -639,7 +748,7 @@ def audit_surfaces():
     from collections import defaultdict
     planes = defaultdict(list)
     count = 0
-    for name in ("elder_hollow_stem", "elder_hollow_cap", "elder_gills"):
+    for name in ("elder_hollow_stem", "elder_hollow_cap", "elder_gills", "elder_interior", "elder_floor"):
         model = json.loads((MODELS / (name + ".json")).read_text())
         assert model["shapes"], (name, "empty shell")
         for part in model["shapes"]:
@@ -678,6 +787,61 @@ def polygons_overlap(a, b):
     return True
 
 
+def audit_interior_visibility():
+    # Cull backfaces just like the main pass: outward crown triangles cannot
+    # conceal the sky for an observer inside the mushroom.
+    faces = []
+    for name in ("elder_hollow_stem", "elder_hollow_cap", "elder_interior", "elder_floor"):
+        model = json.loads((MODELS / (name + ".json")).read_text())
+        for part in model["shapes"]:
+            a, b, c = triangle_vertices(part)
+            faces.append((a, subtract(b, a), subtract(c, a)))
+
+    def nearest_hit(origin, direction):
+        nearest = math.inf
+        for a, edge1, edge2 in faces:
+            h = cross(direction, edge2)
+            determinant = dot(edge1, h)
+            if determinant <= 1e-7:
+                continue
+            offset = subtract(origin, a)
+            u = dot(offset, h) / determinant
+            if u < -1e-7 or u > 1 + 1e-7:
+                continue
+            q = cross(offset, edge1)
+            v = dot(direction, q) / determinant
+            if v < -1e-7 or u + v > 1 + 1e-7:
+                continue
+            distance = dot(edge2, q) / determinant
+            if distance > 1e-5:
+                nearest = min(nearest, distance)
+        return nearest
+
+    count = 0
+    for origin in ((0, 8, 0), (0, 86, 0), (0, 164, 0), (0, 242, 0), (0, 242, -90)):
+        assert math.isfinite(nearest_hit(origin, (0, 1, 0))), (origin, "open crown above")
+        for sector in range(8):
+            angle = (sector + .25) * PI / 4
+            for rise in (0, .5, 1.5):
+                direction = (math.sin(angle), rise, math.cos(angle))
+                assert math.isfinite(nearest_hit(origin, direction)), (origin, direction, "interior sees sky")
+                count += 1
+    # The authored entrance is the intentional opening, including its return path.
+    assert nearest_hit((0, 5, -310), (0, 0, 1)) > 94, "Shell blocks entry gallery"
+    assert nearest_hit((0, 5, -216), (0, 0, -1)) > 94, "Shell blocks exit gallery"
+    print(f"{count + 5} interior sightlines are enclosed; entry and exit gallery remain open.")
+    floor_samples = [(0, 2, 0)]
+    for radius in (80, 170, 235):
+        for sector in range(16):
+            angle = sector * PI / 8
+            floor_samples.append((math.sin(angle) * radius, 2, math.cos(angle) * radius))
+    for origin in floor_samples:
+        assert abs(nearest_hit(origin, (0, -1, 0)) - 2.15) < 1e-5, (origin, "floor gap or uneven support")
+    shell = json.loads((PREFABS / "elder_shell.prefab.json").read_text())
+    assert any(obj["asset"].endswith("/elder_floor.json") and obj["generateColliders"] for obj in shell["objects"])
+    print(f"{len(floor_samples)} floor samples have level support; floor collision is enabled.")
+
+
 def audit():
     import re
     header = (ROOT / "game/src/world/mushroomDungeon.h").read_text()
@@ -700,6 +864,7 @@ def audit():
     print(f"Audited {len(list(PREFABS.glob('*.prefab.json')))} prefabs, {count} objects; all model references resolve.")
     audit_walkways()
     audit_surfaces()
+    audit_interior_visibility()
 
 
 if __name__ == "__main__":

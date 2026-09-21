@@ -99,6 +99,22 @@
             "generateLights": true
         },
         {
+            "asset": "../../models/mushroom_dungeon/hanging_spores.json",
+            "position": [-15, 13, 15],
+            "rotation": [0, 0, 0],
+            "scale": [1.1, 1.1, 1.1],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/hanging_spores.json",
+            "position": [15, 13, -15],
+            "rotation": [0, 0, 0],
+            "scale": [1.1, 1.1, 1.1],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
             "asset": "../../models/mushroom_dungeon/root_portal.json",
             "position": [0.0, 0, 19.4],
             "rotation": [0, 0.0, 0],
