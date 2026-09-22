@@ -1067,11 +1067,11 @@ namespace World
 
                         static const char* c_decorationPaths[] =
                         {
-                            "./assets/models/mushroom_dungeon/cluster.json",
-                            "./assets/models/mushroom_dungeon/roots.json",
-                            "./assets/models/mushroom_dungeon/herald_banner.json",
-                            "./assets/models/mushroom_dungeon/hanging_spores.json",
-                            "./assets/models/mushroom_dungeon/lantern_cyan.json"
+                            "./assets/models/mushroom_dungeon/violet_cluster.json",
+                            "./assets/models/mushroom_dungeon/violet_roots.json",
+                            "./assets/models/mushroom_dungeon/violet_herald_banner.json",
+                            "./assets/models/mushroom_dungeon/violet_hanging_spores.json",
+                            "./assets/models/mushroom_dungeon/violet_lantern_cyan.json"
                         };
                         static std::array<GFX::sAssetHandle, std::size(c_decorationPaths)> s_decorationAssets{};
                         static bool s_decorationAttempted = false;

@@ -1,0 +1,241 @@
+{
+    "name": "Violet mycelium roots",
+    "materials": [
+        {
+            "albedo": [0.13, 0.16, 0.24],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.13, 0.16, 0.24],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.66, 0.6, 0.72],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.66, 0.6, 0.72],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.18, 0.25, 0.64],
+            "roughness": 0.68,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.18, 0.25, 0.64],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.22, 0.76, 0.82],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.22, 0.76, 0.82],
+            "emissiveStrength": 0.65
+        },
+        {
+            "albedo": [0.96, 0.65, 0.51],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.96, 0.65, 0.51],
+            "emissiveStrength": 0.3
+        },
+        {
+            "albedo": [0.2, 0.22, 0.32],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.2, 0.22, 0.32],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.29, 0.24, 0.39],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.29, 0.24, 0.39],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.52, 0.46, 0.67],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.52, 0.46, 0.67],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.28, 0.17, 0.48],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.28, 0.17, 0.48],
+            "emissiveStrength": 0
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "Sphere",
+            "position": [0.0, 2, 40.0],
+            "rotation": [0, 0.0, 0],
+            "scale": [9, 6, 35],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [0.0, 25, 43.0],
+            "rotation": [0, 0.0, 0],
+            "scale": [16, 5, 13],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Sphere",
+            "position": [19.999999999999996, 2, 34.64101615137755],
+            "rotation": [0, 0.5235987755982988, 0],
+            "scale": [9, 6, 35],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [21.499999999999996, 41, 37.239092362730865],
+            "rotation": [0, 0.5235987755982988, 0],
+            "scale": [16, 5, 13],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Sphere",
+            "position": [34.64101615137754, 2, 20.000000000000004],
+            "rotation": [0, 1.0471975511965976, 0],
+            "scale": [9, 6, 35],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [37.23909236273086, 57, 21.500000000000004],
+            "rotation": [0, 1.0471975511965976, 0],
+            "scale": [16, 5, 13],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Sphere",
+            "position": [40.0, 2, 2.4492935982947065e-15],
+            "rotation": [0, 1.5707963267948966, 0],
+            "scale": [9, 6, 35],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [43.0, 25, 2.6329906181668092e-15],
+            "rotation": [0, 1.5707963267948966, 0],
+            "scale": [16, 5, 13],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Sphere",
+            "position": [34.64101615137755, 2, -19.999999999999993],
+            "rotation": [0, 2.0943951023931953, 0],
+            "scale": [9, 6, 35],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [37.239092362730865, 41, -21.49999999999999],
+            "rotation": [0, 2.0943951023931953, 0],
+            "scale": [16, 5, 13],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Sphere",
+            "position": [-34.64101615137754, 2, -20.000000000000018],
+            "rotation": [0, 4.1887902047863905, 0],
+            "scale": [9, 6, 35],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [-37.23909236273086, 57, -21.500000000000018],
+            "rotation": [0, 4.1887902047863905, 0],
+            "scale": [16, 5, 13],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Sphere",
+            "position": [-40.0, 2, -7.347880794884118e-15],
+            "rotation": [0, 4.71238898038469, 0],
+            "scale": [9, 6, 35],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [-43.0, 25, -7.898971854500428e-15],
+            "rotation": [0, 4.71238898038469, 0],
+            "scale": [16, 5, 13],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Sphere",
+            "position": [-34.64101615137754, 2, 20.000000000000004],
+            "rotation": [0, 5.235987755982989, 0],
+            "scale": [9, 6, 35],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [-37.23909236273086, 41, 21.500000000000004],
+            "rotation": [0, 5.235987755982989, 0],
+            "scale": [16, 5, 13],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Sphere",
+            "position": [-20.000000000000018, 2, 34.641016151377535],
+            "rotation": [0, 5.759586531581287, 0],
+            "scale": [9, 6, 35],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [-21.500000000000018, 57, 37.23909236273085],
+            "rotation": [0, 5.759586531581287, 0],
+            "scale": [16, 5, 13],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        }
+    ]
+}

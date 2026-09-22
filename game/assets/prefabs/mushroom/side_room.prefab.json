@@ -19,7 +19,15 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/fungal_pier.json",
+            "asset": "../../models/mushroom_dungeon/vault_chamber.json",
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": true,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/violet_fungal_pier.json",
             "position": [-16, 0, -16],
             "rotation": [0, 0, 0],
             "scale": [0.65, 1.25, 0.65],
@@ -27,7 +35,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/cluster.json",
+            "asset": "../../models/mushroom_dungeon/violet_cluster.json",
             "position": [-13.12, 0, -13.12],
             "rotation": [0, 0, 0],
             "scale": [1.2, 1.2, 1.2],
@@ -35,7 +43,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/fungal_pier.json",
+            "asset": "../../models/mushroom_dungeon/violet_fungal_pier.json",
             "position": [16, 0, 16],
             "rotation": [0, 0, 0],
             "scale": [0.65, 1.25, 0.65],
@@ -43,7 +51,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/cluster.json",
+            "asset": "../../models/mushroom_dungeon/violet_cluster.json",
             "position": [13.12, 0, 13.12],
             "rotation": [0, 0, 0],
             "scale": [1.2, 1.2, 1.2],
@@ -51,39 +59,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/fungal_pier.json",
-            "position": [-16, 0, 16],
-            "rotation": [0, 0, 0],
-            "scale": [0.65, 1.25, 0.65],
-            "generateColliders": true,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/cluster.json",
-            "position": [-13.12, 0, 13.12],
-            "rotation": [0, 0, 0],
-            "scale": [1.2, 1.2, 1.2],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/fungal_pier.json",
-            "position": [16, 0, -16],
-            "rotation": [0, 0, 0],
-            "scale": [0.65, 1.25, 0.65],
-            "generateColliders": true,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/cluster.json",
-            "position": [13.12, 0, -13.12],
-            "rotation": [0, 0, 0],
-            "scale": [1.2, 1.2, 1.2],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/lantern_amber.json",
+            "asset": "../../models/mushroom_dungeon/violet_lantern_amber.json",
             "position": [-16, 7, -16],
             "rotation": [0, 0, 0],
             "scale": [1.2, 1.2, 1.2],
@@ -91,7 +67,7 @@
             "generateLights": true
         },
         {
-            "asset": "../../models/mushroom_dungeon/lantern_amber.json",
+            "asset": "../../models/mushroom_dungeon/violet_lantern_amber.json",
             "position": [16, 7, 16],
             "rotation": [0, 0, 0],
             "scale": [1.2, 1.2, 1.2],
@@ -99,7 +75,7 @@
             "generateLights": true
         },
         {
-            "asset": "../../models/mushroom_dungeon/hanging_spores.json",
+            "asset": "../../models/mushroom_dungeon/violet_hanging_spores.json",
             "position": [-15, 13, 15],
             "rotation": [0, 0, 0],
             "scale": [1.1, 1.1, 1.1],
@@ -107,15 +83,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/hanging_spores.json",
-            "position": [15, 13, -15],
-            "rotation": [0, 0, 0],
-            "scale": [1.1, 1.1, 1.1],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/root_portal.json",
+            "asset": "../../models/mushroom_dungeon/violet_root_portal.json",
             "position": [0.0, 0, 19.4],
             "rotation": [0, 0.0, 0],
             "scale": [1.2, 1.2, 0.75],
@@ -123,15 +91,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/inlay.json",
-            "position": [-3.8, 0, 12.0],
-            "rotation": [0, 0.0, 0],
-            "scale": [0.12, 1, 23],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/root_portal.json",
+            "asset": "../../models/mushroom_dungeon/violet_root_portal.json",
             "position": [19.4, 0, 0.0],
             "rotation": [0, 1.5707963267948966, 0],
             "scale": [1.2, 1.2, 0.75],
@@ -139,15 +99,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/inlay.json",
-            "position": [12.0, 0, 3.8],
-            "rotation": [0, 1.5707963267948966, 0],
-            "scale": [0.12, 1, 23],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/root_portal.json",
+            "asset": "../../models/mushroom_dungeon/violet_root_portal.json",
             "position": [0.0, 0, -19.4],
             "rotation": [0, 3.141592653589793, 0],
             "scale": [1.2, 1.2, 0.75],
@@ -155,15 +107,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/inlay.json",
-            "position": [3.8, 0, -12.0],
-            "rotation": [0, 3.141592653589793, 0],
-            "scale": [0.12, 1, 23],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/root_portal.json",
+            "asset": "../../models/mushroom_dungeon/violet_root_portal.json",
             "position": [-19.4, 0, -0.0],
             "rotation": [0, 4.71238898038469, 0],
             "scale": [1.2, 1.2, 0.75],
@@ -171,15 +115,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/inlay.json",
-            "position": [-12.0, 0, -3.8],
-            "rotation": [0, 4.71238898038469, 0],
-            "scale": [0.12, 1, 23],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/bench.json",
+            "asset": "../../models/mushroom_dungeon/violet_bench.json",
             "position": [-12, 0, 12],
             "rotation": [0, 0, 0],
             "scale": [0.7, 0.7, 0.7],
@@ -187,7 +123,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/arena_beacon.json",
+            "asset": "../../models/mushroom_dungeon/violet_arena_beacon.json",
             "position": [-12, 0, -12],
             "rotation": [0, 0, 0],
             "scale": [0.65, 0.65, 0.65],
@@ -195,7 +131,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/bench.json",
+            "asset": "../../models/mushroom_dungeon/violet_bench.json",
             "position": [12, 0, 12],
             "rotation": [0, 0, 0],
             "scale": [0.7, 0.7, 0.7],
@@ -203,7 +139,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/arena_beacon.json",
+            "asset": "../../models/mushroom_dungeon/violet_arena_beacon.json",
             "position": [12, 0, -12],
             "rotation": [0, 0, 0],
             "scale": [0.65, 0.65, 0.65],
@@ -211,7 +147,7 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/arena_mandala.json",
+            "asset": "../../models/mushroom_dungeon/violet_arena_mandala.json",
             "position": [0, 0, 0],
             "rotation": [0, 0, 0],
             "scale": [0.8, 0.8, 0.8],

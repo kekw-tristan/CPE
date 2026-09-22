@@ -1,194 +1,194 @@
 {
-    "name": "Scalloped woodland fans and jade spore pearls",
+    "name": "Violet shelf colonies and roots",
     "materials": [
         {
-            "albedo": [0.13, 0.18, 0.22],
+            "albedo": [0.13, 0.16, 0.24],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.13, 0.18, 0.22],
+            "emissiveColor": [0.13, 0.16, 0.24],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.81, 0.73, 0.59],
+            "albedo": [0.72, 0.66, 0.76],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.65, 0.48, 0.29],
+            "emissiveColor": [0.66, 0.6, 0.72],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.54, 0.2, 0.12],
-            "roughness": 0.94,
+            "albedo": [0.2, 0.29, 0.7],
+            "roughness": 0.56,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.55, 0.19, 0.1],
+            "emissiveColor": [0.18, 0.25, 0.64],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.4, 0.57, 0.46],
+            "albedo": [0.32, 0.61, 0.68],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.34, 0.64, 0.44],
+            "emissiveColor": [0.22, 0.76, 0.82],
             "emissiveStrength": 0
         },
         {
-            "albedo": [1.0, 0.72, 0.34],
+            "albedo": [0.96, 0.65, 0.51],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [1.0, 0.58, 0.22],
+            "emissiveColor": [0.96, 0.65, 0.51],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.26, 0.36, 0.31],
+            "albedo": [0.2, 0.22, 0.32],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.26, 0.36, 0.31],
+            "emissiveColor": [0.2, 0.22, 0.32],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.25, 0.13, 0.09],
+            "albedo": [0.29, 0.24, 0.39],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.58, 0.66, 0.49],
+            "emissiveColor": [0.29, 0.24, 0.39],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.78, 0.54, 0.23],
+            "albedo": [0.52, 0.46, 0.67],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.58, 0.66, 0.49],
+            "emissiveColor": [0.52, 0.46, 0.67],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.19, 0.12, 0.3],
+            "albedo": [0.28, 0.17, 0.48],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.3, 0.09, 0.38],
+            "emissiveColor": [0.28, 0.17, 0.48],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.68, 0.32, 0.18],
+            "albedo": [0.29, 0.25, 0.58],
+            "roughness": 0.62,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.1,
+            "emissiveColor": [0.66, 0.6, 0.72],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.36, 0.29, 0.43],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.6, 0.25, 0.13],
+            "emissiveColor": [0.66, 0.6, 0.72],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.3, 0.26, 0.17],
-            "roughness": 0.88,
-            "metallic": 0,
-            "lightWrap": 0.35,
-            "shapeContrast": 0.85,
-            "ambientStrength": 1.1,
-            "emissiveColor": [0.36, 0.23, 0.13],
-            "emissiveStrength": 0
-        },
-        {
-            "albedo": [0.24, 0.34, 0.17],
+            "albedo": [0.23, 0.31, 0.36],
             "roughness": 1,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.22, 0.32, 0.13],
+            "emissiveColor": [0.66, 0.6, 0.72],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.49, 0.65, 0.51],
+            "albedo": [0.27, 0.74, 0.85],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.28, 0.65, 0.46],
-            "emissiveStrength": 0.25
+            "emissiveColor": [0.2, 0.69, 0.9],
+            "emissiveStrength": 0.35
         },
         {
-            "albedo": [0.92, 0.8, 0.6],
+            "albedo": [0.63, 0.57, 0.72],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.12,
-            "emissiveColor": [0.74, 0.56, 0.35],
+            "emissiveColor": [0.66, 0.6, 0.72],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.82, 0.7, 0.48],
+            "albedo": [0.94, 0.74, 0.7],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.1,
-            "emissiveColor": [0.77, 0.61, 0.36],
+            "emissiveColor": [0.66, 0.6, 0.72],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.42, 0.29, 0.17],
+            "albedo": [0.3, 0.24, 0.4],
             "roughness": 0.88,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 0.95,
-            "emissiveColor": [0.74, 0.56, 0.35],
+            "emissiveColor": [0.66, 0.6, 0.72],
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.58, 0.42, 0.27],
+            "albedo": [0.43, 0.37, 0.54],
             "roughness": 0.95,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.15,
-            "emissiveColor": [0.52, 0.3, 0.12],
-            "emissiveStrength": 0.035
-        },
-        {
-            "albedo": [0.34, 0.25, 0.18],
-            "roughness": 0.95,
-            "metallic": 0,
-            "lightWrap": 0.35,
-            "shapeContrast": 0.85,
-            "ambientStrength": 1.15,
-            "emissiveColor": [0.34, 0.22, 0.12],
+            "emissiveColor": [0.36, 0.28, 0.52],
             "emissiveStrength": 0.015
         },
         {
-            "albedo": [0.38, 0.6, 0.43],
+            "albedo": [0.24, 0.21, 0.34],
             "roughness": 0.95,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.15,
-            "emissiveColor": [0.24, 0.65, 0.4],
+            "emissiveColor": [0.24, 0.2, 0.32],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.27, 0.65, 0.77],
+            "roughness": 0.95,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.15,
+            "emissiveColor": [0.2, 0.68, 0.9],
             "emissiveStrength": 0.45
         }
     ],
@@ -9922,14 +9922,6 @@
             "materialIndex": 13
         },
         {
-            "meshType": "Sphere",
-            "position": [162.72019447482975, 112.68, 199.78079124943025],
-            "scale": [20.48, 2.2, 14.08],
-            "rotation": [0, 0.65, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
             "meshType": "Triangle",
             "position": [156.72219018744218, 95.4970221692553, 193.4375549515508],
             "scale": [21.13693587721753, 5.629806387647312, 1],
@@ -10696,14 +10688,6 @@
             "rotation": [-1.7212300579166102, 1.0932654412006015, 3.1066008292021117],
             "color": [1, 1, 1, 1],
             "materialIndex": 13
-        },
-        {
-            "meshType": "Sphere",
-            "position": [176.17986029880393, 99.2976, 182.04680593399962],
-            "scale": [16.7936, 2.2, 11.5456],
-            "rotation": [0, 0.74, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
         },
         {
             "meshType": "Triangle",
@@ -11474,14 +11458,6 @@
             "materialIndex": 13
         },
         {
-            "meshType": "Sphere",
-            "position": [192.98808627281164, 85.9152, 168.33113327944],
-            "scale": [13.1072, 2.2, 9.0112],
-            "rotation": [0, 0.8300000000000001, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
             "meshType": "Triangle",
             "position": [200.05243871208066, 70.4007685339725, 161.85881055152458],
             "scale": [11.85730549209761, 3.158184071119254, 1],
@@ -12248,14 +12224,6 @@
             "rotation": [-1.7109806531740464, 0.9133478582653045, 3.1152787814884637],
             "color": [1, 1, 1, 1],
             "materialIndex": 13
-        },
-        {
-            "meshType": "Sphere",
-            "position": [209.64737960938442, 72.5328, 153.61795825860273],
-            "scale": [9.4208, 2.2, 6.4768],
-            "rotation": [0, 0.92, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
         },
         {
             "meshType": "Triangle",
@@ -13026,14 +12994,6 @@
             "materialIndex": 13
         },
         {
-            "meshType": "Sphere",
-            "position": [229.25610942622737, 73.52, -134.74351298045798],
-            "scale": [14.72, 2.2, 10.12],
-            "rotation": [0, 2.1, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
             "meshType": "Triangle",
             "position": [217.4638216638903, 57.79473468415225, -135.5973289710168],
             "scale": [15.192172661750096, 4.046423341121518, 1],
@@ -13800,14 +13760,6 @@
             "rotation": [-1.6841625174386896, -0.35643652350352356, 3.1244349052999993],
             "color": [1, 1, 1, 1],
             "materialIndex": 13
-        },
-        {
-            "meshType": "Sphere",
-            "position": [211.02163566230067, 60.5264, -150.4671874092384],
-            "scale": [12.070400000000003, 2.2, 8.2984],
-            "rotation": [0, 2.19, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
         },
         {
             "meshType": "Triangle",
@@ -14578,14 +14530,6 @@
             "materialIndex": 13
         },
         {
-            "meshType": "Sphere",
-            "position": [-124.47855093945753, 128.4, -233.40711626550396],
-            "scale": [22.400000000000002, 2.2, 15.4],
-            "rotation": [0, 3.65, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
             "meshType": "Triangle",
             "position": [-116.78653536786233, 110.73111799762299, -222.2518115922459],
             "scale": [23.118523615706675, 6.157600736489286, 1],
@@ -15352,14 +15296,6 @@
             "rotation": [1.405390822741129, -1.2347376796340275, 0.04877631778961241],
             "color": [1, 1, 1, 1],
             "materialIndex": 13
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-139.6135463105463, 114.888, -212.921151206988],
-            "scale": [18.368000000000002, 2.2, 12.628000000000002],
-            "rotation": [0, 3.7399999999999998, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
         },
         {
             "meshType": "Triangle",
@@ -16130,14 +16066,6 @@
             "materialIndex": 13
         },
         {
-            "meshType": "Sphere",
-            "position": [-153.79213734720176, 101.376, -193.28380739742715],
-            "scale": [14.336000000000002, 2.2, 9.856000000000002],
-            "rotation": [0, 3.83, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
             "meshType": "Triangle",
             "position": [-158.12351573074383, 85.53209058403242, -184.4516412314222],
             "scale": [12.968927881981784, 3.4542638277866633, 1],
@@ -16904,14 +16832,6 @@
             "rotation": [1.423085589283838, -1.0548799919097445, 0.03259746695977756],
             "color": [1, 1, 1, 1],
             "materialIndex": 13
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-169.78493455098908, 87.864, -177.00939020145867],
-            "scale": [10.303999999999998, 2.2, 7.083999999999999],
-            "rotation": [0, 3.92, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
         },
         {
             "meshType": "Triangle",
@@ -17682,14 +17602,6 @@
             "materialIndex": 13
         },
         {
-            "meshType": "Sphere",
-            "position": [-212.37231635499163, 161.72, 132.2184644883987],
-            "scale": [17.92, 2.2, 12.32],
-            "rotation": [0, 5.25, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
             "meshType": "Triangle",
             "position": [-199.63608386451287, 145.18489439809838, 127.0638450873758],
             "scale": [18.49481889256535, 4.926080589191415, 1],
@@ -18458,14 +18370,6 @@
             "materialIndex": 13
         },
         {
-            "meshType": "Sphere",
-            "position": [-191.64150815639962, 148.5104, 145.09970648628894],
-            "scale": [14.694400000000002, 2.2, 10.102400000000001],
-            "rotation": [0, 5.34, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
             "meshType": "Triangle",
             "position": [-183.43369145067592, 132.70528343266216, 146.80347340003655],
             "scale": [14.43498059907535, 3.8447458257103784, 1],
@@ -19232,182 +19136,6 @@
             "rotation": [1.4593065414580628, 0.4548287838374504, 0.017899075218827644],
             "color": [1, 1, 1, 1],
             "materialIndex": 13
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-175.95407655753456, 135.3008, 160.26245844306027],
-            "scale": [11.468800000000002, 2.2, 7.884800000000001],
-            "rotation": [0, 5.43, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
-            "meshType": "Sphere",
-            "position": [119.2451172194421, 1.0, 266.649500148733],
-            "scale": [25, 5, 17.5],
-            "rotation": [0, 0.42, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
-            "meshType": "Sphere",
-            "position": [182.57979529132726, 1.0, 221.33375262060983],
-            "scale": [18, 5, 12.6],
-            "rotation": [0, 0.69, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
-            "meshType": "Sphere",
-            "position": [271.1731904531037, 1.0, -77.80416271856545],
-            "scale": [22, 5, 15.399999999999999],
-            "rotation": [0, 1.85, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-205.9153410335593, 1.0, -196.71981421344427],
-            "scale": [26, 5, 18.2],
-            "rotation": [0, 3.95, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-255.48396209709932, 1.0, -143.8172293558248],
-            "scale": [17, 5, 11.899999999999999],
-            "rotation": [0, 4.2, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-208.40628593985875, 1.0, 189.42093946862883],
-            "scale": [23, 5, 16.099999999999998],
-            "rotation": [0, 5.45, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 11
-        },
-        {
-            "meshType": "Sphere",
-            "position": [175.6298742976387, 173.77740017616523, 243.73945780069545],
-            "scale": [3.0, 4.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [178.64268539493312, 174.99107564794468, 241.43565304379288],
-            "scale": [3.0, 5.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [181.65549649222754, 178.75348071470543, 239.13184828689032],
-            "scale": [3.0, 6.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [215.75274922810758, 182.06428248964573, 202.13665356225545],
-            "scale": [3.0, 4.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [217.9504828190313, 184.1892759980013, 199.09522422309212],
-            "scale": [3.0, 5.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [220.14821640995495, 188.54356838226525, 196.05379488392884],
-            "scale": [3.0, 6.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-63.67555732802024, 171.27652869500955, -248.87998013841357],
-            "scale": [3.0, 4.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-66.83953690702883, 172.73844971609765, -247.98967275992246],
-            "scale": [3.0, 5.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-70.00351648603726, 176.62978145985383, -247.0993653814314],
-            "scale": [3.0, 6.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-133.94044120732136, 179.03586871808943, -219.5811321636265],
-            "scale": [3.0, 4.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-136.83069476845523, 180.3272451844432, -217.91032813919654],
-            "scale": [3.0, 5.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-139.72094832958894, 183.62362588357678, -216.23952411476665],
-            "scale": [3.0, 6.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-225.24447156459945, 162.8780255106699, 123.58541657674488],
-            "scale": [3.0, 4.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-223.4917601023783, 164.28275613269386, 126.52833376411434],
-            "scale": [3.0, 5.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
-        },
-        {
-            "meshType": "Sphere",
-            "position": [-221.73904864015722, 168.2535377531647, 129.47125095148363],
-            "scale": [3.0, 6.5, 3.0],
-            "rotation": [0, 0, 0],
-            "color": [1, 1, 1, 1],
-            "materialIndex": 12
         }
     ]
 }

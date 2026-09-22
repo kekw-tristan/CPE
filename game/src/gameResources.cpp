@@ -544,6 +544,66 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, sWo
 
     cMatrix4x4f instanceMatrix = CreateTransformMatrix(_rShapeInstance.transform);
 
+    const auto extendBounds = [&](const cVec3f& _rPoint)
+    {
+        _rInstances.bounds.min =
+        {
+            std::min(_rInstances.bounds.min.x(), _rPoint.x()),
+            std::min(_rInstances.bounds.min.y(), _rPoint.y()),
+            std::min(_rInstances.bounds.min.z(), _rPoint.z())
+        };
+        _rInstances.bounds.max =
+        {
+            std::max(_rInstances.bounds.max.x(), _rPoint.x()),
+            std::max(_rInstances.bounds.max.y(), _rPoint.y()),
+            std::max(_rInstances.bounds.max.z(), _rPoint.z())
+        };
+    };
+
+    if (_rShapeInstance.generateLights)
+    {
+        std::vector<LightHandle> lightHandles;
+        ShapeModelLights::Create(model, _rShapeInstance.transform, lightHandles);
+        _rInstances.lightHandles.insert(_rInstances.lightHandles.end(), lightHandles.begin(), lightHandles.end());
+    }
+
+    auto [cached, inserted] = m_bakedWorldModels.try_emplace(_rShapeInstance.modelHandle);
+    if (inserted && model.shapes.size() >= 64)
+    {
+        for (sShapeTriangleBatch& batch : ShapeMeshLibrary::BakeTriangleModel(model))
+        {
+            sBakedWorldModelPart part{};
+            part.mesh = CreateMesh(batch.mesh);
+            part.instance.color = batch.color;
+            part.instance.materialIndex = batch.materialIndex;
+            part.instance.instanceFlags = sInstanceFlags::InstanceFlagPreserveAtDistance;
+            if (model.pDebugName == "rock" || model.pDebugName.starts_with("rock_"))
+                part.instance.instanceFlags |= sInstanceFlags::InstanceFlagWeathered;
+            SubmitMesh(part.mesh);
+            cached->second.push_back(part);
+        }
+    }
+
+    if (!cached->second.empty())
+    {
+        for (const sBakedWorldModelPart& part : cached->second)
+        {
+            sInstanceData instance = part.instance;
+            instance.worldMatrix = instanceMatrix;
+            _rInstances.meshInstances[part.mesh].push_back(instance);
+        }
+        for (uint32_t corner = 0; corner < 8; ++corner)
+        {
+            extendBounds(instanceMatrix.transformPoint(
+            {
+                (corner & 1) != 0 ? model.bounds.max.x() : model.bounds.min.x(),
+                (corner & 2) != 0 ? model.bounds.max.y() : model.bounds.min.y(),
+                (corner & 4) != 0 ? model.bounds.max.z() : model.bounds.min.z()
+            }));
+        }
+        return;
+    }
+
     for (const sShapePartDesc& part : model.shapes)
     {
         sInstanceData instance{};
@@ -580,22 +640,6 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, sWo
             instance.instanceFlags |= sInstanceFlags::InstanceFlagCrystal;
         }
 
-        const auto extendBounds = [&](const cVec3f& _rPoint)
-        {
-            _rInstances.bounds.min =
-            {
-                std::min(_rInstances.bounds.min.x(), _rPoint.x()),
-                std::min(_rInstances.bounds.min.y(), _rPoint.y()),
-                std::min(_rInstances.bounds.min.z(), _rPoint.z())
-            };
-            _rInstances.bounds.max =
-            {
-                std::max(_rInstances.bounds.max.x(), _rPoint.x()),
-                std::max(_rInstances.bounds.max.y(), _rPoint.y()),
-                std::max(_rInstances.bounds.max.z(), _rPoint.z())
-            };
-        };
-
         if (part.meshType == sMeshTypes::ChunkPlane)
         {
             // Terrain is displaced after the world transform in every vertex pass.
@@ -621,13 +665,6 @@ void cGame::BuildRenderInstances(const GFX::sShapeInstance& _rShapeInstance, sWo
         }
 
         _rInstances.meshInstances[mesh].push_back(instance);
-    }
-
-    if (_rShapeInstance.generateLights)
-    {
-        std::vector<LightHandle> lightHandles;
-        ShapeModelLights::Create(model, _rShapeInstance.transform, lightHandles);
-        _rInstances.lightHandles.insert(_rInstances.lightHandles.end(), lightHandles.begin(), lightHandles.end());
     }
 }
 

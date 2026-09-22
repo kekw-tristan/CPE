@@ -12,6 +12,10 @@ namespace Engine::GFX
 
         int drawCalls;
         int instances;
+        int mainInstances = 0;
+        int shadowInstances = 0;
+        int reflectionInstances = 0;
+        int occlusionInstances = 0;
     };
 
     class cFrameStatsWindow : public cImGuiWindow

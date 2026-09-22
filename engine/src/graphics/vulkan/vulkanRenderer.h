@@ -83,6 +83,7 @@ namespace Engine::GFX
             void UpdateInstanceBuffer(std::vector<sInstanceData*>& _rInstances); 
             void UpdateInstanceBuffer(std::span<const sInstanceData> _staticInstances, uint64_t _staticRevision, std::span<sInstanceData* const> _dynamicInstances);
             bool IsBoundsVisible(const sBounds& _rBounds) const;
+            sRenderPassType::Enum GetRenderPassType() const { return m_renderPassType; }
             void UpdateHealthBars(std::span<const sHealthBarData> _healthBars);
             void DrawHealthBars();
             void UpdateParticles(std::span<const sParticleData> _particles);

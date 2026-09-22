@@ -112,6 +112,12 @@ class cGame : public cApplication
             uint32_t                     firstInstance = 0;
             uint32_t                     instanceCount = 0;
         };
+
+        struct sBakedWorldModelPart
+        {
+            GFX::MeshHandle mesh = nullptr;
+            GFX::sInstanceData instance{};
+        };
     
         struct sProjectileVisual
         {
@@ -233,6 +239,8 @@ class cGame : public cApplication
         std::unordered_map<GFX::MeshHandle, std::vector<GFX::sInstanceData*>> m_dynamicMeshInstances;
     
         std::map<std::pair<int, int>, sWorldRenderInstances> m_worldRenderInstances;
+        // Immutable world models reuse application-owned meshes across chunk unload/reload.
+        std::unordered_map<GFX::ShapeModelHandle, std::vector<sBakedWorldModelPart>> m_bakedWorldModels;
         std::map<std::tuple<float, float, float>, Gameplay::sEnemyHandle> m_worldEnemies;
 
         std::vector<Gameplay::sEnemyHandle> m_bossHandles;

@@ -71,6 +71,10 @@ namespace Engine::Logic
     {
         m_frameStatsWindow.GetFrameWindowStats().drawCalls = 0;
         m_frameStatsWindow.GetFrameWindowStats().instances = 0;
+        m_frameStatsWindow.GetFrameWindowStats().mainInstances = 0;
+        m_frameStatsWindow.GetFrameWindowStats().shadowInstances = 0;
+        m_frameStatsWindow.GetFrameWindowStats().reflectionInstances = 0;
+        m_frameStatsWindow.GetFrameWindowStats().occlusionInstances = 0;
 
         return m_vulkanRenderer.BeginFrame(_rCamera);
     }
@@ -177,6 +181,15 @@ namespace Engine::Logic
 
         ++stats.drawCalls;
         stats.instances += _instanceCount;
+
+        switch (m_vulkanRenderer.GetRenderPassType())
+        {
+            case GFX::sRenderPassType::Main:             stats.mainInstances += _instanceCount;       break;
+            case GFX::sRenderPassType::Shadow:           stats.shadowInstances += _instanceCount;     break;
+            case GFX::sRenderPassType::ReflectionProbe:  stats.reflectionInstances += _instanceCount; break;
+            case GFX::sRenderPassType::AmbientOcclusion: stats.occlusionInstances += _instanceCount;  break;
+            default: break;
+        }
 
         GFX::cVulkanMesh* pVulkanMesh = static_cast<GFX::cVulkanMesh*>(_pHandle);
 

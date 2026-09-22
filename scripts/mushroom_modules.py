@@ -20,6 +20,13 @@ PI = math.pi
 BOSS_HEIGHT = 234
 FLOOR_SPACING = BOSS_HEIGHT / 3
 FLOOR_HEIGHTS = tuple(i * FLOOR_SPACING for i in range(4))
+STYLE_PROPS = {
+    "floor_plate", "wall_bay", "parapet", "fungal_pier", "stair_flight",
+    "cluster", "roots", "root_portal", "lantern_cyan", "lantern_amber",
+    "hanging_spores", "nursery", "scroll_shelf", "bench",
+    "alchemy_table", "growth_shelf", "royal_throne", "arena_beacon",
+    "arena_mandala", "vault_rib", "herald_banner", "waystone", "roof_lantern",
+}
 
 
 def write(path, data):
@@ -42,6 +49,8 @@ def rotate(x, z, yaw):
 
 def object_(asset, position=(0, 0, 0), scale=(1, 1, 1), yaw=0,
             collider=False, light=False):
+    if asset in STYLE_PROPS:
+        asset = "violet_" + asset
     return dict(asset="../../models/mushroom_dungeon/" + asset + ".json",
                 position=list(position), rotation=[0, yaw, 0], scale=list(scale),
                 generateColliders=collider, generateLights=light)
@@ -142,13 +151,93 @@ def outside_shaft(polygon):
             break
 
 
+def reference_palette():
+    # Blue-violet caps, ivory fibres and small cyan/peach accents. None of the
+    # structural surfaces emits light; accents remain readable against them.
+    colors = [(0.13, .16, .24), (.66, .60, .72), (.18, .25, .64),
+              (.22, .76, .82), (.96, .65, .51), (.20, .22, .32),
+              (.29, .24, .39), (.52, .46, .67), (.28, .17, .48)]
+    return [dict(albedo=list(color), roughness=.68 if i == 2 else .88,
+                 metallic=0, lightWrap=.35, shapeContrast=.85,
+                 ambientStrength=1.05, emissiveColor=list(color),
+                 emissiveStrength=.65 if i == 3 else (.3 if i == 4 else 0))
+            for i, color in enumerate(colors)]
+
+
+def export_style_props(palette):
+    # Preserve the original assets used by the legacy dungeon and other content.
+    # The checked-in source models are the geometry inputs for these variants.
+    for name in sorted(STYLE_PROPS):
+        model = json.loads((MODELS / (name + ".json")).read_text())
+        model["name"] = "Violet mycelium " + name
+        model["materials"] = palette
+        for light in model.get("lights", []):
+            light["color"] = [.30, .68, 1.0] if "cyan" in name else [1.0, .68, .53]
+            light["castsShadow"] = False
+        write(MODELS / ("violet_" + name + ".json"), model)
+
+
+def export_room_vaults(palette):
+    # All variants meet the existing four sockets. Two skins close the ceiling
+    # from inside and from the upper floors without coplanar duplicate faces.
+    for name, rise in (("passage", 3), ("chamber", 9), ("hall", 17)):
+        parts = []
+        rings = [(1, 14), (.8, 14 + rise * .6), (.42, 14 + rise * .92), (0, 14 + rise)]
+
+        def point(radius, height, sector, outer):
+            angle = sector * PI / 8
+            x, z = math.sin(angle), math.cos(angle)
+            extent = 20 / max(abs(x), abs(z))
+            return [x * extent * radius, height + (.45 if outer else 0), z * extent * radius]
+
+        for outer in (False, True):
+            for band, ((r0, y0), (r1, y1)) in enumerate(zip(rings, rings[1:])):
+                for sector in range(16):
+                    a, b = point(r0, y0, sector, outer), point(r0, y0, sector + 1, outer)
+                    c, d = point(r1, y1, sector + 1, outer), point(r1, y1, sector, outer)
+                    faces = [(a, b, c)] if r1 == 0 else [(a, b, c), (a, c, d)]
+                    for face in faces:
+                        triangle(parts, *(face if outer else reversed(face)),
+                                 8 if outer else (1 if sector % 4 == 0 else 7))
+        write(MODELS / ("vault_" + name + ".json"),
+              dict(name="Violet " + name + " vault", materials=palette, shapes=parts))
+
+
+def export_giant(palette):
+    parts = []
+    sectors = 24
+
+    def ring_point(radius, height, sector):
+        angle = sector * PI * 2 / sectors
+        return [math.sin(angle) * radius, height, math.cos(angle) * radius]
+
+    profiles = [([(1.8, 15), (1.1, 5), (1.7, 0)], 1),
+                ([(0, 18.5), (3, 18.3), (5.8, 17.2), (6.7, 15.8),
+                  (6.6, 15.3), (5.2, 15.6), (2.2, 14.1), (1.8, 12.8)], 2)]
+    for profile, material in profiles:
+        for band, ((r0, y0), (r1, y1)) in enumerate(zip(profile, profile[1:])):
+            for sector in range(sectors):
+                a, b = ring_point(r0, y0, sector), ring_point(r1, y1, sector)
+                c, d = ring_point(r1, y1, sector + 1), ring_point(r0, y0, sector + 1)
+                tint = material if material == 1 or band < 4 else (1 if sector % 2 else 6)
+                if r0 == 0:
+                    triangle(parts, a, b, c, tint)
+                else:
+                    quad(parts, a, b, c, d, tint)
+    write(MODELS / "module_giant.json", dict(name="Blue veil mushroom", materials=palette, shapes=parts))
+
+
 def export():
-    palette = json.loads((MODELS / "floor_plate.json").read_text())["materials"]
+    palette = reference_palette()
+    export_style_props(palette)
+    export_room_vaults(palette)
+    export_giant(palette)
     shell = [shape("Cube", [0, -.6, 0], [40, 1.2, 40], 5)]
     for side in range(4):
         yaw = side * PI / 2
         for x, y, z, scale, material in [
             (0, -.6, 22, [10, 1.2, 4], 5),
+            (0, 10, 22, [10, 1, 4], 1),
             (-12.5, 7, 19.5, [15, 14, 1], 1),
             (12.5, 7, 19.5, [15, 14, 1], 1),
             (0, 12, 19.5, [10, 4, 1], 6),
@@ -174,45 +263,13 @@ def export():
             tissue.append(shape("Sphere", [px, y, pz], scale, material, yaw))
     write(MODELS / "module_mycelium.json", dict(name="Living root supports", materials=palette, shapes=tissue))
 
-    # Giant mushrooms are local assets with a ground origin, unlike the legacy elder.
-    giant = [shape("Cylinder", [0, 8, 0], [2.4, 16, 2.4], 1),
-             shape("Sphere", [0, 17, 0], [13, 4, 13], 2),
-             shape("Sphere", [0, 15.6, 0], [11, .6, 11], 3)]
-    for i in range(7):
-        a = i * PI * 2 / 7
-        giant.append(shape("Sphere", [math.sin(a) * 4.2, 18.5, math.cos(a) * 4.2],
-                           [1.3, .4, 1.3], 4))
-    write(MODELS / "module_giant.json", dict(name="Leuchtender Riesenschirm",
-          materials=palette, shapes=giant))
-
     def save(name, title, objects):
         write(PREFABS / (name + ".prefab.json"),
               dict(assetType="Prefab", name=title, objects=objects))
 
-    # Warm woodland colours belong only to the exterior; room assets keep
-    # their own palette. Material indices stay shared by all four shell models.
     import copy
     exterior_palette = copy.deepcopy(palette)
-
-    def finish_material(index, albedo, glow, strength):
-        exterior_palette[index].update(
-            albedo=albedo, emissiveColor=glow, emissiveStrength=strength,
-            roughness=.88, lightWrap=.42, ambientStrength=1.3, shapeContrast=.85)
-
-    finish_material(1, [.86, .75, .57], [.65, .48, .29], .12)
-    finish_material(2, [.72, .23, .16], [.55, .19, .10], .16)
-    finish_material(3, [.48, .69, .55], [.34, .64, .44], .28)
-    finish_material(4, [1.0, .72, .34], [1.0, .58, .22], .85)
-    for albedo, glow, strength in [
-        ([.83, .38, .24], [.60, .25, .13], .16),  # 9: rolled coral lip
-        ([.48, .32, .20], [.36, .23, .13], .12),  # 10: warm bark
-        ([.34, .46, .24], [.22, .32, .13], .10),  # 11: sage moss
-        ([1.0, .83, .52], [1.0, .68, .32], .70),  # 12: honey window glass
-        ([.91, .79, .61], [.74, .56, .35], .24),  # 13: ivory lamellae
-        ([.98, .88, .66], [.77, .61, .36], .18),  # 14: cap freckles
-    ]:
-        exterior_palette.append(copy.deepcopy(exterior_palette[1]))
-        finish_material(len(exterior_palette) - 1, albedo, glow, strength)
+    exterior_palette.extend(copy.deepcopy(palette[1]) for _ in range(6))
 
     export_landmark(exterior_palette, save)
 
@@ -231,10 +288,13 @@ def export():
         "grotto": "Grotte der Riesenschirme",
     }
     for name, title in titles.items():
-        objects = [object_("module_shell", collider=True), object_("module_mycelium")]
+        vault = "passage" if name in ("corridor", "turn", "entrance") else (
+            "hall" if name in ("large_combat", "grotto") else "chamber")
+        objects = [object_("module_shell", collider=True), object_("module_mycelium"),
+                   object_("vault_" + vault, collider=True)]
         warm = name in ("entrance", "nursery", "alchemy", "shrine", "side_room")
-        lantern = "lantern_amber"
-        for x, z in [(-16, -16), (16, 16), (-16, 16), (16, -16)]:
+        lantern = "lantern_amber" if warm else "lantern_cyan"
+        for x, z in [(-16, -16), (16, 16)]:
             objects.append(object_("fungal_pier", (x, 0, z), (.65, 1.25, .65), collider=True))
             objects.append(object_("cluster", (x * .82, 0, z * .82), (1.2, 1.2, 1.2)))
         for x, z in [(-16, -16), (16, 16)]:
@@ -242,14 +302,12 @@ def export():
         # Warm pools at the walls and a small cool accent give the open rooms depth.
         if not warm:
             objects.append(object_("lantern_cyan", (15, 3, -15), (.7, .7, .7), light=True))
-        for x, z in ((-15, 15), (15, -15)):
+        for x, z in ((-15, 15),):
             objects.append(object_("hanging_spores", (x, 13, z), (1.1, 1.1, 1.1)))
         for side in range(4):
             yaw = side * PI / 2
             x, z = rotate(0, 19.4, yaw)
             objects.append(object_("root_portal", (x, 0, z), (1.2, 1.2, .75), yaw))
-            x, z = rotate(-3.8, 12, yaw)
-            objects.append(object_("inlay", (x, 0, z), (.12, 1, 23), yaw))
 
         # Furniture occupies quadrants, leaving a broad cross and four spawn pockets.
         if name == "nursery":
@@ -289,7 +347,7 @@ def export():
                 objects.append(object_("waystone", (x, 0, -12), (1.3, 1.3, 1.3), collider=True))
                 objects.append(object_("herald_banner", (x, 8, 12), (2, 2, 2)))
         else:
-            for x, z in [(-12, 12), (12, -12)]:
+            for x, z in [(-12, 12)]:
                 objects.append(object_("module_giant", (x, 0, z), (.55, .55, .55), collider=True))
                 objects.append(object_("hanging_spores", (x, 12, z), (1.3, 1.3, 1.3)))
         save(name, title, objects)
@@ -370,22 +428,22 @@ def export_landmark(palette, save):
     for material in palette:
         material.update(metallic=0, emissiveStrength=0, roughness=.88,
                         lightWrap=.35, ambientStrength=1.1, shapeContrast=.85)
-    palette[1].update(albedo=[.81, .73, .59])
-    palette[2].update(albedo=[.54, .20, .12], roughness=.94)
-    palette[3].update(albedo=[.40, .57, .46])
-    palette[9].update(albedo=[.68, .32, .18])
-    palette[10].update(albedo=[.30, .26, .17])
-    palette[11].update(albedo=[.24, .34, .17], roughness=1)
-    palette[12].update(albedo=[.49, .65, .51], emissiveColor=[.28, .65, .46], emissiveStrength=.25)
-    palette[13].update(albedo=[.92, .80, .60], ambientStrength=1.12)
-    palette[14].update(albedo=[.82, .70, .48])
+    palette[1].update(albedo=[.72, .66, .76])
+    palette[2].update(albedo=[.20, .29, .70], roughness=.56)
+    palette[3].update(albedo=[.32, .61, .68])
+    palette[9].update(albedo=[.29, .25, .58], roughness=.62)
+    palette[10].update(albedo=[.36, .29, .43])
+    palette[11].update(albedo=[.23, .31, .36], roughness=1)
+    palette[12].update(albedo=[.27, .74, .85], emissiveColor=[.20, .69, .90], emissiveStrength=.35)
+    palette[13].update(albedo=[.63, .57, .72], ambientStrength=1.12)
+    palette[14].update(albedo=[.94, .74, .70])
     import copy
     palette.append(copy.deepcopy(palette[13]))
-    palette[15].update(albedo=[.42, .29, .17], emissiveStrength=0, ambientStrength=.95)
+    palette[15].update(albedo=[.30, .24, .40], emissiveStrength=0, ambientStrength=.95)
     for albedo, glow, strength in (
-            ([.58, .42, .27], [.52, .30, .12], .035),  # 16: warm inner tissue
-            ([.34, .25, .18], [.34, .22, .12], .015),  # 17: recessed folds
-            ([.38, .60, .43], [.24, .65, .40], .45)):  # 18: living mycelium
+            ([.43, .37, .54], [.36, .28, .52], .015),  # 16: warm inner tissue
+            ([.24, .21, .34], [.24, .20, .32], 0),  # 17: recessed folds
+            ([.27, .65, .77], [.20, .68, .90], .45)):  # 18: living mycelium
         palette.append(copy.deepcopy(palette[1]))
         palette[-1].update(albedo=albedo, emissiveColor=glow, emissiveStrength=strength,
                            roughness=.95, ambientStrength=1.15)
@@ -439,7 +497,7 @@ def export_landmark(palette, save):
             if gate and y0 == 24:
                 quad(stem, surface(r0, y0, i), surface(r0 - 4, y0, i),
                      surface(r0 - 4, y0, i + 1), surface(r0, y0, i + 1), 1)
-    write(MODELS / "elder_hollow_stem.json", dict(name="Fluted ivory elder stem", materials=palette, shapes=stem))
+    write(MODELS / "elder_hollow_stem.json", dict(name="Fluted lilac ivory elder stem", materials=palette, shapes=stem))
 
     # A solid earthen base follows the irregular inner wall. Its top sits just
     # below the room floors and entrance gallery, avoiding coplanar surfaces.
@@ -462,15 +520,15 @@ def export_landmark(palette, save):
         triangle(floor, floor_under, d, c, 17)
         quad(floor, a, c, d, b, 10)
     floor_palette = copy.deepcopy(palette)
-    floor_palette[16].update(albedo=[.32, .27, .18], roughness=1, emissiveStrength=0)
+    floor_palette[16].update(albedo=[.22, .23, .32], roughness=1, emissiveStrength=0)
     write(MODELS / "elder_floor.json", dict(name="Continuous earthen mycelium floor",
           materials=floor_palette, shapes=floor))
 
     cap, gills = [], []
-    # A deep bell-shaped skirt exposes the spotted russet cap from ground level.
-    # Its inward-rolled edge stays outside the rooms and below the stem shoulder.
-    profile = [(0, 335), (65, 331), (132, 321), (200, 306), (256, 270),
-               (294, 225), (321, 182), (328, 155), (324, 143), (311, 145)]
+    # Broad blue cap with a thin rolled lip, pale freckles and exposed lamellae.
+    # The underside meets the stem outside the room reservation.
+    profile = [(0, 335), (100, 332), (210, 319), (300, 288), (365, 258),
+               (390, 240), (392, 233), (390, 228), (384, 227), (374, 231)]
     lip_band = len(profile) - 2
     for band, ((r0, y0), (r1, y1)) in enumerate(zip(profile, profile[1:])):
         for i in range(sectors):
@@ -490,8 +548,8 @@ def export_landmark(palette, save):
 
     # Each rib is part of the shell, with a deep rounded fold and a darker flank.
     # Lamellae curve up inside the lowered skirt and meet the unchanged stem.
-    lamellae = [(311, 145, 0), (296, 169, 10), (279, 190, 17),
-                (265, 201, 20), (253, 203, 12), (244, 198, 0)]
+    lamellae = [(374, 231, 0), (340, 231, 5), (305, 222, 10),
+                (278, 218, 12), (253, 210, 7), (244, 198, 0)]
 
     def gill_point(ring, sector):
         radius, y, depth = ring
@@ -508,7 +566,7 @@ def export_landmark(palette, save):
                 a, b = i + half * .5, i + (half + 1) * .5
                 quad(gills, gill_point(outer, a), gill_point(inner, a),
                      gill_point(inner, b), gill_point(outer, b), material)
-    write(MODELS / "elder_hollow_cap.json", dict(name="Deep bell-shaped russet elder crown", materials=palette, shapes=cap))
+    write(MODELS / "elder_hollow_cap.json", dict(name="Broad blue-violet elder crown", materials=palette, shapes=cap))
     write(MODELS / "elder_gills.json", dict(name="Deep honey ivory descending lamellae", materials=palette, shapes=gills))
 
     # A separate inward-facing vault gives the crown real thickness. Its last
@@ -562,8 +620,8 @@ def export_landmark(palette, save):
         point[0] *= .94
         point[2] *= .94
         lights.append(dict(name=f"mycelium_{i}", type="Point", position=point,
-                           color=[.34, .64, .43], intensity=1.3, radius=75, castsShadow=False))
-    write(MODELS / "elder_interior.json", dict(name="Honey vault and living mycelium",
+                           color=[.28, .64, .88], intensity=1.3, radius=75, castsShadow=False))
+    write(MODELS / "elder_interior.json", dict(name="Violet vault and living mycelium",
           materials=palette, shapes=interior, lights=lights))
 
     details = []
@@ -625,13 +683,18 @@ def export_landmark(palette, save):
             point = gill_point(lamellae[2], sector + j * .13)
             point[1] -= 1.5
             details.append(shape("Sphere", point, [3.0, 4.5 + j, 3.0], 12))
-    write(MODELS / "elder_exterior_details.json", dict(name="Scalloped woodland fans and jade spore pearls", materials=palette, shapes=details))
+    # Keep the continuous triangle surfaces bakeable; small solid growths stay
+    # ordinary shapes in their own model. Both retain the same prefab transform.
+    write(MODELS / "elder_exterior_details.json", dict(name="Violet shelf colonies and roots",
+          materials=palette, shapes=[part for part in details if part["meshType"] == "Triangle"]))
+    write(MODELS / "elder_spore_growth.json", dict(name="Cyan spore pearls and moss",
+          materials=palette, shapes=[part for part in details if part["meshType"] != "Triangle"]))
 
     exterior = [object_("elder_hollow_stem", collider=True),
                 object_("elder_floor", collider=True),
                 object_("elder_hollow_cap"), object_("elder_gills"),
                 object_("elder_interior", light=True),
-                object_("elder_exterior_details"),
+                object_("elder_exterior_details"), object_("elder_spore_growth"),
                 object_("floor_plate", (0, 0, -258), (12, 1.2, 84), collider=True),
                 object_("root_portal", (0, 0, -269), (2.1, 2.5, 1.5)),
                 object_("root_portal", (0, 0, -222), (1.3, 1.6, 1))]
@@ -746,6 +809,12 @@ def triangle_vertices(part):
 
 def audit_surfaces():
     from collections import defaultdict
+    import re
+    source = (ROOT / "game/src/world/mushroomDungeon.cpp").read_text()
+    bounds = []
+    for field in ("minimumBounds", "maximumBounds"):
+        values = re.search(r"layout\." + field + r" = Engine::Math::cVec3f\(([^)]+)\)", source)[1]
+        bounds.append([float(value.strip().removesuffix("f")) for value in values.split(",")])
     planes = defaultdict(list)
     count = 0
     for name in ("elder_hollow_stem", "elder_hollow_cap", "elder_gills", "elder_interior", "elder_floor"):
@@ -754,6 +823,8 @@ def audit_surfaces():
         for part in model["shapes"]:
             assert part["meshType"] == "Triangle", (name, "layered solid in shell")
             a, b, c = triangle_vertices(part)
+            assert all(bounds[0][axis] <= vertex[axis] <= bounds[1][axis]
+                       for vertex in (a, b, c) for axis in range(3)), (name, "shell exceeds streaming reservation")
             normal = cross(subtract(b, a), subtract(c, a))
             length = math.sqrt(dot(normal, normal))
             assert length > 1e-7, (name, "degenerate triangle")
@@ -863,8 +934,52 @@ def audit():
             count += 1
     print(f"Audited {len(list(PREFABS.glob('*.prefab.json')))} prefabs, {count} objects; all model references resolve.")
     audit_walkways()
+    audit_room_vaults()
+    audit_instance_budgets()
     audit_surfaces()
     audit_interior_visibility()
+
+
+def audit_room_vaults():
+    for name, maximum in (("passage", 17), ("chamber", 23), ("hall", 31)):
+        model = json.loads((MODELS / ("vault_" + name + ".json")).read_text())
+        triangles = [triangle_vertices(part) for part in model["shapes"]]
+        for x in (-17, -8, 0, 8, 17):
+            for z in (-17, -8, 0, 8, 17):
+                origin, direction = [x, 6, z], [0, 1, 0]
+                hits = []
+                for a, b, c in triangles:
+                    edge1, edge2 = subtract(b, a), subtract(c, a)
+                    h = cross(direction, edge2)
+                    determinant = dot(edge1, h)
+                    if determinant <= 1e-7:
+                        continue
+                    offset = subtract(origin, a)
+                    u = dot(offset, h) / determinant
+                    q = cross(offset, edge1)
+                    v = dot(direction, q) / determinant
+                    distance = dot(edge2, q) / determinant
+                    if u >= -1e-7 and v >= -1e-7 and u + v <= 1 + 1e-7 and distance > 0:
+                        hits.append(distance + 6)
+                assert hits and 14 <= min(hits) <= maximum + 1e-5, (name, x, z, "ceiling gap or wrong winding")
+    print("75 room ceiling sightlines are enclosed across three vault heights.")
+
+
+def audit_instance_budgets():
+    # Mirrors the eligibility contract of ShapeMeshLibrary::BakeTriangleModel;
+    # counts a single submission, not the sum over shadow/probe/main passes.
+    for prefab in sorted(PREFABS.glob("*.prefab.json")):
+        count = 0
+        for obj in json.loads(prefab.read_text())["objects"]:
+            parts = json.loads((prefab.parent / obj["asset"]).read_text())["shapes"]
+            if len(parts) >= 64 and all(p["meshType"] == "Triangle" for p in parts):
+                count += len({(p["materialIndex"], tuple(p["color"])) for p in parts})
+            else:
+                count += len(parts)
+        budget = 256 if prefab.stem == "elder_shell.prefab" else (
+            600 if prefab.stem == "vertical_transition.prefab" else 240)
+        assert count <= budget, (prefab.name, count, "instance budget exceeded", budget)
+        print(f"{prefab.name}: {count}/{budget} submitted instances per pass")
 
 
 if __name__ == "__main__":

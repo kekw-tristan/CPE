@@ -1,0 +1,185 @@
+{
+    "name": "Violet mycelium nursery",
+    "materials": [
+        {
+            "albedo": [0.13, 0.16, 0.24],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.13, 0.16, 0.24],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.66, 0.6, 0.72],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.66, 0.6, 0.72],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.18, 0.25, 0.64],
+            "roughness": 0.68,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.18, 0.25, 0.64],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.22, 0.76, 0.82],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.22, 0.76, 0.82],
+            "emissiveStrength": 0.65
+        },
+        {
+            "albedo": [0.96, 0.65, 0.51],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.96, 0.65, 0.51],
+            "emissiveStrength": 0.3
+        },
+        {
+            "albedo": [0.2, 0.22, 0.32],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.2, 0.22, 0.32],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.29, 0.24, 0.39],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.29, 0.24, 0.39],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.52, 0.46, 0.67],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.52, 0.46, 0.67],
+            "emissiveStrength": 0
+        },
+        {
+            "albedo": [0.28, 0.17, 0.48],
+            "roughness": 0.88,
+            "metallic": 0,
+            "lightWrap": 0.35,
+            "shapeContrast": 0.85,
+            "ambientStrength": 1.05,
+            "emissiveColor": [0.28, 0.17, 0.48],
+            "emissiveStrength": 0
+        }
+    ],
+    "shapes": [
+        {
+            "meshType": "Cube",
+            "position": [0, 0.6, 0],
+            "scale": [5, 1.2, 3],
+            "rotation": [0, 0, 0],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 6
+        },
+        {
+            "meshType": "Cube",
+            "position": [0, 1.23, 0],
+            "scale": [4.5, 0.06, 2.5],
+            "rotation": [0, 0, 0],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 5
+        },
+        {
+            "meshType": "Cylinder",
+            "position": [-1.5, 1.8, -0.5],
+            "scale": [0.35, 1, 0.35],
+            "rotation": [0, 0, 0],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [-1.5, 2.3, -0.5],
+            "scale": [1.3, 0.6, 1.3],
+            "rotation": [0, 0, 0],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Sphere",
+            "position": [-1.5, 2.15, -0.5],
+            "scale": [1.2, 0.15, 1.2],
+            "rotation": [0, 0, 0],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Cylinder",
+            "position": [0, 2.2, 0.6],
+            "scale": [0.35, 1.8, 0.35],
+            "rotation": [0, 0, 0],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [0, 3.1, 0.6],
+            "scale": [2.3400000000000003, 0.6, 2.3400000000000003],
+            "rotation": [0, 0, 0],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Sphere",
+            "position": [0, 2.95, 0.6],
+            "scale": [2.16, 0.15, 2.16],
+            "rotation": [0, 0, 0],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 3
+        },
+        {
+            "meshType": "Cylinder",
+            "position": [1.4, 1.9500000000000002, -0.4],
+            "scale": [0.35, 1.3, 0.35],
+            "rotation": [0, 0, 0],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 1
+        },
+        {
+            "meshType": "Sphere",
+            "position": [1.4, 2.6, -0.4],
+            "scale": [1.6900000000000002, 0.6, 1.6900000000000002],
+            "rotation": [0, 0, 0],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 2
+        },
+        {
+            "meshType": "Sphere",
+            "position": [1.4, 2.45, -0.4],
+            "scale": [1.56, 0.15, 1.56],
+            "rotation": [0, 0, 0],
+            "color": [1, 1, 1, 1],
+            "materialIndex": 3
+        }
+    ]
+}

@@ -1,5 +1,11 @@
 # Mushroom Dungeon
 
+The blue-violet visual revision and the remaining completion gates are tracked
+in [mushroom_completion.md](mushroom_completion.md). Room prefabs now have three
+vault heights; large immutable triangle-only models are submitted as material/tint
+mesh batches. The layout contracts below remain unchanged. The original shared
+prop models are retained as geometry inputs for the new `violet_*` variants.
+
 The existing four-portal room prefabs remain the building blocks. Generation uses
 48-unit cells in a sparse nine-by-nine envelope, with floors at 0, 78, 156 and 234.
 The boss stays at the existing dungeon centre and encounter height.

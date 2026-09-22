@@ -110,7 +110,11 @@ namespace Engine::GFX
         ImGui::Separator();
 
         ImGui::Text("Draw calls:    %i", m_frameStats.drawCalls);
-        ImGui::Text("Instances:     %i", m_frameStats.instances);
+        ImGui::Text("Instances (all passes): %i", m_frameStats.instances);
+        ImGui::Text("  Main:        %i", m_frameStats.mainInstances);
+        ImGui::Text("  Shadows:     %i", m_frameStats.shadowInstances);
+        ImGui::Text("  Reflections: %i", m_frameStats.reflectionInstances);
+        ImGui::Text("  AO geometry: %i", m_frameStats.occlusionInstances);
 
         ImGui::End();
     }
