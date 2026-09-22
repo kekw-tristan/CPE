@@ -95,6 +95,108 @@ namespace Engine::Physics
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    float SweepSphereAABB(const Math::cVec3f& _rStart, const Math::cVec3f& _rMovement,
+        float _radius, const sAABBCollider& _rBox)
+    {
+        const Math::cVec3f offset = _rStart - _rBox.center;
+        const float origins[] = { offset.x(), offset.y(), offset.z() };
+        const float movements[] = { _rMovement.x(), _rMovement.y(), _rMovement.z() };
+        const float extents[] = { _rBox.halfExtents.x() + _radius,
+            _rBox.halfExtents.y() + _radius, _rBox.halfExtents.z() + _radius };
+        float enter = 0.0f;
+        float leave = 1.0f;
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            if (std::abs(movements[axis]) < 1e-8f)
+            {
+                if (std::abs(origins[axis]) > extents[axis])
+                    return 1.0f;
+                continue;
+            }
+            const float first = (-extents[axis] - origins[axis]) / movements[axis];
+            const float second = (extents[axis] - origins[axis]) / movements[axis];
+            enter = std::max(enter, std::min(first, second));
+            leave = std::min(leave, std::max(first, second));
+            if (enter > leave)
+                return 1.0f;
+        }
+        return enter;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
+    float SweepSphereTriangle(const Math::cVec3f& _rStart, const Math::cVec3f& _rMovement,
+        float _radius, const sTriangleCollider& _rTriangle)
+    {
+        using Math::cVec3f;
+
+        const float radiusSquared = _radius * _radius;
+        if ((_rStart - ClosestPointOnTriangle(_rStart, _rTriangle)).lengthSquared() <= radiusSquared)
+            return 0.0f;
+
+        const float movementSquared = _rMovement.lengthSquared();
+        if (movementSquared < 1e-12f)
+            return 1.0f;
+
+        float fraction = 1.0f;
+        const cVec3f normal = (_rTriangle.b - _rTriangle.a).cross(_rTriangle.c - _rTriangle.a).normalized();
+        const float normalMovement = normal.dot(_rMovement);
+        if (std::abs(normalMovement) > 1e-8f)
+        {
+            const float distance = normal.dot(_rStart - _rTriangle.a);
+            for (float side : { -1.0f, 1.0f })
+            {
+                const float hit = (side * _radius - distance) / normalMovement;
+                if (hit < 0.0f || hit > fraction)
+                    continue;
+                const cVec3f point = _rStart + _rMovement * hit - normal * (side * _radius);
+                if (normal.dot((_rTriangle.b - _rTriangle.a).cross(point - _rTriangle.a)) >= -1e-5f
+                    && normal.dot((_rTriangle.c - _rTriangle.b).cross(point - _rTriangle.b)) >= -1e-5f
+                    && normal.dot((_rTriangle.a - _rTriangle.c).cross(point - _rTriangle.c)) >= -1e-5f)
+                    fraction = hit;
+            }
+        }
+
+        // The expanded triangle also has rounded edges and vertices. Testing
+        // these catches grazing near-plane contacts even when the centre ray misses.
+        const cVec3f vertices[] = { _rTriangle.a, _rTriangle.b, _rTriangle.c };
+        for (int i = 0; i < 3; ++i)
+        {
+            const cVec3f offset = _rStart - vertices[i];
+            const float b = offset.dot(_rMovement);
+            const float c = offset.lengthSquared() - radiusSquared;
+            const float discriminant = b * b - movementSquared * c;
+            if (discriminant >= 0.0f)
+            {
+                const float hit = (-b - std::sqrt(discriminant)) / movementSquared;
+                if (hit >= 0.0f)
+                    fraction = std::min(fraction, hit);
+            }
+
+            const cVec3f edge = vertices[(i + 1) % 3] - vertices[i];
+            const float edgeSquared = edge.lengthSquared();
+            if (edgeSquared < 1e-12f)
+                continue;
+            const float alongStart = offset.dot(edge) / edgeSquared;
+            const float alongMovement = _rMovement.dot(edge) / edgeSquared;
+            const cVec3f perpendicularStart = offset - edge * alongStart;
+            const cVec3f perpendicularMovement = _rMovement - edge * alongMovement;
+            const float edgeA = perpendicularMovement.lengthSquared();
+            const float edgeB = perpendicularStart.dot(perpendicularMovement);
+            const float edgeC = perpendicularStart.lengthSquared() - radiusSquared;
+            const float edgeDiscriminant = edgeB * edgeB - edgeA * edgeC;
+            if (edgeA < 1e-12f || edgeDiscriminant < 0.0f)
+                continue;
+            const float hit = (-edgeB - std::sqrt(edgeDiscriminant)) / edgeA;
+            const float along = alongStart + hit * alongMovement;
+            if (hit >= 0.0f && along >= 0.0f && along <= 1.0f)
+                fraction = std::min(fraction, hit);
+        }
+        return fraction;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     bool IntersectCapsuleTriangle(const sCapsuleCollider& _rCapsule, const sTriangleCollider& _rTriangle, sCollisionResult& _rResult)
     {
         _rResult = {};

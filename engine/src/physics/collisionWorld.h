@@ -33,5 +33,9 @@ namespace Engine::Physics
         Math::cVec3f MoveCapsule(const sCapsuleCollider& _rCapsule, const Math::cVec3f& _rMovement);
         Math::cVec3f MoveCapsule(const sCapsuleCollider& _rCapsule, const Math::cVec3f& _rMovement, float _maximumStepHeight);
         bool FindGroundHeight(const Math::cVec3f& _rPosition, float _maximumHeight, float& _rGroundHeight);
+
+        // Continuous static-world query, including two-sided triangle walls/ceilings.
+        // Returns contact fraction [0, 1]. Sampled terrain is handled by its caller.
+        float SweepSphere(const Math::cVec3f& _rStart, const Math::cVec3f& _rMovement, float _radius);
     }
 }

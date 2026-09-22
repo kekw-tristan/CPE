@@ -667,8 +667,6 @@ void cGame::UpdateInventoryInput()
 
 // -------------------------------------------------------------------------------------------------------------------------
 
-// -------------------------------------------------------------------------------------------------------------------------
-
 void cGame::UpdateThirdPersonCamera(float _deltaTime)
 {
     using namespace Engine;
@@ -684,6 +682,8 @@ void cGame::UpdateThirdPersonCamera(float _deltaTime)
     // Keep the distorted zenith outside the 60-degree vertical field of view.
     constexpr float c_maxPitch          = 30.0f;
     constexpr float c_groundClearance   = 0.35f;
+    constexpr float c_cameraRadius      = 0.3f;
+    constexpr float c_cameraSkin        = 0.03f;
     constexpr int   c_cameraSteps       = 50;
 
     GFX::cCamera& rCamera = GFX::GetCamera();
@@ -714,8 +714,22 @@ void cGame::UpdateThirdPersonCamera(float _deltaTime)
     Math::cVec3f cameraDirection(direction[0], direction[1], direction[2]);
     cameraDirection.normalize();
 
-    const Math::cVec3f cameraRight      = cameraDirection.cross(Math::cVec3f(0.0f, 1.0f, 0.0f)).normalized();
-    const Math::cVec3f targetPosition   = m_playerController.GetPosition() + Math::cVec3f(0.0f, c_targetHeight, 0.0f) + cameraRight * c_shoulderOffset;
+    // Protect the near plane as well as the camera centre. Collision may pull
+    // closer than the user's minimum zoom distance in narrow rooms.
+    const float cameraRadius = std::max(c_cameraRadius, rCamera.GetNearPlane() * 2.0f);
+    const auto clipCameraArm = [&](const Math::cVec3f& _rStart, const Math::cVec3f& _rMovement)
+    {
+        float fraction = Physics::CollisionWorld::SweepSphere(_rStart, _rMovement, cameraRadius);
+        const float length = _rMovement.length();
+        if (fraction < 1.0f && length > 1e-6f)
+            fraction = std::max(0.0f, fraction - c_cameraSkin / length);
+        return _rStart + _rMovement * fraction;
+    };
+
+    const Math::cVec3f cameraRight = cameraDirection.cross(Math::cVec3f(0.0f, 1.0f, 0.0f)).normalized();
+    const Math::cVec3f bodyPosition = m_playerController.GetPosition() + Math::cVec3f(0.0f, 1.0f, 0.0f);
+    const Math::cVec3f headPosition = clipCameraArm(bodyPosition, { 0.0f, c_targetHeight - 1.0f, 0.0f });
+    const Math::cVec3f targetPosition = clipCameraArm(headPosition, cameraRight * c_shoulderOffset);
 
     Math::cVec3f cameraPosition = targetPosition;
 
@@ -736,6 +750,7 @@ void cGame::UpdateThirdPersonCamera(float _deltaTime)
 
     const float minimumHeight = World::GetTerrainSurfaceHeight(cameraPosition.x(), cameraPosition.z()) + c_groundClearance;
     cameraPosition = Math::cVec3f(cameraPosition.x(), std::max(cameraPosition.y(), minimumHeight), cameraPosition.z());
+    cameraPosition = clipCameraArm(targetPosition, cameraPosition - targetPosition);
 
     rCamera.SetPosition(cameraPosition.x(), cameraPosition.y(), cameraPosition.z());
 }

@@ -62,6 +62,7 @@ namespace Engine::Physics
                 void Clear();
                 Math::cVec3f MoveCapsule(const sCapsuleCollider& _rCapsule, const Math::cVec3f& _rMovement, float _maximumStepHeight);
                 bool FindGroundHeight(const Math::cVec3f& _rPosition, float _maximumHeight, float& _rGroundHeight) const;
+                float SweepSphere(const Math::cVec3f& _rStart, const Math::cVec3f& _rMovement, float _radius) const;
 
             private:
 
@@ -353,6 +354,45 @@ namespace Engine::Physics
 
         // -------------------------------------------------------------------------------------------------------------------------
 
+        float cCollisionWorld::SweepSphere(const Math::cVec3f& _rStart, const Math::cVec3f& _rMovement, float _radius) const
+        {
+            const Math::cVec3f end = _rStart + _rMovement;
+            const int32_t minX = ToCell(std::min(_rStart.x(), end.x()) - _radius);
+            const int32_t maxX = ToCell(std::max(_rStart.x(), end.x()) + _radius);
+            const int32_t minZ = ToCell(std::min(_rStart.z(), end.z()) - _radius);
+            const int32_t maxZ = ToCell(std::max(_rStart.z(), end.z()) + _radius);
+            float fraction = 1.0f;
+
+            // Short camera arms touch few cells. Visit them directly without
+            // allocating a candidate list for each query every frame.
+            for (int32_t z = minZ; z <= maxZ; ++z)
+            {
+                for (int32_t x = minX; x <= maxX; ++x)
+                {
+                    const auto cell = m_spatialGrid.find({ x, z });
+                    if (cell == m_spatialGrid.end())
+                        continue;
+                    for (const std::size_t index : cell->second)
+                    {
+                        const auto& collider = m_colliders[index];
+                        if (collider.groundHeightSampler != nullptr)
+                            continue;
+                        const float broadHit = SweepSphereAABB(_rStart, _rMovement, _radius, collider);
+                        if (broadHit >= fraction)
+                            continue;
+                        const float hit = m_triangles[index]
+                            ? SweepSphereTriangle(_rStart, _rMovement, _radius, *m_triangles[index]) : broadHit;
+                        fraction = std::min(fraction, hit);
+                        if (fraction == 0.0f)
+                            return fraction;
+                    }
+                }
+            }
+            return fraction;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
         std::vector<std::size_t> cCollisionWorld::FindCandidates(float _minX, float _maxX, float _minZ, float _maxZ) const
         {
             std::vector<std::size_t> candidates;
@@ -440,6 +480,13 @@ namespace Engine::Physics
         bool FindGroundHeight(const Math::cVec3f& _rPosition, float _maximumHeight, float& _rGroundHeight)
         {
             return cCollisionWorld::GetInstance().FindGroundHeight(_rPosition, _maximumHeight, _rGroundHeight);
+        }
+
+        // -------------------------------------------------------------------------------------------------------------------------
+
+        float SweepSphere(const Math::cVec3f& _rStart, const Math::cVec3f& _rMovement, float _radius)
+        {
+            return cCollisionWorld::GetInstance().SweepSphere(_rStart, _rMovement, _radius);
         }
 
         // -------------------------------------------------------------------------------------------------------------------------
