@@ -8,6 +8,11 @@ The project is focused on building a lightweight, extensible engine while develo
 
 # Blog
 
+## 23.9.2026
+
+Worked on procedural dungeon generation, with a main focus on improving the Mushroom Dungeon. I also added a compass to make navigation easier and introduced four new boss dungeons.
+![Dungeon generation](blogImages/dungeonGeneration.png)
+
 ## 13.9.2026
 
 Worked on several areas of the game: improved enemy spawning, added four new enemy types, updated world generation, added unique boss-drop spells for each enemy, improved the graphics with HDR and bloom, and added chunk culling for better performance.
