@@ -3667,6 +3667,7 @@ namespace Engine::GFX
     void cVulkanRenderer::UpdateFrameUniformBuffer(sVulkanFrame& _rFrame, const cCamera& _rCamera)
     {
         sFrameUniformData frameData{};
+        frameData.localAtmosphere = m_localAtmosphere;
 
         const float width  = static_cast<float>(m_pSwapchain->GetExtent().width);
         const float height = static_cast<float>(m_pSwapchain->GetExtent().height);

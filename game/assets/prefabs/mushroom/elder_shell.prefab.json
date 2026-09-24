@@ -43,6 +43,14 @@
             "generateLights": true
         },
         {
+            "asset": "../../models/mushroom_dungeon/cathedral_pillars.json",
+            "position": [0, 0, 0],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
             "asset": "../../models/mushroom_dungeon/elder_exterior_details.json",
             "position": [0, 0, 0],
             "rotation": [0, 0, 0],

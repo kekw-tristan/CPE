@@ -3,7 +3,7 @@
     "name": "Wurzelkreuzgang",
     "objects": [
         {
-            "asset": "../../models/mushroom_dungeon/module_shell.json",
+            "asset": "../../models/mushroom_dungeon/gallery_shell.json",
             "position": [0, 0, 0],
             "rotation": [0, 0, 0],
             "scale": [1, 1, 1],
@@ -19,11 +19,11 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/vault_passage.json",
+            "asset": "../../models/mushroom_dungeon/gallery_inlay.json",
             "position": [0, 0, 0],
             "rotation": [0, 0, 0],
             "scale": [1, 1, 1],
-            "generateColliders": true,
+            "generateColliders": false,
             "generateLights": false
         },
         {
@@ -87,38 +87,6 @@
             "position": [-15, 13, 15],
             "rotation": [0, 0, 0],
             "scale": [1.1, 1.1, 1.1],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/violet_root_portal.json",
-            "position": [0.0, 0, 19.4],
-            "rotation": [0, 0.0, 0],
-            "scale": [1.2, 1.2, 0.75],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/violet_root_portal.json",
-            "position": [19.4, 0, 0.0],
-            "rotation": [0, 1.5707963267948966, 0],
-            "scale": [1.2, 1.2, 0.75],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/violet_root_portal.json",
-            "position": [0.0, 0, -19.4],
-            "rotation": [0, 3.141592653589793, 0],
-            "scale": [1.2, 1.2, 0.75],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/violet_root_portal.json",
-            "position": [-19.4, 0, -0.0],
-            "rotation": [0, 4.71238898038469, 0],
-            "scale": [1.2, 1.2, 0.75],
             "generateColliders": false,
             "generateLights": false
         },

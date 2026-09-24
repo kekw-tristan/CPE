@@ -93,8 +93,9 @@ namespace World
         {
             if (_floor < 0 || _floor >= c_mushroomDungeonFloorCount || _x * _x + _z * _z > 16)
                 return false;
-            // Reserve the oversized arena and its fitted south connector.
-            if (_floor == 3 && std::abs(_x) <= 1 && std::abs(_z) <= 1)
+            // Keep the cathedral's central shaft open on every floor.
+            // Only the explicitly placed arena and its bridge enter this volume.
+            if (std::abs(_x) <= 1 && std::abs(_z) <= 1)
                 return false;
             for (const auto& node : _rGraph.nodes)
             {
@@ -185,8 +186,8 @@ namespace World
             {{
                 {{0,-4}, {0,-3}, {1,-3}, {2,-3}, {2,-2}, {3,-2}, {3,-1}, {3,0}},
                 {{3,1}, {2,1}, {2,2}, {1,2}, {0,2}, {-1,2}, {-2,2}, {-2,1}},
-                {{-2,0}, {-3,0}, {-3,-1}, {-2,-1}, {-1,-1}, {-1,0}, {-1,1}, {-1,2}},
-                {{-1,3}, {0,3}, {1,3}, {2,3}, {2,2}, {2,1}, {2,0}, {2,-1}, {2,-2}, {1,-2}, {0,-2}}
+                {{-2,0}, {-3,0}, {-3,-1}, {-2,-1}, {-2,-2}, {-2,-3}, {-1,-3}},
+                {{0,-3}, {1,-3}, {2,-3}, {2,-2}, {1,-2}, {0,-2}}
             }};
             int previousStair = -1;
             for (int floor = 0; floor < 4; ++floor)
@@ -547,6 +548,9 @@ namespace World
                 return fail(label + "invalid floor elevation");
             if (m.cellX * m.cellX + m.cellZ * m.cellZ > 16)
                 return fail(label + "room lies outside the reserved stem interior");
+            if (std::abs(m.cellX) <= 1 && std::abs(m.cellZ) <= 1
+                && m.type != sMushroomModuleType::BossArena && m.type != sMushroomModuleType::BossApproach)
+                return fail(label + "room obstructs the central cathedral shaft");
             if (m.inputDirection > sMushroomDirection::Undefined || m.outputDirection > sMushroomDirection::Undefined)
                 return fail(label + "invalid input/output direction");
             if ((m.inputDirection != sMushroomDirection::Undefined

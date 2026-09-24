@@ -16,6 +16,22 @@ namespace Engine::GFX
         float keyExponent = 1200.0f;
     };
 
+    // Optional local atmosphere, packed as seven float4 values for the frame buffer.
+    // A zero blend distance disables it. Bounds enclose an elliptical cylinder;
+    // the shaft follows the vertical Y axis with a shared top/bottom XZ center.
+    struct sLocalAtmosphereSettings
+    {
+        std::array<float, 4> boundsMinBlend{}; // XYZ minimum, W boundary blend distance.
+        std::array<float, 4> boundsMaxAmbient = { 0.0f, 0.0f, 0.0f, 1.0f }; // XYZ maximum, W ambient multiplier.
+        std::array<float, 4> fogColorDensity{}; // RGB linear color, W extinction per world unit.
+        std::array<float, 4> fogHeightStart{}; // Base height, start distance, height falloff, height density.
+        std::array<float, 4> shaftTopRadius{}; // XYZ top center, W top radius.
+        std::array<float, 4> shaftBottomRadius{}; // XYZ bottom center, W bottom radius.
+        std::array<float, 4> shaftColorDensity{}; // RGB linear radiance, W extinction per world unit.
+    };
+
+    static_assert(sizeof(sLocalAtmosphereSettings) == 112);
+
     static constexpr uint32_t c_maxNumberOfFrames       = 2; 
 
     static constexpr uint32_t c_maxNumberOfInstances    = 100000; 

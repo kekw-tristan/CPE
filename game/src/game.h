@@ -50,6 +50,9 @@ class cGame : public cApplication
     public:
 
         cGame(sAppConfig& _rAppConfig);
+#if defined(GAME_DEBUG)
+        void EnableMushroomPreview() { m_mushroomPreview = true; }
+#endif
     
     protected:
 
@@ -177,6 +180,7 @@ class cGame : public cApplication
         void PrepareEnemyHealthBars(const GFX::cCamera& _rCamera);
         void SyncProjectileRenderInstances();
         void UpdateProjectileEffects(float _deltaTime);
+        void UpdateDungeonAtmosphere();
         void SyncLootRenderInstances();
         void UpdateThirdPersonCamera(float _deltaTime);
     
@@ -251,6 +255,10 @@ class cGame : public cApplication
         Gameplay::cProjectileManager m_projectileManager;
 
         GFX::cParticleSystem m_particleSystem;
+        GFX::sParticleEmitterHandle m_dungeonSporeEmitter;
+#if defined(GAME_DEBUG)
+        bool m_mushroomPreview = false;
+#endif
     
         std::vector<sEnemyVisual> m_enemyVisuals;
     

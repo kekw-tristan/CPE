@@ -23,4 +23,5 @@ struct sFrameUniformData
     uint32_t activeLightCount;
 
     Engine::GFX::sReflectionProbeGPU reflectionProbes[Engine::GFX::c_maxNumberOfActiveReflectionProbes];
+    Engine::GFX::sLocalAtmosphereSettings localAtmosphere;
 };

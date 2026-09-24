@@ -20,6 +20,7 @@ PI = math.pi
 BOSS_HEIGHT = 234
 FLOOR_SPACING = BOSS_HEIGHT / 3
 FLOOR_HEIGHTS = tuple(i * FLOOR_SPACING for i in range(4))
+OPEN_ROOMS = {"entrance", "corridor", "turn", "small_combat", "large_combat", "grotto"}
 STYLE_PROPS = {
     "floor_plate", "wall_bay", "parapet", "fungal_pier", "stair_flight",
     "cluster", "roots", "root_portal", "lantern_cyan", "lantern_amber",
@@ -227,11 +228,145 @@ def export_giant(palette):
     write(MODELS / "module_giant.json", dict(name="Blue veil mushroom", materials=palette, shapes=parts))
 
 
+def lathe(parts, profile, material, sectors=24, center=(0, 0)):
+    """Closed radial profiles produce faceted, batchable architecture."""
+    def point(radius, height, index):
+        angle = index * PI * 2 / sectors
+        return [center[0] + math.sin(angle) * radius, height,
+                center[1] + math.cos(angle) * radius]
+
+    for (r0, y0), (r1, y1) in zip(profile, profile[1:]):
+        for i in range(sectors):
+            a, b = point(r0, y0, i), point(r0, y0, i + 1)
+            c, d = point(r1, y1, i + 1), point(r1, y1, i)
+            if r0 == 0:
+                triangle(parts, a, c, d, material)
+            elif r1 == 0:
+                triangle(parts, a, b, c, material)
+            else:
+                quad(parts, a, b, c, d, material)
+
+
+def export_cathedral(palette):
+    import copy
+    stone = copy.deepcopy(palette)
+    stone[1].update(albedo=[.62, .65, .78], ambientStrength=.85)
+    stone[2].update(albedo=[.075, .10, .38], roughness=.72)
+    stone[3].update(albedo=[.16, .78, 1], emissiveColor=[.12, .72, 1], emissiveStrength=3.2)
+    stone[4].update(albedo=[1, .77, .48], emissiveColor=[1, .64, .32], emissiveStrength=2.4)
+    stone[5].update(albedo=[.42, .44, .58], roughness=1)
+
+    def model(name, parts, lights=()):
+        write(MODELS / (name + ".json"), dict(name=name.replace("_", " "),
+              materials=stone, shapes=parts, lights=list(lights)))
+
+    # Same floor and socket contract as the enclosed rooms; low rails expose
+    # the atrium while guarding unused exits and the platform edges.
+    gallery = [shape("Cube", [0, -.9, 0], [40, 1.8, 40], 5)]
+    inlay = []
+    for ix in range(4):
+        for iz in range(4):
+            x, z = -20 + ix * 10, -20 + iz * 10
+            a, b, c, d = [x, .018, z], [x, .018, z + 10], [x + 10, .018, z + 10], [x + 10, .018, z]
+            start = len(inlay)
+            triangle(inlay, a, b, c, 5)
+            triangle(inlay, a, c, d, 5)
+            for j, part in enumerate(inlay[start:]):
+                shade = .86 + .06 * ((ix * 3 + iz * 5 + j) % 5)
+                part["color"] = [shade, shade, shade, 1]
+    for side in range(4):
+        yaw = side * PI / 2
+        for x, y, z, size, material in (
+                (0, -.9, 22, [10, 1.8, 4], 5),
+                (-12.5, 1.4, 19.5, [15, 2.8, 1], 1),
+                (12.5, 1.4, 19.5, [15, 2.8, 1], 1),
+                (-12.5, 2.9, 19.5, [15.2, .3, 1.4], 2),
+                (12.5, 2.9, 19.5, [15.2, .3, 1.4], 2),
+                (-5.5, 1.4, 22, [1, 2.8, 4], 2),
+                (5.5, 1.4, 22, [1, 2.8, 4], 2)):
+            px, pz = rotate(x, z, yaw)
+            gallery.append(shape("Cube", [px, y, pz], size, material, yaw))
+        for distance in (8, 15, 22):
+            points = []
+            for x, z in ((-.175, distance - 1.5), (-.175, distance + 1.5),
+                         (.175, distance + 1.5), (.175, distance - 1.5)):
+                px, pz = rotate(x, z, yaw)
+                points.append([px, .05, pz])
+            quad(inlay, *points, 3)
+    model("gallery_shell", gallery)
+    model("gallery_inlay", inlay)
+
+    # Polygon floor, with its southern three vertices flattened to the socket.
+    arena = []
+    rim = []
+    for i in range(48):
+        angle = i * PI * 2 / 48
+        x, z = 38 * math.sin(angle), 38 * math.cos(angle)
+        if z < -37:
+            z = -38
+        rim.append([x, 0, z])
+    for i, a in enumerate(rim):
+        b = rim[(i + 1) % len(rim)]
+        triangle(arena, [0, 0, 0], a, b, 5 if i % 3 else 1)
+        low_a, low_b = [a[0], -3.5, a[2]], [b[0], -3.5, b[2]]
+        quad(arena, a, low_a, low_b, b, 1 if i % 4 else 2)
+        triangle(arena, [0, -3.5, 0], low_b, low_a, 2)
+    model("cathedral_arena", arena)
+    mandala = []
+    for radius in (18, 29):
+        lathe(mandala, [(radius, .04), (radius + .24, .04),
+                       (radius + .24, .09), (radius, .09), (radius, .04)], 3, 48)
+    model("cathedral_inlay", mandala)
+
+    pillars = []
+    for x in (-54, 54):
+        for z in (-48, 48):
+            lathe(pillars, [(0, -3), (7, -3), (7, 4), (4.3, 8),
+                           (4.3, 296), (7, 304), (0, 304)], 1, center=(x, z))
+            for y in (26, 78, 156, 234, 294):
+                lathe(pillars, [(4.2, y), (9, y), (10, y + 1.2),
+                               (9, y + 3), (4.2, y + 3), (4.2, y)], 2, center=(x, z))
+                lathe(pillars, [(6, y - .2), (8.5, y - .2), (8.5, y + .2),
+                               (6, y + .2), (6, y - .2)], 3, center=(x, z))
+    for x in (-24, 24):
+        for z in (-18, 18):
+            lathe(pillars, [(0, -3), (6, -3), (4, 12), (4, 222),
+                           (7, 230.5), (0, 230.5)], 1, center=(x, z))
+    model("cathedral_pillars", pillars)
+
+    # Mushroom lamps have a warm stem and blue cap, like the reference.
+    lantern = []
+    lathe(lantern, [(0, 0), (.85, 0), (.85, .8), (0, .8)], 2, 12)
+    lathe(lantern, [(0, .8), (.46, .8), (.46, 4.5), (0, 4.5)], 4, 12)
+    lathe(lantern, [(0, 4.5), (1.65, 4.5), (1.8, 4.8),
+                   (1.1, 5.6), (0, 5.9)], 2, 16)
+    lathe(lantern, [(0, 4.45), (1.55, 4.45), (1.55, 4.55), (0, 4.55)], 3, 16)
+    model("cathedral_lantern", lantern, [dict(name="warm_path", type="Point",
+          position=[0, 3, 0], color=[1, .70, .42], intensity=2.6, radius=16, castsShadow=False)])
+
+    gate = []
+    for x in (-14, 14):
+        lathe(gate, [(0, 0), (3, 0), (3, 24), (4, 25), (0, 25)], 1, 12, (x, 0))
+        lathe(gate, [(2.8, 18), (4.3, 18), (4.3, 19), (2.8, 19), (2.8, 18)], 2, 12, (x, 0))
+    # Arch is deliberately behind the encounter, clear of the approach.
+    for left, right in (([-14, 20], [0, 30]), ([0, 30], [14, 20])):
+        a, b = [*left, -1.5], [*right, -1.5]
+        c, d = [right[0], right[1] + 3, -1.5], [left[0], left[1] + 3, -1.5]
+        back = [[v[0], v[1], 1.5] for v in (a, b, c, d)]
+        quad(gate, d, c, b, a, 1)
+        quad(gate, *back, 1)
+        for i, u in enumerate((a, b, c, d)):
+            j = (i + 1) % 4
+            quad(gate, u, (a, b, c, d)[j], back[j], back[i], 2 if i == 0 else 1)
+    model("cathedral_gate", gate)
+
+
 def export():
     palette = reference_palette()
     export_style_props(palette)
     export_room_vaults(palette)
     export_giant(palette)
+    export_cathedral(palette)
     shell = [shape("Cube", [0, -.6, 0], [40, 1.2, 40], 5)]
     for side in range(4):
         yaw = side * PI / 2
@@ -273,10 +408,9 @@ def export():
 
     export_landmark(exterior_palette, save)
 
-    save("doorway_seal", "Verwachsene blinde Tuer", [
-        object_("wall_bay", (0, 0, 19.5), (10, 10, 1), collider=True),
+    save("doorway_seal", "Mycelium gallery balustrade", [
+        object_("wall_bay", (0, 0, 19.5), (10, 2.8, 1), collider=True),
         object_("cluster", (-2, 0, 18), (.8, .8, .8)),
-        object_("herald_banner", (0, 7, 18.8), (.7, .7, .7)),
     ])
 
     titles = {
@@ -290,8 +424,12 @@ def export():
     for name, title in titles.items():
         vault = "passage" if name in ("corridor", "turn", "entrance") else (
             "hall" if name in ("large_combat", "grotto") else "chamber")
-        objects = [object_("module_shell", collider=True), object_("module_mycelium"),
-                   object_("vault_" + vault, collider=True)]
+        objects = [object_("gallery_shell" if name in OPEN_ROOMS else "module_shell", collider=True),
+                   object_("module_mycelium")]
+        if name not in OPEN_ROOMS:
+            objects.append(object_("vault_" + vault, collider=True))
+        else:
+            objects.append(object_("gallery_inlay"))
         warm = name in ("entrance", "nursery", "alchemy", "shrine", "side_room")
         lantern = "lantern_amber" if warm else "lantern_cyan"
         for x, z in [(-16, -16), (16, 16)]:
@@ -304,7 +442,7 @@ def export():
             objects.append(object_("lantern_cyan", (15, 3, -15), (.7, .7, .7), light=True))
         for x, z in ((-15, 15),):
             objects.append(object_("hanging_spores", (x, 13, z), (1.1, 1.1, 1.1)))
-        for side in range(4):
+        for side in range(4) if name not in OPEN_ROOMS else ():
             yaw = side * PI / 2
             x, z = rotate(0, 19.4, yaw)
             objects.append(object_("root_portal", (x, 0, z), (1.2, 1.2, .75), yaw))
@@ -339,7 +477,6 @@ def export():
             objects.append(object_("arena_mandala", scale=(.8, .8, .8)))
         elif name == "large_combat":
             for x in (-13, 13):
-                objects.append(object_("vault_rib", (x, 0, 0), (1.65, 1.6, .6), PI / 2))
                 objects.append(object_("herald_banner", (x, 10, 11), (1.6, 1.6, 1.6)))
             objects.append(object_("arena_mandala", scale=(1.35, 1, 1.35)))
         elif name == "entrance":
@@ -354,11 +491,10 @@ def export():
 
     export_transition(palette, save)
 
-    # The arena is local to its graph floor. A square floor meets the fitted
-    # approach across the entire ten-unit doorway (a circle only meets at a point).
-    arena = [object_("floor_plate", scale=(76, 2, 76), collider=True),
-             object_("arena_mandala"), object_("royal_throne", (0, 0, 26), collider=True),
-             object_("roof_lantern", (0, 11, 0), light=True)]
+    # The round floor includes a flat ten-unit south socket for the bridge.
+    arena = [object_("cathedral_arena", collider=True),
+             object_("arena_mandala"), object_("cathedral_gate", (0, 0, 23)),
+             object_("cathedral_inlay")]
     for i in range(24):
         angle = i * PI * 2 / 24
         x, z = math.sin(angle) * 36, math.cos(angle) * 36
@@ -368,13 +504,21 @@ def export():
     for x in (-26, 26):
         for z in (-16, 16):
             arena.append(object_("arena_beacon", (x, 0, z), (.9, .9, .9), light=True))
+    for i in range(12):
+        angle = i * PI / 6
+        if i == 6:
+            continue
+        arena.append(object_("cathedral_lantern", (34 * math.sin(angle), 0, 34 * math.cos(angle)), light=True))
+    for x in (-21, 21):
+        arena.append(object_("herald_banner", (x, 22, 24), (2.4, 2.4, 2.4)))
     save("boss_arena", "Ancient heart of the Spore Crown", arena)
 
     approach = [object_("floor_plate", (0, 0, -7), (10, 1.2, 34), collider=True),
-                object_("root_portal", (0, 0, -18), (1.2, 1.2, .8))]
+                object_("gallery_inlay", (0, 0, -7), (.22, 1, .82))]
     for x in (-6, 6):
         approach.append(object_("parapet", (x, 0, -7), (34, 1, 1), PI / 2, True))
-        approach.append(object_("lantern_cyan", (x, 4, -15), light=True))
+        for z in (-20, 5):
+            approach.append(object_("cathedral_lantern", (x, 0, z), light=True))
     save("boss_approach", "Bridge to the ancient heart", approach)
 
 
@@ -441,9 +585,9 @@ def export_landmark(palette, save):
     palette.append(copy.deepcopy(palette[13]))
     palette[15].update(albedo=[.30, .24, .40], emissiveStrength=0, ambientStrength=.95)
     for albedo, glow, strength in (
-            ([.43, .37, .54], [.36, .28, .52], .015),  # 16: warm inner tissue
-            ([.24, .21, .34], [.24, .20, .32], 0),  # 17: recessed folds
-            ([.27, .65, .77], [.20, .68, .90], .45)):  # 18: living mycelium
+            ([.48, .49, .68], [.36, .28, .52], 0),  # 16: pale violet inner ribs
+            ([.075, .085, .28], [.24, .20, .32], 0),  # 17: indigo recessed folds
+            ([.20, .73, 1], [.16, .65, 1], 2.8)):  # 18: living mycelium
         palette.append(copy.deepcopy(palette[1]))
         palette[-1].update(albedo=albedo, emissiveColor=glow, emissiveStrength=strength,
                            roughness=.95, ambientStrength=1.15)
@@ -572,11 +716,14 @@ def export_landmark(palette, save):
     # A separate inward-facing vault gives the crown real thickness. Its last
     # ring shares the inner stem vertices; no duplicate coplanar backfaces.
     interior = []
-    vault = [(0, 329), (65, 325), (132, 315), (200, 300),
+    vault = [(24, 327), (65, 325), (132, 315), (200, 300),
              (250, 264), (282, 222), (240, 198)]
 
     def vault_point(ring, sector):
         radius, height = ring
+        if ring == vault[0]:
+            angle = (sector % sectors - .5) * 2 * PI / sectors
+            return [math.sin(angle) * radius, height, math.cos(angle) * radius]
         if ring == vault[-1]:
             return surface(radius, height, sector)
         if radius == 0:
@@ -588,7 +735,8 @@ def export_landmark(palette, save):
 
     for outer, inner in zip(vault, vault[1:]):
         for i in range(sectors):
-            for half, material in ((0, 16), (1, 17)):
+            for half in range(2):
+                material = 16 if (i // 2) % 2 == 0 else 17
                 a, b = i + half * .5, i + (half + 1) * .5
                 if outer[0] == 0:
                     triangle(interior, vault_point(outer, a), vault_point(inner, b),
@@ -596,6 +744,13 @@ def export_landmark(palette, save):
                 else:
                     quad(interior, vault_point(outer, b), vault_point(inner, b),
                          vault_point(inner, a), vault_point(outer, a), material)
+
+    # A luminous diaphragm closes the oculus below the exterior cap. This is
+    # an interior light well, so no night sky leaks through the crown.
+    for i in range(sectors):
+        quad(interior, radial(24, 327, i + 1), radial(20, 325, i + 1),
+             radial(20, 325, i), radial(24, 327, i), 2)
+        triangle(interior, [0, 326, 0], radial(20, 325, i + 1), radial(20, 325, i), 19)
 
     # Thin branching veins sit just inside the wall, beyond all room footprints.
     def vein_point(height, sector):
@@ -613,16 +768,22 @@ def export_landmark(palette, save):
                      vein_point(high, b + .035), vein_point(low, a + .035), 18)
 
     # Local light sources illuminate the vault without flooding every room.
-    lights = [dict(name="heart_amber", type="Point", position=[0, 290, 0],
-                   color=[1, .57, .26], intensity=3, radius=145, castsShadow=False)]
+    lights = [dict(name="oculus_blue", type="Spot", position=[0, 320, 0], direction=[0, -1, 0],
+                   color=[.34, .62, 1], intensity=12, radius=170, innerConeDegrees=19,
+                   outerConeDegrees=34, castsShadow=True),
+              dict(name="heart_fill", type="Point", position=[0, 258, -12],
+                   color=[.32, .48, 1], intensity=2.4, radius=95, castsShadow=False)]
     for i, sector in enumerate((4, 26, 49)):
         point = vein_point(150, sector)
         point[0] *= .94
         point[2] *= .94
         lights.append(dict(name=f"mycelium_{i}", type="Point", position=point,
                            color=[.28, .64, .88], intensity=1.3, radius=75, castsShadow=False))
+    interior_palette = copy.deepcopy(palette)
+    interior_palette.append(copy.deepcopy(palette[18]))
+    interior_palette[19].update(albedo=[.32, .56, .85], emissiveColor=[.24, .48, .85], emissiveStrength=1.1)
     write(MODELS / "elder_interior.json", dict(name="Violet vault and living mycelium",
-          materials=palette, shapes=interior, lights=lights))
+          materials=interior_palette, shapes=interior, lights=lights))
 
     details = []
     # Continuous tapered roots replace intersecting ellipsoids and thick columns.
@@ -693,7 +854,7 @@ def export_landmark(palette, save):
     exterior = [object_("elder_hollow_stem", collider=True),
                 object_("elder_floor", collider=True),
                 object_("elder_hollow_cap"), object_("elder_gills"),
-                object_("elder_interior", light=True),
+                object_("elder_interior", light=True), object_("cathedral_pillars"),
                 object_("elder_exterior_details"), object_("elder_spore_growth"),
                 object_("floor_plate", (0, 0, -258), (12, 1.2, 84), collider=True),
                 object_("root_portal", (0, 0, -269), (2.1, 2.5, 1.5)),
@@ -784,12 +945,36 @@ def audit_walkways():
     # Fitted approach and arena share an edge, not intersecting floor volumes.
     approach = cube_colliders(PREFABS / "boss_approach.prefab.json")
     arena = cube_colliders(PREFABS / "boss_arena.prefab.json")
+    arena_triangles = [triangle_vertices(part) for part in
+                       json.loads((MODELS / "cathedral_arena.json").read_text())["shapes"]]
+
+    def arena_support(x, z):
+        for a, b, c in arena_triangles:
+            if any(abs(v[1]) > 1e-6 for v in (a, b, c)):
+                continue
+            normal = cross(subtract(b, a), subtract(c, a))
+            if normal[1] <= 0:
+                continue
+            point = [x, 0, z]
+            if all(dot(normal, cross(subtract(v, u), subtract(point, u))) >= -1e-6
+                   for u, v in ((a, b), (b, c), (c, a))):
+                return True
+        return False
+
     combined = [([a[0], a[1], a[2] - 48], [b[0], b[1], b[2] - 48]) for a, b in approach] + arena
     for step in range(145):
         z = -72 + step / 2
         for x in (-3, 0, 3):
-            assert any(a[0] <= x <= b[0] and a[2] <= z <= b[2] and abs(b[1]) < 1e-5 for a, b in combined), "Boss bridge floor gap"
+            assert arena_support(x, z) or any(a[0] <= x <= b[0] and a[2] <= z <= b[2]
+                                              and abs(b[1]) < 1e-5 for a, b in combined), "Boss bridge floor gap"
             assert clear(combined, x, z, 0), (x, z, "Boss approach obstruction")
+    for radius in (0, 12, 25, 33):
+        for i in range(48):
+            assert arena_support(radius * math.sin(i * PI / 24), radius * math.cos(i * PI / 24)), "Arena floor gap"
+    for name in OPEN_ROOMS:
+        data = json.loads((PREFABS / (name + ".prefab.json")).read_text())
+        assert not any("vault_" in obj["asset"] and "rib" not in obj["asset"] for obj in data["objects"]), name
+        assert any("gallery_shell" in obj["asset"] for obj in data["objects"]), name
     print("Doorways, guard pockets, 12 stair flights, both landings and boss bridge pass support/clearance checks.")
 
 

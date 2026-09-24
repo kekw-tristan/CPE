@@ -87,6 +87,8 @@ namespace Engine::GFX
 
     void UpdateHealthBars(std::span<const sHealthBarData> _healthBars);
     void UpdateParticles(std::span<const sParticleData> _particles);
+    // Set during OnUpdate, before BeginFrame uploads the frame data.
+    void SetLocalAtmosphere(const sLocalAtmosphereSettings& _rSettings);
 
     double GetParticleGpuMilliseconds();
     cCamera& GetCamera();

@@ -11,10 +11,10 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/violet_root_portal.json",
-            "position": [0, 0, -18],
+            "asset": "../../models/mushroom_dungeon/gallery_inlay.json",
+            "position": [0, 0, -7],
             "rotation": [0, 0, 0],
-            "scale": [1.2, 1.2, 0.8],
+            "scale": [0.22, 1, 0.82],
             "generateColliders": false,
             "generateLights": false
         },
@@ -27,8 +27,16 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/violet_lantern_cyan.json",
-            "position": [-6, 4, -15],
+            "asset": "../../models/mushroom_dungeon/cathedral_lantern.json",
+            "position": [-6, 0, -20],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/cathedral_lantern.json",
+            "position": [-6, 0, 5],
             "rotation": [0, 0, 0],
             "scale": [1, 1, 1],
             "generateColliders": false,
@@ -43,8 +51,16 @@
             "generateLights": false
         },
         {
-            "asset": "../../models/mushroom_dungeon/violet_lantern_cyan.json",
-            "position": [6, 4, -15],
+            "asset": "../../models/mushroom_dungeon/cathedral_lantern.json",
+            "position": [6, 0, -20],
+            "rotation": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "generateColliders": false,
+            "generateLights": true
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/cathedral_lantern.json",
+            "position": [6, 0, 5],
             "rotation": [0, 0, 0],
             "scale": [1, 1, 1],
             "generateColliders": false,

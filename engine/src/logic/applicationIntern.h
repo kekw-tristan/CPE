@@ -67,6 +67,7 @@ namespace Engine::Logic
             bool IsBoundsVisible(const GFX::sBounds& _rBounds) const;
             void UpdateHealthBars(std::span<const GFX::sHealthBarData> _healthBars);
             void UpdateParticles(std::span<const GFX::sParticleData> _particles);
+            void SetLocalAtmosphere(const GFX::sLocalAtmosphereSettings& _rSettings) { m_vulkanRenderer.SetLocalAtmosphere(_rSettings); }
             void DrawHealthBars();
             void DrawParticles();
             double GetParticleGpuMilliseconds() const { return m_vulkanRenderer.GetParticleGpuMilliseconds(); }

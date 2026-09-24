@@ -34,6 +34,14 @@ cbuffer FrameUniformBuffer
     uint activeLightCount;
 
     ReflectionProbeData reflectionProbes[MAX_REFLECTION_PROBES];
+
+    float4 atmosphereBoundsMinBlend;
+    float4 atmosphereBoundsMaxAmbient;
+    float4 atmosphereFogColorDensity;
+    float4 atmosphereFogHeightStart;
+    float4 atmosphereShaftTopRadius;
+    float4 atmosphereShaftBottomRadius;
+    float4 atmosphereShaftColorDensity;
 };
 
 
@@ -1052,6 +1060,72 @@ float4 PSOcclusionBlur(OcclusionOutput input) : SV_Target
     return float4(visibility / max(totalWeight, 0.0001f), center.y, 0.0f, 0.0f);
 }
 
+float LocalAtmosphereWeight(float3 worldPosition)
+{
+    if (atmosphereBoundsMinBlend.w <= 0.0f)
+        return 0.0f;
+
+    const float3 center = (atmosphereBoundsMinBlend.xyz + atmosphereBoundsMaxAmbient.xyz) * 0.5f;
+    const float3 halfSize = max((atmosphereBoundsMaxAmbient.xyz - atmosphereBoundsMinBlend.xyz) * 0.5f, 0.001f);
+    const float radialDistance = (1.0f - length((worldPosition.xz - center.xz) / halfSize.xz)) * min(halfSize.x, halfSize.z);
+    const float heightDistance = halfSize.y - abs(worldPosition.y - center.y);
+    return smoothstep(0.0f, atmosphereBoundsMinBlend.w, min(radialDistance, heightDistance));
+}
+
+// Integrate only the short ray segment through the authored vertical shaft.
+// The visible surface terminates the ray, so foreground geometry occludes it.
+float3 EvaluateLocalLightShaft(float3 worldPosition)
+{
+    const float3 ray = worldPosition - cameraPosition.xyz;
+    const float distance = length(ray);
+    if (distance < 0.001f || atmosphereShaftColorDensity.w <= 0.0f)
+        return 0.0f;
+
+    const float3 direction = ray / distance;
+    const float radius = max(atmosphereShaftTopRadius.w, atmosphereShaftBottomRadius.w);
+    const float3 minimum = float3(atmosphereShaftTopRadius.x - radius, atmosphereShaftBottomRadius.y,
+        atmosphereShaftTopRadius.z - radius);
+    const float3 maximum = float3(atmosphereShaftTopRadius.x + radius, atmosphereShaftTopRadius.y,
+        atmosphereShaftTopRadius.z + radius);
+    float entry = 0.0f;
+    float exit = distance;
+    [unroll]
+    for (uint axis = 0; axis < 3; ++axis)
+    {
+        if (abs(direction[axis]) < 0.00001f)
+        {
+            if (cameraPosition[axis] < minimum[axis] || cameraPosition[axis] > maximum[axis])
+                return 0.0f;
+        }
+        else
+        {
+            const float a = (minimum[axis] - cameraPosition[axis]) / direction[axis];
+            const float b = (maximum[axis] - cameraPosition[axis]) / direction[axis];
+            entry = max(entry, min(a, b));
+            exit = min(exit, max(a, b));
+        }
+    }
+    if (exit <= entry)
+        return 0.0f;
+
+    const float stepLength = (exit - entry) / 12.0f;
+    const float height = max(atmosphereShaftTopRadius.y - atmosphereShaftBottomRadius.y, 0.001f);
+    float opticalDepth = 0.0f;
+    [unroll]
+    for (uint i = 0; i < 12; ++i)
+    {
+        const float3 samplePosition = cameraPosition.xyz + direction * (entry + (i + 0.5f) * stepLength);
+        const float t = saturate((samplePosition.y - atmosphereShaftBottomRadius.y) / height);
+        const float2 offset = samplePosition.xz - atmosphereShaftTopRadius.xz;
+        const float localRadius = lerp(atmosphereShaftBottomRadius.w, atmosphereShaftTopRadius.w, t);
+        const float radial = length(offset) / max(localRadius, 0.001f);
+        const float edge = 1.0f - smoothstep(0.65f, 1.0f, radial);
+        const float streak = 0.65f + 0.35f * pow(0.5f + 0.5f * sin(atan2(offset.y, offset.x) * 18.0f), 4.0f);
+        opticalDepth += edge * streak * lerp(0.4f, 1.0f, t) * stepLength;
+    }
+    return atmosphereShaftColorDensity.rgb * (1.0f - exp(-opticalDepth * atmosphereShaftColorDensity.w));
+}
+
 float4 PSMain(VSOutput input) : SV_Target
 {
     if (input.sky != 0)
@@ -1124,6 +1198,8 @@ float4 PSMain(VSOutput input) : SV_Target
     // Ambient
     // -------------------------------------------------------------------------------------------------------------------------
 
+    const float localAtmosphere = LocalAtmosphereWeight(cameraPosition.xyz);
+    const float localSurface = localAtmosphere * LocalAtmosphereWeight(input.worldPosition);
     float3 finalColor = EvaluateAmbient(
         input.worldPosition,
         normal,
@@ -1131,7 +1207,7 @@ float4 PSMain(VSOutput input) : SV_Target
         albedo,
         roughness,
         metallic,
-        ambientStrength * c_ambientLightStrength,
+        ambientStrength * c_ambientLightStrength * lerp(1.0f, atmosphereBoundsMaxAmbient.w, localSurface),
         lerp(1.0f, 2.5f, crystalMask)
     );
     finalColor *= SampleAmbientOcclusion(input.position.xy, GetCameraViewDepth(input.worldPosition));
@@ -1244,10 +1320,23 @@ float4 PSMain(VSOutput input) : SV_Target
     const float averageHeight = 0.5f * (cameraHeight + fragmentHeight);
     const float heightFogFactor = exp(-averageHeight * c_heightFogFalloff);
     const float fogExtinction = c_fogDensity + c_heightFogDensity * heightFogFactor;
-    const float fogAmount = input.preserveAtDistance != 0 ? 0.0f :
+    float fogAmount = input.preserveAtDistance != 0 ? 0.0f :
         max(1.0f - exp(-fogDepth * fogExtinction), smoothstep(c_fogEdgeStart, c_fogEnd, fogDistance));
-    const float3 fogColor = float3(c_fogRed, c_fogGreen, c_fogBlue);
+    float3 fogColor = float3(c_fogRed, c_fogGreen, c_fogBlue);
+    if (localAtmosphere > 0.0f)
+    {
+        const float localHeight = max(0.5f * (cameraPosition.y + input.worldPosition.y)
+            - atmosphereFogHeightStart.x, 0.0f);
+        const float density = atmosphereFogColorDensity.w
+            + atmosphereFogHeightStart.w * exp(-localHeight * atmosphereFogHeightStart.z);
+        const float localFog = 1.0f - exp(-max(fogDistance - atmosphereFogHeightStart.y, 0.0f) * density);
+        fogAmount = lerp(fogAmount, localFog, localAtmosphere);
+        fogColor = lerp(fogColor, atmosphereFogColorDensity.rgb, localAtmosphere);
+    }
     finalColor = lerp(finalColor, fogColor, fogAmount);
+
+    if (localAtmosphere > 0.0f)
+        finalColor += EvaluateLocalLightShaft(input.worldPosition) * localAtmosphere;
 
     return float4(clamp(finalColor, 0.0f, 65504.0f), input.color.a);
 }

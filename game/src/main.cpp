@@ -1,7 +1,9 @@
 #include "game.h"
 #include "world/forestAtmosphere.h"
 
-int main()
+#include <string_view>
+
+int main(int _argc, char** _argv)
 {
     try
     {
@@ -15,6 +17,13 @@ int main()
         config.environment.keyRadiance  = { World::c_moonRed * World::c_moonRadiance, World::c_moonGreen * World::c_moonRadiance, World::c_moonBlue * World::c_moonRadiance };
 
         cGame game(config);
+#if defined(GAME_DEBUG)
+        for (int i = 1; i < _argc; ++i)
+        {
+            if (std::string_view(_argv[i]) == "--mushroom-preview")
+                game.EnableMushroomPreview();
+        }
+#endif
         game.Run();
     }
     catch(const std::exception& e)

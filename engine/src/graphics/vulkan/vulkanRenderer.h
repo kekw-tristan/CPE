@@ -87,6 +87,7 @@ namespace Engine::GFX
             void UpdateHealthBars(std::span<const sHealthBarData> _healthBars);
             void DrawHealthBars();
             void UpdateParticles(std::span<const sParticleData> _particles);
+            void SetLocalAtmosphere(const sLocalAtmosphereSettings& _rSettings) { m_localAtmosphere = _rSettings; }
             void DrawParticles();
 
             void BeginDraw(); 
@@ -199,6 +200,8 @@ namespace Engine::GFX
             cVulkanImage m_occlusionDepth;
             cVulkanImage m_occlusionRaw;
             cVulkanImage m_occlusionFiltered;
+
+            sLocalAtmosphereSettings m_localAtmosphere{};
 
             static constexpr uint32_t c_bloomLevelCount = 6;
             static constexpr uint32_t c_bloomPassCount  = c_bloomLevelCount * 2 - 1;

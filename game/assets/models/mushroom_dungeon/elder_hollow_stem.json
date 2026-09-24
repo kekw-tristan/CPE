@@ -162,17 +162,17 @@
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.43, 0.37, 0.54],
+            "albedo": [0.48, 0.49, 0.68],
             "roughness": 0.95,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.15,
             "emissiveColor": [0.36, 0.28, 0.52],
-            "emissiveStrength": 0.015
+            "emissiveStrength": 0
         },
         {
-            "albedo": [0.24, 0.21, 0.34],
+            "albedo": [0.075, 0.085, 0.28],
             "roughness": 0.95,
             "metallic": 0,
             "lightWrap": 0.35,
@@ -182,14 +182,14 @@
             "emissiveStrength": 0
         },
         {
-            "albedo": [0.27, 0.65, 0.77],
+            "albedo": [0.2, 0.73, 1],
             "roughness": 0.95,
             "metallic": 0,
             "lightWrap": 0.35,
             "shapeContrast": 0.85,
             "ambientStrength": 1.15,
-            "emissiveColor": [0.2, 0.68, 0.9],
-            "emissiveStrength": 0.45
+            "emissiveColor": [0.16, 0.65, 1],
+            "emissiveStrength": 2.8
         }
     ],
     "shapes": [

@@ -1,12 +1,12 @@
 {
     "assetType": "Prefab",
-    "name": "Verwachsene blinde Tuer",
+    "name": "Mycelium gallery balustrade",
     "objects": [
         {
             "asset": "../../models/mushroom_dungeon/violet_wall_bay.json",
             "position": [0, 0, 19.5],
             "rotation": [0, 0, 0],
-            "scale": [10, 10, 1],
+            "scale": [10, 2.8, 1],
             "generateColliders": true,
             "generateLights": false
         },
@@ -15,14 +15,6 @@
             "position": [-2, 0, 18],
             "rotation": [0, 0, 0],
             "scale": [0.8, 0.8, 0.8],
-            "generateColliders": false,
-            "generateLights": false
-        },
-        {
-            "asset": "../../models/mushroom_dungeon/violet_herald_banner.json",
-            "position": [0, 7, 18.8],
-            "rotation": [0, 0, 0],
-            "scale": [0.7, 0.7, 0.7],
             "generateColliders": false,
             "generateLights": false
         }

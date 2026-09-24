@@ -36,6 +36,26 @@ void cGame::OnInit()
     World::WorldGenerator::Generate(1337);
     m_playerController.SetPosition({ 0.0f, World::GetTerrainSurfaceHeight(0.0f, -24.0f) + 0.1f, -24.0f });
 
+#if defined(GAME_DEBUG)
+    if (m_mushroomPreview)
+    {
+        for (const auto& dungeon : World::WorldGenerator::GetLayout().dungeons)
+        {
+            if (dungeon.bossId != World::sBossId::ForestSporecap)
+                continue;
+
+            m_playerController.SetPosition(dungeon.center + Math::cVec3f(0.0f,
+                World::GetBossArenaHeight(dungeon.bossId) + 0.1f, -99.0f * World::c_mushroomDungeonScale));
+            const auto eye = dungeon.center + Math::cVec3f(0.0f, 246.0f, -119.0f) * World::c_mushroomDungeonScale;
+            const auto target = dungeon.center + Math::cVec3f(0.0f, 262.0f, 0.0f) * World::c_mushroomDungeonScale;
+            GFX::GetCamera().LookAt(eye.x(), eye.y(), eye.z(), target.x(), target.y(), target.z());
+            World::WorldGenerator::Update(m_playerController.GetPosition(),
+                (2 * World::c_chunkLoadRadius + 1) * (2 * World::c_chunkLoadRadius + 1));
+            break;
+        }
+    }
+#endif
+
     if (LoadPlayerModel())
         BuildPlayerRenderInstances();
 
@@ -47,6 +67,10 @@ void cGame::OnInit()
     RebuildDynamicInstanceList();
 
     Platform::SetMouseCaptured(true);
+#if defined(GAME_DEBUG)
+    if (m_mushroomPreview)
+        Platform::SetMouseCaptured(false);
+#endif
 
     BeginRun();
 }
@@ -55,6 +79,19 @@ void cGame::OnInit()
 
 void cGame::OnUpdate(float _deltaTime)
 {
+#if defined(GAME_DEBUG)
+    // Stable inspection view: gameplay remains untouched in a normal launch.
+    if (m_mushroomPreview)
+    {
+        UpdatePlayerRenderInstances();
+        UpdateDungeonAtmosphere();
+        UpdateProjectileEffects(_deltaTime);
+        if (m_dynamicInstanceListDirty)
+            RebuildDynamicInstanceList();
+        return;
+    }
+#endif
+
     UpdateInventoryInput();
 
     const bool augmentSelectionPending = m_runState.HasPendingAugmentSelection();
@@ -143,11 +180,70 @@ void cGame::OnUpdate(float _deltaTime)
     UpdatePlayerRenderInstances();
     UpdateEnemyRenderInstances(_deltaTime);
     SyncProjectileRenderInstances();
+    UpdateDungeonAtmosphere();
     UpdateProjectileEffects(augmentSelectionPending ? 0.0f : _deltaTime);
     SyncLootRenderInstances();
 
     if (m_dynamicInstanceListDirty)
         RebuildDynamicInstanceList();
+}
+
+// -------------------------------------------------------------------------------------------------------------------------
+
+void cGame::UpdateDungeonAtmosphere()
+{
+    GFX::sLocalAtmosphereSettings atmosphere{};
+    bool emitSpores = false;
+
+    for (const auto& dungeon : World::WorldGenerator::GetLayout().dungeons)
+    {
+        if (dungeon.bossId != World::sBossId::ForestSporecap)
+            continue;
+
+        const auto& center = dungeon.center;
+        constexpr float c_scale = World::c_mushroomDungeonScale;
+        atmosphere.boundsMinBlend = { center.x() - 246.0f * c_scale, center.y() - 8.0f * c_scale,
+            center.z() - 246.0f * c_scale, 4.0f };
+        atmosphere.boundsMaxAmbient = { center.x() + 246.0f * c_scale, center.y() + 328.0f * c_scale,
+            center.z() + 246.0f * c_scale, 0.72f };
+        atmosphere.fogColorDensity = { 0.025f, 0.045f, 0.14f, 0.0035f };
+        atmosphere.fogHeightStart = { center.y() + 80.0f * c_scale, 12.0f, 0.035f, 0.009f };
+        atmosphere.shaftTopRadius = { center.x(), center.y() + 324.0f * c_scale, center.z(), 19.0f * c_scale };
+        atmosphere.shaftBottomRadius = { center.x(), center.y() + 234.1f * c_scale, center.z(), 33.0f * c_scale };
+        atmosphere.shaftColorDensity = { 0.14f, 0.30f, 0.65f, 0.012f };
+
+        const auto offset = m_playerController.GetPosition() - center;
+        emitSpores = offset.x() * offset.x() + offset.z() * offset.z() < 210.0f * 210.0f * c_scale * c_scale
+            && offset.y() > 195.0f * c_scale && offset.y() < 327.0f * c_scale;
+        if (emitSpores && !m_particleSystem.IsAlive(m_dungeonSporeEmitter))
+        {
+            GFX::sParticleDefinition spores{};
+            spores.spawnRate = 9.0f;
+            spores.lifetime = 12.0f;
+            spores.startSize = 0.045f;
+            spores.endSize = 0.018f;
+            spores.speed = 0.14f;
+            spores.spread = 0.10f;
+            spores.startColor = { 0.40f, 0.85f, 1.8f, 0.65f };
+            spores.endColor = { 0.25f, 0.55f, 1.2f, 0.0f };
+            m_dungeonSporeEmitter = m_particleSystem.CreateEmitter(spores, center + Math::cVec3f(0.0f, 260.0f * c_scale, 0.0f));
+            std::array<GFX::sParticleSurface, 4> surfaces{};
+            for (size_t i = 0; i < surfaces.size(); ++i)
+            {
+                surfaces[i].position = center + Math::cVec3f(0.0f, (242.0f + static_cast<float>(i) * 21.0f) * c_scale, 0.0f);
+                surfaces[i].radius = 30.0f * c_scale;
+            }
+            m_particleSystem.SetSurfaces(m_dungeonSporeEmitter, surfaces);
+        }
+        break;
+    }
+
+    if (!emitSpores)
+    {
+        m_particleSystem.StopEmitter(m_dungeonSporeEmitter, true);
+        m_dungeonSporeEmitter = {};
+    }
+    GFX::SetLocalAtmosphere(atmosphere);
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -218,6 +314,11 @@ void cGame::OnDraw()
 
 void cGame::OnDrawUI()
 {
+#if defined(GAME_DEBUG)
+    if (m_mushroomPreview)
+        return;
+#endif
+
     UI::sHudState hudState;
 
     hudState.health                                 = m_playerHealth;

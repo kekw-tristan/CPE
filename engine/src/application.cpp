@@ -233,6 +233,18 @@ namespace Engine::GFX
 
     // -------------------------------------------------------------------------------------------------------------------------
 
+    void SetLocalAtmosphere(const sLocalAtmosphereSettings& _rSettings)
+    {
+        if (s_pApplicationIntern == nullptr)
+        {
+            throw std::runtime_error("Application does not exist yet!");
+        }
+
+        s_pApplicationIntern->SetLocalAtmosphere(_rSettings);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------------
+
     double GetParticleGpuMilliseconds()
     {
         return s_pApplicationIntern == nullptr ? -1.0 : s_pApplicationIntern->GetParticleGpuMilliseconds();

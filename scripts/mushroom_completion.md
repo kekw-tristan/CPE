@@ -9,6 +9,41 @@ Pilz-Dungeon. Andere Dungeons erhalten ihre eigene Palette und Raumformen.
 
 ## Umgesetzter erster Abschnitt
 
+### Offene Pilzkathedrale (24.09.2026)
+
+- Der Generator reserviert die mittleren 3 x 3 Rasterzellen auf allen vier
+  Etagen als Luftraum. Nur Bossarena und ihre Anschlussbruecke liegen darin.
+  Der feste Fallback umgeht denselben Bereich; die Layoutvalidierung erzwingt ihn.
+- Eingang, Gaenge, Kurven, kleine/grosse Kampfplattformen und Grotte sind
+  offene Galerien mit niedrigen Bruestungen, facettierten Steinplatten und
+  cyanfarbenen Wegmarkierungen. Nebenraeume behalten ihre Gewoelbe.
+- Runde Arena mit ebenem Suedanschluss, Pilzlaternen, Tor und Bannern;
+  hohe Saeulen mit Leuchtringen und Stuetzen unter der Arena.
+- Radiale indigo/violette Deckenbaender und ein leuchtender, geschlossener
+  Oculus. Die Aussenkappe bleibt geschlossen, damit der Nachthimmel nicht
+  durch das Innere sichtbar wird.
+- Lokale zylindrische Atmosphaere mit eigenem Hoehennebel und sanftem
+  Uebergang am Eingang. Ein begrenzter Lichtschacht wird bis zur sichtbaren
+  Oberflaeche integriert; bis zu etwa 108 schwebende Sporen nutzen das
+  bestehende Partikelsystem. Die Engine erhaelt nur generische Volumendaten.
+- Debug-Start `game.exe --mushroom-preview`: feste Kamera vor der Bossbruecke,
+  pausiertes Gameplay, ausgeblendetes Spiel-HUD. Normaler Start bleibt spielbar.
+  Bei gesperrter `game.exe` wurde separat `game-cathedral-review.exe` gebaut.
+
+Validierung: Engine und Game Debug x64 sowie alle Shader kompiliert;
+10.000 Seeds mit Wiederholungen und erzwungenen Fallbacks bestanden,
+keine natuerlichen Fallbacks. Asset-Audit prueft zusaetzlich die runde
+Arenaflaeche und ihren Brueckenanschluss. Die offenen Standardgalerien
+benoetigen 94 Instanzen pro Pass, die grosse Kampfplattform 132, die
+Arena 148 und die gesamte Pilzhuelle 163 (ohne Laufzeitdekoration).
+
+Die Vorschau wurde im laufenden Vulkan-Renderer betrachtet. Ein kompletter
+Durchlauf mit Spruengen, Kaempfen, Kamera und Streaming auf allen vier
+Etagen steht weiterhin aus. Niedrige Bruestungen erlauben Spruenge;
+die Graphpruefung allein garantiert keine unverkuerzbare Laufroute.
+
+### Vorheriger Stand (22.09.2026)
+
 - Blaue, breitere Aussenkappe mit sichtbaren Lamellen; passende kleine Pilze.
 - Drei geschlossene Raumgewoelbe: niedriger Durchgang, Kammer, hohe Halle.
 - Weniger wiederholte Eckdekoration; kuehle und warme Lichtakzente.
