@@ -4,7 +4,6 @@ Rooms use a 48-unit socket grid, 40-unit interiors and ten-unit doorways.
 Four sparse floors fit inside an ancient hollow elder mushroom. Each stair joins one floor pair.
 The runtime closes unused sockets with doorway_seal.prefab.json. All four
 axes and the combat spawn pockets (+/-7, +/-7) remain clear of furniture.
-This is separate from mushroom_dungeon.py, which authors the legacy landmark.
 """
 
 import argparse
