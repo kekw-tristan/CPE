@@ -628,7 +628,7 @@ def export_landmark(palette, save):
     for (r0, y0), (r1, y1) in zip(stem_rings, stem_rings[1:]):
         for i in range(sectors):
             gate = i == sectors // 2
-            if gate and y0 < 24:
+            if gate and 0 <= y0 < 24:
                 continue
             for inset, reverse in ((0, False), (4, True)):
                 points = [surface(r0 - inset, y0, i), surface(r0 - inset, y0, i + 1),
@@ -640,6 +640,14 @@ def export_landmark(palette, save):
             if gate and y0 == 24:
                 quad(stem, surface(r0, y0, i), surface(r0 - 4, y0, i),
                      surface(r0 - 4, y0, i + 1), surface(r0, y0, i + 1), 1)
+    # Close the underside at the actual stem rim, including the sector below
+    # the entrance. The doorway only opens above the walkable threshold.
+    bottom_radius, bottom_height = stem_rings[0]
+    bottom_center = [16 * math.sin(bottom_height / 250), bottom_height,
+                     -3 * math.sin(bottom_height / 170)]
+    for i in range(sectors):
+        triangle(stem, bottom_center, surface(bottom_radius, bottom_height, i + 1),
+                 surface(bottom_radius, bottom_height, i), 10)
     write(MODELS / "elder_hollow_stem.json", dict(name="Fluted lilac ivory elder stem", materials=palette, shapes=stem))
 
     # A solid earthen base follows the irregular inner wall. Its top sits just
@@ -785,6 +793,34 @@ def export_landmark(palette, save):
           materials=interior_palette, shapes=interior, lights=lights))
 
     details = []
+    # Faceted plinths frame the entry like the reference's stepped stone islands.
+    # Their centre lane stays clear; small growths sit on the level top faces.
+    for side in (-1, 1):
+        rings = []
+        for radius, height in ((9, -36), (14, -16), (17, -3), (17, 0)):
+            rings.append([[side * 34 + math.sin(i * PI / 4) * radius,
+                           height, -276 + math.cos(i * PI / 4) * radius]
+                          for i in range(8)])
+        for lower, upper in zip(rings, rings[1:]):
+            for i in range(8):
+                j = (i + 1) % 8
+                quad(details, lower[i], lower[j], upper[j], upper[i],
+                     17 if upper is rings[-1] else (10 if i % 2 else 15))
+        for i in range(8):
+            j = (i + 1) % 8
+            triangle(details, [side * 34, 0, -276], rings[-1][i], rings[-1][j], 16)
+            triangle(details, [side * 34, -36, -276], rings[0][j], rings[0][i], 10)
+
+    # Narrow cyan veins descend along the outside fibres, echoing the luminous
+    # cascades in the reference. They share the baked decorative triangle model.
+    for sector in (5, 14, 24, 40, 49, 58):
+        edges = []
+        for index, (radius, height) in enumerate(stem_rings[1:-1]):
+            offset = (.25, .35, .25, .6, .45, .35)[index]
+            edges.append([surface(radius + 2, height, sector + offset + width)
+                          for width in (-.055, .055)])
+        for lower, upper in zip(edges, edges[1:]):
+            quad(details, lower[0], lower[1], upper[1], upper[0], 18)
     # Continuous tapered roots replace intersecting ellipsoids and thick columns.
     for root, angle in enumerate((.12, .92, 1.77, 2.43, 3.92, 4.82, 5.67)):
         rings = []
@@ -866,6 +902,11 @@ def export_landmark(palette, save):
             exterior.append(object_("cluster", (x * 1.7, 0, z), (1.8, 1.8, 1.8)))
     for a, size in ((.5, 1.1), (1.8, .85), (4.5, 1.3), (5.2, .8)):
         exterior.append(object_("module_giant", (math.sin(a) * 272, 0, math.cos(a) * 272), (size,) * 3))
+    for side in (-1, 1):
+        exterior.append(object_("cluster", (side * 35, 0, -282), (2.6,) * 3))
+        exterior.append(object_("cluster", (side * 27, 0, -269), (1.6,) * 3))
+        exterior.append(object_("herald_banner", (side * 39, 0, -270), (1.8,) * 3))
+        exterior.append(object_("lantern_cyan", (side * 40, 0, -278), (1.4,) * 3))
     save("elder_shell", "Quiet elder of the Spore Crown", exterior)
 
 
@@ -1095,6 +1136,17 @@ def audit_interior_visibility():
     shell = json.loads((PREFABS / "elder_shell.prefab.json").read_text())
     assert any(obj["asset"].endswith("/elder_floor.json") and obj["generateColliders"] for obj in shell["objects"])
     print(f"{len(floor_samples)} floor samples have level support; floor collision is enabled.")
+    # These exterior views used to expose the hollow foot: below the rim and
+    # through the entrance sector underneath the gallery. Respect backface culling.
+    for radius in (0, 80, 170, 235):
+        for sector in range(16):
+            angle = sector * PI / 8
+            origin = (math.sin(angle) * radius, -145, math.cos(angle) * radius)
+            assert abs(nearest_hit(origin, (0, 1, 0)) - 5) < 1e-5, (origin, "open stem underside")
+    for height in (-130, -70, -6, -1):
+        distance = nearest_hit((0, height, -310), (0, 0, 1))
+        assert 20 < distance < 65, (height, "open foundation below entrance")
+    print("64 underside and 4 exterior threshold sightlines are closed.")
 
 
 def audit():

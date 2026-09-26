@@ -217,6 +217,70 @@
             "scale": [0.8, 0.8, 0.8],
             "generateColliders": false,
             "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/violet_cluster.json",
+            "position": [-35, 0, -282],
+            "rotation": [0, 0, 0],
+            "scale": [2.6, 2.6, 2.6],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/violet_cluster.json",
+            "position": [-27, 0, -269],
+            "rotation": [0, 0, 0],
+            "scale": [1.6, 1.6, 1.6],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/violet_herald_banner.json",
+            "position": [-39, 0, -270],
+            "rotation": [0, 0, 0],
+            "scale": [1.8, 1.8, 1.8],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/violet_lantern_cyan.json",
+            "position": [-40, 0, -278],
+            "rotation": [0, 0, 0],
+            "scale": [1.4, 1.4, 1.4],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/violet_cluster.json",
+            "position": [35, 0, -282],
+            "rotation": [0, 0, 0],
+            "scale": [2.6, 2.6, 2.6],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/violet_cluster.json",
+            "position": [27, 0, -269],
+            "rotation": [0, 0, 0],
+            "scale": [1.6, 1.6, 1.6],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/violet_herald_banner.json",
+            "position": [39, 0, -270],
+            "rotation": [0, 0, 0],
+            "scale": [1.8, 1.8, 1.8],
+            "generateColliders": false,
+            "generateLights": false
+        },
+        {
+            "asset": "../../models/mushroom_dungeon/violet_lantern_cyan.json",
+            "position": [40, 0, -278],
+            "rotation": [0, 0, 0],
+            "scale": [1.4, 1.4, 1.4],
+            "generateColliders": false,
+            "generateLights": false
         }
     ]
 }

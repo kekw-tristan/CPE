@@ -83,6 +83,38 @@ void cGame::OnUpdate(float _deltaTime)
     // Stable inspection view: gameplay remains untouched in a normal launch.
     if (m_mushroomPreview)
     {
+        // Fixed review angles: arena, exterior, entrance and foundation.
+        static const std::array<Math::cVec3f, 4> c_previewEyes =
+        {
+            Math::cVec3f(0.0f, 246.0f, -119.0f),
+            Math::cVec3f(390.0f, 190.0f, -590.0f),
+            Math::cVec3f(85.0f, 42.0f, -365.0f),
+            Math::cVec3f(45.0f, -12.0f, -330.0f)
+        };
+        static const std::array<Math::cVec3f, 4> c_previewTargets =
+        {
+            Math::cVec3f(0.0f, 262.0f, 0.0f),
+            Math::cVec3f(0.0f, 100.0f, 0.0f),
+            Math::cVec3f(0.0f, 10.0f, -265.0f),
+            Math::cVec3f(0.0f, -8.0f, -265.0f)
+        };
+        for (size_t view = 0; view < c_previewEyes.size(); ++view)
+        {
+            if (!Platform::IsKeyDown('1' + static_cast<int>(view)))
+                continue;
+
+            for (const auto& dungeon : World::WorldGenerator::GetLayout().dungeons)
+            {
+                if (dungeon.bossId != World::sBossId::ForestSporecap)
+                    continue;
+
+                const auto eye = dungeon.center + c_previewEyes[view] * World::c_mushroomDungeonScale;
+                const auto target = dungeon.center + c_previewTargets[view] * World::c_mushroomDungeonScale;
+                GFX::GetCamera().LookAt(eye.x(), eye.y(), eye.z(), target.x(), target.y(), target.z());
+                break;
+            }
+        }
+
         UpdatePlayerRenderInstances();
         UpdateDungeonAtmosphere();
         UpdateProjectileEffects(_deltaTime);

@@ -9,6 +9,21 @@ Pilz-Dungeon. Andere Dungeons erhalten ihre eigene Palette und Raumformen.
 
 ## Umgesetzter erster Abschnitt
 
+### Geschlossener Sockel und Aussenverzierung (26.09.2026)
+
+- Der Eingangsschlitz endet an der Bodenschwelle. Darunter ist der Stamm
+  geschlossen; eine an den Stammrand angepasste Flaeche schliesst die Unterseite.
+- Zwei facettierte Steinsockel mit Pilzgruppen, Laternen und Bannern flankieren
+  den Eingang. Schmale cyanfarbene Leuchtadern laufen an den Aussenfasern entlang.
+- Der Asset-Audit prueft 64 Sichtlinien von unten und vier unter dem Eingang
+  mit Backface-Culling. Die Aussenhuelle liegt bei 218 von 256 Instanzen pro Pass.
+- In `game.exe --mushroom-preview` schalten die Tasten `1` bis `4` zwischen
+  Bossarena, Aussenansicht, Eingang und Sockel um.
+
+Validierung: Debug x64 gebaut, Assets aktualisiert und alle vier Ansichten
+im Vulkan-Renderer geprueft. Keine Fehler im Laufzeit-Fehlerlog.
+Ein kompletter spielbarer Dungeon-Durchlauf wurde dabei nicht durchgefuehrt.
+
 ### Offene Pilzkathedrale (24.09.2026)
 
 - Der Generator reserviert die mittleren 3 x 3 Rasterzellen auf allen vier
